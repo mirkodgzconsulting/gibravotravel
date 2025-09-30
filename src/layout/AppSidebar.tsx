@@ -21,7 +21,7 @@ import {
   PlugInIcon,
   TableIcon,
   TaskIcon,
-  UserCircleIcon,
+  UserIcon,
 } from "../icons/index";
 import SidebarWidget from "./SidebarWidget";
 
@@ -159,7 +159,7 @@ const gestioneItems: NavItem[] = [
 
 const utentiItems: NavItem[] = [
   {
-    icon: <UserCircleIcon />,
+    icon: <UserIcon />,
     name: "Crea Utenti",
     path: "/crea-utenti",
   },
@@ -387,7 +387,7 @@ const AppSidebar: React.FC = () => {
   );
 
   const [openSubmenu, setOpenSubmenu] = useState<{
-    type: "main" | "support" | "others";
+    type: "home" | "gestione" | "utenti" | "support" | "others";
     index: number;
   } | null>(null);
   const [subMenuHeight, setSubMenuHeight] = useState<Record<string, number>>(
@@ -418,7 +418,7 @@ const AppSidebar: React.FC = () => {
           nav.subItems.forEach((subItem) => {
             if (isActive(subItem.path)) {
               setOpenSubmenu({
-                type: menuType as "main" | "support" | "others",
+                type: menuType as "home" | "gestione" | "utenti" | "support" | "others",
                 index,
               });
               submenuMatched = true;
@@ -449,7 +449,7 @@ const AppSidebar: React.FC = () => {
 
   const handleSubmenuToggle = (
     index: number,
-    menuType: "main" | "support" | "others"
+    menuType: "home" | "gestione" | "utenti" | "support" | "others"
   ) => {
     setOpenSubmenu((prevOpenSubmenu) => {
       if (

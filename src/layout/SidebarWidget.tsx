@@ -1,3 +1,4 @@
+import Link from "next/link";
 import React from "react";
 
 export default function SidebarWidget() {
@@ -12,12 +13,12 @@ export default function SidebarWidget() {
       <p className="mb-4 text-gray-500 text-theme-sm dark:text-gray-400">
         Dashboard di gestione per servizi di viaggi e turismo.
       </p>
-      <a
+      <Link
         href="/"
         className="flex items-center justify-center p-3 font-medium text-white rounded-lg bg-brand-500 text-theme-sm hover:bg-brand-600"
       >
         Vai al Dashboard
-      </a>
+      </Link>
     </div>
   );
 }

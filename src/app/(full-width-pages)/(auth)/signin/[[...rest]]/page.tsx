@@ -5,7 +5,6 @@ import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import Image from "next/image";
-import { Metadata } from "next";
 
 export default function SignInPage() {
   const { isSignedIn, isLoaded } = useUser();

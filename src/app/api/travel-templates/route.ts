@@ -141,24 +141,26 @@ export async function POST(request: NextRequest) {
           const bytes = await coverImage.arrayBuffer();
           const buffer = Buffer.from(bytes);
           
-          // Subir directamente a Cloudinary sin conversión base64
-          const result = await cloudinary.uploader.upload_stream(
-            {
-              folder: 'gibravotravel/templates',
-              resource_type: 'image',
-              transformation: [
-                { width: 800, height: 600, crop: 'limit', quality: 'auto' }
-              ]
-            },
-            (error, result) => {
-              if (error) throw error;
-              return result;
-            }
-          ).end(buffer);
+          // Subir directamente a Cloudinary usando Promise
+          const result = await new Promise((resolve, reject) => {
+            cloudinary.uploader.upload_stream(
+              {
+                folder: 'gibravotravel/templates',
+                resource_type: 'image',
+                transformation: [
+                  { width: 800, height: 600, crop: 'limit', quality: 'auto' }
+                ]
+              },
+              (error, result) => {
+                if (error) reject(error);
+                else resolve(result);
+              }
+            ).end(buffer);
+          });
 
           return {
             type: 'image',
-            url: result.secure_url,
+            url: (result as any).secure_url,
             name: coverImage.name
           };
         } catch (error) {
@@ -176,21 +178,23 @@ export async function POST(request: NextRequest) {
           const bytes = await pdfFile.arrayBuffer();
           const buffer = Buffer.from(bytes);
           
-          // Subir directamente a Cloudinary sin conversión base64
-          const result = await cloudinary.uploader.upload_stream(
-            {
-              folder: 'gibravotravel/templates',
-              resource_type: 'raw'
-            },
-            (error, result) => {
-              if (error) throw error;
-              return result;
-            }
-          ).end(buffer);
+          // Subir directamente a Cloudinary usando Promise
+          const result = await new Promise((resolve, reject) => {
+            cloudinary.uploader.upload_stream(
+              {
+                folder: 'gibravotravel/templates',
+                resource_type: 'raw'
+              },
+              (error, result) => {
+                if (error) reject(error);
+                else resolve(result);
+              }
+            ).end(buffer);
+          });
 
           return {
             type: 'pdf',
-            url: result.secure_url,
+            url: (result as any).secure_url,
             name: pdfFile.name
           };
         } catch (error) {

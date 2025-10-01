@@ -60,29 +60,51 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let coverImagePath = null;
-    let pdfFilePath = null;
+    let coverImageData = null;
+    let coverImageName = null;
+    let pdfFileData = null;
+    let pdfFileName = null;
 
-    // Procesar imagen de portada
+    // Procesar imagen de portada (optimizado)
     if (coverImage && coverImage.size > 0) {
+      // Limitar tamaño de imagen a 5MB
+      if (coverImage.size > 5 * 1024 * 1024) {
+        return NextResponse.json(
+          { error: 'La imagen es demasiado grande. Máximo 5MB.' },
+          { status: 400 }
+        );
+      }
+      
       const imageBuffer = await coverImage.arrayBuffer();
       const imageBase64 = Buffer.from(imageBuffer).toString('base64');
-      coverImagePath = `data:${coverImage.type};base64,${imageBase64}`;
+      coverImageData = `data:${coverImage.type};base64,${imageBase64}`;
+      coverImageName = coverImage.name;
     }
 
-    // Procesar archivo PDF
+    // Procesar archivo PDF (optimizado)
     if (pdfFile && pdfFile.size > 0) {
+      // Limitar tamaño de PDF a 10MB
+      if (pdfFile.size > 10 * 1024 * 1024) {
+        return NextResponse.json(
+          { error: 'El archivo PDF es demasiado grande. Máximo 10MB.' },
+          { status: 400 }
+        );
+      }
+      
       const pdfBuffer = await pdfFile.arrayBuffer();
       const pdfBase64 = Buffer.from(pdfBuffer).toString('base64');
-      pdfFilePath = `data:${pdfFile.type};base64,${pdfBase64}`;
+      pdfFileData = `data:${pdfFile.type};base64,${pdfBase64}`;
+      pdfFileName = pdfFile.name;
     }
 
     const template = await prisma.travelNoteTemplate.create({
       data: {
         title,
         textContent,
-        coverImage: coverImagePath,
-        pdfFile: pdfFilePath,
+        coverImage: coverImageData,
+        coverImageName,
+        pdfFile: pdfFileData,
+        pdfFileName,
         tourDate: new Date(tourDate),
         travelCost: travelCost ? parseFloat(travelCost) : null,
         createdBy: userId,

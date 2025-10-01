@@ -17,7 +17,9 @@ interface TravelNoteTemplate {
   title: string;
   textContent: string;
   coverImage: string | null;
+  coverImageName: string | null;
   pdfFile: string | null;
+  pdfFileName: string | null;
   tourDate: string;
   travelCost: number | null;
   createdBy: string;
@@ -48,6 +50,7 @@ export default function PartenzeNotePage() {
   const [error, setError] = useState<string | null>(null);
   const [expandedTemplate, setExpandedTemplate] = useState<string | null>(null);
   const [showCopyNotification, setShowCopyNotification] = useState(false);
+  const [copiedTemplates, setCopiedTemplates] = useState<Set<string>>(new Set());
   const [formData, setFormData] = useState<TemplateFormData>({
     title: "",
     textContent: "",
@@ -131,10 +134,22 @@ export default function PartenzeNotePage() {
     }
   };
 
-  const handleCopyContent = async (text: string) => {
+  const handleCopyContent = async (templateId: string, text: string) => {
     try {
       await navigator.clipboard.writeText(text);
       setShowCopyNotification(true);
+      
+      // Marcar como copiado
+      setCopiedTemplates(prev => new Set(prev).add(templateId));
+      
+      // Resetear después de 3 segundos
+      setTimeout(() => {
+        setCopiedTemplates(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(templateId);
+          return newSet;
+        });
+      }, 3000);
     } catch {
       setError('Error al copiar al portapapeles');
     }
@@ -403,10 +418,10 @@ export default function PartenzeNotePage() {
                         <span className="text-gray-500 dark:text-gray-400">PDF: </span>
                         <a
                           href={template.pdfFile}
-                          download
+                          download={template.pdfFileName || 'documento.pdf'}
                           className="text-brand-600 dark:text-brand-400 hover:underline"
                         >
-                          {template.pdfFile.split('/').pop()}
+                          {template.pdfFileName || 'documento.pdf'}
                         </a>
                       </div>
                     )}
@@ -416,10 +431,10 @@ export default function PartenzeNotePage() {
                         <span className="text-gray-500 dark:text-gray-400">Imagen: </span>
                         <a
                           href={template.coverImage}
-                          download
+                          download={template.coverImageName || 'imagen.jpg'}
                           className="text-brand-600 dark:text-brand-400 hover:underline"
                         >
-                          {template.coverImage.split('/').pop()}
+                          {template.coverImageName || 'imagen.jpg'}
                         </a>
                       </div>
                     )}
@@ -428,13 +443,23 @@ export default function PartenzeNotePage() {
                   {/* Acciones */}
                   <div className="flex justify-center space-x-4 mb-3">
                     <button
-                      onClick={() => handleCopyContent(template.textContent)}
-                      className="p-3 bg-green-100 hover:bg-green-200 text-green-700 hover:text-green-800 dark:bg-green-900/20 dark:hover:bg-green-900/30 dark:text-green-400 dark:hover:text-green-300 rounded-lg transition-all duration-200 transform hover:scale-105"
-                      title="Copiar contenido"
+                      onClick={() => handleCopyContent(template.id, template.textContent)}
+                      className={`p-3 rounded-lg transition-all duration-200 transform hover:scale-105 ${
+                        copiedTemplates.has(template.id)
+                          ? 'bg-green-500 text-white'
+                          : 'bg-green-100 hover:bg-green-200 text-green-700 hover:text-green-800 dark:bg-green-900/20 dark:hover:bg-green-900/30 dark:text-green-400 dark:hover:text-green-300'
+                      }`}
+                      title={copiedTemplates.has(template.id) ? "¡Copiado!" : "Copiar contenido"}
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
+                      {copiedTemplates.has(template.id) ? (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                      )}
                     </button>
                     
                     <button

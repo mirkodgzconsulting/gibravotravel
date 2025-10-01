@@ -43,17 +43,19 @@ model Departure {
 
 // Modelo para plantillas de notas de viaje
 model TravelNoteTemplate {
-  id          String   @id @default(cuid())
-  title       String   // Título del tour
-  textContent String   // Plantilla de texto
-  coverImage  String?  // Ruta de la imagen de portada
-  pdfFile     String?  // Ruta del archivo PDF
-  tourDate    DateTime // Fecha del tour
-  travelCost  Float?   // Costo del viaje
-  createdBy   String   // ID del usuario que creó la plantilla
-  isDeleted   Boolean  @default(false) // Para papelera
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String   @id @default(cuid())
+  title           String   // Título del tour
+  textContent     String   // Plantilla de texto
+  coverImage      String?  // Datos de la imagen de portada (base64)
+  coverImageName  String?  // Nombre original del archivo de imagen
+  pdfFile         String?  // Datos del archivo PDF (base64)
+  pdfFileName     String?  // Nombre original del archivo PDF
+  tourDate        DateTime // Fecha del tour
+  travelCost      Float?   // Costo del viaje
+  createdBy       String   // ID del usuario que creó la plantilla
+  isDeleted       Boolean  @default(false) // Para papelera
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   // Relación con el usuario que creó la plantilla
   creator User @relation(fields: [createdBy], references: [clerkId])

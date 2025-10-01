@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { auth } from '@clerk/nextjs/server';
+import { writeFile, mkdir } from 'fs/promises';
+import { join } from 'path';
 
 const prisma = new PrismaClient();
 
@@ -101,12 +103,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let coverImageData = null;
+    let coverImagePath = null;
     let coverImageName = null;
-    let pdfFileData = null;
+    let pdfFilePath = null;
     let pdfFileName = null;
 
-    // Procesar imagen de portada (optimizado)
+    // Procesar imagen de portada (guardado local)
     if (coverImage && coverImage.size > 0) {
       // Limitar tamaño de imagen a 5MB
       if (coverImage.size > 5 * 1024 * 1024) {
@@ -116,13 +118,39 @@ export async function POST(request: NextRequest) {
         );
       }
       
-      const imageBuffer = await coverImage.arrayBuffer();
-      const imageBase64 = Buffer.from(imageBuffer).toString('base64');
-      coverImageData = `data:${coverImage.type};base64,${imageBase64}`;
-      coverImageName = coverImage.name;
+      try {
+        const bytes = await coverImage.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+
+        // Generar nombre único para la imagen
+        const timestamp = Date.now();
+        const filename = `template_${timestamp}_${coverImage.name}`;
+
+        // Crear directorio si no existe
+        const uploadDir = join(process.cwd(), 'public', 'uploads', 'templates');
+        await mkdir(uploadDir, { recursive: true });
+
+        // Ruta donde se guardará la imagen
+        const filePath = join(uploadDir, filename);
+
+        // Guardar la imagen
+        await writeFile(filePath, buffer);
+
+        // Guardar solo la ruta relativa en la base de datos
+        coverImagePath = `/uploads/templates/${filename}`;
+        coverImageName = coverImage.name;
+
+        console.log('✅ Imagen guardada:', coverImagePath);
+      } catch (fileError) {
+        console.error('❌ Error guardando imagen:', fileError);
+        return NextResponse.json(
+          { error: 'Error guardando imagen' },
+          { status: 500 }
+        );
+      }
     }
 
-    // Procesar archivo PDF (optimizado)
+    // Procesar archivo PDF (guardado local)
     if (pdfFile && pdfFile.size > 0) {
       // Limitar tamaño de PDF a 10MB
       if (pdfFile.size > 10 * 1024 * 1024) {
@@ -132,19 +160,45 @@ export async function POST(request: NextRequest) {
         );
       }
       
-      const pdfBuffer = await pdfFile.arrayBuffer();
-      const pdfBase64 = Buffer.from(pdfBuffer).toString('base64');
-      pdfFileData = `data:${pdfFile.type};base64,${pdfBase64}`;
-      pdfFileName = pdfFile.name;
+      try {
+        const bytes = await pdfFile.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+
+        // Generar nombre único para el PDF
+        const timestamp = Date.now();
+        const filename = `template_${timestamp}_${pdfFile.name}`;
+
+        // Crear directorio si no existe
+        const uploadDir = join(process.cwd(), 'public', 'uploads', 'templates');
+        await mkdir(uploadDir, { recursive: true });
+
+        // Ruta donde se guardará el PDF
+        const filePath = join(uploadDir, filename);
+
+        // Guardar el PDF
+        await writeFile(filePath, buffer);
+
+        // Guardar solo la ruta relativa en la base de datos
+        pdfFilePath = `/uploads/templates/${filename}`;
+        pdfFileName = pdfFile.name;
+
+        console.log('✅ PDF guardado:', pdfFilePath);
+      } catch (fileError) {
+        console.error('❌ Error guardando PDF:', fileError);
+        return NextResponse.json(
+          { error: 'Error guardando archivo PDF' },
+          { status: 500 }
+        );
+      }
     }
 
     const template = await prisma.travelNoteTemplate.create({
       data: {
         title,
         textContent,
-        coverImage: coverImageData,
+        coverImage: coverImagePath,
         coverImageName,
-        pdfFile: pdfFileData,
+        pdfFile: pdfFilePath,
         pdfFileName,
         tourDate: new Date(tourDate),
         travelCost: travelCost ? parseFloat(travelCost) : null,

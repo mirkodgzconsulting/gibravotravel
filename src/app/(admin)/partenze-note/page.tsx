@@ -419,6 +419,8 @@ export default function PartenzeNotePage() {
                         <a
                           href={template.pdfFile}
                           download={template.pdfFileName || 'documento.pdf'}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="text-brand-600 dark:text-brand-400 hover:underline"
                         >
                           {template.pdfFileName || 'documento.pdf'}
@@ -432,6 +434,8 @@ export default function PartenzeNotePage() {
                         <a
                           href={template.coverImage}
                           download={template.coverImageName || 'imagen.jpg'}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="text-brand-600 dark:text-brand-400 hover:underline"
                         >
                           {template.coverImageName || 'imagen.jpg'}

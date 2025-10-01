@@ -7,6 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  USER
+  ADMIN
+  TI
+}
+
 model User {
   id          String   @id @default(cuid())
   clerkId     String   @unique
@@ -46,9 +52,9 @@ model TravelNoteTemplate {
   id              String   @id @default(cuid())
   title           String   // Título del tour
   textContent     String   // Plantilla de texto
-  coverImage      String?  // Datos de la imagen de portada (base64)
+  coverImage      String?  // Ruta del archivo de imagen
   coverImageName  String?  // Nombre original del archivo de imagen
-  pdfFile         String?  // Datos del archivo PDF (base64)
+  pdfFile         String?  // Ruta del archivo PDF
   pdfFileName     String?  // Nombre original del archivo PDF
   tourDate        DateTime // Fecha del tour
   travelCost      Float?   // Costo del viaje
@@ -101,12 +107,6 @@ model Stop {
   routeStops RouteStop[]
 
   @@map("stops")
-}
-
-enum UserRole {
-  USER
-  ADMIN
-  TI
 }
 
 model RouteStop {

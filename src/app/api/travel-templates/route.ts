@@ -141,8 +141,8 @@ export async function POST(request: NextRequest) {
         // Guardar la imagen
         await writeFile(filePath, buffer);
 
-        // Guardar solo la ruta relativa en la base de datos
-        coverImagePath = `/uploads/templates/${filename}`;
+        // Guardar la ruta que apunta a nuestra API
+        coverImagePath = `/api/uploads/templates/${filename}`;
         coverImageName = coverImage.name;
 
         console.log('✅ Imagen guardada:', coverImagePath);
@@ -188,8 +188,8 @@ export async function POST(request: NextRequest) {
         // Guardar el PDF
         await writeFile(filePath, buffer);
 
-        // Guardar solo la ruta relativa en la base de datos
-        pdfFilePath = `/uploads/templates/${filename}`;
+        // Guardar la ruta que apunta a nuestra API
+        pdfFilePath = `/api/uploads/templates/${filename}`;
         pdfFileName = pdfFile.name;
 
         console.log('✅ PDF guardado:', pdfFilePath);

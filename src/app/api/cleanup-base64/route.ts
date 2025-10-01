@@ -43,9 +43,9 @@ export async function POST() {
         pdfFileName?: null;
       } = {};
 
-      // Verificar si coverImage es base64 (contiene "data:")
-      if (template.coverImage && template.coverImage.includes('data:')) {
-        console.log(`🗑️ Eliminando base64 de imagen para: ${template.title}`);
+      // Verificar si coverImage es base64 (contiene "data:") o ruta antigua
+      if (template.coverImage && (template.coverImage.includes('data:') || !template.coverImage.includes('/api/uploads/'))) {
+        console.log(`🗑️ Eliminando imagen antigua para: ${template.title}`);
         updateData.coverImage = null;
         updateData.coverImageName = null;
         needsUpdate = true;
@@ -57,9 +57,9 @@ export async function POST() {
         });
       }
 
-      // Verificar si pdfFile es base64 (contiene "data:")
-      if (template.pdfFile && template.pdfFile.includes('data:')) {
-        console.log(`🗑️ Eliminando base64 de PDF para: ${template.title}`);
+      // Verificar si pdfFile es base64 (contiene "data:") o ruta antigua
+      if (template.pdfFile && (template.pdfFile.includes('data:') || !template.pdfFile.includes('/api/uploads/'))) {
+        console.log(`🗑️ Eliminando PDF antiguo para: ${template.title}`);
         updateData.pdfFile = null;
         updateData.pdfFileName = null;
         needsUpdate = true;

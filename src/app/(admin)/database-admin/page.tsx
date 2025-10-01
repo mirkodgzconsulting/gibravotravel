@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useUserRole } from "@/hooks/useUserRole";
 import ComponentCard from "@/components/common/ComponentCard";
-import PageBreadcrumb from "@/components/common/PageBreadcrumb";
+import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import Image from "next/image";
 import Badge from "@/components/ui/badge/Badge";
 import {

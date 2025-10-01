@@ -76,6 +76,11 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     console.log('🚀 Creating new travel template...');
+    console.log('🔍 Environment check:', {
+      isVercel: !!process.env.VERCEL,
+      hasBlobToken: !!process.env.BLOB_READ_WRITE_TOKEN,
+      nodeEnv: process.env.NODE_ENV
+    });
     
     const { userId } = await auth();
     
@@ -114,9 +119,16 @@ export async function POST(request: NextRequest) {
 
     // Procesar imagen de portada
     if (coverImage && coverImage.size > 0) {
+      console.log('📷 Processing cover image:', {
+        name: coverImage.name,
+        size: coverImage.size,
+        type: coverImage.type
+      });
+      
       // Limitar tamaño según el entorno
       const maxSize = isVercel ? 10 * 1024 * 1024 : 5 * 1024 * 1024; // 10MB para Vercel Blob, 5MB para desarrollo
       if (coverImage.size > maxSize) {
+        console.log('❌ Image too large:', coverImage.size, 'max:', maxSize);
         return NextResponse.json(
           { error: `La imagen es demasiado grande. Máximo ${isVercel ? '10MB' : '5MB'}.` },
           { status: 400 }
@@ -126,8 +138,8 @@ export async function POST(request: NextRequest) {
       try {
         const bytes = await coverImage.arrayBuffer();
         
-        if (isVercel) {
-          // En Vercel, usar Blob Storage
+        if (isVercel && process.env.BLOB_READ_WRITE_TOKEN) {
+          // En Vercel con token configurado, usar Blob Storage
           const timestamp = Date.now();
           const filename = `templates/template_${timestamp}_${coverImage.name}`;
           
@@ -178,8 +190,8 @@ export async function POST(request: NextRequest) {
       try {
         const bytes = await pdfFile.arrayBuffer();
         
-        if (isVercel) {
-          // En Vercel, usar Blob Storage
+        if (isVercel && process.env.BLOB_READ_WRITE_TOKEN) {
+          // En Vercel con token configurado, usar Blob Storage
           const timestamp = Date.now();
           const filename = `templates/template_${timestamp}_${pdfFile.name}`;
           

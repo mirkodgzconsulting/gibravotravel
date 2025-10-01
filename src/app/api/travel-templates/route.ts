@@ -102,9 +102,25 @@ export async function POST(request: NextRequest) {
     const coverImage = formData.get('coverImage') as File;
     const pdfFile = formData.get('pdfFile') as File;
 
-    if (!title || !textContent || !tourDate) {
+    console.log('📝 Form data received:', {
+      title: title || 'EMPTY',
+      textContent: textContent || 'EMPTY',
+      tourDate: tourDate || 'EMPTY',
+      travelCost: travelCost || 'EMPTY',
+      hasCoverImage: !!coverImage,
+      hasPdfFile: !!pdfFile
+    });
+
+    // Validación mejorada
+    const missingFields = [];
+    if (!title || title.trim() === '') missingFields.push('title');
+    if (!textContent || textContent.trim() === '') missingFields.push('textContent');
+    if (!tourDate || tourDate.trim() === '') missingFields.push('tourDate');
+
+    if (missingFields.length > 0) {
+      console.log('❌ Missing required fields:', missingFields);
       return NextResponse.json(
-        { error: 'Faltan campos requeridos' },
+        { error: `Faltan campos requeridos: ${missingFields.join(', ')}` },
         { status: 400 }
       );
     }
@@ -288,6 +304,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    console.log('💾 Creating template in database with data:', {
+      title,
+      textContent: textContent.substring(0, 50) + '...',
+      coverImage: coverImageData ? 'HAS_IMAGE' : 'NO_IMAGE',
+      coverImageName,
+      pdfFile: pdfFileData ? 'HAS_PDF' : 'NO_PDF',
+      pdfFileName,
+      tourDate: new Date(tourDate).toISOString(),
+      travelCost: travelCost && travelCost.trim() !== '' ? parseFloat(travelCost) : null,
+      createdBy: userId,
+    });
+
     const template = await prisma.travelNoteTemplate.create({
       data: {
         title,
@@ -297,7 +325,7 @@ export async function POST(request: NextRequest) {
         pdfFile: pdfFileData,
         pdfFileName,
         tourDate: new Date(tourDate),
-        travelCost: travelCost ? parseFloat(travelCost) : null,
+        travelCost: travelCost && travelCost.trim() !== '' ? parseFloat(travelCost) : null,
         createdBy: userId,
       },
     });

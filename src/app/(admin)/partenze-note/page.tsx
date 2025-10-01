@@ -126,11 +126,15 @@ export default function PartenzeNotePage() {
           travelCost: "",
         });
         fetchTemplates();
+        setError(null);
       } else {
-        setError('Error al crear plantilla');
+        const errorData = await response.json();
+        console.error('❌ API Error:', errorData);
+        setError(`Error al crear plantilla: ${errorData.error || 'Error desconocido'}`);
       }
-    } catch {
-      setError('Error de conexión');
+    } catch (error) {
+      console.error('❌ Network Error:', error);
+      setError('Error de conexión con el servidor');
     } finally {
       setIsSubmitting(false);
     }

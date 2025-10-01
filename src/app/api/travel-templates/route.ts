@@ -116,6 +116,26 @@ export async function POST(request: NextRequest) {
 
     // Detectar si estamos en Vercel
     const isVercel = process.env.VERCEL;
+    const hasBlobToken = !!process.env.BLOB_READ_WRITE_TOKEN;
+    
+    console.log('🔍 Storage decision:', {
+      isVercel,
+      hasBlobToken,
+      willUseBlob: isVercel && hasBlobToken,
+      willUseLocal: !isVercel || !hasBlobToken
+    });
+
+    // En Vercel, requerir token de Blob Storage
+    if (isVercel && !hasBlobToken) {
+      console.error('❌ BLOB_READ_WRITE_TOKEN no configurado en Vercel');
+      return NextResponse.json(
+        { 
+          error: 'Vercel Blob Storage no configurado. Contacta al administrador.',
+          details: 'BLOB_READ_WRITE_TOKEN environment variable missing'
+        },
+        { status: 500 }
+      );
+    }
 
     // Procesar imagen de portada
     if (coverImage && coverImage.size > 0) {
@@ -138,7 +158,7 @@ export async function POST(request: NextRequest) {
       try {
         const bytes = await coverImage.arrayBuffer();
         
-        if (isVercel && process.env.BLOB_READ_WRITE_TOKEN) {
+        if (isVercel && hasBlobToken) {
           try {
             // En Vercel con token configurado, usar Blob Storage
             const timestamp = Date.now();
@@ -172,7 +192,7 @@ export async function POST(request: NextRequest) {
             console.log('✅ Imagen guardada (fallback local):', coverImageData);
           }
         } else {
-          // En desarrollo, usar almacenamiento local
+          // Solo usar almacenamiento local en desarrollo
           const buffer = Buffer.from(bytes);
           const timestamp = Date.now();
           const filename = `template_${timestamp}_${coverImage.name}`;
@@ -210,7 +230,7 @@ export async function POST(request: NextRequest) {
       try {
         const bytes = await pdfFile.arrayBuffer();
         
-        if (isVercel && process.env.BLOB_READ_WRITE_TOKEN) {
+        if (isVercel && hasBlobToken) {
           try {
             // En Vercel con token configurado, usar Blob Storage
             const timestamp = Date.now();
@@ -244,7 +264,7 @@ export async function POST(request: NextRequest) {
             console.log('✅ PDF guardado (fallback local):', pdfFileData);
           }
         } else {
-          // En desarrollo, usar almacenamiento local
+          // Solo usar almacenamiento local en desarrollo
           const buffer = Buffer.from(bytes);
           const timestamp = Date.now();
           const filename = `template_${timestamp}_${pdfFile.name}`;

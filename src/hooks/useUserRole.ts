@@ -9,15 +9,20 @@ export function useUserRole() {
   const { user: clerkUser, isLoaded } = useClerkUser();
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasTriedFetch, setHasTriedFetch] = useState(false);
 
   useEffect(() => {
     async function fetchUserRole() {
-      if (!isLoaded || !clerkUser) {
-        setUserRole(null);
-        setIsLoading(false);
+      if (!isLoaded || !clerkUser || hasTriedFetch) {
+        if (!isLoaded || !clerkUser) {
+          setUserRole(null);
+          setIsLoading(false);
+        }
         return;
       }
 
+      setHasTriedFetch(true);
+      
       try {
         console.log('🔍 Fetching role for clerkId:', clerkUser.id);
         const response = await fetch(`/api/user/role?clerkId=${clerkUser.id}`);
@@ -45,7 +50,7 @@ export function useUserRole() {
     }
 
     fetchUserRole();
-  }, [isLoaded, clerkUser]);
+  }, [isLoaded, clerkUser, hasTriedFetch]);
 
   return {
     userRole,

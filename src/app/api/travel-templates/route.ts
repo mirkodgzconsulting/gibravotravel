@@ -139,18 +139,38 @@ export async function POST(request: NextRequest) {
         const bytes = await coverImage.arrayBuffer();
         
         if (isVercel && process.env.BLOB_READ_WRITE_TOKEN) {
-          // En Vercel con token configurado, usar Blob Storage
-          const timestamp = Date.now();
-          const filename = `templates/template_${timestamp}_${coverImage.name}`;
-          
-          const blob = await put(filename, bytes, {
-            access: 'public',
-            contentType: coverImage.type,
-          });
-          
-          coverImageData = blob.url;
-          coverImageName = coverImage.name;
-          console.log('✅ Imagen guardada (Vercel Blob):', blob.url);
+          try {
+            // En Vercel con token configurado, usar Blob Storage
+            const timestamp = Date.now();
+            const filename = `templates/template_${timestamp}_${coverImage.name}`;
+            
+            console.log('📤 Uploading to Vercel Blob:', filename);
+            const blob = await put(filename, bytes, {
+              access: 'public',
+              contentType: coverImage.type,
+            });
+            
+            coverImageData = blob.url;
+            coverImageName = coverImage.name;
+            console.log('✅ Imagen guardada (Vercel Blob):', blob.url);
+          } catch (blobError) {
+            console.error('❌ Error uploading to Vercel Blob:', blobError);
+            // Fallback a almacenamiento local si Blob falla
+            console.log('🔄 Fallback to local storage...');
+            const buffer = Buffer.from(bytes);
+            const timestamp = Date.now();
+            const filename = `template_${timestamp}_${coverImage.name}`;
+            
+            const uploadDir = join(process.cwd(), 'public', 'uploads', 'templates');
+            await mkdir(uploadDir, { recursive: true });
+            
+            const filePath = join(uploadDir, filename);
+            await writeFile(filePath, buffer);
+            
+            coverImageData = `/api/uploads/templates/${filename}`;
+            coverImageName = coverImage.name;
+            console.log('✅ Imagen guardada (fallback local):', coverImageData);
+          }
         } else {
           // En desarrollo, usar almacenamiento local
           const buffer = Buffer.from(bytes);
@@ -191,18 +211,38 @@ export async function POST(request: NextRequest) {
         const bytes = await pdfFile.arrayBuffer();
         
         if (isVercel && process.env.BLOB_READ_WRITE_TOKEN) {
-          // En Vercel con token configurado, usar Blob Storage
-          const timestamp = Date.now();
-          const filename = `templates/template_${timestamp}_${pdfFile.name}`;
-          
-          const blob = await put(filename, bytes, {
-            access: 'public',
-            contentType: pdfFile.type,
-          });
-          
-          pdfFileData = blob.url;
-          pdfFileName = pdfFile.name;
-          console.log('✅ PDF guardado (Vercel Blob):', blob.url);
+          try {
+            // En Vercel con token configurado, usar Blob Storage
+            const timestamp = Date.now();
+            const filename = `templates/template_${timestamp}_${pdfFile.name}`;
+            
+            console.log('📤 Uploading PDF to Vercel Blob:', filename);
+            const blob = await put(filename, bytes, {
+              access: 'public',
+              contentType: pdfFile.type,
+            });
+            
+            pdfFileData = blob.url;
+            pdfFileName = pdfFile.name;
+            console.log('✅ PDF guardado (Vercel Blob):', blob.url);
+          } catch (blobError) {
+            console.error('❌ Error uploading PDF to Vercel Blob:', blobError);
+            // Fallback a almacenamiento local si Blob falla
+            console.log('🔄 Fallback PDF to local storage...');
+            const buffer = Buffer.from(bytes);
+            const timestamp = Date.now();
+            const filename = `template_${timestamp}_${pdfFile.name}`;
+            
+            const uploadDir = join(process.cwd(), 'public', 'uploads', 'templates');
+            await mkdir(uploadDir, { recursive: true });
+            
+            const filePath = join(uploadDir, filename);
+            await writeFile(filePath, buffer);
+            
+            pdfFileData = `/api/uploads/templates/${filename}`;
+            pdfFileName = pdfFile.name;
+            console.log('✅ PDF guardado (fallback local):', pdfFileData);
+          }
         } else {
           // En desarrollo, usar almacenamiento local
           const buffer = Buffer.from(bytes);
@@ -263,11 +303,23 @@ export async function POST(request: NextRequest) {
       },
     };
 
+    console.log('🎉 Template created successfully:', template.id);
     return NextResponse.json({ template: templateWithCreator }, { status: 201 });
   } catch (error) {
-    console.error('Error creating travel template:', error);
+    console.error('❌ Error creating travel template:', error);
+    console.error('❌ Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined
+    });
+    
+    // Retornar un mensaje más específico
+    const errorMessage = error instanceof Error ? error.message : 'Error interno del servidor';
     return NextResponse.json(
-      { error: 'Error interno del servidor' },
+      { 
+        error: 'Error interno del servidor',
+        details: errorMessage 
+      },
       { status: 500 }
     );
   }

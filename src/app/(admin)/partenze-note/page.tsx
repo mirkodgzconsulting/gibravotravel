@@ -51,8 +51,6 @@ export default function PartenzeNotePage() {
   const [expandedTemplate, setExpandedTemplate] = useState<string | null>(null);
   const [showCopyNotification, setShowCopyNotification] = useState(false);
   const [copiedTemplates, setCopiedTemplates] = useState<Set<string>>(new Set());
-  const [isCleaningUp, setIsCleaningUp] = useState(false);
-  const [cleanupMessage, setCleanupMessage] = useState<string | null>(null);
   const [formData, setFormData] = useState<TemplateFormData>({
     title: "",
     textContent: "",
@@ -181,36 +179,6 @@ export default function PartenzeNotePage() {
     }
   };
 
-  const handleCleanupBase64Data = async () => {
-    if (!confirm('¿Estás seguro de que quieres limpiar los datos base64 antiguos? Esto eliminará las imágenes y PDFs guardados en formato base64.')) {
-      return;
-    }
-
-    setIsCleaningUp(true);
-    setCleanupMessage(null);
-
-    try {
-      const response = await fetch('/api/cleanup-base64', {
-        method: 'POST',
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        setCleanupMessage(`✅ ${result.message}`);
-        // Recargar las plantillas para ver los cambios
-        fetchTemplates();
-      } else {
-        const errorData = await response.json();
-        setCleanupMessage(`❌ Error: ${errorData.error}`);
-      }
-    } catch {
-      setCleanupMessage('❌ Error de conexión durante la limpieza');
-    } finally {
-      setIsCleaningUp(false);
-      // Limpiar el mensaje después de 5 segundos
-      setTimeout(() => setCleanupMessage(null), 5000);
-    }
-  };
 
   const handleDownload = async (url: string, filename: string) => {
     try {
@@ -290,45 +258,16 @@ export default function PartenzeNotePage() {
 
       {/* Botones principales */}
       <div className="flex justify-center gap-4 mb-8">
-        <Button
-          onClick={openModal}
-          variant="primary"
-          size="md"
-          startIcon={
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-          }
-        >
-          Agregar Plantilla
-        </Button>
-        
         <button
-          onClick={handleCleanupBase64Data}
-          disabled={isCleaningUp}
-          className="px-6 py-3 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white font-medium rounded-lg transition-colors duration-200 flex items-center gap-2"
+          onClick={openModal}
+          className="p-3 bg-brand-500 hover:bg-brand-600 text-white rounded-lg transition-colors duration-200 flex items-center justify-center shadow-lg hover:shadow-xl"
+          title="Aggiungi Modello"
         >
-          {isCleaningUp ? (
-            <>
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              Limpiando...
-            </>
-          ) : (
-            <>
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-              Limpiar Datos Antiguos
-            </>
-          )}
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          </svg>
         </button>
-      </div>
-
-      {cleanupMessage && (
-        <div className="mb-6 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-          <p className="text-blue-800 dark:text-blue-200 text-sm">{cleanupMessage}</p>
-        </div>
-      )}
+        
 
       {/* Modal para agregar plantilla */}
       <Modal
@@ -338,13 +277,13 @@ export default function PartenzeNotePage() {
       >
         <div className="p-4">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-            Agregar Nueva Plantilla
+            Aggiungi Nuovo Modello
           </h2>
           
           <form onSubmit={handleSubmit} className="space-y-3">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Título del Tour *
+              Titolo del Tour *
             </label>
             <input
               type="text"
@@ -358,7 +297,7 @@ export default function PartenzeNotePage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Plantilla de Texto *
+              Modello di Testo *
             </label>
             <textarea
               name="textContent"
@@ -372,7 +311,7 @@ export default function PartenzeNotePage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Imagen de Portada
+              Immagine di Copertina
             </label>
             <input
               type="file"
@@ -384,7 +323,7 @@ export default function PartenzeNotePage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Archivo PDF/Documento
+              File PDF/Documento
             </label>
             <input
               type="file"
@@ -396,7 +335,7 @@ export default function PartenzeNotePage() {
 
           <div className="grid grid-cols-2 gap-4">
             <DatePicker
-              label="Fecha del Tour"
+              label="Data del Tour"
               name="tourDate"
               value={formData.tourDate}
               onChange={(value) => setFormData(prev => ({ ...prev, tourDate: value }))}
@@ -405,7 +344,7 @@ export default function PartenzeNotePage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Costo del Viaje
+                Costo del Viaggio
               </label>
               <input
                 type="number"
@@ -426,14 +365,14 @@ export default function PartenzeNotePage() {
               disabled={isSubmitting}
               className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
             >
-              Cancelar
+              Annulla
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
               className="px-4 py-2 bg-brand-500 text-white rounded-md hover:bg-brand-600 disabled:opacity-50"
             >
-              {isSubmitting ? 'Guardando...' : 'Guardar Plantilla'}
+              {isSubmitting ? 'Salvataggio...' : 'Salva Modello'}
             </button>
           </div>
           </form>
@@ -441,15 +380,15 @@ export default function PartenzeNotePage() {
       </Modal>
 
       {/* Grid de plantillas */}
-      <ComponentCard title="Plantillas de Notas de Viaje">
+      <ComponentCard title="Modelli di Note di Viaggio">
         {loading ? (
           <div className="flex justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500"></div>
           </div>
         ) : templates.length === 0 ? (
           <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-            <p>No hay plantillas registradas</p>
-            <p className="text-sm mt-2">Haz clic en &quot;Agregar Plantilla&quot; para crear la primera</p>
+            <p>Nessun modello registrato</p>
+            <p className="text-sm mt-2">Clicca sull&apos;icona &quot;+&quot; per creare il primo</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -509,7 +448,7 @@ export default function PartenzeNotePage() {
                     
                     {template.coverImage && (
                       <div className="text-sm">
-                        <span className="text-gray-500 dark:text-gray-400">Imagen: </span>
+                        <span className="text-gray-500 dark:text-gray-400">Immagine: </span>
                         <button
                           onClick={() => handleDownload(template.coverImage!, template.coverImageName || 'imagen.jpg')}
                           className="text-brand-600 dark:text-brand-400 hover:underline cursor-pointer"
@@ -569,7 +508,7 @@ export default function PartenzeNotePage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
                       <span>
-                        Creado por: {template.creator?.firstName} {template.creator?.lastName}
+                        Creato da: {template.creator?.firstName} {template.creator?.lastName}
                       </span>
                     </div>
                     <div className="flex items-center justify-center gap-2 mt-1">
@@ -596,7 +535,7 @@ export default function PartenzeNotePage() {
                             onClick={() => toggleExpanded(template.id)}
                             className="text-brand-600 dark:text-brand-400 hover:underline mt-2"
                           >
-                            Leer menos
+                            Leggi meno
                           </button>
                         </div>
                       ) : (
@@ -612,7 +551,7 @@ export default function PartenzeNotePage() {
                               onClick={() => toggleExpanded(template.id)}
                               className="text-brand-600 dark:text-brand-400 hover:underline mt-2"
                             >
-                              Leer más
+                              Leggi più
                             </button>
                           )}
                         </div>

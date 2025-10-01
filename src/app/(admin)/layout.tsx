@@ -38,9 +38,12 @@ export default function AdminLayout({
     if (isLoaded && isSignedIn && !roleLoading && userRole === null) {
       console.log('❌ No role found after loading - scheduling redirect to unauthorized');
       const timer = setTimeout(() => {
-        console.log('🚀 Executing redirect to unauthorized');
-        router.push("/unauthorized");
-      }, 2000); // Delay de 2 segundos para dar tiempo al hook
+        // Verificar una vez más antes de redirigir
+        if (userRole === null) {
+          console.log('🚀 Executing redirect to unauthorized');
+          router.push("/unauthorized");
+        }
+      }, 3000); // Aumentar delay a 3 segundos
       
       return () => {
         console.log('🔄 Clearing redirect timer');
@@ -62,12 +65,16 @@ export default function AdminLayout({
   }
 
   // Si no hay rol pero todo está cargado, mostrar loading temporal
+  // Solo mostrar loading si realmente no hay rol después de un tiempo
   if (userRole === null && isLoaded && isSignedIn && !roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-500 mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400">Verificando permisos...</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+            Si tienes permisos, serás redirigido automáticamente
+          </p>
         </div>
       </div>
     );

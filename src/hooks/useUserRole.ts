@@ -10,14 +10,19 @@ export function useUserRole() {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasTriedFetch, setHasTriedFetch] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     async function fetchUserRole() {
-      if (!isLoaded || !clerkUser || hasTriedFetch) {
-        if (!isLoaded || !clerkUser) {
-          setUserRole(null);
-          setIsLoading(false);
-        }
+      if (!isLoaded || !clerkUser) {
+        setUserRole(null);
+        setIsLoading(false);
+        setHasTriedFetch(false);
+        return;
+      }
+
+      // Si ya intentamos y tenemos un rol, no volver a intentar
+      if (hasTriedFetch && userRole !== null) {
         return;
       }
 
@@ -52,6 +57,15 @@ export function useUserRole() {
       } catch (error) {
         console.error('❌ Network error fetching user role:', error);
         setUserRole(null);
+        
+        // Retry logic para errores de red
+        if (retryCount < 2) {
+          console.log(`🔄 Retrying... (${retryCount + 1}/2)`);
+          setTimeout(() => {
+            setRetryCount(prev => prev + 1);
+            setHasTriedFetch(false);
+          }, 1000 * (retryCount + 1)); // Delay incremental
+        }
       } finally {
         console.log('🏁 Role fetch completed');
         setIsLoading(false);
@@ -59,7 +73,7 @@ export function useUserRole() {
     }
 
     fetchUserRole();
-  }, [isLoaded, clerkUser, hasTriedFetch]);
+  }, [isLoaded, clerkUser, hasTriedFetch, retryCount, userRole]);
 
   return {
     userRole,

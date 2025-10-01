@@ -80,24 +80,14 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('🚀 Creating new travel template...');
-    console.log('🔍 Environment check:', {
-      hasCloudinaryUrl: !!process.env.CLOUDINARY_URL,
-      hasCloudinaryConfig: !!(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET),
-      nodeEnv: process.env.NODE_ENV
-    });
-    
     const { userId } = await auth();
     
     if (!userId) {
-      console.log('❌ No user ID found');
       return NextResponse.json(
         { error: 'No autorizado' },
         { status: 401 }
       );
     }
-
-    console.log('✅ User authenticated:', userId);
 
     const formData = await request.formData();
     const title = formData.get('title') as string;
@@ -107,15 +97,6 @@ export async function POST(request: NextRequest) {
     const coverImage = formData.get('coverImage') as File;
     const pdfFile = formData.get('pdfFile') as File;
 
-    console.log('📝 Form data received:', {
-      title: title || 'EMPTY',
-      textContent: textContent || 'EMPTY',
-      tourDate: tourDate || 'EMPTY',
-      travelCost: travelCost || 'EMPTY',
-      hasCoverImage: !!coverImage,
-      hasPdfFile: !!pdfFile
-    });
-
     // Validación mejorada
     const missingFields = [];
     if (!title || title.trim() === '') missingFields.push('title');
@@ -123,114 +104,126 @@ export async function POST(request: NextRequest) {
     if (!tourDate || tourDate.trim() === '') missingFields.push('tourDate');
 
     if (missingFields.length > 0) {
-      console.log('❌ Missing required fields:', missingFields);
       return NextResponse.json(
         { error: `Faltan campos requeridos: ${missingFields.join(', ')}` },
         { status: 400 }
       );
     }
 
-    let coverImageUrl = null;
-    let coverImageName = null;
-    let pdfFileUrl = null;
-    let pdfFileName = null;
-
-    // Procesar imagen de portada
+    // Validar tamaños de archivos antes de procesar
     if (coverImage && coverImage.size > 0) {
-      console.log('📷 Processing cover image:', {
-        name: coverImage.name,
-        size: coverImage.size,
-        type: coverImage.type
-      });
-      
-      // Limitar tamaño a 10MB
-      const maxSize = 10 * 1024 * 1024; // 10MB
-      if (coverImage.size > maxSize) {
-        console.log('❌ Image too large:', coverImage.size, 'max:', maxSize);
+      const maxImageSize = 10 * 1024 * 1024; // 10MB
+      if (coverImage.size > maxImageSize) {
         return NextResponse.json(
           { error: 'La imagen es demasiado grande. Máximo 10MB.' },
           { status: 400 }
         );
       }
-      
-      try {
-        const bytes = await coverImage.arrayBuffer();
-        const buffer = Buffer.from(bytes);
-        
-        // Convertir a base64 para Cloudinary
-        const base64 = buffer.toString('base64');
-        const dataUri = `data:${coverImage.type};base64,${base64}`;
-        
-        console.log('📤 Uploading to Cloudinary...');
-        
-        // Subir a Cloudinary
-        const result = await cloudinary.uploader.upload(dataUri, {
-          folder: 'gibravotravel/templates',
-          resource_type: 'image',
-          transformation: [
-            { width: 800, height: 600, crop: 'limit', quality: 'auto' }
-          ]
-        });
-        
-        coverImageUrl = result.secure_url;
-        coverImageName = coverImage.name;
-        console.log('✅ Imagen guardada en Cloudinary:', result.secure_url);
-        
-      } catch (uploadError) {
-        console.error('❌ Error uploading to Cloudinary:', uploadError);
-        return NextResponse.json(
-          { 
-            error: 'Error subiendo imagen a Cloudinary',
-            details: uploadError instanceof Error ? uploadError.message : 'Unknown error'
-          },
-          { status: 500 }
-        );
-      }
     }
 
-    // Procesar archivo PDF
     if (pdfFile && pdfFile.size > 0) {
-      console.log('📄 Processing PDF file:', {
-        name: pdfFile.name,
-        size: pdfFile.size,
-        type: pdfFile.type
-      });
-      
-      // Limitar tamaño a 50MB
-      const maxSize = 50 * 1024 * 1024; // 50MB
-      if (pdfFile.size > maxSize) {
-        console.log('❌ PDF too large:', pdfFile.size, 'max:', maxSize);
+      const maxPdfSize = 50 * 1024 * 1024; // 50MB
+      if (pdfFile.size > maxPdfSize) {
         return NextResponse.json(
           { error: 'El archivo PDF es demasiado grande. Máximo 50MB.' },
           { status: 400 }
         );
       }
+    }
+
+    // Uploads paralelos para mejor rendimiento
+    const uploadPromises = [];
+
+    // Preparar upload de imagen si existe
+    if (coverImage && coverImage.size > 0) {
+      const imageUploadPromise = (async () => {
+        try {
+          const bytes = await coverImage.arrayBuffer();
+          const buffer = Buffer.from(bytes);
+          
+          // Subir directamente a Cloudinary sin conversión base64
+          const result = await cloudinary.uploader.upload_stream(
+            {
+              folder: 'gibravotravel/templates',
+              resource_type: 'image',
+              transformation: [
+                { width: 800, height: 600, crop: 'limit', quality: 'auto' }
+              ]
+            },
+            (error, result) => {
+              if (error) throw error;
+              return result;
+            }
+          ).end(buffer);
+
+          return {
+            type: 'image',
+            url: result.secure_url,
+            name: coverImage.name
+          };
+        } catch (error) {
+          throw new Error(`Error uploading image: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+      })();
       
+      uploadPromises.push(imageUploadPromise);
+    }
+
+    // Preparar upload de PDF si existe
+    if (pdfFile && pdfFile.size > 0) {
+      const pdfUploadPromise = (async () => {
+        try {
+          const bytes = await pdfFile.arrayBuffer();
+          const buffer = Buffer.from(bytes);
+          
+          // Subir directamente a Cloudinary sin conversión base64
+          const result = await cloudinary.uploader.upload_stream(
+            {
+              folder: 'gibravotravel/templates',
+              resource_type: 'raw'
+            },
+            (error, result) => {
+              if (error) throw error;
+              return result;
+            }
+          ).end(buffer);
+
+          return {
+            type: 'pdf',
+            url: result.secure_url,
+            name: pdfFile.name
+          };
+        } catch (error) {
+          throw new Error(`Error uploading PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+      })();
+      
+      uploadPromises.push(pdfUploadPromise);
+    }
+
+    // Ejecutar todos los uploads en paralelo
+    let coverImageUrl = null;
+    let coverImageName = null;
+    let pdfFileUrl = null;
+    let pdfFileName = null;
+
+    if (uploadPromises.length > 0) {
       try {
-        const bytes = await pdfFile.arrayBuffer();
-        const buffer = Buffer.from(bytes);
+        const uploadResults = await Promise.all(uploadPromises);
         
-        // Convertir a base64 para Cloudinary
-        const base64 = buffer.toString('base64');
-        const dataUri = `data:${pdfFile.type};base64,${base64}`;
-        
-        console.log('📤 Uploading PDF to Cloudinary...');
-        
-        // Subir a Cloudinary
-        const result = await cloudinary.uploader.upload(dataUri, {
-          folder: 'gibravotravel/templates',
-          resource_type: 'raw'
+        uploadResults.forEach(result => {
+          if (result.type === 'image') {
+            coverImageUrl = result.url;
+            coverImageName = result.name;
+          } else if (result.type === 'pdf') {
+            pdfFileUrl = result.url;
+            pdfFileName = result.name;
+          }
         });
-        
-        pdfFileUrl = result.secure_url;
-        pdfFileName = pdfFile.name;
-        console.log('✅ PDF guardado en Cloudinary:', result.secure_url);
-        
       } catch (uploadError) {
-        console.error('❌ Error uploading PDF to Cloudinary:', uploadError);
         return NextResponse.json(
           { 
-            error: 'Error subiendo PDF a Cloudinary',
+            error: 'Error subiendo archivos a Cloudinary',
             details: uploadError instanceof Error ? uploadError.message : 'Unknown error'
           },
           { status: 500 }
@@ -238,18 +231,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log('💾 Creating template in database with data:', {
-      title,
-      textContent: textContent.substring(0, 50) + '...',
-      coverImage: coverImageUrl ? 'HAS_IMAGE' : 'NO_IMAGE',
-      coverImageName,
-      pdfFile: pdfFileUrl ? 'HAS_PDF' : 'NO_PDF',
-      pdfFileName,
-      tourDate: new Date(tourDate).toISOString(),
-      travelCost: travelCost && travelCost.trim() !== '' ? parseFloat(travelCost) : null,
-      createdBy: userId,
-    });
-
+    // Crear template con información del creador en una sola query
     const template = await prisma.travelNoteTemplate.create({
       data: {
         title,
@@ -262,40 +244,29 @@ export async function POST(request: NextRequest) {
         travelCost: travelCost && travelCost.trim() !== '' ? parseFloat(travelCost) : null,
         createdBy: userId,
       },
-    });
-
-    // Obtener información del creador por separado
-    const creator = await prisma.user.findUnique({
-      where: {
-        clerkId: userId,
-      },
-      select: {
-        firstName: true,
-        lastName: true,
-        email: true,
+      include: {
+        creator: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
       },
     });
 
+    // Asegurar que el creator existe o usar valores por defecto
     const templateWithCreator = {
       ...template,
-      creator: creator || {
+      creator: template.creator || {
         firstName: null,
         lastName: null,
         email: 'Usuario no encontrado',
       },
     };
 
-    console.log('🎉 Template created successfully:', template.id);
     return NextResponse.json({ template: templateWithCreator }, { status: 201 });
   } catch (error) {
-    console.error('❌ Error creating travel template:', error);
-    console.error('❌ Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      name: error instanceof Error ? error.name : undefined
-    });
-    
-    // Retornar un mensaje más específico
     const errorMessage = error instanceof Error ? error.message : 'Error interno del servidor';
     return NextResponse.json(
       { 

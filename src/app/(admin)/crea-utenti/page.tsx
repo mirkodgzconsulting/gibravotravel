@@ -149,7 +149,7 @@ export default function CreaUtentiPage() {
       case 'TI': return 'error';
       case 'ADMIN': return 'warning';
       case 'USER': return 'success';
-      default: return 'default';
+      default: return 'light';
     }
   };
 

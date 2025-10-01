@@ -6,25 +6,61 @@ const prisma = new PrismaClient();
 
 export async function GET() {
   try {
+    console.log('🔍 Fetching travel templates...');
+    
+    // Consulta optimizada sin include para evitar problemas de JOIN
     const templates = await prisma.travelNoteTemplate.findMany({
       where: {
         isDeleted: false,
       },
-      include: {
-        creator: {
-          select: {
-            firstName: true,
-            lastName: true,
-            email: true,
-          },
-        },
+      select: {
+        id: true,
+        title: true,
+        textContent: true,
+        coverImage: true,
+        coverImageName: true,
+        pdfFile: true,
+        pdfFileName: true,
+        tourDate: true,
+        travelCost: true,
+        createdBy: true,
+        createdAt: true,
+        updatedAt: true,
       },
       orderBy: {
         createdAt: 'desc',
       },
     });
 
-    return NextResponse.json({ templates });
+    console.log(`✅ Found ${templates.length} templates`);
+
+    // Obtener información del creador por separado para evitar problemas de JOIN
+    const creatorIds = [...new Set(templates.map(t => t.createdBy))];
+    const creators = await prisma.user.findMany({
+      where: {
+        clerkId: {
+          in: creatorIds,
+        },
+      },
+      select: {
+        clerkId: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+      },
+    });
+
+    // Combinar datos
+    const templatesWithCreators = templates.map(template => ({
+      ...template,
+      creator: creators.find(c => c.clerkId === template.createdBy) || {
+        firstName: null,
+        lastName: null,
+        email: 'Usuario no encontrado',
+      },
+    }));
+
+    return NextResponse.json({ templates: templatesWithCreators });
   } catch (error) {
     console.error('Error fetching travel templates:', error);
     return NextResponse.json(
@@ -36,14 +72,19 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('🚀 Creating new travel template...');
+    
     const { userId } = await auth();
     
     if (!userId) {
+      console.log('❌ No user ID found');
       return NextResponse.json(
         { error: 'No autorizado' },
         { status: 401 }
       );
     }
+
+    console.log('✅ User authenticated:', userId);
 
     const formData = await request.formData();
     const title = formData.get('title') as string;
@@ -109,18 +150,30 @@ export async function POST(request: NextRequest) {
         travelCost: travelCost ? parseFloat(travelCost) : null,
         createdBy: userId,
       },
-      include: {
-        creator: {
-          select: {
-            firstName: true,
-            lastName: true,
-            email: true,
-          },
-        },
+    });
+
+    // Obtener información del creador por separado
+    const creator = await prisma.user.findUnique({
+      where: {
+        clerkId: userId,
+      },
+      select: {
+        firstName: true,
+        lastName: true,
+        email: true,
       },
     });
 
-    return NextResponse.json({ template }, { status: 201 });
+    const templateWithCreator = {
+      ...template,
+      creator: creator || {
+        firstName: null,
+        lastName: null,
+        email: 'Usuario no encontrado',
+      },
+    };
+
+    return NextResponse.json({ template: templateWithCreator }, { status: 201 });
   } catch (error) {
     console.error('Error creating travel template:', error);
     return NextResponse.json(

@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { UserRole } from '@prisma/client';
 import { createClerkClient } from '@clerk/backend';
-import { writeFile } from 'fs/promises';
-import { join } from 'path';
 
 export async function POST(request: NextRequest) {
   try {
@@ -69,15 +67,8 @@ export async function POST(request: NextRequest) {
         const bytes = await photo.arrayBuffer();
         const buffer = Buffer.from(bytes);
         
-        // Generar nombre único para la imagen
-        const timestamp = Date.now();
-        const filename = `user_${timestamp}_${photo.name}`;
-        
         // En Vercel, el sistema de archivos es de solo lectura
-        // Vamos a usar una estrategia diferente: guardar como base64 o usar un servicio externo
-        
-        // Por ahora, vamos a guardar la imagen como base64 en la base de datos
-        // Esto es temporal hasta implementar un servicio de almacenamiento
+        // Guardamos la imagen como base64 en la base de datos
         
         const base64Image = buffer.toString('base64');
         const dataUrl = `data:${photo.type};base64,${base64Image}`;

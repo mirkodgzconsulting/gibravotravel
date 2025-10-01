@@ -2,8 +2,8 @@
 
 import { useUser as useClerkUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
-import { prisma } from "@/lib/prisma";
-import { UserRole } from "@prisma/client";
+
+type UserRole = 'USER' | 'ADMIN' | 'TI';
 
 export function useUserRole() {
   const { user: clerkUser, isLoaded } = useClerkUser();

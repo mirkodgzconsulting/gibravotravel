@@ -164,6 +164,11 @@ const utentiItems: NavItem[] = [
     name: "Crea Utenti",
     path: "/crea-utenti",
   },
+  {
+    icon: <TableIcon />,
+    name: "Database Admin",
+    path: "/database-admin",
+  },
 ];
 
 

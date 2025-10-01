@@ -7,17 +7,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Modelo para roles de usuarios
-enum UserRole {
-  USER
-  ADMIN
-  TI
-}
-
-// Modelo para información adicional de usuarios (complementa Clerk)
 model User {
   id          String   @id @default(cuid())
-  clerkId     String   @unique // ID del usuario en Clerk
+  clerkId     String   @unique
   email       String   @unique
   firstName   String?
   lastName    String?
@@ -31,7 +23,6 @@ model User {
   @@map("users")
 }
 
-// Modelo para gestionar departures/notes (PARTENZE/NOTE)
 model Departure {
   id            String    @id @default(cuid())
   title         String
@@ -47,7 +38,6 @@ model Departure {
   @@map("departures")
 }
 
-// Modelo para información general (INFO)
 model Info {
   id        String   @id @default(cuid())
   title     String
@@ -60,48 +50,48 @@ model Info {
   @@map("info")
 }
 
-// Modelo para rutas/percorsi (PERCORSI)
 model Route {
-  id          String   @id @default(cuid())
+  id          String      @id @default(cuid())
   name        String
   description String?
   distance    Float?
-  duration    Int? // en minutos
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  stops RouteStop[]
+  duration    Int?
+  active      Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  stops       RouteStop[]
 
   @@map("routes")
 }
 
-// Modelo para paradas/fermate (FERMATE)
 model Stop {
-  id        String   @id @default(cuid())
-  name      String
-  address   String?
-  latitude  Float?
-  longitude Float?
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  id         String      @id @default(cuid())
+  name       String
+  address    String?
+  latitude   Float?
+  longitude  Float?
+  active     Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
   routeStops RouteStop[]
 
   @@map("stops")
 }
 
-// Tabla de relación entre rutas y paradas
 model RouteStop {
   id      String @id @default(cuid())
   routeId String
   stopId  String
-  order   Int    // orden de la parada en la ruta
-
-  route Route @relation(fields: [routeId], references: [id], onDelete: Cascade)
-  stop  Stop  @relation(fields: [stopId], references: [id], onDelete: Cascade)
+  order   Int
+  route   Route  @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  stop    Stop   @relation(fields: [stopId], references: [id], onDelete: Cascade)
 
   @@unique([routeId, stopId])
   @@map("route_stops")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  TI
 }

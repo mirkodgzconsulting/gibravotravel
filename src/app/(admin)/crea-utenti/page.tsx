@@ -137,7 +137,7 @@ export default function CreaUtentiPage() {
       } else {
         setMessage({ type: 'error', text: data.error || 'Errore durante la creazione dell\'utente' });
       }
-    } catch (error) {
+    } catch {
       setMessage({ type: 'error', text: 'Errore durante la creazione dell\'utente' });
     } finally {
       setSubmitting(false);
@@ -210,7 +210,7 @@ export default function CreaUtentiPage() {
                   </button>
                 </div>
                 <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-2">
-                  ⚠️ Condividi questa password con l'utente. Dovrà cambiarla al primo accesso.
+                  ⚠️ Condividi questa password con l&apos;utente. Dovrà cambiarla al primo accesso.
                 </p>
               </div>
             )}

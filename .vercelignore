@@ -1,0 +1,4 @@
+# Force cache clear
+node_modules
+.next
+.vercel

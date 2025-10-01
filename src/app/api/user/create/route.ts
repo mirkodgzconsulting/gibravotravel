@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { UserRole } from '@prisma/client';
-import { writeFile } from 'fs/promises';
-import { join } from 'path';
 import { createClerkClient } from '@clerk/backend';
+import { put } from '@vercel/blob';
 
 export async function POST(request: NextRequest) {
   try {
@@ -41,21 +40,23 @@ export async function POST(request: NextRequest) {
 
     // Manejar la imagen si se proporciona
     if (photo && photo.size > 0) {
-      const bytes = await photo.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      
-      // Generar nombre único para la imagen
-      const timestamp = Date.now();
-      const filename = `user_${timestamp}_${photo.name}`;
-      const path = join(process.cwd(), 'public', 'uploads', 'users', filename);
-      
-      // Crear directorio si no existe
-      const { mkdir } = await import('fs/promises');
-      await mkdir(join(process.cwd(), 'public', 'uploads', 'users'), { recursive: true });
-      
-      // Guardar la imagen
-      await writeFile(path, buffer);
-      photoPath = `/uploads/users/${filename}`;
+      try {
+        // Generar nombre único para la imagen
+        const timestamp = Date.now();
+        const filename = `user_${timestamp}_${photo.name}`;
+        
+        // Subir a Vercel Blob
+        const blob = await put(filename, photo, {
+          access: 'public',
+          contentType: photo.type,
+        });
+        
+        photoPath = blob.url;
+        console.log('✅ Imagen subida a Vercel Blob:', blob.url);
+      } catch (blobError) {
+        console.error('❌ Error subiendo imagen a Vercel Blob:', blobError);
+        // Continuar sin imagen si hay error
+      }
     }
 
     // Crear cliente de Clerk

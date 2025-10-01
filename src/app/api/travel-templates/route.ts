@@ -221,7 +221,7 @@ export async function POST(request: NextRequest) {
           // No crear directorio si ya existe
           try {
             await mkdir(uploadDir, { recursive: true });
-          } catch (dirError) {
+          } catch {
             // Directorio ya existe, continuar
             console.log('📁 Directorio ya existe, continuando...');
           }
@@ -307,7 +307,7 @@ export async function POST(request: NextRequest) {
           // No crear directorio si ya existe
           try {
             await mkdir(uploadDir, { recursive: true });
-          } catch (dirError) {
+          } catch {
             // Directorio ya existe, continuar
             console.log('📁 Directorio ya existe, continuando...');
           }

@@ -30,7 +30,9 @@ export default function AdminLayout({
 
   // Redirigir a usuarios no autorizados (que no están en la base de datos)
   useEffect(() => {
+    console.log('🔍 Layout useEffect:', { isLoaded, isSignedIn, roleLoading, userRole });
     if (isLoaded && isSignedIn && !roleLoading && userRole === null) {
+      console.log('❌ Redirecting to unauthorized - userRole is null');
       router.push("/unauthorized");
     }
   }, [isLoaded, isSignedIn, roleLoading, userRole, router]);
@@ -43,8 +45,18 @@ export default function AdminLayout({
     );
   }
 
-  if (!isSignedIn || userRole === null) {
+  if (!isSignedIn) {
     return null;
+  }
+
+  // Solo redirigir si definitivamente no hay rol después de cargar
+  if (userRole === null && !roleLoading) {
+    console.log('❌ No role found after loading - redirecting to unauthorized');
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-500"></div>
+      </div>
+    );
   }
 
   // Route-specific styles for the main content container

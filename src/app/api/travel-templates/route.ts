@@ -79,6 +79,7 @@ export async function POST(request: NextRequest) {
     console.log('🔍 Environment check:', {
       isVercel: !!process.env.VERCEL,
       hasBlobToken: !!process.env.GIBRAV_READ_WRITE_TOKEN,
+      blobTokenValue: process.env.GIBRAV_READ_WRITE_TOKEN ? 'TOKEN_PRESENT' : 'TOKEN_MISSING',
       nodeEnv: process.env.NODE_ENV
     });
     
@@ -144,15 +145,13 @@ export async function POST(request: NextRequest) {
     // En Vercel, requerir token de Blob Storage
     if (isVercel && !hasBlobToken) {
       console.error('❌ GIBRAV_READ_WRITE_TOKEN no configurado en Vercel');
-      console.log('⚠️ Continuando sin Blob Storage - usando fallback temporal');
-      // Comentamos el return para permitir continuar sin Blob Storage
-      // return NextResponse.json(
-      //   { 
-      //     error: 'Vercel Blob Storage no configurado. Contacta al administrador.',
-      //     details: 'GIBRAV_READ_WRITE_TOKEN environment variable missing'
-      //   },
-      //   { status: 500 }
-      // );
+      return NextResponse.json(
+        { 
+          error: 'Vercel Blob Storage no configurado. Contacta al administrador.',
+          details: 'GIBRAV_READ_WRITE_TOKEN environment variable missing'
+        },
+        { status: 500 }
+      );
     }
 
     // Procesar imagen de portada
@@ -210,30 +209,20 @@ export async function POST(request: NextRequest) {
             console.log('✅ Imagen guardada (fallback local):', coverImageData);
           }
         } else {
-          // Fallback para Vercel sin Blob Storage o desarrollo local
-          if (isVercel) {
-            // En Vercel sin Blob, usar base64 temporal (solo para testing)
-            console.log('⚠️ Using base64 fallback in Vercel (temporary)');
-            const base64 = Buffer.from(bytes).toString('base64');
-            coverImageData = `data:${coverImage.type};base64,${base64}`;
-            coverImageName = coverImage.name;
-            console.log('✅ Imagen guardada (Vercel base64 temporal):', coverImageName);
-          } else {
-            // En desarrollo, usar almacenamiento local
-            const buffer = Buffer.from(bytes);
-            const timestamp = Date.now();
-            const filename = `template_${timestamp}_${coverImage.name}`;
-            
-            const uploadDir = join(process.cwd(), 'public', 'uploads', 'templates');
-            await mkdir(uploadDir, { recursive: true });
-            
-            const filePath = join(uploadDir, filename);
-            await writeFile(filePath, buffer);
-            
-            coverImageData = `/api/uploads/templates/${filename}`;
-            coverImageName = coverImage.name;
-            console.log('✅ Imagen guardada (desarrollo local):', coverImageData);
-          }
+          // Solo desarrollo local (Vercel ya debe tener Blob Storage)
+          const buffer = Buffer.from(bytes);
+          const timestamp = Date.now();
+          const filename = `template_${timestamp}_${coverImage.name}`;
+          
+          const uploadDir = join(process.cwd(), 'public', 'uploads', 'templates');
+          await mkdir(uploadDir, { recursive: true });
+          
+          const filePath = join(uploadDir, filename);
+          await writeFile(filePath, buffer);
+          
+          coverImageData = `/api/uploads/templates/${filename}`;
+          coverImageName = coverImage.name;
+          console.log('✅ Imagen guardada (desarrollo local):', coverImageData);
         }
       } catch (fileError) {
         console.error('❌ Error procesando imagen:', fileError);
@@ -300,30 +289,20 @@ export async function POST(request: NextRequest) {
             console.log('✅ PDF guardado (fallback local):', pdfFileData);
           }
         } else {
-          // Fallback para Vercel sin Blob Storage o desarrollo local
-          if (isVercel) {
-            // En Vercel sin Blob, usar base64 temporal (solo para testing)
-            console.log('⚠️ Using base64 fallback for PDF in Vercel (temporary)');
-            const base64 = Buffer.from(bytes).toString('base64');
-            pdfFileData = `data:${pdfFile.type};base64,${base64}`;
-            pdfFileName = pdfFile.name;
-            console.log('✅ PDF guardado (Vercel base64 temporal):', pdfFileName);
-          } else {
-            // En desarrollo, usar almacenamiento local
-            const buffer = Buffer.from(bytes);
-            const timestamp = Date.now();
-            const filename = `template_${timestamp}_${pdfFile.name}`;
-            
-            const uploadDir = join(process.cwd(), 'public', 'uploads', 'templates');
-            await mkdir(uploadDir, { recursive: true });
-            
-            const filePath = join(uploadDir, filename);
-            await writeFile(filePath, buffer);
-            
-            pdfFileData = `/api/uploads/templates/${filename}`;
-            pdfFileName = pdfFile.name;
-            console.log('✅ PDF guardado (desarrollo local):', pdfFileData);
-          }
+          // Solo desarrollo local (Vercel ya debe tener Blob Storage)
+          const buffer = Buffer.from(bytes);
+          const timestamp = Date.now();
+          const filename = `template_${timestamp}_${pdfFile.name}`;
+          
+          const uploadDir = join(process.cwd(), 'public', 'uploads', 'templates');
+          await mkdir(uploadDir, { recursive: true });
+          
+          const filePath = join(uploadDir, filename);
+          await writeFile(filePath, buffer);
+          
+          pdfFileData = `/api/uploads/templates/${filename}`;
+          pdfFileName = pdfFile.name;
+          console.log('✅ PDF guardado (desarrollo local):', pdfFileData);
         }
       } catch (fileError) {
         console.error('❌ Error procesando PDF:', fileError);

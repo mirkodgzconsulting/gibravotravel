@@ -7,17 +7,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Modelo para roles de usuarios
-enum UserRole {
-  USER
-  ADMIN
-  TI
-}
-
-// Modelo para información adicional de usuarios (complementa Clerk)
 model User {
   id          String   @id @default(cuid())
-  clerkId     String   @unique // ID del usuario en Clerk
+  clerkId     String   @unique
   email       String   @unique
   firstName   String?
   lastName    String?
@@ -31,3 +23,8 @@ model User {
   @@map("users")
 }
 
+enum UserRole {
+  USER
+  ADMIN
+  TI
+}

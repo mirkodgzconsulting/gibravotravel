@@ -3,9 +3,10 @@ import { prisma } from '@/lib/prisma';
 import { UserRole } from '@prisma/client';
 
 export async function POST(request: NextRequest) {
+  const body = await request.json();
+  const { clerkId, email, firstName, lastName, phoneNumber, role = 'USER' } = body;
+
   try {
-    const body = await request.json();
-    const { clerkId, email, firstName, lastName, phoneNumber, role = 'USER' } = body;
 
     if (!email) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
@@ -42,7 +43,7 @@ export async function POST(request: NextRequest) {
     if (error instanceof Error && error.message.includes('Unique constraint')) {
       try {
         const existingUser = await prisma.user.findUnique({
-          where: { email: body.email },
+          where: { email },
           select: { role: true, email: true }
         });
         

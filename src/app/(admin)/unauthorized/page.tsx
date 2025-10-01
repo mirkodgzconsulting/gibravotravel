@@ -54,7 +54,7 @@ export default function UnauthorizedPage() {
               Prossimi Passi:
             </h4>
             <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1 text-left">
-              <li>• Contatta l'amministratore TI</li>
+              <li>• Contatta l&apos;amministratore TI</li>
               <li>• Richiedi la creazione del tuo account</li>
               <li>• Specifica il ruolo richiesto (USER, ADMIN, TI)</li>
             </ul>

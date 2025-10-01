@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { UserRole } from '@prisma/client';
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
+import { createClerkClient } from '@clerk/backend';
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,6 +22,19 @@ export async function POST(request: NextRequest) {
     // Verificar que el rol sea válido
     if (!['USER', 'ADMIN', 'TI'].includes(role)) {
       return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
+    }
+
+    // Verificar si el usuario ya existe en Prisma
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      return NextResponse.json({ 
+        user: existingUser, 
+        role: existingUser.role,
+        message: 'User already exists with this email'
+      });
     }
 
     let photoPath = null;
@@ -44,10 +58,58 @@ export async function POST(request: NextRequest) {
       photoPath = `/uploads/users/${filename}`;
     }
 
-    // Crear usuario en Prisma
+    // Crear cliente de Clerk
+    const clerk = createClerkClient({
+      secretKey: process.env.CLERK_SECRET_KEY!,
+    });
+
+    // Generar password temporal
+    const temporaryPassword = Math.random().toString(36).slice(-12) + 'A1!';
+
+    let clerkUser;
+    try {
+      // Crear usuario en Clerk
+      clerkUser = await clerk.users.createUser({
+        emailAddress: [email],
+        firstName: firstName,
+        lastName: lastName,
+        password: temporaryPassword,
+        skipPasswordChecks: true, // Permitir password temporal
+        publicMetadata: {
+          role: role,
+          phoneNumber: phoneNumber,
+        },
+      });
+
+      console.log('✅ Usuario creado en Clerk:', clerkUser.id);
+    } catch (clerkError) {
+      console.error('❌ Error creando usuario en Clerk:', clerkError);
+      
+      // Si hay error en Clerk, intentar crear solo en Prisma como fallback
+      const fallbackUser = await prisma.user.create({
+        data: {
+          clerkId: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          email,
+          firstName,
+          lastName,
+          phoneNumber,
+          photo: photoPath,
+          role: role as UserRole,
+        },
+      });
+
+      return NextResponse.json({ 
+        user: fallbackUser, 
+        role: fallbackUser.role,
+        message: 'User created in database only. Clerk creation failed. Manual registration required.',
+        temporaryPassword: null,
+      });
+    }
+
+    // Crear usuario en Prisma con el clerkId real
     const user = await prisma.user.create({
       data: {
-        clerkId: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // ID temporal
+        clerkId: clerkUser.id,
         email,
         firstName,
         lastName,
@@ -60,33 +122,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ 
       user, 
       role: user.role,
-      message: 'User created successfully. They will need to register in Clerk to access the system.'
+      message: `User created successfully in both Clerk and database. They can now login with email: ${email}`,
+      temporaryPassword: temporaryPassword,
     });
   } catch (error) {
     console.error('Error creating user:', error);
-    
-    // Si el usuario ya existe, devolver el usuario existente
-    if (error instanceof Error && error.message.includes('Unique constraint')) {
-      try {
-        const formData = await request.formData();
-        const email = formData.get('email') as string;
-        
-        const existingUser = await prisma.user.findUnique({
-          where: { email },
-          select: { role: true, email: true }
-        });
-        
-        if (existingUser) {
-          return NextResponse.json({ 
-            user: existingUser, 
-            role: existingUser.role,
-            message: 'User already exists with this email'
-          });
-        }
-      } catch (findError) {
-        console.error('Error finding existing user:', findError);
-      }
-    }
 
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

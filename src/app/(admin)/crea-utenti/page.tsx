@@ -45,7 +45,7 @@ export default function CreaUtentiPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string; password?: string } | null>(null);
   
   const [formData, setFormData] = useState<UserFormData>({
     email: "",
@@ -119,7 +119,11 @@ export default function CreaUtentiPage() {
       const data = await response.json();
 
       if (response.ok) {
-        setMessage({ type: 'success', text: 'Utente creato con successo!' });
+        setMessage({ 
+          type: 'success', 
+          text: data.message || 'Utente creato con successo!',
+          password: data.temporaryPassword 
+        });
         setFormData({
           email: "",
           firstName: "",
@@ -187,7 +191,30 @@ export default function CreaUtentiPage() {
             ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200' 
             : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-200'
         }`}>
-          {message.text}
+          <div className="space-y-2">
+            <p>{message.text}</p>
+            {message.password && (
+              <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-md border border-yellow-200 dark:border-yellow-800">
+                <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">
+                  🔑 Password temporanea per il primo accesso:
+                </p>
+                <div className="flex items-center gap-2">
+                  <code className="px-2 py-1 bg-yellow-100 dark:bg-yellow-800 text-yellow-900 dark:text-yellow-100 rounded text-sm font-mono">
+                    {message.password}
+                  </code>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(message.password!)}
+                    className="px-2 py-1 text-xs bg-yellow-200 dark:bg-yellow-700 text-yellow-900 dark:text-yellow-100 rounded hover:bg-yellow-300 dark:hover:bg-yellow-600"
+                  >
+                    Copia
+                  </button>
+                </div>
+                <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-2">
+                  ⚠️ Condividi questa password con l'utente. Dovrà cambiarla al primo accesso.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

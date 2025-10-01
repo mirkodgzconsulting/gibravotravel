@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useUserRole } from "@/hooks/useUserRole";
 import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
@@ -74,11 +74,7 @@ export default function DatabaseAdminPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchData();
-  }, [activeTab]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -109,12 +105,16 @@ export default function DatabaseAdminPage() {
           setStops([]);
           break;
       }
-    } catch (err) {
+    } catch {
       setError('Error de conexión');
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
@@ -169,7 +169,7 @@ export default function DatabaseAdminPage() {
           <Button 
             onClick={fetchData}
             size="sm"
-            color="primary"
+            variant="primary"
             className="mt-2"
           >
             Riprova
@@ -184,7 +184,7 @@ export default function DatabaseAdminPage() {
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() => setActiveTab(tab.id as 'users' | 'departures' | 'routes' | 'stops')}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === tab.id
                     ? 'border-brand-500 text-brand-600 dark:text-brand-400'

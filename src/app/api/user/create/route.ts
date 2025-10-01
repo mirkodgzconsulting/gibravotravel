@@ -8,12 +8,27 @@ import { join } from 'path';
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
+    
+    // Debug: Log all form data keys
+    console.log('🔍 FormData keys:', Array.from(formData.keys()));
+    
     const email = formData.get('email') as string;
     const firstName = formData.get('firstName') as string;
     const lastName = formData.get('lastName') as string;
     const phoneNumber = formData.get('phoneNumber') as string;
     const role = formData.get('role') as string;
     const photo = formData.get('photo') as File | null;
+    
+    // Debug: Log all received data
+    console.log('📋 Received data:', {
+      email,
+      firstName,
+      lastName,
+      phoneNumber,
+      role,
+      photoReceived: !!photo,
+      photoType: photo?.constructor?.name || 'null'
+    });
 
     if (!email) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
@@ -143,6 +158,9 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Debug: Log photoPath before saving to database
+    console.log('💾 Saving to database with photoPath:', photoPath);
+
     // Crear usuario en Prisma con el clerkId real
     const user = await prisma.user.create({
       data: {
@@ -154,6 +172,14 @@ export async function POST(request: NextRequest) {
         photo: photoPath,
         role: role as UserRole,
       },
+    });
+
+    // Debug: Log saved user data
+    console.log('✅ User saved to database:', {
+      id: user.id,
+      email: user.email,
+      photo: user.photo,
+      photoPath: photoPath
     });
 
     return NextResponse.json({ 

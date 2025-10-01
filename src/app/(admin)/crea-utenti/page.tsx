@@ -107,8 +107,19 @@ export default function CreaUtentiPage() {
       formDataToSend.append('phoneNumber', formData.phoneNumber);
       formDataToSend.append('role', formData.role);
       
+      // Debug: Log photo data before sending
+      console.log('📸 Frontend - Photo data:', {
+        hasPhoto: !!formData.photo,
+        photoName: formData.photo?.name,
+        photoSize: formData.photo?.size,
+        photoType: formData.photo?.type
+      });
+      
       if (formData.photo) {
         formDataToSend.append('photo', formData.photo);
+        console.log('✅ Frontend - Photo added to FormData');
+      } else {
+        console.log('⚠️ Frontend - No photo to send');
       }
 
       const response = await fetch('/api/user/create', {

@@ -22,10 +22,18 @@ export function useUserRole() {
       }
 
       setHasTriedFetch(true);
+      console.log('🚀 Starting role fetch for clerkId:', clerkUser.id);
       
       try {
-        console.log('🔍 Fetching role for clerkId:', clerkUser.id);
-        const response = await fetch(`/api/user/role?clerkId=${clerkUser.id}`);
+        const response = await fetch(`/api/user/role?clerkId=${clerkUser.id}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          // Agregar timeout para evitar requests colgados
+          signal: AbortSignal.timeout(10000)
+        });
+        
         console.log('📡 API Response status:', response.status);
         
         if (response.ok) {
@@ -45,6 +53,7 @@ export function useUserRole() {
         console.error('❌ Network error fetching user role:', error);
         setUserRole(null);
       } finally {
+        console.log('🏁 Role fetch completed');
         setIsLoading(false);
       }
     }

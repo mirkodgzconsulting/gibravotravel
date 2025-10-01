@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "../context/SidebarContext";
+import { useUserRole } from "../hooks/useUserRole";
 import {
   AiIcon,
   BoxCubeIcon,
@@ -246,6 +247,7 @@ const supportItems: NavItem[] = [
 
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
+  const { canAccessGestione, canManageUsers, isLoading } = useUserRole();
   const pathname = usePathname();
 
   const renderMenuItems = (
@@ -530,38 +532,45 @@ const AppSidebar: React.FC = () => {
               </h2>
               {renderMenuItems(homeItems, "home")}
             </div>
-            <div>
-              <h2
-                className={`mb-4 text-xs uppercase flex leading-5 text-gray-400 ${
-                  !isExpanded && !isHovered
-                    ? "xl:justify-center"
-                    : "justify-start"
-                }`}
-              >
-                {isExpanded || isHovered || isMobileOpen ? (
-                  "GESTIONE"
-                ) : (
-                  <HorizontaLDots />
-                )}
-              </h2>
-              {renderMenuItems(gestioneItems, "gestione")}
-            </div>
-            <div>
-              <h2
-                className={`mb-4 text-xs uppercase flex leading-5 text-gray-400 ${
-                  !isExpanded && !isHovered
-                    ? "xl:justify-center"
-                    : "justify-start"
-                }`}
-              >
-                {isExpanded || isHovered || isMobileOpen ? (
-                  "UTENTI"
-                ) : (
-                  <HorizontaLDots />
-                )}
-              </h2>
-              {renderMenuItems(utentiItems, "utenti")}
-            </div>
+            {/* Sección GESTIONE - Solo para ADMIN y TI */}
+            {canAccessGestione && (
+              <div>
+                <h2
+                  className={`mb-4 text-xs uppercase flex leading-5 text-gray-400 ${
+                    !isExpanded && !isHovered
+                      ? "xl:justify-center"
+                      : "justify-start"
+                  }`}
+                >
+                  {isExpanded || isHovered || isMobileOpen ? (
+                    "GESTIONE"
+                  ) : (
+                    <HorizontaLDots />
+                  )}
+                </h2>
+                {renderMenuItems(gestioneItems, "gestione")}
+              </div>
+            )}
+            
+            {/* Sección UTENTI - Solo para TI */}
+            {canManageUsers && (
+              <div>
+                <h2
+                  className={`mb-4 text-xs uppercase flex leading-5 text-gray-400 ${
+                    !isExpanded && !isHovered
+                      ? "xl:justify-center"
+                      : "justify-start"
+                  }`}
+                >
+                  {isExpanded || isHovered || isMobileOpen ? (
+                    "UTENTI"
+                  ) : (
+                    <HorizontaLDots />
+                  )}
+                </h2>
+                {renderMenuItems(utentiItems, "utenti")}
+              </div>
+            )}
             <div>
               <h2
                 className={`mb-4 text-xs uppercase flex leading-5 text-gray-400 ${

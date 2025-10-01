@@ -238,14 +238,14 @@ export default function PartenzeNotePage() {
       <Modal
         isOpen={isModalOpen}
         onClose={closeModal}
-        className="max-w-2xl mx-4"
+        className="max-w-lg mx-4"
       >
-        <div className="p-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+        <div className="p-4">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
             Agregar Nueva Plantilla
           </h2>
           
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Título del Tour *

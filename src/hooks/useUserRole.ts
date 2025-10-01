@@ -19,21 +19,25 @@ export function useUserRole() {
       }
 
       try {
+        console.log('🔍 Fetching role for clerkId:', clerkUser.id);
         const response = await fetch(`/api/user/role?clerkId=${clerkUser.id}`);
+        console.log('📡 API Response status:', response.status);
+        
         if (response.ok) {
           const data = await response.json();
-          console.log('User role found:', data.role); // Debug log
+          console.log('✅ User role found:', data.role);
           setUserRole(data.role);
         } else if (response.status === 404) {
-          // Usuario no existe en la DB - no crear automáticamente
-          console.log('User not found in database. Please contact admin to create user account.');
+          console.log('❌ User not found in database (404). ClerkId:', clerkUser.id);
           setUserRole(null);
         } else {
-          console.error('Error fetching user role:', response.status);
+          console.error('❌ Error fetching user role:', response.status, response.statusText);
+          const errorData = await response.text();
+          console.error('Error details:', errorData);
           setUserRole(null);
         }
       } catch (error) {
-        console.error('Error fetching user role:', error);
+        console.error('❌ Network error fetching user role:', error);
         setUserRole(null);
       } finally {
         setIsLoading(false);

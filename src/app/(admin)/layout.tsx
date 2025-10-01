@@ -9,6 +9,7 @@ import { usePathname } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { useUserRole } from "@/hooks/useUserRole";
 
 export default function AdminLayout({
   children,
@@ -18,6 +19,7 @@ export default function AdminLayout({
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
   const pathname = usePathname();
   const { isSignedIn, isLoaded } = useUser();
+  const { userRole, isLoading: roleLoading } = useUserRole();
   const router = useRouter();
 
   useEffect(() => {
@@ -26,7 +28,14 @@ export default function AdminLayout({
     }
   }, [isLoaded, isSignedIn, router]);
 
-  if (!isLoaded) {
+  // Redirigir a usuarios no autorizados (que no están en la base de datos)
+  useEffect(() => {
+    if (isLoaded && isSignedIn && !roleLoading && userRole === null) {
+      router.push("/unauthorized");
+    }
+  }, [isLoaded, isSignedIn, roleLoading, userRole, router]);
+
+  if (!isLoaded || roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-500"></div>
@@ -34,7 +43,7 @@ export default function AdminLayout({
     );
   }
 
-  if (!isSignedIn) {
+  if (!isSignedIn || userRole === null) {
     return null;
   }
 

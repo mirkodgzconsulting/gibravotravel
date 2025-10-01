@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
     console.log('🚀 Creating new travel template...');
     console.log('🔍 Environment check:', {
       isVercel: !!process.env.VERCEL,
-      hasBlobToken: !!process.env.BLOB_READ_WRITE_TOKEN,
+      hasBlobToken: !!process.env.GIBRAV_LECTURA_ESCRITURA_TOKEN,
       nodeEnv: process.env.NODE_ENV
     });
     
@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
 
     // Detectar si estamos en Vercel
     const isVercel = process.env.VERCEL;
-    const hasBlobToken = !!process.env.BLOB_READ_WRITE_TOKEN;
+    const hasBlobToken = !!process.env.GIBRAV_LECTURA_ESCRITURA_TOKEN;
     
     console.log('🔍 Storage decision:', {
       isVercel,
@@ -127,11 +127,11 @@ export async function POST(request: NextRequest) {
 
     // En Vercel, requerir token de Blob Storage
     if (isVercel && !hasBlobToken) {
-      console.error('❌ BLOB_READ_WRITE_TOKEN no configurado en Vercel');
+      console.error('❌ GIBRAV_LECTURA_ESCRITURA_TOKEN no configurado en Vercel');
       return NextResponse.json(
         { 
           error: 'Vercel Blob Storage no configurado. Contacta al administrador.',
-          details: 'BLOB_READ_WRITE_TOKEN environment variable missing'
+          details: 'GIBRAV_LECTURA_ESCRITURA_TOKEN environment variable missing'
         },
         { status: 500 }
       );

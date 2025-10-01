@@ -73,28 +73,20 @@ export async function POST(request: NextRequest) {
         const timestamp = Date.now();
         const filename = `user_${timestamp}_${photo.name}`;
         
-        // Ruta donde se guardará la imagen
-        const path = join(process.cwd(), 'public', 'uploads', 'users', filename);
+        // En Vercel, el sistema de archivos es de solo lectura
+        // Vamos a usar una estrategia diferente: guardar como base64 o usar un servicio externo
         
-        console.log('📁 Ruta completa:', path);
+        // Por ahora, vamos a guardar la imagen como base64 en la base de datos
+        // Esto es temporal hasta implementar un servicio de almacenamiento
         
-        // Crear directorio si no existe
-        const { mkdir } = await import('fs/promises');
-        const uploadDir = join(process.cwd(), 'public', 'uploads', 'users');
-        await mkdir(uploadDir, { recursive: true });
-        console.log('📂 Directorio creado/verificado:', uploadDir);
+        const base64Image = buffer.toString('base64');
+        const dataUrl = `data:${photo.type};base64,${base64Image}`;
         
-        // Guardar la imagen
-        await writeFile(path, buffer);
-        console.log('💾 Archivo guardado en:', path);
+        console.log('🔄 Convertiendo imagen a base64...');
+        console.log('📏 Tamaño de base64:', dataUrl.length, 'caracteres');
         
-        // Verificar que el archivo se guardó
-        const { existsSync } = await import('fs');
-        const fileExists = existsSync(path);
-        console.log('✅ Archivo existe después de guardar:', fileExists);
-        
-        // Guardar solo la ruta relativa en la base de datos
-        photoPath = `/uploads/users/${filename}`;
+        // Guardar como base64 en lugar de archivo
+        photoPath = dataUrl;
         
         console.log('✅ Imagen guardada localmente:', photoPath);
       } catch (fileError) {

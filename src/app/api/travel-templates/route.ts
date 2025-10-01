@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { auth } from '@clerk/nextjs/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { put } from '@vercel/blob';
+import { v2 as cloudinary } from 'cloudinary';
 
 const prisma = new PrismaClient();
+
+// Configurar Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dskliu1ig',
+  api_key: process.env.CLOUDINARY_API_KEY || '538724966551851',
+  api_secret: process.env.CLOUDINARY_API_SECRET || 'Q1fP7-pH6iiltPbFNkqPn0d93no',
+});
 
 export async function GET() {
   try {
@@ -77,11 +82,9 @@ export async function POST(request: NextRequest) {
   try {
     console.log('🚀 Creating new travel template...');
     console.log('🔍 Environment check:', {
-      isVercel: !!process.env.VERCEL,
-      hasBlobToken: !!process.env.GIBRAV_READ_WRITE_TOKEN,
-      blobTokenValue: process.env.GIBRAV_READ_WRITE_TOKEN ? 'TOKEN_PRESENT' : 'TOKEN_MISSING',
-      nodeEnv: process.env.NODE_ENV,
-      allEnvVars: Object.keys(process.env).filter(key => key.includes('GIBRAV') || key.includes('BLOB')).join(', ')
+      hasCloudinaryUrl: !!process.env.CLOUDINARY_URL,
+      hasCloudinaryConfig: !!(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET),
+      nodeEnv: process.env.NODE_ENV
     });
     
     const { userId } = await auth();
@@ -127,35 +130,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let coverImageData = null;
+    let coverImageUrl = null;
     let coverImageName = null;
-    let pdfFileData = null;
+    let pdfFileUrl = null;
     let pdfFileName = null;
-
-    // Detectar si estamos en Vercel
-    const isVercel = process.env.VERCEL;
-    const hasBlobToken = !!process.env.GIBRAV_READ_WRITE_TOKEN;
-    
-    console.log('🔍 Storage decision:', {
-      isVercel,
-      hasBlobToken,
-      willUseBlob: isVercel && hasBlobToken,
-      willUseLocal: !isVercel || !hasBlobToken
-    });
-
-    // En Vercel, requerir token de Blob Storage
-    if (isVercel && !hasBlobToken) {
-      console.error('❌ GIBRAV_READ_WRITE_TOKEN no configurado en Vercel');
-      console.log('⚠️ TEMPORAL: Continuando sin archivos para debugging');
-      // Temporal: continuar sin archivos para poder diagnosticar
-      // return NextResponse.json(
-      //   { 
-      //     error: 'Vercel Blob Storage no configurado. Contacta al administrador.',
-      //     details: 'GIBRAV_READ_WRITE_TOKEN environment variable missing'
-      //   },
-      //   { status: 500 }
-      // );
-    }
 
     // Procesar imagen de portada
     if (coverImage && coverImage.size > 0) {
@@ -165,85 +143,45 @@ export async function POST(request: NextRequest) {
         type: coverImage.type
       });
       
-      // Limitar tamaño según el entorno
-      const maxSize = isVercel ? 10 * 1024 * 1024 : 5 * 1024 * 1024; // 10MB para Vercel Blob, 5MB para desarrollo
+      // Limitar tamaño a 10MB
+      const maxSize = 10 * 1024 * 1024; // 10MB
       if (coverImage.size > maxSize) {
         console.log('❌ Image too large:', coverImage.size, 'max:', maxSize);
         return NextResponse.json(
-          { error: `La imagen es demasiado grande. Máximo ${isVercel ? '10MB' : '5MB'}.` },
+          { error: 'La imagen es demasiado grande. Máximo 10MB.' },
           { status: 400 }
         );
       }
       
       try {
         const bytes = await coverImage.arrayBuffer();
+        const buffer = Buffer.from(bytes);
         
-        if (isVercel && hasBlobToken) {
-          try {
-            // En Vercel con token configurado, usar Blob Storage
-            const timestamp = Date.now();
-            const filename = `templates/template_${timestamp}_${coverImage.name}`;
-            
-            console.log('📤 Uploading to Vercel Blob:', filename);
-            const blob = await put(filename, bytes, {
-              access: 'public',
-              contentType: coverImage.type,
-            });
-            
-            coverImageData = blob.url;
-            coverImageName = coverImage.name;
-            console.log('✅ Imagen guardada (Vercel Blob):', blob.url);
-          } catch (blobError) {
-            console.error('❌ Error uploading to Vercel Blob:', blobError);
-            // Fallback a almacenamiento local si Blob falla
-            console.log('🔄 Fallback to local storage...');
-            const buffer = Buffer.from(bytes);
-            const timestamp = Date.now();
-            const filename = `template_${timestamp}_${coverImage.name}`;
-            
-            const uploadDir = join(process.cwd(), 'public', 'uploads', 'templates');
-            await mkdir(uploadDir, { recursive: true });
-            
-            const filePath = join(uploadDir, filename);
-            await writeFile(filePath, buffer);
-            
-            coverImageData = `/api/uploads/templates/${filename}`;
-            coverImageName = coverImage.name;
-            console.log('✅ Imagen guardada (fallback local):', coverImageData);
-          }
-        } else {
-          // Solo desarrollo local (Vercel ya debe tener Blob Storage)
-          const buffer = Buffer.from(bytes);
-          const timestamp = Date.now();
-          const filename = `template_${timestamp}_${coverImage.name}`;
-          
-          const uploadDir = join(process.cwd(), 'public', 'uploads', 'templates');
-          // No crear directorio si ya existe
-          try {
-            await mkdir(uploadDir, { recursive: true });
-          } catch {
-            // Directorio ya existe, continuar
-            console.log('📁 Directorio ya existe, continuando...');
-          }
-          
-          const filePath = join(uploadDir, filename);
-          await writeFile(filePath, buffer);
-          
-          coverImageData = `/api/uploads/templates/${filename}`;
-          coverImageName = coverImage.name;
-          console.log('✅ Imagen guardada (desarrollo local):', coverImageData);
-        }
-      } catch (fileError) {
-        console.error('❌ Error procesando imagen:', fileError);
-        console.error('❌ Error details:', {
-          message: fileError instanceof Error ? fileError.message : 'Unknown error',
-          stack: fileError instanceof Error ? fileError.stack : undefined,
-          name: fileError instanceof Error ? fileError.name : undefined
+        // Convertir a base64 para Cloudinary
+        const base64 = buffer.toString('base64');
+        const dataUri = `data:${coverImage.type};base64,${base64}`;
+        
+        console.log('📤 Uploading to Cloudinary...');
+        
+        // Subir a Cloudinary
+        const result = await cloudinary.uploader.upload(dataUri, {
+          folder: 'gibravotravel/templates',
+          resource_type: 'image',
+          transformation: [
+            { width: 800, height: 600, crop: 'limit', quality: 'auto' }
+          ]
         });
+        
+        coverImageUrl = result.secure_url;
+        coverImageName = coverImage.name;
+        console.log('✅ Imagen guardada en Cloudinary:', result.secure_url);
+        
+      } catch (uploadError) {
+        console.error('❌ Error uploading to Cloudinary:', uploadError);
         return NextResponse.json(
           { 
-            error: 'Error procesando imagen',
-            details: fileError instanceof Error ? fileError.message : 'Unknown error'
+            error: 'Error subiendo imagen a Cloudinary',
+            details: uploadError instanceof Error ? uploadError.message : 'Unknown error'
           },
           { status: 500 }
         );
@@ -252,84 +190,48 @@ export async function POST(request: NextRequest) {
 
     // Procesar archivo PDF
     if (pdfFile && pdfFile.size > 0) {
-      // Limitar tamaño según el entorno
-      const maxSize = isVercel ? 50 * 1024 * 1024 : 10 * 1024 * 1024; // 50MB para Vercel Blob, 10MB para desarrollo
+      console.log('📄 Processing PDF file:', {
+        name: pdfFile.name,
+        size: pdfFile.size,
+        type: pdfFile.type
+      });
+      
+      // Limitar tamaño a 50MB
+      const maxSize = 50 * 1024 * 1024; // 50MB
       if (pdfFile.size > maxSize) {
+        console.log('❌ PDF too large:', pdfFile.size, 'max:', maxSize);
         return NextResponse.json(
-          { error: `El archivo PDF es demasiado grande. Máximo ${isVercel ? '50MB' : '10MB'}.` },
+          { error: 'El archivo PDF es demasiado grande. Máximo 50MB.' },
           { status: 400 }
         );
       }
       
       try {
         const bytes = await pdfFile.arrayBuffer();
+        const buffer = Buffer.from(bytes);
         
-        if (isVercel && hasBlobToken) {
-          try {
-            // En Vercel con token configurado, usar Blob Storage
-            const timestamp = Date.now();
-            const filename = `templates/template_${timestamp}_${pdfFile.name}`;
-            
-            console.log('📤 Uploading PDF to Vercel Blob:', filename);
-            const blob = await put(filename, bytes, {
-              access: 'public',
-              contentType: pdfFile.type,
-            });
-            
-            pdfFileData = blob.url;
-            pdfFileName = pdfFile.name;
-            console.log('✅ PDF guardado (Vercel Blob):', blob.url);
-          } catch (blobError) {
-            console.error('❌ Error uploading PDF to Vercel Blob:', blobError);
-            // Fallback a almacenamiento local si Blob falla
-            console.log('🔄 Fallback PDF to local storage...');
-            const buffer = Buffer.from(bytes);
-            const timestamp = Date.now();
-            const filename = `template_${timestamp}_${pdfFile.name}`;
-            
-            const uploadDir = join(process.cwd(), 'public', 'uploads', 'templates');
-            await mkdir(uploadDir, { recursive: true });
-            
-            const filePath = join(uploadDir, filename);
-            await writeFile(filePath, buffer);
-            
-            pdfFileData = `/api/uploads/templates/${filename}`;
-            pdfFileName = pdfFile.name;
-            console.log('✅ PDF guardado (fallback local):', pdfFileData);
-          }
-        } else {
-          // Solo desarrollo local (Vercel ya debe tener Blob Storage)
-          const buffer = Buffer.from(bytes);
-          const timestamp = Date.now();
-          const filename = `template_${timestamp}_${pdfFile.name}`;
-          
-          const uploadDir = join(process.cwd(), 'public', 'uploads', 'templates');
-          // No crear directorio si ya existe
-          try {
-            await mkdir(uploadDir, { recursive: true });
-          } catch {
-            // Directorio ya existe, continuar
-            console.log('📁 Directorio ya existe, continuando...');
-          }
-          
-          const filePath = join(uploadDir, filename);
-          await writeFile(filePath, buffer);
-          
-          pdfFileData = `/api/uploads/templates/${filename}`;
-          pdfFileName = pdfFile.name;
-          console.log('✅ PDF guardado (desarrollo local):', pdfFileData);
-        }
-      } catch (fileError) {
-        console.error('❌ Error procesando PDF:', fileError);
-        console.error('❌ Error details:', {
-          message: fileError instanceof Error ? fileError.message : 'Unknown error',
-          stack: fileError instanceof Error ? fileError.stack : undefined,
-          name: fileError instanceof Error ? fileError.name : undefined
+        // Convertir a base64 para Cloudinary
+        const base64 = buffer.toString('base64');
+        const dataUri = `data:${pdfFile.type};base64,${base64}`;
+        
+        console.log('📤 Uploading PDF to Cloudinary...');
+        
+        // Subir a Cloudinary
+        const result = await cloudinary.uploader.upload(dataUri, {
+          folder: 'gibravotravel/templates',
+          resource_type: 'raw'
         });
+        
+        pdfFileUrl = result.secure_url;
+        pdfFileName = pdfFile.name;
+        console.log('✅ PDF guardado en Cloudinary:', result.secure_url);
+        
+      } catch (uploadError) {
+        console.error('❌ Error uploading PDF to Cloudinary:', uploadError);
         return NextResponse.json(
           { 
-            error: 'Error procesando archivo PDF',
-            details: fileError instanceof Error ? fileError.message : 'Unknown error'
+            error: 'Error subiendo PDF a Cloudinary',
+            details: uploadError instanceof Error ? uploadError.message : 'Unknown error'
           },
           { status: 500 }
         );
@@ -339,9 +241,9 @@ export async function POST(request: NextRequest) {
     console.log('💾 Creating template in database with data:', {
       title,
       textContent: textContent.substring(0, 50) + '...',
-      coverImage: coverImageData ? 'HAS_IMAGE' : 'NO_IMAGE',
+      coverImage: coverImageUrl ? 'HAS_IMAGE' : 'NO_IMAGE',
       coverImageName,
-      pdfFile: pdfFileData ? 'HAS_PDF' : 'NO_PDF',
+      pdfFile: pdfFileUrl ? 'HAS_PDF' : 'NO_PDF',
       pdfFileName,
       tourDate: new Date(tourDate).toISOString(),
       travelCost: travelCost && travelCost.trim() !== '' ? parseFloat(travelCost) : null,
@@ -352,9 +254,9 @@ export async function POST(request: NextRequest) {
       data: {
         title,
         textContent,
-        coverImage: coverImageData,
+        coverImage: coverImageUrl,
         coverImageName,
-        pdfFile: pdfFileData,
+        pdfFile: pdfFileUrl,
         pdfFileName,
         tourDate: new Date(tourDate),
         travelCost: travelCost && travelCost.trim() !== '' ? parseFloat(travelCost) : null,

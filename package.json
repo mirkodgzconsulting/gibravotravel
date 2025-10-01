@@ -27,6 +27,7 @@
     "@vercel/blob": "^2.0.0",
     "apexcharts": "^4.3.0",
     "autoprefixer": "^10.4.20",
+    "cloudinary": "^2.7.0",
     "clsx": "^2.1.1",
     "flatpickr": "^4.6.13",
     "next": "^15.4.3",

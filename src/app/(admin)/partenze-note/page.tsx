@@ -51,6 +51,8 @@ export default function PartenzeNotePage() {
   const [expandedTemplate, setExpandedTemplate] = useState<string | null>(null);
   const [showCopyNotification, setShowCopyNotification] = useState(false);
   const [copiedTemplates, setCopiedTemplates] = useState<Set<string>>(new Set());
+  const [isCleaningUp, setIsCleaningUp] = useState(false);
+  const [cleanupMessage, setCleanupMessage] = useState<string | null>(null);
   const [formData, setFormData] = useState<TemplateFormData>({
     title: "",
     textContent: "",
@@ -175,6 +177,37 @@ export default function PartenzeNotePage() {
     }
   };
 
+  const handleCleanupBase64Data = async () => {
+    if (!confirm('¿Estás seguro de que quieres limpiar los datos base64 antiguos? Esto eliminará las imágenes y PDFs guardados en formato base64.')) {
+      return;
+    }
+
+    setIsCleaningUp(true);
+    setCleanupMessage(null);
+
+    try {
+      const response = await fetch('/api/cleanup-base64', {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setCleanupMessage(`✅ ${result.message}`);
+        // Recargar las plantillas para ver los cambios
+        fetchTemplates();
+      } else {
+        const errorData = await response.json();
+        setCleanupMessage(`❌ Error: ${errorData.error}`);
+      }
+    } catch {
+      setCleanupMessage('❌ Error de conexión durante la limpieza');
+    } finally {
+      setIsCleaningUp(false);
+      // Limpiar el mensaje después de 5 segundos
+      setTimeout(() => setCleanupMessage(null), 5000);
+    }
+  };
+
   const toggleExpanded = (id: string) => {
     setExpandedTemplate(expandedTemplate === id ? null : id);
   };
@@ -232,8 +265,8 @@ export default function PartenzeNotePage() {
         </div>
       )}
 
-      {/* Botón principal para agregar plantilla */}
-      <div className="flex justify-center mb-8">
+      {/* Botones principales */}
+      <div className="flex justify-center gap-4 mb-8">
         <Button
           onClick={openModal}
           variant="primary"
@@ -246,7 +279,33 @@ export default function PartenzeNotePage() {
         >
           Agregar Plantilla
         </Button>
+        
+        <button
+          onClick={handleCleanupBase64Data}
+          disabled={isCleaningUp}
+          className="px-6 py-3 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white font-medium rounded-lg transition-colors duration-200 flex items-center gap-2"
+        >
+          {isCleaningUp ? (
+            <>
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              Limpiando...
+            </>
+          ) : (
+            <>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Limpiar Datos Antiguos
+            </>
+          )}
+        </button>
       </div>
+
+      {cleanupMessage && (
+        <div className="mb-6 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+          <p className="text-blue-800 dark:text-blue-200 text-sm">{cleanupMessage}</p>
+        </div>
+      )}
 
       {/* Modal para agregar plantilla */}
       <Modal

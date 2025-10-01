@@ -204,27 +204,45 @@ export default function CreaUtentiPage() {
         }`}>
           <div className="space-y-2">
             <p>{message.text}</p>
-            {message.password && (
-              <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-md border border-yellow-200 dark:border-yellow-800">
-                <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">
-                  🔑 Password temporanea per il primo accesso:
-                </p>
-                <div className="flex items-center gap-2">
-                  <code className="px-2 py-1 bg-yellow-100 dark:bg-yellow-800 text-yellow-900 dark:text-yellow-100 rounded text-sm font-mono">
-                    {message.password}
-                  </code>
-                  <button
-                    onClick={() => navigator.clipboard.writeText(message.password!)}
-                    className="px-2 py-1 text-xs bg-yellow-200 dark:bg-yellow-700 text-yellow-900 dark:text-yellow-100 rounded hover:bg-yellow-300 dark:hover:bg-yellow-600"
-                  >
-                    Copia
-                  </button>
-                </div>
-                <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-2">
-                  ⚠️ Condividi questa password con l&apos;utente. Dovrà cambiarla al primo accesso.
-                </p>
-              </div>
-            )}
+                   {message.password && (
+                     <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-md border border-yellow-200 dark:border-yellow-800">
+                       <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">
+                         Copia la password per questo utente:
+                       </p>
+                       <div className="flex items-center gap-2">
+                         <code className="px-2 py-1 bg-yellow-100 dark:bg-yellow-800 text-yellow-900 dark:text-yellow-100 rounded text-sm font-mono">
+                           {message.password}
+                         </code>
+                         <button
+                           onClick={async () => {
+                             try {
+                               await navigator.clipboard.writeText(message.password!);
+                               // Mostrar confirmación temporal
+                               const button = document.querySelector('[data-copy-button]') as HTMLButtonElement;
+                               if (button) {
+                                 const originalText = button.textContent;
+                                 button.textContent = 'Copiato!';
+                                 button.className = button.className.replace('bg-yellow-200', 'bg-green-200').replace('hover:bg-yellow-300', 'hover:bg-green-300');
+                                 setTimeout(() => {
+                                   button.textContent = originalText;
+                                   button.className = button.className.replace('bg-green-200', 'bg-yellow-200').replace('hover:bg-green-300', 'hover:bg-yellow-300');
+                                 }, 2000);
+                               }
+                             } catch (err) {
+                               console.error('Error copying to clipboard:', err);
+                             }
+                           }}
+                           data-copy-button
+                           className="px-2 py-1 text-xs bg-yellow-200 dark:bg-yellow-700 text-yellow-900 dark:text-yellow-100 rounded hover:bg-yellow-300 dark:hover:bg-yellow-600 transition-colors"
+                         >
+                           Copia
+                         </button>
+                       </div>
+                       <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-2">
+                         Puoi copiare questa password per condividere
+                       </p>
+                     </div>
+                   )}
           </div>
         </div>
       )}

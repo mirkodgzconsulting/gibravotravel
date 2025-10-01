@@ -7,7 +7,6 @@ import { Modal } from "@/components/ui/modal";
 import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import Button from "@/components/ui/button/Button";
-import { FileInput } from "@/components/ui/file-input/FileInput";
 import { DatePicker } from "@/components/ui/date-picker/DatePicker";
 import { CopyNotification } from "@/components/ui/notification/CopyNotification";
 import Image from "next/image";
@@ -274,21 +273,29 @@ export default function PartenzeNotePage() {
             />
           </div>
 
-          <FileInput
-            label="Imagen de Portada"
-            name="coverImage"
-            accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-            onChange={(file) => setFormData(prev => ({ ...prev, coverImage: file }))}
-            value={formData.coverImage}
-          />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Imagen de Portada
+            </label>
+            <input
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+              onChange={(e) => setFormData(prev => ({ ...prev, coverImage: e.target.files?.[0] || null }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            />
+          </div>
 
-          <FileInput
-            label="Archivo PDF/Documento"
-            name="pdfFile"
-            accept=".pdf,.doc,.docx"
-            onChange={(file) => setFormData(prev => ({ ...prev, pdfFile: file }))}
-            value={formData.pdfFile}
-          />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Archivo PDF/Documento
+            </label>
+            <input
+              type="file"
+              accept=".pdf,.doc,.docx"
+              onChange={(e) => setFormData(prev => ({ ...prev, pdfFile: e.target.files?.[0] || null }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            />
+          </div>
 
           <div className="grid grid-cols-2 gap-4">
             <DatePicker

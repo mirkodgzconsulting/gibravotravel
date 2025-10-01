@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
 
           return {
             type: 'image',
-            url: (result as any).secure_url,
+            url: (result as { secure_url: string }).secure_url,
             name: coverImage.name
           };
         } catch (error) {
@@ -194,7 +194,7 @@ export async function POST(request: NextRequest) {
 
           return {
             type: 'pdf',
-            url: (result as any).secure_url,
+            url: (result as { secure_url: string }).secure_url,
             name: pdfFile.name
           };
         } catch (error) {

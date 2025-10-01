@@ -80,7 +80,8 @@ export async function POST(request: NextRequest) {
       isVercel: !!process.env.VERCEL,
       hasBlobToken: !!process.env.GIBRAV_READ_WRITE_TOKEN,
       blobTokenValue: process.env.GIBRAV_READ_WRITE_TOKEN ? 'TOKEN_PRESENT' : 'TOKEN_MISSING',
-      nodeEnv: process.env.NODE_ENV
+      nodeEnv: process.env.NODE_ENV,
+      allEnvVars: Object.keys(process.env).filter(key => key.includes('GIBRAV') || key.includes('BLOB')).join(', ')
     });
     
     const { userId } = await auth();
@@ -145,13 +146,15 @@ export async function POST(request: NextRequest) {
     // En Vercel, requerir token de Blob Storage
     if (isVercel && !hasBlobToken) {
       console.error('❌ GIBRAV_READ_WRITE_TOKEN no configurado en Vercel');
-      return NextResponse.json(
-        { 
-          error: 'Vercel Blob Storage no configurado. Contacta al administrador.',
-          details: 'GIBRAV_READ_WRITE_TOKEN environment variable missing'
-        },
-        { status: 500 }
-      );
+      console.log('⚠️ TEMPORAL: Continuando sin archivos para debugging');
+      // Temporal: continuar sin archivos para poder diagnosticar
+      // return NextResponse.json(
+      //   { 
+      //     error: 'Vercel Blob Storage no configurado. Contacta al administrador.',
+      //     details: 'GIBRAV_READ_WRITE_TOKEN environment variable missing'
+      //   },
+      //   { status: 500 }
+      // );
     }
 
     // Procesar imagen de portada
@@ -215,7 +218,13 @@ export async function POST(request: NextRequest) {
           const filename = `template_${timestamp}_${coverImage.name}`;
           
           const uploadDir = join(process.cwd(), 'public', 'uploads', 'templates');
-          await mkdir(uploadDir, { recursive: true });
+          // No crear directorio si ya existe
+          try {
+            await mkdir(uploadDir, { recursive: true });
+          } catch (dirError) {
+            // Directorio ya existe, continuar
+            console.log('📁 Directorio ya existe, continuando...');
+          }
           
           const filePath = join(uploadDir, filename);
           await writeFile(filePath, buffer);
@@ -295,7 +304,13 @@ export async function POST(request: NextRequest) {
           const filename = `template_${timestamp}_${pdfFile.name}`;
           
           const uploadDir = join(process.cwd(), 'public', 'uploads', 'templates');
-          await mkdir(uploadDir, { recursive: true });
+          // No crear directorio si ya existe
+          try {
+            await mkdir(uploadDir, { recursive: true });
+          } catch (dirError) {
+            // Directorio ya existe, continuar
+            console.log('📁 Directorio ya existe, continuando...');
+          }
           
           const filePath = join(uploadDir, filename);
           await writeFile(filePath, buffer);

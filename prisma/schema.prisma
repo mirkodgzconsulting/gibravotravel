@@ -1,0 +1,107 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Modelo para roles de usuarios
+enum UserRole {
+  ADMIN
+  USER
+  TI
+}
+
+// Modelo para información adicional de usuarios (complementa Clerk)
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique // ID del usuario en Clerk
+  email     String   @unique
+  firstName String?
+  lastName  String?
+  role      UserRole @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+// Modelo para gestionar departures/notes
+model Departure {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  departureDate DateTime
+  returnDate   DateTime?
+  price       Float?
+  capacity    Int?
+  available   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("departures")
+}
+
+// Modelo para información general
+model Info {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  category  String
+  published Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("info")
+}
+
+// Modelo para rutas/percorsi
+model Route {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  distance    Float?
+  duration    Int? // en minutos
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  stops RouteStop[]
+
+  @@map("routes")
+}
+
+// Modelo para paradas/fermate
+model Stop {
+  id        String   @id @default(cuid())
+  name      String
+  address   String?
+  latitude  Float?
+  longitude Float?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  routeStops RouteStop[]
+
+  @@map("stops")
+}
+
+// Tabla de relación entre rutas y paradas
+model RouteStop {
+  id       String @id @default(cuid())
+  routeId  String
+  stopId   String
+  order    Int    // orden de la parada en la ruta
+  
+  route Route @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  stop  Stop  @relation(fields: [stopId], references: [id], onDelete: Cascade)
+
+  @@unique([routeId, stopId])
+  @@map("route_stops")
+}

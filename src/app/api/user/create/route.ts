@@ -39,9 +39,18 @@ export async function POST(request: NextRequest) {
 
     let photoPath = null;
 
+    // Debug: Verificar si hay imagen
+    console.log('📸 Debug - Photo received:', {
+      hasPhoto: !!photo,
+      photoSize: photo?.size || 0,
+      photoName: photo?.name || 'no name',
+      photoType: photo?.type || 'no type'
+    });
+
     // Manejar la imagen si se proporciona
     if (photo && photo.size > 0) {
       try {
+        console.log('🔄 Procesando imagen...');
         const bytes = await photo.arrayBuffer();
         const buffer = Buffer.from(bytes);
         
@@ -52,12 +61,22 @@ export async function POST(request: NextRequest) {
         // Ruta donde se guardará la imagen
         const path = join(process.cwd(), 'public', 'uploads', 'users', filename);
         
+        console.log('📁 Ruta completa:', path);
+        
         // Crear directorio si no existe
         const { mkdir } = await import('fs/promises');
-        await mkdir(join(process.cwd(), 'public', 'uploads', 'users'), { recursive: true });
+        const uploadDir = join(process.cwd(), 'public', 'uploads', 'users');
+        await mkdir(uploadDir, { recursive: true });
+        console.log('📂 Directorio creado/verificado:', uploadDir);
         
         // Guardar la imagen
         await writeFile(path, buffer);
+        console.log('💾 Archivo guardado en:', path);
+        
+        // Verificar que el archivo se guardó
+        const { existsSync } = await import('fs');
+        const fileExists = existsSync(path);
+        console.log('✅ Archivo existe después de guardar:', fileExists);
         
         // Guardar solo la ruta relativa en la base de datos
         photoPath = `/uploads/users/${filename}`;
@@ -65,8 +84,15 @@ export async function POST(request: NextRequest) {
         console.log('✅ Imagen guardada localmente:', photoPath);
       } catch (fileError) {
         console.error('❌ Error guardando imagen:', fileError);
+        console.error('❌ Error details:', {
+          message: fileError.message,
+          stack: fileError.stack,
+          name: fileError.name
+        });
         // Continuar sin imagen si hay error
       }
+    } else {
+      console.log('⚠️ No hay imagen para procesar o imagen vacía');
     }
 
     // Crear cliente de Clerk

@@ -85,9 +85,9 @@ export async function POST(request: NextRequest) {
       } catch (fileError) {
         console.error('❌ Error guardando imagen:', fileError);
         console.error('❌ Error details:', {
-          message: fileError.message,
-          stack: fileError.stack,
-          name: fileError.name
+          message: fileError instanceof Error ? fileError.message : 'Unknown error',
+          stack: fileError instanceof Error ? fileError.stack : 'No stack trace',
+          name: fileError instanceof Error ? fileError.name : 'UnknownError'
         });
         // Continuar sin imagen si hay error
       }

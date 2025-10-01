@@ -65,7 +65,7 @@ export default function CreaUtentiPage() {
         const error = await response.json();
         setMessage(`Errore: ${error.error}`);
       }
-    } catch (error) {
+    } catch {
       setMessage("Errore durante la creazione dell'utente");
     } finally {
       setIsSubmitting(false);
@@ -193,7 +193,7 @@ export default function CreaUtentiPage() {
             Note Importanti:
           </h3>
           <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-            <li>• L'utente riceverà un'email per completare la registrazione in Clerk</li>
+            <li>• L&apos;utente riceverà un&apos;email per completare la registrazione in Clerk</li>
             <li>• Il ruolo TI ha accesso completo a tutte le funzionalità</li>
             <li>• Il ruolo Admin ha accesso alla sezione GESTIONE</li>
             <li>• Il ruolo User ha accesso limitato alle funzionalità base</li>

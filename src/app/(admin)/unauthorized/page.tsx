@@ -31,7 +31,7 @@ export default function UnauthorizedPage() {
               Account Non Configurato
             </h3>
             <p className="text-red-700 dark:text-red-300 text-sm">
-              Il tuo account non è stato configurato nel sistema de gestión.
+              Il tuo account non è stato configurato nel sistema de gestione.
             </p>
           </div>
 

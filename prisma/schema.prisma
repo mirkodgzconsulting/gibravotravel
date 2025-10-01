@@ -78,20 +78,21 @@ model Stop {
   @@map("stops")
 }
 
-model RouteStop {
-  id      String @id @default(cuid())
-  routeId String
-  stopId  String
-  order   Int
-  route   Route  @relation(fields: [routeId], references: [id], onDelete: Cascade)
-  stop    Stop   @relation(fields: [stopId], references: [id], onDelete: Cascade)
-
-  @@unique([routeId, stopId])
-  @@map("route_stops")
-}
-
 enum UserRole {
   USER
   ADMIN
   TI
+}
+
+model RouteStop {
+  id      String @id @default(cuid())
+  routeId String
+  stopId  String
+  order   Int    // orden de la parada en la ruta
+  
+  route Route @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  stop  Stop  @relation(fields: [stopId], references: [id], onDelete: Cascade)
+
+  @@unique([routeId, stopId])
+  @@map("route_stops")
 }

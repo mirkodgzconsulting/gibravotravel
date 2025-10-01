@@ -45,14 +45,6 @@ export default function AdminLayout({
     return null;
   }
 
-  // Solo redirigir si definitivamente no hay rol después de cargar
-  // Y solo después de que el hook haya terminado de cargar al menos una vez
-  if (userRole === null && !roleLoading && isLoaded && isSignedIn) {
-    console.log('❌ No role found after loading - redirecting to unauthorized');
-    router.push("/unauthorized");
-    return null;
-  }
-
   // Si aún está cargando el rol, mostrar loading
   if (roleLoading) {
     return (
@@ -60,6 +52,13 @@ export default function AdminLayout({
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-500"></div>
       </div>
     );
+  }
+
+  // Solo redirigir si definitivamente no hay rol después de cargar
+  if (userRole === null && isLoaded && isSignedIn) {
+    console.log('❌ No role found after loading - redirecting to unauthorized');
+    router.push("/unauthorized");
+    return null;
   }
 
   // Route-specific styles for the main content container

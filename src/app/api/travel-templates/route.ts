@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { auth } from '@clerk/nextjs/server';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
+import { put } from '@vercel/blob';
 
 const prisma = new PrismaClient();
 
@@ -103,100 +104,113 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let coverImagePath = null;
+    let coverImageData = null;
     let coverImageName = null;
-    let pdfFilePath = null;
+    let pdfFileData = null;
     let pdfFileName = null;
 
-    // Procesar imagen de portada (almacenamiento local)
+    // Detectar si estamos en Vercel
+    const isVercel = process.env.VERCEL;
+
+    // Procesar imagen de portada
     if (coverImage && coverImage.size > 0) {
-      // Limitar tamaño de imagen a 5MB
-      if (coverImage.size > 5 * 1024 * 1024) {
+      // Limitar tamaño según el entorno
+      const maxSize = isVercel ? 10 * 1024 * 1024 : 5 * 1024 * 1024; // 10MB para Vercel Blob, 5MB para desarrollo
+      if (coverImage.size > maxSize) {
         return NextResponse.json(
-          { error: 'La imagen es demasiado grande. Máximo 5MB.' },
+          { error: `La imagen es demasiado grande. Máximo ${isVercel ? '10MB' : '5MB'}.` },
           { status: 400 }
         );
       }
       
       try {
         const bytes = await coverImage.arrayBuffer();
-        const buffer = Buffer.from(bytes);
-
-        // Generar nombre único para la imagen
-        const timestamp = Date.now();
-        const filename = `template_${timestamp}_${coverImage.name}`;
-
-        // Usar /tmp en Vercel, public/uploads en desarrollo
-        const isVercel = process.env.VERCEL;
-        const uploadDir = isVercel 
-          ? '/tmp/uploads/templates' 
-          : join(process.cwd(), 'public', 'uploads', 'templates');
-
-        // Crear directorio si no existe
-        await mkdir(uploadDir, { recursive: true });
-
-        // Ruta donde se guardará la imagen
-        const filePath = join(uploadDir, filename);
-
-        // Guardar la imagen
-        await writeFile(filePath, buffer);
-
-        // Guardar la ruta que apunta a nuestra API
-        coverImagePath = `/api/uploads/templates/${filename}`;
-        coverImageName = coverImage.name;
-
-        console.log('✅ Imagen guardada:', coverImagePath);
+        
+        if (isVercel) {
+          // En Vercel, usar Blob Storage
+          const timestamp = Date.now();
+          const filename = `templates/template_${timestamp}_${coverImage.name}`;
+          
+          const blob = await put(filename, bytes, {
+            access: 'public',
+            contentType: coverImage.type,
+          });
+          
+          coverImageData = blob.url;
+          coverImageName = coverImage.name;
+          console.log('✅ Imagen guardada (Vercel Blob):', blob.url);
+        } else {
+          // En desarrollo, usar almacenamiento local
+          const buffer = Buffer.from(bytes);
+          const timestamp = Date.now();
+          const filename = `template_${timestamp}_${coverImage.name}`;
+          
+          const uploadDir = join(process.cwd(), 'public', 'uploads', 'templates');
+          await mkdir(uploadDir, { recursive: true });
+          
+          const filePath = join(uploadDir, filename);
+          await writeFile(filePath, buffer);
+          
+          coverImageData = `/api/uploads/templates/${filename}`;
+          coverImageName = coverImage.name;
+          console.log('✅ Imagen guardada (desarrollo local):', coverImageData);
+        }
       } catch (fileError) {
-        console.error('❌ Error guardando imagen:', fileError);
+        console.error('❌ Error procesando imagen:', fileError);
         return NextResponse.json(
-          { error: 'Error guardando imagen' },
+          { error: 'Error procesando imagen' },
           { status: 500 }
         );
       }
     }
 
-    // Procesar archivo PDF (almacenamiento local)
+    // Procesar archivo PDF
     if (pdfFile && pdfFile.size > 0) {
-      // Limitar tamaño de PDF a 10MB
-      if (pdfFile.size > 10 * 1024 * 1024) {
+      // Limitar tamaño según el entorno
+      const maxSize = isVercel ? 50 * 1024 * 1024 : 10 * 1024 * 1024; // 50MB para Vercel Blob, 10MB para desarrollo
+      if (pdfFile.size > maxSize) {
         return NextResponse.json(
-          { error: 'El archivo PDF es demasiado grande. Máximo 10MB.' },
+          { error: `El archivo PDF es demasiado grande. Máximo ${isVercel ? '50MB' : '10MB'}.` },
           { status: 400 }
         );
       }
       
       try {
         const bytes = await pdfFile.arrayBuffer();
-        const buffer = Buffer.from(bytes);
-
-        // Generar nombre único para el PDF
-        const timestamp = Date.now();
-        const filename = `template_${timestamp}_${pdfFile.name}`;
-
-        // Usar /tmp en Vercel, public/uploads en desarrollo
-        const isVercel = process.env.VERCEL;
-        const uploadDir = isVercel 
-          ? '/tmp/uploads/templates' 
-          : join(process.cwd(), 'public', 'uploads', 'templates');
-
-        // Crear directorio si no existe
-        await mkdir(uploadDir, { recursive: true });
-
-        // Ruta donde se guardará el PDF
-        const filePath = join(uploadDir, filename);
-
-        // Guardar el PDF
-        await writeFile(filePath, buffer);
-
-        // Guardar la ruta que apunta a nuestra API
-        pdfFilePath = `/api/uploads/templates/${filename}`;
-        pdfFileName = pdfFile.name;
-
-        console.log('✅ PDF guardado:', pdfFilePath);
+        
+        if (isVercel) {
+          // En Vercel, usar Blob Storage
+          const timestamp = Date.now();
+          const filename = `templates/template_${timestamp}_${pdfFile.name}`;
+          
+          const blob = await put(filename, bytes, {
+            access: 'public',
+            contentType: pdfFile.type,
+          });
+          
+          pdfFileData = blob.url;
+          pdfFileName = pdfFile.name;
+          console.log('✅ PDF guardado (Vercel Blob):', blob.url);
+        } else {
+          // En desarrollo, usar almacenamiento local
+          const buffer = Buffer.from(bytes);
+          const timestamp = Date.now();
+          const filename = `template_${timestamp}_${pdfFile.name}`;
+          
+          const uploadDir = join(process.cwd(), 'public', 'uploads', 'templates');
+          await mkdir(uploadDir, { recursive: true });
+          
+          const filePath = join(uploadDir, filename);
+          await writeFile(filePath, buffer);
+          
+          pdfFileData = `/api/uploads/templates/${filename}`;
+          pdfFileName = pdfFile.name;
+          console.log('✅ PDF guardado (desarrollo local):', pdfFileData);
+        }
       } catch (fileError) {
-        console.error('❌ Error guardando PDF:', fileError);
+        console.error('❌ Error procesando PDF:', fileError);
         return NextResponse.json(
-          { error: 'Error guardando archivo PDF' },
+          { error: 'Error procesando archivo PDF' },
           { status: 500 }
         );
       }
@@ -206,9 +220,9 @@ export async function POST(request: NextRequest) {
       data: {
         title,
         textContent,
-        coverImage: coverImagePath,
+        coverImage: coverImageData,
         coverImageName,
-        pdfFile: pdfFilePath,
+        pdfFile: pdfFileData,
         pdfFileName,
         tourDate: new Date(tourDate),
         travelCost: travelCost ? parseFloat(travelCost) : null,

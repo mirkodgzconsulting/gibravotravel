@@ -7,6 +7,9 @@ import { Modal } from "@/components/ui/modal";
 import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import Button from "@/components/ui/button/Button";
+import { FileInput } from "@/components/ui/file-input/FileInput";
+import { DatePicker } from "@/components/ui/date-picker/DatePicker";
+import { CopyNotification } from "@/components/ui/notification/CopyNotification";
 import Image from "next/image";
 import { useUser } from "@clerk/nextjs";
 
@@ -45,6 +48,7 @@ export default function PartenzeNotePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedTemplate, setExpandedTemplate] = useState<string | null>(null);
+  const [showCopyNotification, setShowCopyNotification] = useState(false);
   const [formData, setFormData] = useState<TemplateFormData>({
     title: "",
     textContent: "",
@@ -82,10 +86,6 @@ export default function PartenzeNotePage() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'coverImage' | 'pdfFile') => {
-    const file = e.target.files?.[0] || null;
-    setFormData(prev => ({ ...prev, [field]: file }));
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,7 +135,7 @@ export default function PartenzeNotePage() {
   const handleCopyContent = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      // Aquí podrías agregar una notificación de éxito
+      setShowCopyNotification(true);
     } catch {
       setError('Error al copiar al portapapeles');
     }
@@ -274,44 +274,30 @@ export default function PartenzeNotePage() {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Imagen de Portada
-            </label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleFileChange(e, 'coverImage')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            />
-          </div>
+          <FileInput
+            label="Imagen de Portada"
+            name="coverImage"
+            accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+            onChange={(file) => setFormData(prev => ({ ...prev, coverImage: file }))}
+            value={formData.coverImage}
+          />
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Archivo PDF
-            </label>
-            <input
-              type="file"
-              accept=".pdf"
-              onChange={(e) => handleFileChange(e, 'pdfFile')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            />
-          </div>
+          <FileInput
+            label="Archivo PDF/Documento"
+            name="pdfFile"
+            accept=".pdf,.doc,.docx"
+            onChange={(file) => setFormData(prev => ({ ...prev, pdfFile: file }))}
+            value={formData.pdfFile}
+          />
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Fecha del Tour *
-              </label>
-              <input
-                type="date"
-                name="tourDate"
-                value={formData.tourDate}
-                onChange={handleInputChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              />
-            </div>
+            <DatePicker
+              label="Fecha del Tour"
+              name="tourDate"
+              value={formData.tourDate}
+              onChange={(value) => setFormData(prev => ({ ...prev, tourDate: value }))}
+              required
+            />
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -436,7 +422,7 @@ export default function PartenzeNotePage() {
                   <div className="flex justify-center space-x-4 mb-3">
                     <button
                       onClick={() => handleCopyContent(template.textContent)}
-                      className="p-2 text-gray-600 hover:text-brand-600 dark:text-gray-400 dark:hover:text-brand-400"
+                      className="p-3 bg-green-100 hover:bg-green-200 text-green-700 hover:text-green-800 dark:bg-green-900/20 dark:hover:bg-green-900/30 dark:text-green-400 dark:hover:text-green-300 rounded-lg transition-all duration-200 transform hover:scale-105"
                       title="Copiar contenido"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -445,8 +431,8 @@ export default function PartenzeNotePage() {
                     </button>
                     
                     <button
-                      className="p-2 text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
-                      title="Editar"
+                      className="p-3 bg-blue-100 hover:bg-blue-200 text-blue-700 hover:text-blue-800 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-400 dark:hover:text-blue-300 rounded-lg transition-all duration-200 transform hover:scale-105"
+                      title="Editar plantilla"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -455,7 +441,7 @@ export default function PartenzeNotePage() {
                     
                     <button
                       onClick={() => handleDeleteTemplate(template.id)}
-                      className="p-2 text-gray-600 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
+                      className="p-3 bg-red-100 hover:bg-red-200 text-red-700 hover:text-red-800 dark:bg-red-900/20 dark:hover:bg-red-900/30 dark:text-red-400 dark:hover:text-red-300 rounded-lg transition-all duration-200 transform hover:scale-105"
                       title="Enviar a papelera"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -513,6 +499,12 @@ export default function PartenzeNotePage() {
           </div>
         )}
       </ComponentCard>
+
+      {/* Notificación de copiado */}
+      <CopyNotification
+        show={showCopyNotification}
+        onHide={() => setShowCopyNotification(false)}
+      />
     </div>
   );
 }

@@ -33,18 +33,6 @@ export default function AdminLayout({
     console.log('🔍 Layout useEffect:', { isLoaded, isSignedIn, roleLoading, userRole });
   }, [isLoaded, isSignedIn, roleLoading, userRole]);
 
-  if (!isLoaded || roleLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-500"></div>
-      </div>
-    );
-  }
-
-  if (!isSignedIn) {
-    return null;
-  }
-
   // CRÍTICO: Usar useEffect para manejar la redirección con delay
   useEffect(() => {
     if (isLoaded && isSignedIn && !roleLoading && userRole === null) {
@@ -60,6 +48,18 @@ export default function AdminLayout({
       };
     }
   }, [isLoaded, isSignedIn, roleLoading, userRole, router]);
+
+  if (!isLoaded || roleLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-500"></div>
+      </div>
+    );
+  }
+
+  if (!isSignedIn) {
+    return null;
+  }
 
   // Si no hay rol pero todo está cargado, mostrar loading temporal
   if (userRole === null && isLoaded && isSignedIn && !roleLoading) {

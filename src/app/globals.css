@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+/* Utility classes for line clamping */
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme {

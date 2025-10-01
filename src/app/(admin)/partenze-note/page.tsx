@@ -212,6 +212,25 @@ export default function PartenzeNotePage() {
     }
   };
 
+  const handleDownload = async (url: string, filename: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      // Fallback: abrir en nueva pestaña
+      window.open(url, '_blank');
+    }
+  };
+
   const toggleExpanded = (id: string) => {
     setExpandedTemplate(expandedTemplate === id ? null : id);
   };
@@ -479,30 +498,24 @@ export default function PartenzeNotePage() {
                     {template.pdfFile && (
                       <div className="text-sm">
                         <span className="text-gray-500 dark:text-gray-400">PDF: </span>
-                        <a
-                          href={template.pdfFile}
-                          download={template.pdfFileName || 'documento.pdf'}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-brand-600 dark:text-brand-400 hover:underline"
+                        <button
+                          onClick={() => handleDownload(template.pdfFile!, template.pdfFileName || 'documento.pdf')}
+                          className="text-brand-600 dark:text-brand-400 hover:underline cursor-pointer"
                         >
                           {template.pdfFileName || 'documento.pdf'}
-                        </a>
+                        </button>
                       </div>
                     )}
                     
                     {template.coverImage && (
                       <div className="text-sm">
                         <span className="text-gray-500 dark:text-gray-400">Imagen: </span>
-                        <a
-                          href={template.coverImage}
-                          download={template.coverImageName || 'imagen.jpg'}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-brand-600 dark:text-brand-400 hover:underline"
+                        <button
+                          onClick={() => handleDownload(template.coverImage!, template.coverImageName || 'imagen.jpg')}
+                          className="text-brand-600 dark:text-brand-400 hover:underline cursor-pointer"
                         >
                           {template.coverImageName || 'imagen.jpg'}
-                        </a>
+                        </button>
                       </div>
                     )}
                   </div>
@@ -547,6 +560,30 @@ export default function PartenzeNotePage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
                     </button>
+                  </div>
+
+                  {/* Información del creador */}
+                  <div className="text-center text-sm text-gray-500 dark:text-gray-400 mb-3">
+                    <div className="flex items-center justify-center gap-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      <span>
+                        Creado por: {template.creator?.firstName} {template.creator?.lastName}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-center gap-2 mt-1">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <span>
+                        {new Date(template.createdAt).toLocaleDateString('es-ES', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Texto de la plantilla */}

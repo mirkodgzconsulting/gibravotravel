@@ -521,7 +521,8 @@ const AppSidebar: React.FC = () => {
       <div className="flex flex-col overflow-y-auto  duration-300 ease-linear no-scrollbar">
         <nav className="mb-6">
           <div className="flex flex-col gap-4">
-            <div>
+            {/* HOME - Comentado para presentación */}
+            {/* <div>
               <h2
                 className={`mb-4 text-xs uppercase flex leading-5 text-gray-400 ${
                   !isExpanded && !isHovered
@@ -536,7 +537,7 @@ const AppSidebar: React.FC = () => {
                 )}
               </h2>
               {renderMenuItems(homeItems, "home")}
-            </div>
+            </div> */}
             {/* Sección GESTIONE - Solo para ADMIN y TI */}
             {canAccessGestione && (
               <div>
@@ -576,7 +577,8 @@ const AppSidebar: React.FC = () => {
                 {renderMenuItems(utentiItems, "utenti")}
               </div>
             )}
-            <div>
+            {/* SUPPORTO - Comentado para presentación */}
+            {/* <div>
               <h2
                 className={`mb-4 text-xs uppercase flex leading-5 text-gray-400 ${
                   !isExpanded && !isHovered
@@ -591,8 +593,9 @@ const AppSidebar: React.FC = () => {
                 )}
               </h2>
               {renderMenuItems(supportItems, "support")}
-            </div>
-            <div>
+            </div> */}
+            {/* ALTRI - Comentado para presentación */}
+            {/* <div>
               <h2
                 className={`mb-4 text-xs uppercase flex leading-5 text-gray-400 ${
                   !isExpanded && !isHovered
@@ -607,7 +610,7 @@ const AppSidebar: React.FC = () => {
                 )}
               </h2>
               {renderMenuItems(othersItems, "others")}
-            </div>
+            </div> */}
           </div>
         </nav>
         {isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null}

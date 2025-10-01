@@ -237,8 +237,16 @@ export async function POST(request: NextRequest) {
         }
       } catch (fileError) {
         console.error('❌ Error procesando imagen:', fileError);
+        console.error('❌ Error details:', {
+          message: fileError instanceof Error ? fileError.message : 'Unknown error',
+          stack: fileError instanceof Error ? fileError.stack : undefined,
+          name: fileError instanceof Error ? fileError.name : undefined
+        });
         return NextResponse.json(
-          { error: 'Error procesando imagen' },
+          { 
+            error: 'Error procesando imagen',
+            details: fileError instanceof Error ? fileError.message : 'Unknown error'
+          },
           { status: 500 }
         );
       }
@@ -319,8 +327,16 @@ export async function POST(request: NextRequest) {
         }
       } catch (fileError) {
         console.error('❌ Error procesando PDF:', fileError);
+        console.error('❌ Error details:', {
+          message: fileError instanceof Error ? fileError.message : 'Unknown error',
+          stack: fileError instanceof Error ? fileError.stack : undefined,
+          name: fileError instanceof Error ? fileError.name : undefined
+        });
         return NextResponse.json(
-          { error: 'Error procesando archivo PDF' },
+          { 
+            error: 'Error procesando archivo PDF',
+            details: fileError instanceof Error ? fileError.message : 'Unknown error'
+          },
           { status: 500 }
         );
       }

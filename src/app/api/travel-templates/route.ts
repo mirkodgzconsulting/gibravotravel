@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
     let pdfFilePath = null;
     let pdfFileName = null;
 
-    // Procesar imagen de portada (guardado local)
+    // Procesar imagen de portada (almacenamiento local)
     if (coverImage && coverImage.size > 0) {
       // Limitar tamaño de imagen a 5MB
       if (coverImage.size > 5 * 1024 * 1024) {
@@ -126,8 +126,13 @@ export async function POST(request: NextRequest) {
         const timestamp = Date.now();
         const filename = `template_${timestamp}_${coverImage.name}`;
 
+        // Usar /tmp en Vercel, public/uploads en desarrollo
+        const isVercel = process.env.VERCEL;
+        const uploadDir = isVercel 
+          ? '/tmp/uploads/templates' 
+          : join(process.cwd(), 'public', 'uploads', 'templates');
+
         // Crear directorio si no existe
-        const uploadDir = join(process.cwd(), 'public', 'uploads', 'templates');
         await mkdir(uploadDir, { recursive: true });
 
         // Ruta donde se guardará la imagen
@@ -150,7 +155,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Procesar archivo PDF (guardado local)
+    // Procesar archivo PDF (almacenamiento local)
     if (pdfFile && pdfFile.size > 0) {
       // Limitar tamaño de PDF a 10MB
       if (pdfFile.size > 10 * 1024 * 1024) {
@@ -168,8 +173,13 @@ export async function POST(request: NextRequest) {
         const timestamp = Date.now();
         const filename = `template_${timestamp}_${pdfFile.name}`;
 
+        // Usar /tmp en Vercel, public/uploads en desarrollo
+        const isVercel = process.env.VERCEL;
+        const uploadDir = isVercel 
+          ? '/tmp/uploads/templates' 
+          : join(process.cwd(), 'public', 'uploads', 'templates');
+
         // Crear directorio si no existe
-        const uploadDir = join(process.cwd(), 'public', 'uploads', 'templates');
         await mkdir(uploadDir, { recursive: true });
 
         // Ruta donde se guardará el PDF

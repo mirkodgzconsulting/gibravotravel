@@ -81,7 +81,8 @@ export const SearchProvider: React.FC<{ children: React.ReactNode }> = ({
           const data = await response.json();
           const filtered = data.templates.filter((template: TravelNoteTemplate) =>
             template.title.toLowerCase().includes(term.toLowerCase()) ||
-            template.textContent.toLowerCase().includes(term.toLowerCase())
+            template.textContent.toLowerCase().includes(term.toLowerCase()) ||
+            `${template.creator.firstName} ${template.creator.lastName}`.toLowerCase().includes(term.toLowerCase())
           );
           setSearchResults(filtered);
         }

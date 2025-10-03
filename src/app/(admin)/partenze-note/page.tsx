@@ -63,7 +63,6 @@ export default function PartenzeNotePage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<TravelNoteTemplate | null>(null);
-  const [filterCreator, setFilterCreator] = useState("");
 
   const fetchTemplates = useCallback(async () => {
     try {
@@ -280,17 +279,8 @@ export default function PartenzeNotePage() {
     }).format(amount);
   };
 
-  // Funciones de filtrado - ahora usa búsqueda global
-  const filteredTemplates = (searchTerm && searchResults.length > 0 ? searchResults : templates).filter(template => {
-    const matchesCreator = filterCreator === "" ||
-      `${template.creator.firstName} ${template.creator.lastName}`.toLowerCase().includes(filterCreator.toLowerCase());
-    
-    return matchesCreator;
-  });
-
-  const resetFilters = () => {
-    setFilterCreator("");
-  };
+  // Usar directamente los resultados de búsqueda o todas las plantillas
+  const filteredTemplates = searchTerm && searchResults.length > 0 ? searchResults : templates;
 
   const closeModalAndReset = () => {
     closeModal();
@@ -469,52 +459,21 @@ export default function PartenzeNotePage() {
         </div>
       </Modal>
 
-      {/* Controles de filtros */}
-      <ComponentCard title="Filtri">
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Filtro por creador */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Filtra per creatore
-              </label>
-              <input
-                type="text"
-                value={filterCreator}
-                onChange={(e) => setFilterCreator(e.target.value)}
-                placeholder="Nome del creatore..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              />
-            </div>
-
-            {/* Información de resultados */}
-            <div className="md:col-span-2 flex items-end">
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                {searchTerm && searchResults.length > 0 && (
-                  <span className="text-brand-600 dark:text-brand-400">
-                    &quot;{searchTerm}&quot;: {searchResults.length} risultati
-                  </span>
-                )}
-                {!searchTerm && (
-                  <span>{filteredTemplates.length} di {templates.length} modelli</span>
-                )}
-              </div>
+      {/* Información de resultados de búsqueda */}
+      {searchTerm && searchResults.length > 0 && (
+        <ComponentCard title="Risultati Ricerca">
+          <div className="text-center py-4">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              <span className="text-brand-600 dark:text-brand-400 font-medium">
+                &quot;{searchTerm}&quot;
+              </span>
+              <span className="ml-2">
+                {searchResults.length} {searchResults.length === 1 ? 'risultato' : 'risultati'} trovati
+              </span>
             </div>
           </div>
-
-          {/* Botón de reset */}
-          {filterCreator && (
-            <div className="flex justify-end">
-              <button
-                onClick={resetFilters}
-                className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 border border-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                Cancella filtri
-              </button>
-            </div>
-          )}
-        </div>
-      </ComponentCard>
+        </ComponentCard>
+      )}
 
       {/* Grid de plantillas */}
       <ComponentCard title="Modelli di Note di Viaggio">

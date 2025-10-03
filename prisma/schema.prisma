@@ -28,6 +28,7 @@ model User {
 
   // Relaciones
   travelNoteTemplates TravelNoteTemplate[]
+  clients            Client[]
 
   @@map("users")
 }
@@ -120,4 +121,27 @@ model RouteStop {
 
   @@unique([routeId, stopId])
   @@map("route_stops")
+}
+
+// Modelo para clientes
+model Client {
+  id              String   @id @default(cuid())
+  firstName       String   // Nome
+  lastName        String   // Cognome
+  fiscalCode      String   // Codice Fiscale
+  address         String   // Indirizzo
+  phoneNumber     String   // Telefono
+  email           String   @unique
+  birthPlace      String   // Nato a
+  birthDate       DateTime // Data di nascita
+  documents       String?  // Documenti (URLs o paths)
+  isActive        Boolean  @default(true)
+  createdBy       String   // ID del usuario que creó el cliente
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relación con el usuario que creó el cliente
+  creator User @relation(fields: [createdBy], references: [clerkId])
+
+  @@map("clients")
 }

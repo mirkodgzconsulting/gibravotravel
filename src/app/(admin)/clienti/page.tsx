@@ -16,29 +16,35 @@ import {
 
 interface Cliente {
   id: string;
-  nome: string;
-  cognome: string;
-  codiceFiscale: string;
-  indirizzo: string;
-  telefono: string;
+  firstName: string;
+  lastName: string;
+  fiscalCode: string;
+  address: string;
+  phoneNumber: string;
   email: string;
-  natoA: string;
-  dataNascita: string;
-  documenti: string | null;
+  birthPlace: string;
+  birthDate: string;
+  documents: string | null;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  creator: {
+    firstName: string | null;
+    lastName: string | null;
+    email: string;
+  };
 }
 
 interface ClienteFormData {
-  nome: string;
-  cognome: string;
-  codiceFiscale: string;
-  indirizzo: string;
-  telefono: string;
+  firstName: string;
+  lastName: string;
+  fiscalCode: string;
+  address: string;
+  phoneNumber: string;
   email: string;
-  natoA: string;
-  dataNascita: string;
-  documenti?: File | null;
+  birthPlace: string;
+  birthDate: string;
+  documents?: File | null;
 }
 
 // Lista de países para el select
@@ -57,15 +63,15 @@ export default function ClientiPage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   
   const [formData, setFormData] = useState<ClienteFormData>({
-    nome: "",
-    cognome: "",
-    codiceFiscale: "",
-    indirizzo: "",
-    telefono: "",
+    firstName: "",
+    lastName: "",
+    fiscalCode: "",
+    address: "",
+    phoneNumber: "",
     email: "",
-    natoA: "Italia",
-    dataNascita: "",
-    documenti: null,
+    birthPlace: "Italia",
+    birthDate: "",
+    documents: null,
   });
 
   // Cargar clientes al montar el componente
@@ -76,46 +82,15 @@ export default function ClientiPage() {
   const fetchClienti = async () => {
     try {
       setLoading(true);
-      // TODO: Implementar API endpoint para clientes
-      // const response = await fetch('/api/clienti/list');
-      // if (response.ok) {
-      //   const data = await response.json();
-      //   setClienti(data.clienti || []);
-      // }
-      
-      // Datos de ejemplo por ahora
-      setClienti([
-        {
-          id: "1",
-          nome: "Mario",
-          cognome: "Rossi",
-          codiceFiscale: "RSSMRA80A01H501U",
-          indirizzo: "Via Roma 123, Milano",
-          telefono: "+39 123 456 7890",
-          email: "mario.rossi@email.com",
-          natoA: "Milano",
-          dataNascita: "1980-01-01",
-          documenti: null,
-          createdAt: "2024-01-15T10:30:00Z",
-          updatedAt: "2024-01-15T10:30:00Z"
-        },
-        {
-          id: "2",
-          nome: "Giulia",
-          cognome: "Bianchi",
-          codiceFiscale: "BNCGLI85B02F205X",
-          indirizzo: "Corso Italia 456, Roma",
-          telefono: "+39 987 654 3210",
-          email: "giulia.bianchi@email.com",
-          natoA: "Roma",
-          dataNascita: "1985-02-15",
-          documenti: null,
-          createdAt: "2024-01-20T14:15:00Z",
-          updatedAt: "2024-01-20T14:15:00Z"
-        }
-      ]);
+      const response = await fetch('/api/clients');
+      if (response.ok) {
+        const data = await response.json();
+        setClienti(data.clients || []);
+      } else {
+        setMessage({ type: 'error', text: 'Errore durante il caricamento dei clienti' });
+      }
     } catch {
-      console.error('Error fetching clienti');
+      setMessage({ type: 'error', text: 'Errore di connessione' });
     } finally {
       setLoading(false);
     }
@@ -133,7 +108,7 @@ export default function ClientiPage() {
     const file = e.target.files?.[0] || null;
     setFormData(prev => ({
       ...prev,
-      documenti: file
+      documents: file
     }));
   };
 
@@ -144,53 +119,47 @@ export default function ClientiPage() {
 
     try {
       const formDataToSend = new FormData();
-      formDataToSend.append('nome', formData.nome);
-      formDataToSend.append('cognome', formData.cognome);
-      formDataToSend.append('codiceFiscale', formData.codiceFiscale);
-      formDataToSend.append('indirizzo', formData.indirizzo);
-      formDataToSend.append('telefono', formData.telefono);
+      formDataToSend.append('firstName', formData.firstName);
+      formDataToSend.append('lastName', formData.lastName);
+      formDataToSend.append('fiscalCode', formData.fiscalCode);
+      formDataToSend.append('address', formData.address);
+      formDataToSend.append('phoneNumber', formData.phoneNumber);
       formDataToSend.append('email', formData.email);
-      formDataToSend.append('natoA', formData.natoA);
-      formDataToSend.append('dataNascita', formData.dataNascita);
+      formDataToSend.append('birthPlace', formData.birthPlace);
+      formDataToSend.append('birthDate', formData.birthDate);
       
-      if (formData.documenti) {
-        formDataToSend.append('documenti', formData.documenti);
+      if (formData.documents) {
+        formDataToSend.append('documents', formData.documents);
       }
 
-      // TODO: Implementar API endpoint para crear cliente
-      // const response = await fetch('/api/clienti/create', {
-      //   method: 'POST',
-      //   body: formDataToSend,
-      // });
+      const response = await fetch('/api/clients', {
+        method: 'POST',
+        body: formDataToSend,
+      });
 
-      // const data = await response.json();
+      const data = await response.json();
 
-      // if (response.ok) {
-      //   setMessage({ 
-      //     type: 'success', 
-      //     text: data.message || 'Cliente creato con successo!'
-      //   });
-      //   setFormData({
-      //     nome: "",
-      //     cognome: "",
-      //     codiceFiscale: "",
-      //     indirizzo: "",
-      //     telefono: "",
-      //     email: "",
-      //     natoA: "Italia",
-      //     dataNascita: "",
-      //     documenti: null,
-      //   });
-      //   modal.closeModal();
-      //   fetchClienti();
-      // } else {
-      //   setMessage({ type: 'error', text: data.error || 'Errore durante la creazione del cliente' });
-      // }
-
-      // Simulación por ahora
-      console.log('Datos del cliente:', Object.fromEntries(formDataToSend));
-      setMessage({ type: 'success', text: 'Cliente creato con successo!' });
-      modal.closeModal();
+      if (response.ok) {
+        setMessage({ 
+          type: 'success', 
+          text: data.message || 'Cliente creato con successo!'
+        });
+        setFormData({
+          firstName: "",
+          lastName: "",
+          fiscalCode: "",
+          address: "",
+          phoneNumber: "",
+          email: "",
+          birthPlace: "Italia",
+          birthDate: "",
+          documents: null,
+        });
+        modal.closeModal();
+        fetchClienti(); // Recargar la lista
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Errore durante la creazione del cliente' });
+      }
       
     } catch {
       setMessage({ type: 'error', text: 'Errore durante la creazione del cliente' });
@@ -270,14 +239,14 @@ export default function ClientiPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="nome" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Nome *
                 </label>
                 <input
                   type="text"
-                  id="nome"
-                  name="nome"
-                  value={formData.nome}
+                  id="firstName"
+                  name="firstName"
+                  value={formData.firstName}
                   onChange={handleInputChange}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
@@ -285,14 +254,14 @@ export default function ClientiPage() {
               </div>
 
               <div>
-                <label htmlFor="cognome" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Cognome *
                 </label>
                 <input
                   type="text"
-                  id="cognome"
-                  name="cognome"
-                  value={formData.cognome}
+                  id="lastName"
+                  name="lastName"
+                  value={formData.lastName}
                   onChange={handleInputChange}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
@@ -301,14 +270,14 @@ export default function ClientiPage() {
             </div>
 
             <div>
-              <label htmlFor="codiceFiscale" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label htmlFor="fiscalCode" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Codice Fiscale *
               </label>
               <input
                 type="text"
-                id="codiceFiscale"
-                name="codiceFiscale"
-                value={formData.codiceFiscale}
+                id="fiscalCode"
+                name="fiscalCode"
+                value={formData.fiscalCode}
                 onChange={handleInputChange}
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
@@ -316,14 +285,14 @@ export default function ClientiPage() {
             </div>
 
             <div>
-              <label htmlFor="indirizzo" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label htmlFor="address" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Indirizzo *
               </label>
               <input
                 type="text"
-                id="indirizzo"
-                name="indirizzo"
-                value={formData.indirizzo}
+                id="address"
+                name="address"
+                value={formData.address}
                 onChange={handleInputChange}
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
@@ -332,14 +301,14 @@ export default function ClientiPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="telefono" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Telefono *
                 </label>
                 <input
                   type="tel"
-                  id="telefono"
-                  name="telefono"
-                  value={formData.telefono}
+                  id="phoneNumber"
+                  name="phoneNumber"
+                  value={formData.phoneNumber}
                   onChange={handleInputChange}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
@@ -364,13 +333,13 @@ export default function ClientiPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="natoA" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label htmlFor="birthPlace" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Nato a *
                 </label>
                 <select
-                  id="natoA"
-                  name="natoA"
-                  value={formData.natoA}
+                  id="birthPlace"
+                  name="birthPlace"
+                  value={formData.birthPlace}
                   onChange={handleInputChange}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
@@ -384,14 +353,14 @@ export default function ClientiPage() {
               </div>
 
               <div>
-                <label htmlFor="dataNascita" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label htmlFor="birthDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Data di nascita *
                 </label>
                 <input
                   type="date"
-                  id="dataNascita"
-                  name="dataNascita"
-                  value={formData.dataNascita}
+                  id="birthDate"
+                  name="birthDate"
+                  value={formData.birthDate}
                   onChange={handleInputChange}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
@@ -400,13 +369,13 @@ export default function ClientiPage() {
             </div>
 
             <div>
-              <label htmlFor="documenti" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label htmlFor="documents" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Documenti
               </label>
               <input
                 type="file"
-                id="documenti"
-                name="documenti"
+                id="documents"
+                name="documents"
                 accept="image/*,.pdf,.doc,.docx"
                 onChange={handleFileChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
@@ -461,7 +430,13 @@ export default function ClientiPage() {
                       isHeader
                       className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
                     >
-                      Contatto
+                      Telefono
+                    </TableCell>
+                    <TableCell
+                      isHeader
+                      className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                    >
+                      Email
                     </TableCell>
                     <TableCell
                       isHeader
@@ -493,7 +468,7 @@ export default function ClientiPage() {
                 <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
                   {clienti.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="px-5 py-8 text-center text-gray-500 dark:text-gray-400">
+                      <TableCell colSpan={8} className="px-5 py-8 text-center text-gray-500 dark:text-gray-400">
                         Nessun cliente registrato
                       </TableCell>
                     </TableRow>
@@ -504,12 +479,12 @@ export default function ClientiPage() {
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
                               <div className="w-full h-full flex items-center justify-center text-gray-500 dark:text-gray-400 text-sm font-medium">
-                                {cliente.nome[0]?.toUpperCase()}
+                                {cliente.firstName[0]?.toUpperCase()}
                               </div>
                             </div>
                             <div>
                               <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
-                                {cliente.nome} {cliente.cognome}
+                                {cliente.firstName} {cliente.lastName}
                               </span>
                               <span className="block text-gray-500 text-theme-xs dark:text-gray-400">
                                 ID: {cliente.id}
@@ -518,22 +493,22 @@ export default function ClientiPage() {
                           </div>
                         </TableCell>
                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                          {cliente.codiceFiscale}
+                          {cliente.fiscalCode}
                         </TableCell>
                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                          <div>
-                            <div>{cliente.email}</div>
-                            <div className="text-xs text-gray-400">{cliente.telefono}</div>
-                          </div>
+                          {cliente.phoneNumber}
                         </TableCell>
                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                          {cliente.indirizzo}
+                          {cliente.email}
                         </TableCell>
                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                          {cliente.natoA}
+                          {cliente.address}
                         </TableCell>
                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                          {new Date(cliente.dataNascita).toLocaleDateString('it-IT')}
+                          {cliente.birthPlace}
+                        </TableCell>
+                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                          {new Date(cliente.birthDate).toLocaleDateString('it-IT')}
                         </TableCell>
                         <TableCell className="px-4 py-3 text-start">
                           <div className="flex items-center gap-2">

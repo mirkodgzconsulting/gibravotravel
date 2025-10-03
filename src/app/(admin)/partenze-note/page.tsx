@@ -461,7 +461,7 @@ export default function PartenzeNotePage() {
 
       {/* Información de resultados de búsqueda */}
       {searchTerm && searchResults.length > 0 && (
-        <ComponentCard>
+        <ComponentCard title="Risultati Ricerca">
           <div className="text-center py-4">
             <div className="text-sm text-gray-600 dark:text-gray-400">
               <span className="text-brand-600 dark:text-brand-400 font-medium">

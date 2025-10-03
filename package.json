@@ -29,6 +29,7 @@
     "autoprefixer": "^10.4.20",
     "cloudinary": "^2.7.0",
     "clsx": "^2.1.1",
+    "dotenv": "^17.2.3",
     "flatpickr": "^4.6.13",
     "next": "^15.4.3",
     "prisma": "^6.16.3",

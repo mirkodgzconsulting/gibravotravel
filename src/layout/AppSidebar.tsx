@@ -165,6 +165,11 @@ const gestioneItems: NavItem[] = [
     name: "CLIENTI",
     path: "/clienti",
   },
+  {
+    icon: <ArrowDownIcon />,
+    name: "MIGRAR CLIENTES",
+    path: "/migrate-clients",
+  },
 ];
 
 const utentiItems: NavItem[] = [

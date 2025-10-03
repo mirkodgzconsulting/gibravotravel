@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 
 // Configuración
 const CSV_FILE_PATH = './data/clientes-wordpress.csv'; // Cambia esta ruta
-const ADMIN_USER_ID = 'tu-clerk-user-id'; // Reemplaza con tu Clerk ID de administrador
+const ADMIN_USER_ID = 'user_33SQ3k9daADwzexJSS23utCpPqr'; // Tu Clerk ID de administrador
 
 // Función para parsear CSV
 function parseCSV(csvContent) {

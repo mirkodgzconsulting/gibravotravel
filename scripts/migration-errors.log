@@ -1,0 +1,259 @@
+Migración de clientes - 2025-10-03T21:01:01.937Z
+
+Errores:
+Fila 1: 
+Invalid `prisma.client.findUnique()` invocation in
+D:\gibravotravel\scripts\migrate-clients.js:88:52
+
+  85 }
+  86 
+  87 // Verificar si el email ya existe
+→ 88 const existingClient = await prisma.client.findUnique(
+error: Environment variable not found: DATABASE_URL.
+  -->  schema.prisma:7
+   | 
+ 6 |   provider = "postgresql"
+ 7 |   url      = env("DATABASE_URL")
+   | 
+
+Validation Error Count: 1
+Fila 3: 
+Invalid `prisma.client.findUnique()` invocation in
+D:\gibravotravel\scripts\migrate-clients.js:88:52
+
+  85 }
+  86 
+  87 // Verificar si el email ya existe
+→ 88 const existingClient = await prisma.client.findUnique(
+error: Environment variable not found: DATABASE_URL.
+  -->  schema.prisma:7
+   | 
+ 6 |   provider = "postgresql"
+ 7 |   url      = env("DATABASE_URL")
+   | 
+
+Validation Error Count: 1
+Fila 95: 
+Invalid `prisma.client.findUnique()` invocation in
+D:\gibravotravel\scripts\migrate-clients.js:88:52
+
+  85 }
+  86 
+  87 // Verificar si el email ya existe
+→ 88 const existingClient = await prisma.client.findUnique(
+error: Environment variable not found: DATABASE_URL.
+  -->  schema.prisma:7
+   | 
+ 6 |   provider = "postgresql"
+ 7 |   url      = env("DATABASE_URL")
+   | 
+
+Validation Error Count: 1
+Fila 1419: 
+Invalid `prisma.client.findUnique()` invocation in
+D:\gibravotravel\scripts\migrate-clients.js:88:52
+
+  85 }
+  86 
+  87 // Verificar si el email ya existe
+→ 88 const existingClient = await prisma.client.findUnique(
+error: Environment variable not found: DATABASE_URL.
+  -->  schema.prisma:7
+   | 
+ 6 |   provider = "postgresql"
+ 7 |   url      = env("DATABASE_URL")
+   | 
+
+Validation Error Count: 1
+Fila 1526: 
+Invalid `prisma.client.findUnique()` invocation in
+D:\gibravotravel\scripts\migrate-clients.js:88:52
+
+  85 }
+  86 
+  87 // Verificar si el email ya existe
+→ 88 const existingClient = await prisma.client.findUnique(
+error: Environment variable not found: DATABASE_URL.
+  -->  schema.prisma:7
+   | 
+ 6 |   provider = "postgresql"
+ 7 |   url      = env("DATABASE_URL")
+   | 
+
+Validation Error Count: 1
+Fila 1903: 
+Invalid `prisma.client.findUnique()` invocation in
+D:\gibravotravel\scripts\migrate-clients.js:88:52
+
+  85 }
+  86 
+  87 // Verificar si el email ya existe
+→ 88 const existingClient = await prisma.client.findUnique(
+error: Environment variable not found: DATABASE_URL.
+  -->  schema.prisma:7
+   | 
+ 6 |   provider = "postgresql"
+ 7 |   url      = env("DATABASE_URL")
+   | 
+
+Validation Error Count: 1
+Fila 1920: 
+Invalid `prisma.client.findUnique()` invocation in
+D:\gibravotravel\scripts\migrate-clients.js:88:52
+
+  85 }
+  86 
+  87 // Verificar si el email ya existe
+→ 88 const existingClient = await prisma.client.findUnique(
+error: Environment variable not found: DATABASE_URL.
+  -->  schema.prisma:7
+   | 
+ 6 |   provider = "postgresql"
+ 7 |   url      = env("DATABASE_URL")
+   | 
+
+Validation Error Count: 1
+Fila 2110: 
+Invalid `prisma.client.findUnique()` invocation in
+D:\gibravotravel\scripts\migrate-clients.js:88:52
+
+  85 }
+  86 
+  87 // Verificar si el email ya existe
+→ 88 const existingClient = await prisma.client.findUnique(
+error: Environment variable not found: DATABASE_URL.
+  -->  schema.prisma:7
+   | 
+ 6 |   provider = "postgresql"
+ 7 |   url      = env("DATABASE_URL")
+   | 
+
+Validation Error Count: 1
+Fila 2114: 
+Invalid `prisma.client.findUnique()` invocation in
+D:\gibravotravel\scripts\migrate-clients.js:88:52
+
+  85 }
+  86 
+  87 // Verificar si el email ya existe
+→ 88 const existingClient = await prisma.client.findUnique(
+error: Environment variable not found: DATABASE_URL.
+  -->  schema.prisma:7
+   | 
+ 6 |   provider = "postgresql"
+ 7 |   url      = env("DATABASE_URL")
+   | 
+
+Validation Error Count: 1
+Fila 2131: 
+Invalid `prisma.client.findUnique()` invocation in
+D:\gibravotravel\scripts\migrate-clients.js:88:52
+
+  85 }
+  86 
+  87 // Verificar si el email ya existe
+→ 88 const existingClient = await prisma.client.findUnique(
+error: Environment variable not found: DATABASE_URL.
+  -->  schema.prisma:7
+   | 
+ 6 |   provider = "postgresql"
+ 7 |   url      = env("DATABASE_URL")
+   | 
+
+Validation Error Count: 1
+Fila 2565: 
+Invalid `prisma.client.findUnique()` invocation in
+D:\gibravotravel\scripts\migrate-clients.js:88:52
+
+  85 }
+  86 
+  87 // Verificar si el email ya existe
+→ 88 const existingClient = await prisma.client.findUnique(
+error: Environment variable not found: DATABASE_URL.
+  -->  schema.prisma:7
+   | 
+ 6 |   provider = "postgresql"
+ 7 |   url      = env("DATABASE_URL")
+   | 
+
+Validation Error Count: 1
+Fila 2566: 
+Invalid `prisma.client.findUnique()` invocation in
+D:\gibravotravel\scripts\migrate-clients.js:88:52
+
+  85 }
+  86 
+  87 // Verificar si el email ya existe
+→ 88 const existingClient = await prisma.client.findUnique(
+error: Environment variable not found: DATABASE_URL.
+  -->  schema.prisma:7
+   | 
+ 6 |   provider = "postgresql"
+ 7 |   url      = env("DATABASE_URL")
+   | 
+
+Validation Error Count: 1
+Fila 2568: 
+Invalid `prisma.client.findUnique()` invocation in
+D:\gibravotravel\scripts\migrate-clients.js:88:52
+
+  85 }
+  86 
+  87 // Verificar si el email ya existe
+→ 88 const existingClient = await prisma.client.findUnique(
+error: Environment variable not found: DATABASE_URL.
+  -->  schema.prisma:7
+   | 
+ 6 |   provider = "postgresql"
+ 7 |   url      = env("DATABASE_URL")
+   | 
+
+Validation Error Count: 1
+Fila 2569: 
+Invalid `prisma.client.findUnique()` invocation in
+D:\gibravotravel\scripts\migrate-clients.js:88:52
+
+  85 }
+  86 
+  87 // Verificar si el email ya existe
+→ 88 const existingClient = await prisma.client.findUnique(
+error: Environment variable not found: DATABASE_URL.
+  -->  schema.prisma:7
+   | 
+ 6 |   provider = "postgresql"
+ 7 |   url      = env("DATABASE_URL")
+   | 
+
+Validation Error Count: 1
+Fila 2570: 
+Invalid `prisma.client.findUnique()` invocation in
+D:\gibravotravel\scripts\migrate-clients.js:88:52
+
+  85 }
+  86 
+  87 // Verificar si el email ya existe
+→ 88 const existingClient = await prisma.client.findUnique(
+error: Environment variable not found: DATABASE_URL.
+  -->  schema.prisma:7
+   | 
+ 6 |   provider = "postgresql"
+ 7 |   url      = env("DATABASE_URL")
+   | 
+
+Validation Error Count: 1
+Fila 2571: 
+Invalid `prisma.client.findUnique()` invocation in
+D:\gibravotravel\scripts\migrate-clients.js:88:52
+
+  85 }
+  86 
+  87 // Verificar si el email ya existe
+→ 88 const existingClient = await prisma.client.findUnique(
+error: Environment variable not found: DATABASE_URL.
+  -->  schema.prisma:7
+   | 
+ 6 |   provider = "postgresql"
+ 7 |   url      = env("DATABASE_URL")
+   | 
+
+Validation Error Count: 1

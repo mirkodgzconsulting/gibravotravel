@@ -1,3 +1,4 @@
+require('dotenv').config({ path: '../.env' });
 const { PrismaClient } = require('@prisma/client');
 const XLSX = require('xlsx');
 const fs = require('fs');
@@ -6,8 +7,8 @@ const path = require('path');
 const prisma = new PrismaClient();
 
 // Configuración
-const EXCEL_FILE_PATH = './data/clientes-wordpress.xlsx'; // Cambia esta ruta
-const ADMIN_USER_ID = 'tu-clerk-user-id'; // Reemplaza con tu Clerk ID de administrador
+const EXCEL_FILE_PATH = './scripts/data/clientes-wordpress.xlsx'; // Ruta desde el directorio raíz
+const ADMIN_USER_ID = 'user_33SQ3k9daADwzexJSS23utCpPqr'; // Tu Clerk ID de administrador
 
 // Mapeo de columnas de Excel a campos de la base de datos
 const COLUMN_MAPPING = {
@@ -66,22 +67,38 @@ async function migrateClients() {
         const clientData = {
           firstName: row['Nome']?.toString().trim() || '',
           lastName: row['Cognome']?.toString().trim() || '',
-          fiscalCode: row['Codice Fiscale']?.toString().trim() || '',
+          fiscalCode: row['Codice Fiscale']?.toString().trim() || 'N/A',
           address: row['Indirizzo']?.toString().trim() || '',
           email: row['E-mail']?.toString().trim() || '',
           phoneNumber: row['Telefono']?.toString().trim() || '',
           birthPlace: row['Nato a']?.toString().trim() || 'Italia',
-          birthDate: parseDate(row['Data di nascita']),
+          birthDate: parseDate(row['Data di nascita']) || new Date(),
           documents: row['Documenti']?.toString().trim() || null,
           createdBy: ADMIN_USER_ID,
           isActive: true
         };
+        
+        // Limpiar valores "undefined" y otros valores problemáticos
+        if (clientData.lastName === 'undefined' || clientData.lastName === '') {
+          clientData.lastName = 'Apellido_No_Disponible';
+        }
+        if (clientData.email === 'undefined') {
+          clientData.email = '';
+        }
+        if (clientData.fiscalCode === 'undefined') {
+          clientData.fiscalCode = 'N/A';
+        }
 
         // Validaciones básicas
-        if (!clientData.firstName || !clientData.lastName || !clientData.email) {
+        if (!clientData.firstName || !clientData.lastName) {
           console.log(`⚠️  Fila ${i + 1}: Datos incompletos, saltando...`);
           skippedCount++;
           continue;
+        }
+        
+        // Si no hay email, generar uno temporal
+        if (!clientData.email) {
+          clientData.email = `temp_${clientData.firstName.toLowerCase().replace(/\s+/g, '')}_${clientData.lastName.toLowerCase().replace(/\s+/g, '')}_${i + 1}@temp.com`;
         }
 
         // Verificar si el email ya existe

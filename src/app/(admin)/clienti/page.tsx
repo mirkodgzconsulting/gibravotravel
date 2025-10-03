@@ -63,6 +63,8 @@ export default function ClientiPage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [editingClient, setEditingClient] = useState<Cliente | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
   
   const [formData, setFormData] = useState<ClienteFormData>({
     firstName: "",
@@ -340,6 +342,18 @@ export default function ClientiPage() {
     );
   });
 
+  // Lógica de paginación
+  const totalItems = filteredClienti.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+  const currentData = filteredClienti.slice(startIndex, endIndex);
+
+  // Resetear página cuando cambie el filtro o items por página
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, itemsPerPage]);
+
   if (roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -590,18 +604,50 @@ export default function ClientiPage() {
         </div>
       </Modal>
 
-      {/* Buscador */}
+
+      {/* Header de la tabla con selector y buscador */}
       <div className="mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Gestione Clienti
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {filteredClienti.length} {filteredClienti.length === 1 ? 'cliente' : 'clienti'} {searchTerm ? 'trovati' : 'registrati'}
-            </p>
+        <div className="flex flex-col gap-2 px-4 py-4 border border-b-0 border-gray-100 dark:border-white/[0.05] rounded-t-xl sm:flex-row sm:items-center sm:justify-between bg-white dark:bg-white/[0.03]">
+          <div className="flex items-center gap-3">
+            <span className="text-gray-500 dark:text-gray-400">Mostra</span>
+            <div className="relative z-20 bg-transparent">
+              <select
+                className="w-full py-2 pl-3 pr-8 text-sm text-gray-800 bg-transparent border border-gray-300 rounded-lg appearance-none dark:bg-dark-900 h-9 bg-none shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                value={itemsPerPage}
+                onChange={(e) => setItemsPerPage(Number(e.target.value))}
+              >
+                {[10, 15, 50, 100].map((value) => (
+                  <option
+                    key={value}
+                    value={value}
+                    className="text-gray-500 dark:bg-gray-900 dark:text-gray-400"
+                  >
+                    {value}
+                  </option>
+                ))}
+              </select>
+              <span className="absolute z-30 text-gray-500 -translate-y-1/2 right-2 top-1/2 dark:text-gray-400">
+                <svg
+                  className="stroke-current"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M3.8335 5.9165L8.00016 10.0832L12.1668 5.9165"
+                    stroke=""
+                    strokeWidth="1.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </span>
+            </div>
+            <span className="text-gray-500 dark:text-gray-400">registri</span>
           </div>
-          
+
           <div className="relative">
             <button className="absolute text-gray-500 -translate-y-1/2 left-4 top-1/2 dark:text-gray-400">
               <svg
@@ -625,14 +671,14 @@ export default function ClientiPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Cerca clienti..."
-              className="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent py-2.5 pl-11 pr-4 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 sm:w-[300px]"
+              className="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent py-2.5 pl-11 pr-4 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 xl:w-[300px]"
             />
           </div>
         </div>
       </div>
 
       {/* Tabla de clientes */}
-      <ComponentCard title="Clienti Registrati">
+      <ComponentCard title="">
         {loading ? (
           <div className="flex justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500"></div>
@@ -701,14 +747,14 @@ export default function ClientiPage() {
                 </TableHeader>
 
                 <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-                  {filteredClienti.length === 0 ? (
+                  {currentData.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={9} className="px-5 py-8 text-center text-gray-500 dark:text-gray-400">
                         {searchTerm ? 'Nessun cliente trovato con i criteri di ricerca' : 'Nessun cliente registrato'}
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredClienti.map((cliente) => (
+                    currentData.map((cliente) => (
                       <TableRow key={cliente.id}>
                         <TableCell className="px-5 py-4 sm:px-6 text-start">
                           <div className="flex items-center gap-3">
@@ -775,6 +821,66 @@ export default function ClientiPage() {
                   )}
                 </TableBody>
               </Table>
+            </div>
+
+            {/* Footer de paginación */}
+            <div className="border border-t-0 rounded-b-xl border-gray-100 py-4 pl-[18px] pr-4 dark:border-white/[0.05]">
+              <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between">
+                {/* Información de registros mostrados */}
+                <div className="pb-3 xl:pb-0">
+                  <p className="pb-3 text-sm font-medium text-center text-gray-500 border-b border-gray-100 dark:border-gray-800 dark:text-gray-400 xl:border-b-0 xl:pb-0 xl:text-left">
+                    Mostrando {startIndex + 1} a {endIndex} di {totalItems} registri
+                  </p>
+                </div>
+
+                {/* Controles de paginación */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:hover:bg-gray-700 dark:text-white"
+                  >
+                    Precedente
+                  </button>
+                  
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`px-3 py-1 text-sm rounded-md ${
+                            currentPage === pageNum
+                              ? 'bg-brand-500 text-white'
+                              : 'border border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700 dark:text-white'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:hover:bg-gray-700 dark:text-white"
+                  >
+                    Successivo
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}

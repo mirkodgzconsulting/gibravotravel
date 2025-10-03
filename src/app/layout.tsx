@@ -27,8 +27,8 @@ export default function RootLayout({
     <ClerkProvider
       signInUrl="/signin"
       signUpUrl="/signin"
-      fallbackRedirectUrl="/"
-      signOutUrl="/signin"
+      afterSignInUrl="/"
+      afterSignOutUrl="/signin"
     >
       <html lang="it">
         <body className={`${outfit.className} dark:bg-gray-900`}>

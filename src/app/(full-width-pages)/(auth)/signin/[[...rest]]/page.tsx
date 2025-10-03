@@ -96,7 +96,9 @@ export default function SignInPage() {
               },
             }}
             signUpUrl={undefined}
-            fallbackRedirectUrl="/"
+            forceRedirectUrl="/"
+            afterSignInUrl="/"
+            afterSignOutUrl="/signin"
           />
         </div>
 

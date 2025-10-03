@@ -18,9 +18,16 @@ export default function UserDropdown() {
     setIsOpen(false);
   }
 
-  const handleSignOut = () => {
-    signOut();
-    closeDropdown();
+  const handleSignOut = async () => {
+    try {
+      console.log('🚀 Signing out user...');
+      await signOut({ redirectUrl: '/signin' });
+      closeDropdown();
+    } catch (error) {
+      console.error('❌ Error during sign out:', error);
+      // Fallback: redirect manually
+      window.location.href = '/signin';
+    }
   };
   return (
     <div className="relative">

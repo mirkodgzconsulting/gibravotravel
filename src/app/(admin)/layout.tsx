@@ -22,13 +22,13 @@ export default function AdminLayout({
   const { userRole, isLoading: roleLoading } = useUserRole();
   const router = useRouter();
 
-  useEffect(() => {
-    // Si Clerk está cargado y el usuario no está autenticado, redirigir inmediatamente
-    if (isLoaded && isSignedIn === false) {
-      console.log('🚀 User not signed in, redirecting to signin');
-      router.push("/signin");
-    }
-  }, [isLoaded, isSignedIn, router]);
+  // Remover la redirección automática del layout - se maneja en la página
+  // useEffect(() => {
+  //   if (isLoaded && isSignedIn === false) {
+  //     console.log('🚀 User not signed in, redirecting to signin');
+  //     router.push("/signin");
+  //   }
+  // }, [isLoaded, isSignedIn, router]);
 
   // Debug: Log del estado actual
   useEffect(() => {
@@ -63,10 +63,10 @@ export default function AdminLayout({
     );
   }
 
-  // Si Clerk está cargado pero el usuario no está autenticado, no mostrar nada (se redirigirá)
-  if (isLoaded && isSignedIn === false) {
-    return null;
-  }
+  // Remover esta verificación - se maneja en cada página individual
+  // if (isLoaded && isSignedIn === false) {
+  //   return null;
+  // }
 
   // Mostrar loading mientras se verifica el rol del usuario
   if (roleLoading) {

@@ -287,7 +287,7 @@ export default function ClientiPage() {
 
       setMessage({
         type: 'success',
-        text: `File Excel esportato con successo: ${fileName}`
+        text: `File Excel esportato con successo: ${fileName} (${clienti.length} clienti)`
       });
     } catch (error) {
       console.error('❌ Export error:', error);

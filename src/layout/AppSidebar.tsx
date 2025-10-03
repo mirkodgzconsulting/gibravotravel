@@ -16,7 +16,6 @@ import {
   GridIcon,
   GroupIcon,
   HorizontaLDots,
-  InfoIcon,
   ListIcon,
   MailIcon,
   PageIcon,
@@ -165,11 +164,6 @@ const gestioneItems: NavItem[] = [
     icon: <GroupIcon />,
     name: "CLIENTI",
     path: "/clienti",
-  },
-  {
-    icon: <InfoIcon />,
-    name: "ESTADÍSTICAS CLIENTES",
-    path: "/verify-migration",
   },
 ];
 

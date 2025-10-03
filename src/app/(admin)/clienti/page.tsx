@@ -334,7 +334,9 @@ export default function ClientiPage() {
       cliente.email.toLowerCase().includes(searchLower) ||
       cliente.phoneNumber.toLowerCase().includes(searchLower) ||
       cliente.address.toLowerCase().includes(searchLower) ||
-      cliente.birthPlace.toLowerCase().includes(searchLower)
+      cliente.birthPlace.toLowerCase().includes(searchLower) ||
+      (cliente.creator?.firstName && cliente.creator.firstName.toLowerCase().includes(searchLower)) ||
+      (cliente.creator?.lastName && cliente.creator.lastName.toLowerCase().includes(searchLower))
     );
   });
 
@@ -687,6 +689,12 @@ export default function ClientiPage() {
                       isHeader
                       className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
                     >
+                      Registrato da
+                    </TableCell>
+                    <TableCell
+                      isHeader
+                      className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                    >
                       Azioni
                     </TableCell>
                   </TableRow>
@@ -695,7 +703,7 @@ export default function ClientiPage() {
                 <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
                   {filteredClienti.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="px-5 py-8 text-center text-gray-500 dark:text-gray-400">
+                      <TableCell colSpan={9} className="px-5 py-8 text-center text-gray-500 dark:text-gray-400">
                         {searchTerm ? 'Nessun cliente trovato con i criteri di ricerca' : 'Nessun cliente registrato'}
                       </TableCell>
                     </TableRow>
@@ -733,6 +741,9 @@ export default function ClientiPage() {
                         </TableCell>
                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                           {new Date(cliente.birthDate).toLocaleDateString('it-IT')}
+                        </TableCell>
+                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                          {cliente.creator?.firstName} {cliente.creator?.lastName}
                         </TableCell>
                         <TableCell className="px-4 py-3 text-start">
                           <div className="flex items-center gap-2">

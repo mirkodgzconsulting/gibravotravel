@@ -62,6 +62,7 @@ export default function ClientiPage() {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [editingClient, setEditingClient] = useState<Cliente | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
   
   const [formData, setFormData] = useState<ClienteFormData>({
     firstName: "",
@@ -323,6 +324,20 @@ export default function ClientiPage() {
   };
 
 
+  // Filtrar clientes basado en el término de búsqueda
+  const filteredClienti = clienti.filter((cliente) => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      cliente.firstName.toLowerCase().includes(searchLower) ||
+      cliente.lastName.toLowerCase().includes(searchLower) ||
+      cliente.fiscalCode.toLowerCase().includes(searchLower) ||
+      cliente.email.toLowerCase().includes(searchLower) ||
+      cliente.phoneNumber.toLowerCase().includes(searchLower) ||
+      cliente.address.toLowerCase().includes(searchLower) ||
+      cliente.birthPlace.toLowerCase().includes(searchLower)
+    );
+  });
+
   if (roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -573,6 +588,47 @@ export default function ClientiPage() {
         </div>
       </Modal>
 
+      {/* Buscador */}
+      <div className="mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Gestione Clienti
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {filteredClienti.length} {filteredClienti.length === 1 ? 'cliente' : 'clienti'} {searchTerm ? 'trovati' : 'registrati'}
+            </p>
+          </div>
+          
+          <div className="relative">
+            <button className="absolute text-gray-500 -translate-y-1/2 left-4 top-1/2 dark:text-gray-400">
+              <svg
+                className="fill-current"
+                width="20"
+                height="20"
+                viewBox="0 0 20 20"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                  d="M3.04199 9.37363C3.04199 5.87693 5.87735 3.04199 9.37533 3.04199C12.8733 3.04199 15.7087 5.87693 15.7087 9.37363C15.7087 12.8703 12.8733 15.7053 9.37533 15.7053C5.87735 15.7053 3.04199 12.8703 3.04199 9.37363ZM9.37533 1.54199C5.04926 1.54199 1.54199 5.04817 1.54199 9.37363C1.54199 13.6991 5.04926 17.2053 9.37533 17.2053C11.2676 17.2053 13.0032 16.5344 14.3572 15.4176L17.1773 18.238C17.4702 18.5309 17.945 18.5309 18.2379 18.238C18.5308 17.9451 18.5309 17.4703 18.238 17.1773L15.4182 14.3573C16.5367 13.0033 17.2087 11.2669 17.2087 9.37363C17.2087 5.04817 13.7014 1.54199 9.37533 1.54199Z"
+                  fill=""
+                />
+              </svg>
+            </button>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Cerca clienti..."
+              className="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent py-2.5 pl-11 pr-4 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 sm:w-[300px]"
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Tabla de clientes */}
       <ComponentCard title="Clienti Registrati">
         {loading ? (
@@ -637,14 +693,14 @@ export default function ClientiPage() {
                 </TableHeader>
 
                 <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-                  {clienti.length === 0 ? (
+                  {filteredClienti.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={8} className="px-5 py-8 text-center text-gray-500 dark:text-gray-400">
-                        Nessun cliente registrato
+                        {searchTerm ? 'Nessun cliente trovato con i criteri di ricerca' : 'Nessun cliente registrato'}
                       </TableCell>
                     </TableRow>
                   ) : (
-                    clienti.map((cliente) => (
+                    filteredClienti.map((cliente) => (
                       <TableRow key={cliente.id}>
                         <TableCell className="px-5 py-4 sm:px-6 text-start">
                           <div className="flex items-center gap-3">
@@ -656,9 +712,6 @@ export default function ClientiPage() {
                             <div>
                               <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
                                 {cliente.firstName} {cliente.lastName}
-                              </span>
-                              <span className="block text-gray-500 text-theme-xs dark:text-gray-400">
-                                {cliente.email}
                               </span>
                             </div>
                           </div>

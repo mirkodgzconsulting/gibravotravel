@@ -167,9 +167,9 @@ const gestioneItems: NavItem[] = [
     path: "/clienti",
   },
   {
-    icon: <ArrowDownIcon />,
-    name: "MIGRAR CLIENTES",
-    path: "/migrate-clients",
+    icon: <InfoIcon />,
+    name: "ESTADÍSTICAS CLIENTES",
+    path: "/verify-migration",
   },
 ];
 

@@ -24,7 +24,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      signInUrl="/signin"
+      signUpUrl="/signin"
+      afterSignInUrl="/"
+      afterSignOutUrl="/signin"
+    >
       <html lang="it">
         <body className={`${outfit.className} dark:bg-gray-900`}>
           <ThemeProvider>

@@ -63,7 +63,6 @@ export default function PartenzeNotePage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<TravelNoteTemplate | null>(null);
-  const [filterDate, setFilterDate] = useState("");
   const [filterCreator, setFilterCreator] = useState("");
 
   const fetchTemplates = useCallback(async () => {
@@ -283,17 +282,13 @@ export default function PartenzeNotePage() {
 
   // Funciones de filtrado - ahora usa búsqueda global
   const filteredTemplates = (searchTerm && searchResults.length > 0 ? searchResults : templates).filter(template => {
-    const matchesDate = filterDate === "" || 
-      template.tourDate.startsWith(filterDate);
-    
     const matchesCreator = filterCreator === "" ||
       `${template.creator.firstName} ${template.creator.lastName}`.toLowerCase().includes(filterCreator.toLowerCase());
     
-    return matchesDate && matchesCreator;
+    return matchesCreator;
   });
 
   const resetFilters = () => {
-    setFilterDate("");
     setFilterCreator("");
   };
 
@@ -477,20 +472,7 @@ export default function PartenzeNotePage() {
       {/* Controles de filtros */}
       <ComponentCard title="Filtri">
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Filtro por fecha */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Filtra per data
-              </label>
-              <input
-                type="date"
-                value={filterDate}
-                onChange={(e) => setFilterDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              />
-            </div>
-
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Filtro por creador */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -504,27 +486,33 @@ export default function PartenzeNotePage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               />
             </div>
+
+            {/* Información de resultados */}
+            <div className="md:col-span-2 flex items-end">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                {searchTerm && searchResults.length > 0 && (
+                  <span className="text-brand-600 dark:text-brand-400">
+                    &quot;{searchTerm}&quot;: {searchResults.length} risultati
+                  </span>
+                )}
+                {!searchTerm && (
+                  <span>{filteredTemplates.length} di {templates.length} modelli</span>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Información y botones */}
-          <div className="flex justify-between items-center">
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              {searchTerm && searchResults.length > 0 && (
-                <span className="text-brand-600 dark:text-brand-400">
-                  &quot;{searchTerm}&quot;: {searchResults.length} risultati
-                </span>
-              )}
-              {!searchTerm && (
-                <span>{filteredTemplates.length} di {templates.length} modelli</span>
-              )}
+          {/* Botón de reset */}
+          {filterCreator && (
+            <div className="flex justify-end">
+              <button
+                onClick={resetFilters}
+                className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 border border-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                Cancella filtri
+              </button>
             </div>
-            <button
-              onClick={resetFilters}
-              className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 border border-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            >
-              Cancella filtri
-            </button>
-          </div>
+          )}
         </div>
       </ComponentCard>
 

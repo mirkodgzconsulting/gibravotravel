@@ -82,15 +82,34 @@ export default function ClientiPage() {
   const fetchClienti = async () => {
     try {
       setLoading(true);
+      console.log('🔍 Fetching clienti...');
+      
       const response = await fetch('/api/clients');
+      console.log('🔍 Response status:', response.status);
+      console.log('🔍 Response ok:', response.ok);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('🔍 Data received:', data);
         setClienti(data.clients || []);
+        
+        if (data.clients && data.clients.length === 0) {
+          console.log('ℹ️ No hay clientes registrados aún');
+        }
       } else {
-        setMessage({ type: 'error', text: 'Errore durante il caricamento dei clienti' });
+        const errorData = await response.json();
+        console.error('❌ Error response:', errorData);
+        setMessage({ 
+          type: 'error', 
+          text: `Errore durante il caricamento: ${errorData.error || 'Error desconocido'}` 
+        });
       }
-    } catch {
-      setMessage({ type: 'error', text: 'Errore di connessione' });
+    } catch (error) {
+      console.error('❌ Network error:', error);
+      setMessage({ 
+        type: 'error', 
+        text: `Errore di connessione: ${error instanceof Error ? error.message : 'Error desconocido'}` 
+      });
     } finally {
       setLoading(false);
     }
@@ -132,12 +151,18 @@ export default function ClientiPage() {
         formDataToSend.append('documents', formData.documents);
       }
 
+      console.log('🔍 Submitting client data...');
+      
       const response = await fetch('/api/clients', {
         method: 'POST',
         body: formDataToSend,
       });
 
+      console.log('🔍 Submit response status:', response.status);
+      console.log('🔍 Submit response ok:', response.ok);
+
       const data = await response.json();
+      console.log('🔍 Submit response data:', data);
 
       if (response.ok) {
         setMessage({ 
@@ -158,7 +183,11 @@ export default function ClientiPage() {
         modal.closeModal();
         fetchClienti(); // Recargar la lista
       } else {
-        setMessage({ type: 'error', text: data.error || 'Errore durante la creazione del cliente' });
+        console.error('❌ Submit error:', data);
+        setMessage({ 
+          type: 'error', 
+          text: `${data.error || 'Errore durante la creazione del cliente'}${data.details ? ': ' + data.details : ''}` 
+        });
       }
       
     } catch {

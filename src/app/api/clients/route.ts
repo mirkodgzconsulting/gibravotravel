@@ -13,11 +13,19 @@ cloudinary.config({
 // GET - Obtener todos los clientes
 export async function GET() {
   try {
+    console.log('🔍 GET /api/clients - Iniciando...');
+    
     const { userId } = await auth();
+    console.log('🔍 User ID:', userId);
     
     if (!userId) {
+      console.log('❌ No autorizado - userId es null');
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
+
+    // Verificar si la tabla existe y tiene datos
+    const clientCount = await prisma.client.count();
+    console.log('🔍 Total clientes en DB:', clientCount);
 
     const clients = await prisma.client.findMany({
       where: {
@@ -37,29 +45,52 @@ export async function GET() {
       }
     });
 
-    return NextResponse.json({ clients });
+    console.log('🔍 Clientes encontrados:', clients.length);
+    console.log('🔍 Primer cliente:', clients[0] || 'No hay clientes');
+
+    return NextResponse.json({ 
+      clients,
+      total: clientCount,
+      active: clients.length 
+    });
   } catch (error) {
-    console.error('Error fetching clients:', error);
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+    console.error('❌ Error fetching clients:', error);
+    console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    return NextResponse.json({ 
+      error: 'Error interno del servidor',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    }, { status: 500 });
   }
 }
 
 // POST - Crear nuevo cliente
 export async function POST(request: NextRequest) {
   try {
+    console.log('🔍 POST /api/clients - Iniciando...');
+    
     const { userId } = await auth();
+    console.log('🔍 User ID:', userId);
     
     if (!userId) {
+      console.log('❌ No autorizado - userId es null');
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
     // Verificar rol del usuario
     const user = await prisma.user.findUnique({
       where: { clerkId: userId },
-      select: { role: true }
+      select: { role: true, firstName: true, lastName: true }
     });
 
-    if (!user || !['ADMIN', 'TI'].includes(user.role)) {
+    console.log('🔍 Usuario encontrado:', user);
+
+    if (!user) {
+      console.log('❌ Usuario no encontrado en la base de datos');
+      return NextResponse.json({ error: 'Usuario no encontrado en la base de datos' }, { status: 404 });
+    }
+
+    if (!['ADMIN', 'TI'].includes(user.role)) {
+      console.log('❌ Rol insuficiente:', user.role);
       return NextResponse.json({ error: 'No tienes permisos para crear clientes' }, { status: 403 });
     }
 
@@ -75,8 +106,30 @@ export async function POST(request: NextRequest) {
     const birthDate = formData.get('birthDate') as string;
     const documents = formData.get('documents') as File | null;
 
+    console.log('🔍 Datos recibidos:', {
+      firstName,
+      lastName,
+      fiscalCode,
+      address,
+      phoneNumber,
+      email,
+      birthPlace,
+      birthDate,
+      hasDocuments: !!documents
+    });
+
     // Validaciones básicas
     if (!firstName || !lastName || !fiscalCode || !address || !phoneNumber || !email || !birthPlace || !birthDate) {
+      console.log('❌ Campos faltantes:', {
+        firstName: !!firstName,
+        lastName: !!lastName,
+        fiscalCode: !!fiscalCode,
+        address: !!address,
+        phoneNumber: !!phoneNumber,
+        email: !!email,
+        birthPlace: !!birthPlace,
+        birthDate: !!birthDate
+      });
       return NextResponse.json({ error: 'Todos los campos obligatorios deben ser completados' }, { status: 400 });
     }
 
@@ -117,6 +170,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Crear cliente
+    console.log('🔍 Creando cliente en la base de datos...');
+    
     const client = await prisma.client.create({
       data: {
         firstName,
@@ -141,13 +196,19 @@ export async function POST(request: NextRequest) {
       }
     });
 
+    console.log('✅ Cliente creado exitosamente:', client.id);
+
     return NextResponse.json({ 
       client,
       message: 'Cliente creado exitosamente' 
     }, { status: 201 });
 
   } catch (error) {
-    console.error('Error creating client:', error);
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+    console.error('❌ Error creating client:', error);
+    console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    return NextResponse.json({ 
+      error: 'Error interno del servidor',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    }, { status: 500 });
   }
 }

@@ -60,6 +60,10 @@ export default function PartenzeNotePage() {
     travelCost: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<TravelNoteTemplate | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterDate, setFilterDate] = useState("");
+  const [filterCreator, setFilterCreator] = useState("");
 
   const fetchTemplates = useCallback(async () => {
     try {
@@ -159,6 +163,67 @@ export default function PartenzeNotePage() {
     }
   };
 
+  const handleEditTemplate = (template: TravelNoteTemplate) => {
+    setEditingTemplate(template);
+    setFormData({
+      title: template.title,
+      textContent: template.textContent,
+      coverImage: null,
+      pdfFile: null,
+      tourDate: template.tourDate.split('T')[0], // Convertir a formato YYYY-MM-DD
+      travelCost: template.travelCost?.toString() || "",
+    });
+    openModal();
+  };
+
+  const handleUpdateTemplate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTemplate) return;
+
+    setIsSubmitting(true);
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append('title', formData.title);
+      formDataToSend.append('textContent', formData.textContent);
+      formDataToSend.append('tourDate', formData.tourDate);
+      formDataToSend.append('travelCost', formData.travelCost);
+      
+      if (formData.coverImage) {
+        formDataToSend.append('coverImage', formData.coverImage);
+      }
+      if (formData.pdfFile) {
+        formDataToSend.append('pdfFile', formData.pdfFile);
+      }
+
+      const response = await fetch(`/api/travel-templates/${editingTemplate.id}`, {
+        method: 'PUT',
+        body: formDataToSend,
+      });
+
+      if (response.ok) {
+        closeModal();
+        setEditingTemplate(null);
+        setFormData({
+          title: "",
+          textContent: "",
+          coverImage: null,
+          pdfFile: null,
+          tourDate: "",
+          travelCost: "",
+        });
+        fetchTemplates();
+        setError(null);
+      } else {
+        const errorData = await response.json();
+        setError(`Error al actualizar plantilla: ${errorData.error || 'Error desconocido'}`);
+      }
+    } catch (error) {
+      setError('Error de conexión con el servidor');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleDeleteTemplate = async (id: string) => {
     if (!confirm('¿Estás seguro de que quieres enviar esta plantilla a la papelera?')) {
       return;
@@ -215,6 +280,40 @@ export default function PartenzeNotePage() {
     }).format(amount);
   };
 
+  // Funciones de filtrado y búsqueda
+  const filteredTemplates = templates.filter(template => {
+    const matchesSearch = searchTerm === "" || 
+      template.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      template.textContent.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesDate = filterDate === "" || 
+      template.tourDate.startsWith(filterDate);
+    
+    const matchesCreator = filterCreator === "" ||
+      `${template.creator.firstName} ${template.creator.lastName}`.toLowerCase().includes(filterCreator.toLowerCase());
+    
+    return matchesSearch && matchesDate && matchesCreator;
+  });
+
+  const resetFilters = () => {
+    setSearchTerm("");
+    setFilterDate("");
+    setFilterCreator("");
+  };
+
+  const closeModalAndReset = () => {
+    closeModal();
+    setEditingTemplate(null);
+    setFormData({
+      title: "",
+      textContent: "",
+      coverImage: null,
+      pdfFile: null,
+      tourDate: "",
+      travelCost: "",
+    });
+  };
+
   if (roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -260,10 +359,10 @@ export default function PartenzeNotePage() {
       <div className="flex justify-center gap-4 mb-8">
         <button
           onClick={openModal}
-          className="p-3 bg-brand-500 hover:bg-brand-600 text-white rounded-lg transition-colors duration-200 flex items-center justify-center shadow-lg hover:shadow-xl"
+          className="p-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg transition-colors duration-200 flex items-center justify-center shadow-md hover:shadow-lg"
           title="Aggiungi Modello"
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
         </button>
@@ -277,10 +376,10 @@ export default function PartenzeNotePage() {
       >
         <div className="p-4">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-            Aggiungi Nuovo Modello
+            {editingTemplate ? 'Modifica Modello' : 'Aggiungi Nuovo Modello'}
           </h2>
           
-          <form onSubmit={handleSubmit} className="space-y-3">
+          <form onSubmit={editingTemplate ? handleUpdateTemplate : handleSubmit} className="space-y-3">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Titolo del Tour *
@@ -361,7 +460,7 @@ export default function PartenzeNotePage() {
           <div className="flex justify-end space-x-3 pt-4">
             <button
               type="button"
-              onClick={closeModal}
+              onClick={closeModalAndReset}
               disabled={isSubmitting}
               className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
             >
@@ -372,12 +471,78 @@ export default function PartenzeNotePage() {
               disabled={isSubmitting}
               className="px-4 py-2 bg-brand-500 text-white rounded-md hover:bg-brand-600 disabled:opacity-50"
             >
-              {isSubmitting ? 'Salvataggio...' : 'Salva Modello'}
+              {isSubmitting ? 'Salvataggio...' : (editingTemplate ? 'Aggiorna Modello' : 'Salva Modello')}
             </button>
           </div>
           </form>
         </div>
       </Modal>
+
+      {/* Controles de búsqueda y filtros */}
+      <ComponentCard title="Ricerca e Filtri">
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Búsqueda por texto */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Cerca nei modelli
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Cerca per titolo o contenuto..."
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+                <svg className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Filtro por fecha */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Filtra per data
+              </label>
+              <input
+                type="date"
+                value={filterDate}
+                onChange={(e) => setFilterDate(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              />
+            </div>
+
+            {/* Filtro por creador */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Filtra per creatore
+              </label>
+              <input
+                type="text"
+                value={filterCreator}
+                onChange={(e) => setFilterCreator(e.target.value)}
+                placeholder="Nome del creatore..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              />
+            </div>
+          </div>
+
+          {/* Botones de acción */}
+          <div className="flex justify-between items-center">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              {filteredTemplates.length} di {templates.length} modelli
+            </div>
+            <button
+              onClick={resetFilters}
+              className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 border border-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              Cancella filtri
+            </button>
+          </div>
+        </div>
+      </ComponentCard>
 
       {/* Grid de plantillas */}
       <ComponentCard title="Modelli di Note di Viaggio">
@@ -390,9 +555,14 @@ export default function PartenzeNotePage() {
             <p>Nessun modello registrato</p>
             <p className="text-sm mt-2">Clicca sull&apos;icona &quot;+&quot; per creare il primo</p>
           </div>
+        ) : filteredTemplates.length === 0 ? (
+          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+            <p>Nessun modello trovato con i filtri attuali</p>
+            <p className="text-sm mt-2">Prova a modificare i criteri di ricerca</p>
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {templates.map((template) => (
+            {filteredTemplates.map((template) => (
               <div
                 key={template.id}
                 className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden border border-gray-200 dark:border-gray-700"
@@ -482,6 +652,7 @@ export default function PartenzeNotePage() {
                     </button>
                     
                     <button
+                      onClick={() => handleEditTemplate(template)}
                       className="p-3 bg-blue-100 hover:bg-blue-200 text-blue-700 hover:text-blue-800 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-400 dark:hover:text-blue-300 rounded-lg transition-all duration-200 transform hover:scale-105"
                       title="Editar plantilla"
                     >

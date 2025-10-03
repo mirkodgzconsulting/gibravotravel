@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { auth } from '@clerk/nextjs/server';
+import { v2 as cloudinary } from 'cloudinary';
 
 const prisma = new PrismaClient();
+
+// Configurar Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dskliu1ig',
+  api_key: process.env.CLOUDINARY_API_KEY || '538724966551851',
+  api_secret: process.env.CLOUDINARY_API_SECRET || 'Q1fP7-pH6iiltPbFNkqPn0d93no',
+});
 
 export async function GET(
   request: NextRequest,
@@ -92,20 +100,69 @@ export async function PUT(
     }
 
     let coverImagePath = template.coverImage;
+    let coverImageName = template.coverImageName;
     let pdfFilePath = template.pdfFile;
+    let pdfFileName = template.pdfFileName;
 
     // Procesar nueva imagen de portada si se proporciona
     if (coverImage && coverImage.size > 0) {
-      const imageBuffer = await coverImage.arrayBuffer();
-      const imageBase64 = Buffer.from(imageBuffer).toString('base64');
-      coverImagePath = `data:${coverImage.type};base64,${imageBase64}`;
+      try {
+        const bytes = await coverImage.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+        
+        const result = await new Promise((resolve, reject) => {
+          cloudinary.uploader.upload_stream(
+            {
+              folder: 'gibravotravel/templates',
+              resource_type: 'image',
+              transformation: [
+                { width: 800, height: 600, crop: 'limit', quality: 'auto' }
+              ]
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          ).end(buffer);
+        });
+
+        coverImagePath = (result as { secure_url: string }).secure_url;
+        coverImageName = coverImage.name;
+      } catch (error) {
+        return NextResponse.json(
+          { error: 'Error subiendo imagen actualizada' },
+          { status: 500 }
+        );
+      }
     }
 
     // Procesar nuevo archivo PDF si se proporciona
     if (pdfFile && pdfFile.size > 0) {
-      const pdfBuffer = await pdfFile.arrayBuffer();
-      const pdfBase64 = Buffer.from(pdfBuffer).toString('base64');
-      pdfFilePath = `data:${pdfFile.type};base64,${pdfBase64}`;
+      try {
+        const bytes = await pdfFile.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+        
+        const result = await new Promise((resolve, reject) => {
+          cloudinary.uploader.upload_stream(
+            {
+              folder: 'gibravotravel/templates',
+              resource_type: 'raw'
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          ).end(buffer);
+        });
+
+        pdfFilePath = (result as { secure_url: string }).secure_url;
+        pdfFileName = pdfFile.name;
+      } catch (error) {
+        return NextResponse.json(
+          { error: 'Error subiendo PDF actualizado' },
+          { status: 500 }
+        );
+      }
     }
 
     const updatedTemplate = await prisma.travelNoteTemplate.update({
@@ -114,7 +171,9 @@ export async function PUT(
         title,
         textContent,
         coverImage: coverImagePath,
+        coverImageName,
         pdfFile: pdfFilePath,
+        pdfFileName,
         tourDate: new Date(tourDate),
         travelCost: travelCost ? parseFloat(travelCost) : null,
       },

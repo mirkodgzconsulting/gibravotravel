@@ -6,8 +6,6 @@ import { useModal } from "@/hooks/useModal";
 import { Modal } from "@/components/ui/modal";
 import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
-import Image from "next/image";
-import Badge from "@/components/ui/badge/Badge";
 import {
   Table,
   TableBody,
@@ -116,8 +114,8 @@ export default function ClientiPage() {
           updatedAt: "2024-01-20T14:15:00Z"
         }
       ]);
-    } catch (error) {
-      console.error('Error fetching clienti:', error);
+    } catch {
+      console.error('Error fetching clienti');
     } finally {
       setLoading(false);
     }
@@ -201,9 +199,6 @@ export default function ClientiPage() {
     }
   };
 
-  const getStatusBadgeColor = (isActive: boolean) => {
-    return isActive ? 'success' : 'error';
-  };
 
   if (roleLoading) {
     return (

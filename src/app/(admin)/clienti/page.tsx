@@ -5,6 +5,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useModal } from "@/hooks/useModal";
 import { Modal } from "@/components/ui/modal";
 import ComponentCard from "@/components/common/ComponentCard";
+import * as XLSX from 'xlsx';
 import {
   Table,
   TableBody,
@@ -238,6 +239,61 @@ export default function ClientiPage() {
       setMessage({ 
         type: 'error', 
         text: `Errore di connessione: ${error instanceof Error ? error.message : 'Error desconocido'}` 
+      });
+    }
+  };
+
+  const handleExportToExcel = () => {
+    try {
+      // Preparar los datos para exportar
+      const exportData = clienti.map(cliente => ({
+        'Nome': cliente.firstName,
+        'Cognome': cliente.lastName,
+        'Codice Fiscale': cliente.fiscalCode,
+        'Indirizzo': cliente.address,
+        'Telefono': cliente.phoneNumber,
+        'E-mail': cliente.email,
+        'Nato a': cliente.birthPlace,
+        'Data di nascita': cliente.birthDate ? new Date(cliente.birthDate).toLocaleDateString('it-IT') : '',
+        'Registrato da': cliente.creator ? `${cliente.creator.firstName} ${cliente.creator.lastName}` : '',
+        'Data registrazione': cliente.createdAt ? new Date(cliente.createdAt).toLocaleDateString('it-IT') : '',
+        'Stato': cliente.isActive ? 'Attivo' : 'Inattivo'
+      }));
+
+      // Crear el workbook y worksheet
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Clienti');
+
+      // Ajustar el ancho de las columnas
+      const columnWidths = [
+        { wch: 15 }, // Nome
+        { wch: 20 }, // Cognome
+        { wch: 18 }, // Codice Fiscale
+        { wch: 30 }, // Indirizzo
+        { wch: 15 }, // Telefono
+        { wch: 25 }, // E-mail
+        { wch: 15 }, // Nato a
+        { wch: 15 }, // Data di nascita
+        { wch: 20 }, // Registrato da
+        { wch: 18 }, // Data registrazione
+        { wch: 10 }  // Stato
+      ];
+      worksheet['!cols'] = columnWidths;
+
+      // Generar el archivo
+      const fileName = `clienti_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+
+      setMessage({
+        type: 'success',
+        text: `File Excel esportato con successo: ${fileName}`
+      });
+    } catch (error) {
+      console.error('❌ Export error:', error);
+      setMessage({
+        type: 'error',
+        text: 'Errore durante l\'esportazione del file Excel'
       });
     }
   };
@@ -618,6 +674,16 @@ export default function ClientiPage() {
                 <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
                   Clientes: {clienti.length.toLocaleString()}
                 </span>
+                <button
+                  onClick={handleExportToExcel}
+                  className="flex items-center gap-1 px-3 py-1 text-xs bg-green-100 hover:bg-green-200 text-green-700 hover:text-green-800 dark:bg-green-900/20 dark:hover:bg-green-900/30 dark:text-green-400 dark:hover:text-green-300 rounded transition-colors duration-200"
+                  title="Esporta tutti i clienti in Excel"
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Excel
+                </button>
                 <span className="text-gray-500 dark:text-gray-400">Mostra</span>
                 <div className="relative z-20 bg-transparent">
                   <select

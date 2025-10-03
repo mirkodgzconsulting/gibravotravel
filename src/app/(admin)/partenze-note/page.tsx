@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useModal } from "@/hooks/useModal";
+import { useSearch } from "@/context/SearchContext";
 import { Modal } from "@/components/ui/modal";
 import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
@@ -45,6 +46,7 @@ export default function PartenzeNotePage() {
   const { userRole, isLoading: roleLoading } = useUserRole();
   const { user } = useUser();
   const { isOpen: isModalOpen, openModal, closeModal } = useModal();
+  const { searchTerm, searchResults } = useSearch();
   const [templates, setTemplates] = useState<TravelNoteTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +63,6 @@ export default function PartenzeNotePage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<TravelNoteTemplate | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
   const [filterDate, setFilterDate] = useState("");
   const [filterCreator, setFilterCreator] = useState("");
 
@@ -217,7 +218,7 @@ export default function PartenzeNotePage() {
         const errorData = await response.json();
         setError(`Error al actualizar plantilla: ${errorData.error || 'Error desconocido'}`);
       }
-    } catch (error) {
+    } catch {
       setError('Error de conexión con el servidor');
     } finally {
       setIsSubmitting(false);
@@ -280,23 +281,18 @@ export default function PartenzeNotePage() {
     }).format(amount);
   };
 
-  // Funciones de filtrado y búsqueda
-  const filteredTemplates = templates.filter(template => {
-    const matchesSearch = searchTerm === "" || 
-      template.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      template.textContent.toLowerCase().includes(searchTerm.toLowerCase());
-    
+  // Funciones de filtrado - ahora usa búsqueda global
+  const filteredTemplates = (searchTerm && searchResults.length > 0 ? searchResults : templates).filter(template => {
     const matchesDate = filterDate === "" || 
       template.tourDate.startsWith(filterDate);
     
     const matchesCreator = filterCreator === "" ||
       `${template.creator.firstName} ${template.creator.lastName}`.toLowerCase().includes(filterCreator.toLowerCase());
     
-    return matchesSearch && matchesDate && matchesCreator;
+    return matchesDate && matchesCreator;
   });
 
   const resetFilters = () => {
-    setSearchTerm("");
     setFilterDate("");
     setFilterCreator("");
   };
@@ -478,29 +474,10 @@ export default function PartenzeNotePage() {
         </div>
       </Modal>
 
-      {/* Controles de búsqueda y filtros */}
-      <ComponentCard title="Ricerca e Filtri">
+      {/* Controles de filtros */}
+      <ComponentCard title="Filtri">
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Búsqueda por texto */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Cerca nei modelli
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Cerca per titolo o contenuto..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                />
-                <svg className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-            </div>
-
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Filtro por fecha */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -529,10 +506,17 @@ export default function PartenzeNotePage() {
             </div>
           </div>
 
-          {/* Botones de acción */}
+          {/* Información y botones */}
           <div className="flex justify-between items-center">
             <div className="text-sm text-gray-600 dark:text-gray-400">
-              {filteredTemplates.length} di {templates.length} modelli
+              {searchTerm && searchResults.length > 0 && (
+                <span className="text-brand-600 dark:text-brand-400">
+                  &quot;{searchTerm}&quot;: {searchResults.length} risultati
+                </span>
+              )}
+              {!searchTerm && (
+                <span>{filteredTemplates.length} di {templates.length} modelli</span>
+              )}
             </div>
             <button
               onClick={resetFilters}

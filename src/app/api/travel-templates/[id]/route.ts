@@ -128,7 +128,7 @@ export async function PUT(
 
         coverImagePath = (result as { secure_url: string }).secure_url;
         coverImageName = coverImage.name;
-      } catch (error) {
+      } catch {
         return NextResponse.json(
           { error: 'Error subiendo imagen actualizada' },
           { status: 500 }
@@ -157,7 +157,7 @@ export async function PUT(
 
         pdfFilePath = (result as { secure_url: string }).secure_url;
         pdfFileName = pdfFile.name;
-      } catch (error) {
+      } catch {
         return NextResponse.json(
           { error: 'Error subiendo PDF actualizado' },
           { status: 500 }

@@ -4,6 +4,7 @@ import "swiper/swiper-bundle.css";
 import "simplebar-react/dist/simplebar.min.css";
 import { SidebarProvider } from "@/context/SidebarContext";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { SearchProvider } from "@/context/SearchContext";
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 
@@ -27,7 +28,9 @@ export default function RootLayout({
       <html lang="it">
         <body className={`${outfit.className} dark:bg-gray-900`}>
           <ThemeProvider>
-            <SidebarProvider>{children}</SidebarProvider>
+            <SearchProvider>
+              <SidebarProvider>{children}</SidebarProvider>
+            </SearchProvider>
           </ThemeProvider>
         </body>
       </html>

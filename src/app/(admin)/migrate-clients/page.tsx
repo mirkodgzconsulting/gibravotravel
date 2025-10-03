@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 
 export default function MigrateClientsPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -64,10 +63,10 @@ export default function MigrateClientsPage() {
             </div>
           </div>
 
-          <Button
+          <button
             onClick={handleMigration}
             disabled={isLoading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <div className="flex items-center gap-2">
@@ -77,7 +76,7 @@ export default function MigrateClientsPage() {
             ) : (
               '🚀 Iniciar Migración'
             )}
-          </Button>
+          </button>
 
           {error && (
             <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">

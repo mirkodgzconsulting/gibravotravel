@@ -135,7 +135,7 @@ const homeItems: NavItem[] = [
   },
 ];
 
-const gestioneItems: NavItem[] = [
+const modelloItems: NavItem[] = [
   {
     icon: <BoxCubeIcon />,
     name: "PARTENZE/NOTE",
@@ -155,6 +155,14 @@ const gestioneItems: NavItem[] = [
     icon: <TableIcon />,
     name: "FERMATE",
     path: "/fermate",
+  },
+];
+
+const gestioneItems: NavItem[] = [
+  {
+    icon: <UserIcon />,
+    name: "CLIENTI",
+    path: "/clienti",
   },
 ];
 
@@ -409,10 +417,12 @@ const AppSidebar: React.FC = () => {
   useEffect(() => {
     // Check if the current path matches any submenu item
     let submenuMatched = false;
-    ["home", "gestione", "utenti", "support", "others"].forEach((menuType) => {
+    ["home", "modello", "gestione", "utenti", "support", "others"].forEach((menuType) => {
       const items =
         menuType === "home"
           ? homeItems
+          : menuType === "modello"
+          ? modelloItems
           : menuType === "gestione"
           ? gestioneItems
           : menuType === "utenti"
@@ -538,6 +548,26 @@ const AppSidebar: React.FC = () => {
               </h2>
               {renderMenuItems(homeItems, "home")}
             </div> */}
+            {/* Sección MODELLO - Solo para ADMIN y TI */}
+            {canAccessGestione && (
+              <div>
+                <h2
+                  className={`mb-4 text-xs uppercase flex leading-5 text-gray-400 ${
+                    !isExpanded && !isHovered
+                      ? "xl:justify-center"
+                      : "justify-start"
+                  }`}
+                >
+                  {isExpanded || isHovered || isMobileOpen ? (
+                    "MODELLO"
+                  ) : (
+                    <HorizontaLDots />
+                  )}
+                </h2>
+                {renderMenuItems(modelloItems, "modello")}
+              </div>
+            )}
+            
             {/* Sección GESTIONE - Solo para ADMIN y TI */}
             {canAccessGestione && (
               <div>

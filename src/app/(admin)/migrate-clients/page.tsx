@@ -4,7 +4,19 @@ import { useState } from 'react';
 
 export default function MigrateClientsPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<{
+    success: boolean;
+    summary: {
+      totalProcessed: number;
+      successCount: number;
+      skippedCount: number;
+      errorCount: number;
+    };
+    errors?: Array<{
+      row: number;
+      error: string;
+    }>;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleMigration = async () => {
@@ -118,7 +130,7 @@ export default function MigrateClientsPage() {
                     Errores encontrados:
                   </h5>
                   <div className="max-h-32 overflow-y-auto">
-                    {result.errors.map((err: any, index: number) => (
+                    {result.errors.map((err, index: number) => (
                       <div key={index} className="text-xs text-red-700 dark:text-red-300">
                         Fila {err.row}: {err.error}
                       </div>

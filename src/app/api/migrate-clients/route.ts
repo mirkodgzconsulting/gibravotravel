@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { auth } from '@clerk/nextjs/server';
 
@@ -7,13 +7,7 @@ const prisma = new PrismaClient();
 // Importar los datos del Excel generados
 import { EXCEL_DATA } from '../../../lib/migration-data';
 
-function parseDate(dateValue: any) {
-  if (!dateValue) return null;
-  // Lógica para parsear fechas
-  return new Date();
-}
-
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     // Verificar autenticación
     const { userId } = await auth();
@@ -36,7 +30,7 @@ export async function POST(request: NextRequest) {
     let successCount = 0;
     let skippedCount = 0;
     let errorCount = 0;
-    const errors: any[] = [];
+    const errors: Array<{ row: number; error: string }> = [];
 
     // Procesar cada registro
     for (let i = 0; i < EXCEL_DATA.length; i++) {
@@ -52,7 +46,7 @@ export async function POST(request: NextRequest) {
           email: row['E-mail']?.toString().trim() || '',
           phoneNumber: row['Telefono']?.toString().trim() || '',
           birthPlace: row['Nato a']?.toString().trim() || 'Italia',
-          birthDate: parseDate(row['Data di nascita']) || new Date(),
+          birthDate: new Date(), // Fecha por defecto ya que no hay datos de nacimiento en el Excel
           documents: null,
           createdBy: userId,
           isActive: true

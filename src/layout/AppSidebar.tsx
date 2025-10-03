@@ -7,6 +7,7 @@ import { useSidebar } from "../context/SidebarContext";
 import { useUserRole } from "../hooks/useUserRole";
 import {
   AiIcon,
+  ArrowDownIcon,
   BoxCubeIcon,
   CalenderIcon,
   CallIcon,

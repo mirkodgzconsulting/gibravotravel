@@ -23,7 +23,9 @@ export default function AdminLayout({
   const router = useRouter();
 
   useEffect(() => {
-    if (isLoaded && !isSignedIn) {
+    // Si Clerk está cargado y el usuario no está autenticado, redirigir inmediatamente
+    if (isLoaded && isSignedIn === false) {
+      console.log('🚀 User not signed in, redirecting to signin');
       router.push("/signin");
     }
   }, [isLoaded, isSignedIn, router]);
@@ -52,7 +54,8 @@ export default function AdminLayout({
     }
   }, [isLoaded, isSignedIn, roleLoading, userRole, router]);
 
-  if (!isLoaded || roleLoading) {
+  // Mostrar loading mientras Clerk se está cargando
+  if (!isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-500"></div>
@@ -60,8 +63,18 @@ export default function AdminLayout({
     );
   }
 
-  if (!isSignedIn) {
+  // Si Clerk está cargado pero el usuario no está autenticado, no mostrar nada (se redirigirá)
+  if (isLoaded && isSignedIn === false) {
     return null;
+  }
+
+  // Mostrar loading mientras se verifica el rol del usuario
+  if (roleLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-500"></div>
+      </div>
+    );
   }
 
   // Si no hay rol pero todo está cargado Y el usuario está autenticado, mostrar loading temporal

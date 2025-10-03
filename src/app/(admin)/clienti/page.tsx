@@ -61,6 +61,7 @@ export default function ClientiPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [editingClient, setEditingClient] = useState<Cliente | null>(null);
   
   const [formData, setFormData] = useState<ClienteFormData>({
     firstName: "",
@@ -112,6 +113,130 @@ export default function ClientiPage() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEditClient = (cliente: Cliente) => {
+    setEditingClient(cliente);
+    setFormData({
+      firstName: cliente.firstName,
+      lastName: cliente.lastName,
+      fiscalCode: cliente.fiscalCode,
+      address: cliente.address,
+      phoneNumber: cliente.phoneNumber,
+      email: cliente.email,
+      birthPlace: cliente.birthPlace,
+      birthDate: cliente.birthDate.split('T')[0], // Convertir a formato YYYY-MM-DD
+      documents: null,
+    });
+    modal.openModal();
+  };
+
+  const handleUpdateClient = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingClient) return;
+
+    setSubmitting(true);
+    setMessage(null);
+
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append('firstName', formData.firstName);
+      formDataToSend.append('lastName', formData.lastName);
+      formDataToSend.append('fiscalCode', formData.fiscalCode);
+      formDataToSend.append('address', formData.address);
+      formDataToSend.append('phoneNumber', formData.phoneNumber);
+      formDataToSend.append('email', formData.email);
+      formDataToSend.append('birthPlace', formData.birthPlace);
+      formDataToSend.append('birthDate', formData.birthDate);
+      
+      if (formData.documents) {
+        formDataToSend.append('documents', formData.documents);
+      }
+
+      console.log('🔍 Updating client:', editingClient.id);
+
+      const response = await fetch(`/api/clients/${editingClient.id}`, {
+        method: 'PUT',
+        body: formDataToSend,
+      });
+
+      console.log('🔍 Update response status:', response.status);
+      const data = await response.json();
+      console.log('🔍 Update response data:', data);
+
+      if (response.ok) {
+        setMessage({ 
+          type: 'success', 
+          text: data.message || 'Cliente aggiornato con successo!'
+        });
+        setEditingClient(null);
+        setFormData({
+          firstName: "",
+          lastName: "",
+          fiscalCode: "",
+          address: "",
+          phoneNumber: "",
+          email: "",
+          birthPlace: "Italia",
+          birthDate: "",
+          documents: null,
+        });
+        modal.closeModal();
+        fetchClienti(); // Recargar la lista
+      } else {
+        console.error('❌ Update error:', data);
+        setMessage({ 
+          type: 'error', 
+          text: `${data.error || 'Errore durante l\'aggiornamento del cliente'}${data.details ? ': ' + data.details : ''}` 
+        });
+      }
+    } catch (error) {
+      console.error('❌ Network error:', error);
+      setMessage({ 
+        type: 'error', 
+        text: `Errore di connessione: ${error instanceof Error ? error.message : 'Error desconocido'}` 
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteClient = async (clienteId: string) => {
+    if (!confirm('Sei sicuro di voler eliminare questo cliente? Questa azione non può essere annullata.')) {
+      return;
+    }
+
+    try {
+      console.log('🔍 Deleting client:', clienteId);
+
+      const response = await fetch(`/api/clients/${clienteId}`, {
+        method: 'DELETE',
+      });
+
+      console.log('🔍 Delete response status:', response.status);
+      const data = await response.json();
+      console.log('🔍 Delete response data:', data);
+
+      if (response.ok) {
+        setMessage({ 
+          type: 'success', 
+          text: data.message || 'Cliente eliminato con successo!'
+        });
+        fetchClienti(); // Recargar la lista
+      } else {
+        console.error('❌ Delete error:', data);
+        setMessage({ 
+          type: 'error', 
+          text: `${data.error || 'Errore durante l\'eliminazione del cliente'}${data.details ? ': ' + data.details : ''}` 
+        });
+      }
+    } catch (error) {
+      console.error('❌ Network error:', error);
+      setMessage({ 
+        type: 'error', 
+        text: `Errore di connessione: ${error instanceof Error ? error.message : 'Error desconocido'}` 
+      });
     }
   };
 
@@ -258,14 +383,14 @@ export default function ClientiPage() {
         <div className="space-y-6">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Registra Nuovo Cliente
+              {editingClient ? 'Modifica Cliente' : 'Registra Nuovo Cliente'}
             </h2>
             <p className="text-gray-600 dark:text-gray-400">
-              Compila i dati per registrare un nuovo cliente nel sistema
+              {editingClient ? 'Modifica i dati del cliente' : 'Compila i dati per registrare un nuovo cliente nel sistema'}
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={editingClient ? handleUpdateClient : handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -414,7 +539,21 @@ export default function ClientiPage() {
             <div className="flex gap-4 pt-4">
               <button
                 type="button"
-                onClick={modal.closeModal}
+                onClick={() => {
+                  modal.closeModal();
+                  setEditingClient(null);
+                  setFormData({
+                    firstName: "",
+                    lastName: "",
+                    fiscalCode: "",
+                    address: "",
+                    phoneNumber: "",
+                    email: "",
+                    birthPlace: "Italia",
+                    birthDate: "",
+                    documents: null,
+                  });
+                }}
                 className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
               >
                 Annulla
@@ -424,7 +563,10 @@ export default function ClientiPage() {
                 disabled={submitting}
                 className="flex-1 px-4 py-2 text-sm font-medium text-white bg-brand-500 border border-transparent rounded-md hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {submitting ? "Creazione..." : "Registra Cliente"}
+                {submitting 
+                  ? (editingClient ? "Aggiornamento..." : "Creazione...") 
+                  : (editingClient ? "Aggiorna Cliente" : "Registra Cliente")
+                }
               </button>
             </div>
           </form>
@@ -516,7 +658,7 @@ export default function ClientiPage() {
                                 {cliente.firstName} {cliente.lastName}
                               </span>
                               <span className="block text-gray-500 text-theme-xs dark:text-gray-400">
-                                ID: {cliente.id}
+                                {cliente.email}
                               </span>
                             </div>
                           </div>
@@ -543,20 +685,20 @@ export default function ClientiPage() {
                           <div className="flex items-center gap-2">
                             {/* Botón Editar */}
                             <button
-                              onClick={() => console.log('Editar cliente:', cliente.id)}
+                              onClick={() => handleEditClient(cliente)}
                               className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-700 hover:text-blue-800 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-400 dark:hover:text-blue-300 rounded-lg transition-all duration-200 transform hover:scale-105"
-                              title="Editar cliente"
+                              title="Modifica cliente"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                               </svg>
                             </button>
-                            
+
                             {/* Botón Eliminar */}
                             <button
-                              onClick={() => console.log('Eliminar cliente:', cliente.id)}
+                              onClick={() => handleDeleteClient(cliente.id)}
                               className="p-2 bg-red-100 hover:bg-red-200 text-red-700 hover:text-red-800 dark:bg-red-900/20 dark:hover:bg-red-900/30 dark:text-red-400 dark:hover:text-red-300 rounded-lg transition-all duration-200 transform hover:scale-105"
-                              title="Eliminar cliente"
+                              title="Elimina cliente"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

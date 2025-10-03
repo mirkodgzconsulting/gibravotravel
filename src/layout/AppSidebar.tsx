@@ -14,6 +14,7 @@ import {
   ChatIcon,
   ChevronDownIcon,
   GridIcon,
+  GroupIcon,
   HorizontaLDots,
   ListIcon,
   MailIcon,
@@ -160,7 +161,7 @@ const modelloItems: NavItem[] = [
 
 const gestioneItems: NavItem[] = [
   {
-    icon: <UserIcon />,
+    icon: <GroupIcon />,
     name: "CLIENTI",
     path: "/clienti",
   },

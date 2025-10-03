@@ -379,7 +379,7 @@ export default function ClientiPage() {
 
   return (
     <div>
-      <PageBreadcrumb pageTitle="Gestione Clienti" />
+     
       
       {/* Mensaje de estado */}
       {message && (
@@ -616,6 +616,9 @@ export default function ClientiPage() {
             {/* Header con selector y buscador */}
             <div className="flex flex-col gap-2 px-4 py-4 border border-b-0 border-gray-100 dark:border-white/[0.05] rounded-t-xl sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
+                <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                  Clientes: {clienti.length.toLocaleString()}
+                </span>
                 <span className="text-gray-500 dark:text-gray-400">Mostra</span>
                 <div className="relative z-20 bg-transparent">
                   <select

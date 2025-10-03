@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { usePathname } from "next/navigation";
 
 type SearchContextType = {
@@ -67,7 +67,7 @@ export const SearchProvider: React.FC<{ children: React.ReactNode }> = ({
   const config = getSearchConfig();
   const isSearchActive = config.isActive;
 
-  const performSearch = async (term: string) => {
+  const performSearch = useCallback(async (term: string) => {
     if (!isSearchActive || !term.trim()) {
       setSearchResults([]);
       return;
@@ -92,7 +92,7 @@ export const SearchProvider: React.FC<{ children: React.ReactNode }> = ({
       console.error('Error performing search:', error);
       setSearchResults([]);
     }
-  };
+  }, [isSearchActive, pathname]);
 
   useEffect(() => {
     if (searchTerm) {

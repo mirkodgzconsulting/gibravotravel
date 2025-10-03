@@ -11,12 +11,17 @@ export default function SignInPage() {
   const router = useRouter();
 
   useEffect(() => {
+    console.log('🔍 SignIn useEffect:', { isLoaded, isSignedIn });
     if (isLoaded && isSignedIn) {
+      console.log('🚀 User is signed in, redirecting to dashboard');
       router.push("/");
     }
   }, [isLoaded, isSignedIn, router]);
 
+  console.log('🔍 SignIn render:', { isLoaded, isSignedIn });
+
   if (!isLoaded) {
+    console.log('🔄 Clerk not loaded, showing loading spinner');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-500"></div>
@@ -44,6 +49,8 @@ export default function SignInPage() {
       </div>
     );
   }
+
+  console.log('🚀 Rendering SignIn form');
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">

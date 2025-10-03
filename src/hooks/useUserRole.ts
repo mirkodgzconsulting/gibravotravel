@@ -18,6 +18,7 @@ export function useUserRole() {
         setUserRole(null);
         setIsLoading(false);
         setHasTriedFetch(false);
+        setRetryCount(0);
         return;
       }
 

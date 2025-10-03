@@ -64,8 +64,8 @@ export default function AdminLayout({
     return null;
   }
 
-  // Si no hay rol pero todo está cargado, mostrar loading temporal
-  // Solo mostrar loading si realmente no hay rol después de un tiempo
+  // Si no hay rol pero todo está cargado Y el usuario está autenticado, mostrar loading temporal
+  // Solo mostrar loading si realmente no hay rol después de un tiempo Y el usuario está autenticado
   if (userRole === null && isLoaded && isSignedIn && !roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -78,6 +78,11 @@ export default function AdminLayout({
         </div>
       </div>
     );
+  }
+
+  // Si el usuario no está autenticado, no mostrar nada (se redirigirá)
+  if (!isSignedIn) {
+    return null;
   }
 
   // Route-specific styles for the main content container

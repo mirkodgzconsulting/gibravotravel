@@ -192,7 +192,7 @@ export default function ClientiPage() {
       setMessage({ type: 'success', text: 'Cliente creato con successo!' });
       modal.closeModal();
       
-    } catch (error) {
+    } catch {
       setMessage({ type: 'error', text: 'Errore durante la creazione del cliente' });
     } finally {
       setSubmitting(false);

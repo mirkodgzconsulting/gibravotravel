@@ -265,7 +265,7 @@ const AppSidebar: React.FC = () => {
 
   const renderMenuItems = (
     navItems: NavItem[],
-    menuType: "home" | "gestione" | "utenti" | "support" | "others"
+    menuType: "home" | "modello" | "gestione" | "utenti" | "support" | "others"
   ) => (
     <ul className="flex flex-col gap-1">
       {navItems.map((nav, index) => (
@@ -402,7 +402,7 @@ const AppSidebar: React.FC = () => {
   );
 
   const [openSubmenu, setOpenSubmenu] = useState<{
-    type: "home" | "gestione" | "utenti" | "support" | "others";
+    type: "home" | "modello" | "gestione" | "utenti" | "support" | "others";
     index: number;
   } | null>(null);
   const [subMenuHeight, setSubMenuHeight] = useState<Record<string, number>>(
@@ -466,7 +466,7 @@ const AppSidebar: React.FC = () => {
 
   const handleSubmenuToggle = (
     index: number,
-    menuType: "home" | "gestione" | "utenti" | "support" | "others"
+    menuType: "home" | "modello" | "gestione" | "utenti" | "support" | "others"
   ) => {
     setOpenSubmenu((prevOpenSubmenu) => {
       if (

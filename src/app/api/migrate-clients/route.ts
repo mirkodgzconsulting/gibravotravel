@@ -5,7 +5,7 @@ import { auth } from '@clerk/nextjs/server';
 const prisma = new PrismaClient();
 
 // Importar los datos del Excel generados
-import { EXCEL_DATA } from '../../migration-data';
+import { EXCEL_DATA } from '../../../lib/migration-data';
 
 function parseDate(dateValue: any) {
   if (!dateValue) return null;

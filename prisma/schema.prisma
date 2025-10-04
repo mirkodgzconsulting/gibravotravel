@@ -197,3 +197,32 @@ model Origine {
 
   @@map("origine")
 }
+
+// Tabla para gestión de boletos/tickets de viaje
+model Biglietteria {
+  id                String   @id @default(cuid())
+  pagamento         String   // Tipo de pago (referencia a tabla Pagamento)
+  data              DateTime // Fecha de la transacción
+  iata              String   // Aerolínea (referencia a tabla Iata)
+  pnr               String?  // Código PNR del vuelo
+  passeggero        String   // Nombre del pasajero
+  itinerario        String   // Ruta del viaje
+  servizio          String   // Servicio (referencia a tabla Servizio)
+  neto              Float    // Precio neto
+  venduto           Float    // Precio vendido
+  acconto           Float    // Monto del anticipo
+  daPagare          Float    // Monto pendiente de pago
+  metodoPagamento   String   // Método de pago (referencia a tabla MetodoPagamento)
+  feeAgv            Float    // Fee de la agencia
+  origine           String   // Origen del cliente (referencia a tabla Origine)
+  cliente           String   // Nombre del cliente
+  codiceFiscale     String   // Código fiscal del cliente
+  indirizzo         String   // Dirección del cliente
+  email             String   // Email del cliente
+  numeroTelefono    String   // Número de teléfono del cliente
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("biglietteria")
+}

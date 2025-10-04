@@ -220,6 +220,7 @@ model Biglietteria {
   indirizzo         String   // Dirección del cliente
   email             String   // Email del cliente
   numeroTelefono    String   // Número de teléfono del cliente
+  creadoPor         String   // Nombre de la persona que creó el registro
   isActive          Boolean  @default(true)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt

@@ -458,6 +458,18 @@ export default function BiglietteriaPage() {
                       Cliente
                     </TableCell>
                     <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                      Codice Fiscale
+                    </TableCell>
+                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                      Indirizzo
+                    </TableCell>
+                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                      Email
+                    </TableCell>
+                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                      Telefono
+                    </TableCell>
+                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                       Pagamento
                     </TableCell>
                     <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
@@ -508,7 +520,7 @@ export default function BiglietteriaPage() {
                 <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
                   {currentData.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={15} className="px-5 py-8 text-center text-gray-500 dark:text-gray-400">
+                      <TableCell colSpan={19} className="px-5 py-8 text-center text-gray-500 dark:text-gray-400">
                         {searchTerm ? 'Nessun biglietto trovato con i criteri di ricerca' : 'Nessun biglietto registrato'}
                       </TableCell>
                     </TableRow>
@@ -528,6 +540,18 @@ export default function BiglietteriaPage() {
                               </span>
                             </div>
                           </div>
+                        </TableCell>
+                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                          {record.codiceFiscale}
+                        </TableCell>
+                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                          {record.indirizzo}
+                        </TableCell>
+                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                          {record.email}
+                        </TableCell>
+                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                          {record.numeroTelefono}
                         </TableCell>
                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                           {record.pagamento}
@@ -676,7 +700,7 @@ export default function BiglietteriaPage() {
 
       {/* Modal para agregar/editar */}
       <Modal isOpen={isModalOpen} onClose={closeModal}>
-        <div className="w-full max-w-4xl mx-auto max-h-[85vh] bg-white dark:bg-gray-800 rounded-lg shadow-xl flex flex-col">
+        <div className="w-full max-w-2xl mx-auto max-h-[85vh] bg-white dark:bg-gray-800 rounded-lg shadow-xl flex flex-col">
           {/* Header fijo */}
           <div className="flex-shrink-0 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
@@ -708,7 +732,7 @@ export default function BiglietteriaPage() {
             </div>
 
             {/* Campos automáticos del cliente */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Codice Fiscale
@@ -756,7 +780,7 @@ export default function BiglietteriaPage() {
             </div>
 
             {/* Campos principales */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Pagamento *
@@ -886,7 +910,7 @@ export default function BiglietteriaPage() {
             </div>
 
             {/* Campos monetarios */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Neto *

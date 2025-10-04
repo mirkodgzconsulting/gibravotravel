@@ -450,7 +450,7 @@ export default function BiglietteriaPage() {
             </div>
 
             {/* Tabla */}
-            <div className="w-full overflow-x-auto">
+            <div className="w-full">
               <Table className="w-full min-w-[1800px]">
                 <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
                   <TableRow>

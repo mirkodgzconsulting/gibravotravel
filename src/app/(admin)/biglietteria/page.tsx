@@ -700,7 +700,7 @@ export default function BiglietteriaPage() {
 
       {/* Modal para agregar/editar */}
       <Modal isOpen={isModalOpen} onClose={closeModal}>
-        <div className="w-[800px] max-h-[85vh] bg-white dark:bg-gray-800 rounded-lg shadow-xl flex flex-col mx-auto">
+        <div className="w-[900px] max-h-[90vh] bg-white dark:bg-gray-800 rounded-lg shadow-xl flex flex-col mx-auto">
           {/* Header fijo */}
           <div className="flex-shrink-0 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
@@ -709,8 +709,8 @@ export default function BiglietteriaPage() {
           </div>
           
           {/* Contenido con scroll */}
-          <div className="flex-1 overflow-y-auto px-6 py-4">
-            <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="flex-1 overflow-y-auto px-8 py-6">
+            <form onSubmit={handleSubmit} className="space-y-8">
             {/* Cliente */}
             <div className="w-full">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -1002,7 +1002,7 @@ export default function BiglietteriaPage() {
           </div>
           
           {/* Footer fijo con botones */}
-          <div className="flex-shrink-0 px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-b-lg">
+          <div className="flex-shrink-0 px-8 py-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-b-lg">
             <div className="flex justify-end gap-3">
               <button
                 type="button"

@@ -676,7 +676,7 @@ export default function BiglietteriaPage() {
 
       {/* Modal para agregar/editar */}
       <Modal isOpen={isModalOpen} onClose={closeModal}>
-        <div className="max-w-4xl w-full max-h-[90vh] flex flex-col">
+        <div className="w-full max-w-6xl mx-auto max-h-[85vh] bg-white dark:bg-gray-800 rounded-lg shadow-xl flex flex-col">
           {/* Header fijo */}
           <div className="flex-shrink-0 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
@@ -686,9 +686,9 @@ export default function BiglietteriaPage() {
           
           {/* Contenido con scroll */}
           <div className="flex-1 overflow-y-auto px-6 py-4">
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-6">
             {/* Cliente */}
-            <div>
+            <div className="w-full">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Cliente *
               </label>
@@ -708,7 +708,7 @@ export default function BiglietteriaPage() {
             </div>
 
             {/* Campos automáticos del cliente */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Codice Fiscale
@@ -756,7 +756,7 @@ export default function BiglietteriaPage() {
             </div>
 
             {/* Campos principales */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Pagamento *
@@ -807,7 +807,7 @@ export default function BiglietteriaPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   PNR
@@ -833,7 +833,7 @@ export default function BiglietteriaPage() {
               </div>
             </div>
 
-            <div>
+            <div className="w-full">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Itinerario *
               </label>
@@ -846,7 +846,7 @@ export default function BiglietteriaPage() {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Servizio *
@@ -886,7 +886,7 @@ export default function BiglietteriaPage() {
             </div>
 
             {/* Campos monetarios */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Neto *
@@ -940,7 +940,7 @@ export default function BiglietteriaPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Metodo Pagamento *

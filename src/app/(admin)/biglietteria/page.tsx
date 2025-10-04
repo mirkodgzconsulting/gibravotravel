@@ -700,7 +700,7 @@ export default function BiglietteriaPage() {
 
       {/* Modal para agregar/editar */}
       <Modal isOpen={isModalOpen} onClose={closeModal}>
-        <div className="w-[900px] max-h-[90vh] bg-white dark:bg-gray-800 rounded-lg shadow-xl flex flex-col mx-auto">
+        <div className="w-[700px] max-h-[90vh] bg-white dark:bg-gray-800 rounded-lg shadow-xl flex flex-col mx-auto">
           {/* Header fijo */}
           <div className="flex-shrink-0 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-xl font-semibold text-gray-800 dark:text-white">

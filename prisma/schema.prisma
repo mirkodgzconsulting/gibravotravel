@@ -145,3 +145,55 @@ model Client {
 
   @@map("clients")
 }
+
+// Tablas de referencia/catálogo
+
+model Pagamento {
+  id         String   @id @default(cuid())
+  pagamento  String   @unique // Tipo de pago: acconto, acconto ricevuto, verificare, ricevuto, da pagare
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("pagamento")
+}
+
+model Iata {
+  id         String   @id @default(cuid())
+  iata       String   @unique // Aerolínea: suema, ryan air, flight genius, kkm, safer, booking
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("iata")
+}
+
+model Servizio {
+  id         String   @id @default(cuid())
+  servizio   String   @unique // Servicio: biglietto, express, hotel, bagaglio, cambio data, polizza, lettera di invito
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("servizio")
+}
+
+model MetodoPagamento {
+  id                 String   @id @default(cuid())
+  metodoPagamento    String   @unique // Método: cash, PostePay, bonifico, POS, Western, RIA
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("metodo_pagamento")
+}
+
+model Origine {
+  id         String   @id @default(cuid())
+  origine    String   @unique // Origen: WhatsApp, Facebook, Cliente, Passaparola
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("origine")
+}

@@ -676,12 +676,17 @@ export default function BiglietteriaPage() {
 
       {/* Modal para agregar/editar */}
       <Modal isOpen={isModalOpen} onClose={closeModal}>
-        <div className="space-y-6">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
-            Nuovo Biglietto
-          </h2>
+        <div className="max-w-4xl w-full max-h-[90vh] flex flex-col">
+          {/* Header fijo */}
+          <div className="flex-shrink-0 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
+              Nuovo Biglietto
+            </h2>
+          </div>
           
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Contenido con scroll */}
+          <div className="flex-1 overflow-y-auto px-6 py-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
             {/* Cliente */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -969,8 +974,12 @@ export default function BiglietteriaPage() {
               </div>
             </div>
 
-            {/* Botones */}
-            <div className="flex justify-end gap-3 pt-4">
+            </form>
+          </div>
+          
+          {/* Footer fijo con botones */}
+          <div className="flex-shrink-0 px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-b-lg">
+            <div className="flex justify-end gap-3">
               <button
                 type="button"
                 onClick={closeModal}
@@ -981,12 +990,13 @@ export default function BiglietteriaPage() {
               <button
                 type="submit"
                 disabled={submitting}
+                onClick={handleSubmit}
                 className="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting ? 'Salvando...' : 'Salva'}
               </button>
             </div>
-          </form>
+          </div>
         </div>
       </Modal>
     </div>

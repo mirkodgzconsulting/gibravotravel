@@ -450,8 +450,8 @@ export default function BiglietteriaPage() {
             </div>
 
             {/* Tabla */}
-            <div className="max-w-full overflow-x-auto">
-              <Table>
+            <div className="w-full">
+              <Table className="w-full">
                 <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
                   <TableRow>
                     <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
@@ -479,22 +479,22 @@ export default function BiglietteriaPage() {
                       Servizio
                     </TableCell>
                     <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
-                      Neto
+                      Neto (€)
                     </TableCell>
                     <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
-                      Venduto
+                      Venduto (€)
                     </TableCell>
                     <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
-                      Acconto
+                      Acconto (€)
                     </TableCell>
                     <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
-                      Da Pagare
+                      Da Pagare (€)
                     </TableCell>
                     <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                       Metodo Pag.
                     </TableCell>
                     <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
-                      Fee AGV
+                      Fee AGV (€)
                     </TableCell>
                     <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                       Origine
@@ -676,7 +676,7 @@ export default function BiglietteriaPage() {
 
       {/* Modal para agregar/editar */}
       <Modal isOpen={isModalOpen} onClose={closeModal}>
-        <div className="w-full max-w-6xl mx-auto max-h-[85vh] bg-white dark:bg-gray-800 rounded-lg shadow-xl flex flex-col">
+        <div className="w-full max-w-4xl mx-auto max-h-[85vh] bg-white dark:bg-gray-800 rounded-lg shadow-xl flex flex-col">
           {/* Header fijo */}
           <div className="flex-shrink-0 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
@@ -708,7 +708,7 @@ export default function BiglietteriaPage() {
             </div>
 
             {/* Campos automáticos del cliente */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Codice Fiscale
@@ -756,7 +756,7 @@ export default function BiglietteriaPage() {
             </div>
 
             {/* Campos principales */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Pagamento *
@@ -807,7 +807,7 @@ export default function BiglietteriaPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   PNR
@@ -846,7 +846,7 @@ export default function BiglietteriaPage() {
               />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Servizio *
@@ -886,7 +886,7 @@ export default function BiglietteriaPage() {
             </div>
 
             {/* Campos monetarios */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Neto *
@@ -940,7 +940,7 @@ export default function BiglietteriaPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Metodo Pagamento *

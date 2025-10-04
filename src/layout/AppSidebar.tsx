@@ -165,6 +165,11 @@ const gestioneItems: NavItem[] = [
     name: "CLIENTI",
     path: "/clienti",
   },
+  {
+    icon: <BoxCubeIcon />,
+    name: "BIGLIETTERIA",
+    path: "/biglietteria",
+  },
 ];
 
 const utentiItems: NavItem[] = [

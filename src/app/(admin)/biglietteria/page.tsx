@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useModal } from "@/hooks/useModal";
 import { Modal } from "@/components/ui/modal";
-import ComponentCard from "@/components/common/ComponentCard";
 import * as XLSX from 'xlsx';
 import {
   Table,
@@ -392,7 +391,7 @@ export default function BiglietteriaPage() {
       </div>
 
       {/* Tabla de registros */}
-      <ComponentCard title="">
+      <div className="w-full border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] rounded-2xl">
         {loading ? (
           <div className="flex justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500"></div>
@@ -696,7 +695,7 @@ export default function BiglietteriaPage() {
             </div>
           </div>
         )}
-      </ComponentCard>
+      </div>
 
       {/* Modal para agregar/editar */}
       <Modal isOpen={isModalOpen} onClose={closeModal}>

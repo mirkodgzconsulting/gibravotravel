@@ -53,15 +53,16 @@ export async function POST(request: NextRequest) {
     const data = {
       cliente: record.cliente || '',
       indirizzo: record.indirizzo || '',
-      // Puedes agregar más campos aquí cuando estés listo
-      // data: record.data ? new Date(record.data).toLocaleDateString('it-IT') : '',
-      // servizio: record.servizio || '',
-      // itinerario: record.itinerario || '',
-      // passeggero: record.passeggero || '',
-      // venduto: record.venduto ? `€${record.venduto.toFixed(2)}` : '',
-      // acconto: record.acconto ? `€${record.acconto.toFixed(2)}` : '',
-      // dapagare: record.daPagare ? `€${record.daPagare.toFixed(2)}` : '',
-      // pnr: record.pnr || '',
+      codicefiscale: record.codiceFiscale || '',
+      date: record.data ? new Date(record.data).toLocaleDateString('it-IT') : '',
+      servizio: record.servizio || '',
+      itinerario: record.itinerario || '',
+      passeggero: record.passeggero || '',
+      venduto: record.venduto ? `€${record.venduto.toFixed(2)}` : '€0.00',
+      acconto: record.acconto ? `€${record.acconto.toFixed(2)}` : '€0.00',
+      dapagare: record.daPagare ? `€${record.daPagare.toFixed(2)}` : '€0.00',
+      pnr: record.pnr || '',
+      agente: record.creadoPor || '',
     };
 
     // Reemplazar los placeholders con los datos

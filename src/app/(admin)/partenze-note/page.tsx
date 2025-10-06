@@ -549,6 +549,15 @@ export default function PartenzeNotePage() {
                 key={template.id}
                 className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden border border-gray-200 dark:border-gray-700"
               >
+                {/* Campo ACC arriba de la imagen */}
+                {(template as TravelNoteTemplate & { acc?: string }).acc && (
+                  <div className="px-4 pt-4 pb-2">
+                    <div className="text-sm font-medium text-gray-800 dark:text-gray-200 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-md border border-blue-200 dark:border-blue-800">
+                      ACC: {(template as TravelNoteTemplate & { acc?: string }).acc}
+                    </div>
+                  </div>
+                )}
+
                 {/* Imagen de portada */}
                 <div className="h-48 bg-gray-200 dark:bg-gray-700 relative">
                   {template.coverImage ? (
@@ -654,42 +663,11 @@ export default function PartenzeNotePage() {
                     </button>
                   </div>
 
-                  {/* Información del creador */}
-                  <div className="text-center text-sm text-gray-500 dark:text-gray-400 mb-3">
-                    <div className="flex items-center justify-center gap-2">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                      <span>
-                        Creato da: {template.creator?.firstName} {template.creator?.lastName}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-center gap-2 mt-1">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <span>
-                        {new Date(template.createdAt).toLocaleDateString('es-ES', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })}
-                      </span>
-                    </div>
-                  </div>
-
                   {/* Texto de la plantilla */}
                   <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
                     <div className="text-sm text-gray-700 dark:text-gray-300">
                       {expandedTemplate === template.id ? (
                         <div>
-                          {/* Campo ACC */}
-                          {(template as TravelNoteTemplate & { acc?: string }).acc && (
-                            <div className="mb-3 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-md border border-blue-200 dark:border-blue-800">
-                              <span className="font-medium text-blue-800 dark:text-blue-200">ACC:</span>
-                              <span className="ml-2 text-blue-700 dark:text-blue-300">{(template as TravelNoteTemplate & { acc?: string }).acc}</span>
-                            </div>
-                          )}
                           <p className="whitespace-pre-wrap">{template.textContent}</p>
                           <button
                             onClick={() => toggleExpanded(template.id)}

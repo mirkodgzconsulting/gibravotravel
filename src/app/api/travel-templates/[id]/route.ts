@@ -23,14 +23,19 @@ export async function GET(
         id,
         isDeleted: false,
       },
-      include: {
-        creator: {
-          select: {
-            firstName: true,
-            lastName: true,
-            email: true,
-          },
-        },
+      select: {
+        id: true,
+        title: true,
+        textContent: true,
+        coverImage: true,
+        coverImageName: true,
+        pdfFile: true,
+        pdfFileName: true,
+        tourDate: true,
+        travelCost: true,
+        createdBy: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
 
@@ -41,7 +46,30 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ template });
+    // Obtener información del creador
+    const creator = await prisma.user.findUnique({
+      where: {
+        clerkId: template.createdBy,
+      },
+      select: {
+        firstName: true,
+        lastName: true,
+        email: true,
+      },
+    });
+
+    // Combinar datos con campo ACC por compatibilidad
+    const templateWithCreator = {
+      ...template,
+      acc: null, // Campo ACC por defecto hasta que se complete la migración
+      creator: creator || {
+        firstName: null,
+        lastName: null,
+        email: 'Usuario no encontrado',
+      },
+    };
+
+    return NextResponse.json({ template: templateWithCreator });
   } catch (error) {
     console.error('Error fetching travel template:', error);
     return NextResponse.json(

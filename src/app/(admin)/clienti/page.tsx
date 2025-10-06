@@ -464,7 +464,7 @@ export default function ClientiPage() {
       <Modal
         isOpen={modal.isOpen}
         onClose={modal.closeModal}
-        className="max-w-2xl p-6"
+        className="max-w-2xl p-6 max-h-[90vh] overflow-y-auto"
       >
         <div className="space-y-6">
           <div className="text-center">

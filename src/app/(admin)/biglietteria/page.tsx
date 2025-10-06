@@ -527,18 +527,9 @@ export default function BiglietteriaPage() {
                     currentData.map((record) => (
                       <TableRow key={record.id}>
                         <TableCell className="px-5 py-4 sm:px-6 text-start">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
-                              <div className="w-full h-full flex items-center justify-center text-gray-500 dark:text-gray-400 text-sm font-medium">
-                                {record.cliente[0]?.toUpperCase()}
-                              </div>
-                            </div>
-                            <div>
-                              <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
-                                {record.cliente}
-                              </span>
-                            </div>
-                          </div>
+                          <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
+                            {record.cliente}
+                          </span>
                         </TableCell>
                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                           {record.codiceFiscale}

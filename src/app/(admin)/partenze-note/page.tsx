@@ -549,15 +549,6 @@ export default function PartenzeNotePage() {
                 key={template.id}
                 className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden border border-gray-200 dark:border-gray-700"
               >
-                {/* Campo ACC arriba de la imagen */}
-                {(template as TravelNoteTemplate & { acc?: string }).acc && (
-                  <div className="px-4 pt-4 pb-2">
-                    <div className="text-sm font-medium text-gray-800 dark:text-gray-200 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-md border border-blue-200 dark:border-blue-800">
-                      ACC: {(template as TravelNoteTemplate & { acc?: string }).acc}
-                    </div>
-                  </div>
-                )}
-
                 {/* Imagen de portada */}
                 <div className="h-48 bg-gray-200 dark:bg-gray-700 relative">
                   {template.coverImage ? (
@@ -592,6 +583,15 @@ export default function PartenzeNotePage() {
                       {formatCurrency(template.travelCost)}
                     </span>
                   </div>
+
+                  {/* Campo ACC */}
+                  {(template as TravelNoteTemplate & { acc?: string }).acc && (
+                    <div className="mb-3">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        ACC: {(template as TravelNoteTemplate & { acc?: string }).acc}
+                      </span>
+                    </div>
+                  )}
 
                   {/* Archivos */}
                   <div className="space-y-2 mb-3">

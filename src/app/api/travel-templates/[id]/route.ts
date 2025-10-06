@@ -27,6 +27,7 @@ export async function GET(
         id: true,
         title: true,
         textContent: true,
+        acc: true,
         coverImage: true,
         coverImageName: true,
         pdfFile: true,
@@ -58,10 +59,9 @@ export async function GET(
       },
     });
 
-    // Combinar datos con campo ACC por compatibilidad
+    // Combinar datos
     const templateWithCreator = {
       ...template,
-      acc: null, // Campo ACC por defecto hasta que se complete la migración
       creator: creator || {
         firstName: null,
         lastName: null,

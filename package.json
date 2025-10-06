@@ -4,10 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev ",
-    "build": "prisma generate && next build ",
+    "build": "prisma generate && node scripts/migrate-acc-field.js && next build ",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "migrate-acc": "node scripts/migrate-acc-field.js"
   },
   "dependencies": {
     "@clerk/backend": "^2.17.0",

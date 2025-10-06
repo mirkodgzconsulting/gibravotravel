@@ -121,9 +121,101 @@ export default function BiglietteriaPage() {
 
   // Fetch datos iniciales
   useEffect(() => {
-    fetchRecords();
-    fetchClients();
-    fetchReferenceData();
+    // En desarrollo local, usar datos simulados
+    const isLocalDevelopment = typeof window !== 'undefined' && 
+      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    
+    if (process.env.NODE_ENV === 'development' && isLocalDevelopment) {
+      // Datos simulados para desarrollo
+      setRecords([
+        {
+          id: 'dev-1',
+          pagamento: 'acconto ricevuto',
+          data: '2025-01-15',
+          iata: 'SUEMA',
+          pnr: 'TEST123',
+          passeggero: 'Mirko Dominguez',
+          itinerario: 'Milano - Roma',
+          servizio: 'Biglietto',
+          neto: 1111.11,
+          venduto: 1111.11,
+          acconto: 111.11,
+          daPagare: 1000.00,
+          metodoPagamento: 'Bonifico',
+          feeAgv: 50.00,
+          origine: 'WhatsApp',
+          cliente: 'Mirko Jhonatan jose Dominguez Guillen',
+          codiceFiscale: 'DMGMKO90A01F205X',
+          indirizzo: 'Via Roma 123, Milano',
+          email: 'mirko@example.com',
+          numeroTelefono: '35112324121',
+          creadoPor: 'Admin Dev',
+          isActive: true,
+          createdAt: '2025-01-15T10:00:00Z',
+          updatedAt: '2025-01-15T10:00:00Z'
+        },
+        {
+          id: 'dev-2',
+          pagamento: 'acconto ricevuto',
+          data: '2025-01-16',
+          iata: 'Booking',
+          pnr: 'ABC456',
+          passeggero: 'Ana García',
+          itinerario: 'Madrid - Barcelona',
+          servizio: 'Biglietto',
+          neto: 800.00,
+          venduto: 950.00,
+          acconto: 200.00,
+          daPagare: 750.00,
+          metodoPagamento: 'Cash',
+          feeAgv: 40.00,
+          origine: 'Facebook',
+          cliente: 'Ana María García López',
+          codiceFiscale: 'GRLNAM85B12H501Y',
+          indirizzo: 'Calle Mayor 45, Madrid',
+          email: 'ana.garcia@example.com',
+          numeroTelefono: '612345678',
+          creadoPor: 'Admin Dev',
+          isActive: true,
+          createdAt: '2025-01-16T14:30:00Z',
+          updatedAt: '2025-01-16T14:30:00Z'
+        }
+      ]);
+      
+      setClients([
+        {
+          id: 'client-1',
+          firstName: 'Mirko',
+          lastName: 'Dominguez Guillen',
+          fiscalCode: 'DMGMKO90A01F205X',
+          address: 'Via Roma 123, Milano',
+          email: 'mirko@example.com',
+          phoneNumber: '35112324121'
+        },
+        {
+          id: 'client-2',
+          firstName: 'Ana María',
+          lastName: 'García López',
+          fiscalCode: 'GRLNAM85B12H501Y',
+          address: 'Calle Mayor 45, Madrid',
+          email: 'ana.garcia@example.com',
+          phoneNumber: '612345678'
+        }
+      ]);
+      
+      // Datos de referencia simulados
+      setPagamenti(['acconto', 'acconto ricevuto', 'verificare', 'ricevuto', 'da pagare']);
+      setIataList(['SUEMA', 'Ryan Air', 'Flight Genius', 'KKM', 'Safer', 'Booking']);
+      setServizi(['biglietto', 'express', 'hotel', 'bagaglio', 'cambio data', 'polizza', 'lettera de invito']);
+      setMetodiPagamento(['cash', 'PostePay', 'bonifico', 'POS', 'Western', 'RIA']);
+      setOrigini(['WhatsApp', 'Facebook', 'Cliente', 'Passaparola']);
+      setLoading(false);
+    } else {
+      // En producción, usar la lógica normal
+      fetchRecords();
+      fetchClients();
+      fetchReferenceData();
+    }
   }, []);
 
   const fetchRecords = async () => {
@@ -430,8 +522,27 @@ export default function BiglietteriaPage() {
     );
   }
 
+  // Detectar si estamos en desarrollo local
+  const isLocalDevelopment = typeof window !== 'undefined' && 
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
   return (
     <div>
+      {/* Indicador de modo desarrollo */}
+      {process.env.NODE_ENV === 'development' && isLocalDevelopment && (
+        <div className="mb-4 p-3 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 dark:bg-yellow-900/20 dark:border-yellow-400 dark:text-yellow-200">
+          <div className="flex items-center">
+            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            <div>
+              <p className="font-bold">Modo Desarrollo Local</p>
+              <p className="text-sm">Usando datos simulados. Los cambios se ven al instante.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Mensaje de estado */}
       {message && (
         <div className={`mb-6 p-4 rounded-lg ${

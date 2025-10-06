@@ -6,6 +6,7 @@ import { SidebarProvider } from "@/context/SidebarContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { SearchProvider } from "@/context/SearchContext";
 import { ClerkProvider } from "@clerk/nextjs";
+import DevelopmentBypass from "@/components/DevelopmentBypass";
 import type { Metadata } from "next";
 
 const outfit = Outfit({
@@ -32,11 +33,13 @@ export default function RootLayout({
     >
       <html lang="it">
         <body className={`${outfit.className} dark:bg-gray-900`}>
-          <ThemeProvider>
-            <SearchProvider>
-              <SidebarProvider>{children}</SidebarProvider>
-            </SearchProvider>
-          </ThemeProvider>
+          <DevelopmentBypass>
+            <ThemeProvider>
+              <SearchProvider>
+                <SidebarProvider>{children}</SidebarProvider>
+              </SearchProvider>
+            </ThemeProvider>
+          </DevelopmentBypass>
         </body>
       </html>
     </ClerkProvider>

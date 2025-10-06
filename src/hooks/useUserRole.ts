@@ -12,7 +12,26 @@ export function useUserRole() {
   const [hasTriedFetch, setHasTriedFetch] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
 
+  // Bypass para desarrollo local
+  const isLocalDevelopment = typeof window !== 'undefined' && 
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  
+  const isDevelopmentMode = process.env.NODE_ENV === 'development' && isLocalDevelopment;
+
+  // En desarrollo local, inicializar con datos simulados
   useEffect(() => {
+    if (isDevelopmentMode) {
+      setUserRole('ADMIN');
+      setIsLoading(false);
+    }
+  }, [isDevelopmentMode]);
+
+  useEffect(() => {
+    // En desarrollo local, no ejecutar la lógica de autenticación
+    if (isDevelopmentMode) {
+      return;
+    }
+
     async function fetchUserRole() {
       if (!isLoaded || !clerkUser) {
         setUserRole(null);
@@ -74,7 +93,7 @@ export function useUserRole() {
     }
 
     fetchUserRole();
-  }, [isLoaded, clerkUser, hasTriedFetch, retryCount, userRole]);
+  }, [isDevelopmentMode, isLoaded, clerkUser, hasTriedFetch, retryCount, userRole]);
 
   return {
     userRole,

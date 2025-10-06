@@ -13,7 +13,7 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "GiBravo Travel - Dashboard di Gestione",
+  title: "GiBravo Travel -- Dashboard di Gestione",
   description: "Sistema di gestione integrale per servizi di viaggi e turismo",
   keywords: "viaggi, turismo, gestione, dashboard, GiBravo Travel",
 };

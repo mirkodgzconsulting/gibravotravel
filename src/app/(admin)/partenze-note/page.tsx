@@ -683,6 +683,13 @@ export default function PartenzeNotePage() {
                     <div className="text-sm text-gray-700 dark:text-gray-300">
                       {expandedTemplate === template.id ? (
                         <div>
+                          {/* Campo ACC */}
+                          {(template as TravelNoteTemplate & { acc?: string }).acc && (
+                            <div className="mb-3 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-md border border-blue-200 dark:border-blue-800">
+                              <span className="font-medium text-blue-800 dark:text-blue-200">ACC:</span>
+                              <span className="ml-2 text-blue-700 dark:text-blue-300">{(template as TravelNoteTemplate & { acc?: string }).acc}</span>
+                            </div>
+                          )}
                           <p className="whitespace-pre-wrap">{template.textContent}</p>
                           <button
                             onClick={() => toggleExpanded(template.id)}

@@ -17,7 +17,7 @@ interface TravelNoteTemplate {
   id: string;
   title: string;
   textContent: string;
-  acc: string | null;
+  acc?: string | null;
   coverImage: string | null;
   coverImageName: string | null;
   pdfFile: string | null;

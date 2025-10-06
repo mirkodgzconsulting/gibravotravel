@@ -87,6 +87,7 @@ export async function PUT(
     const formData = await request.formData();
     const title = formData.get('title') as string;
     const textContent = formData.get('textContent') as string;
+    const acc = formData.get('acc') as string;
     const tourDate = formData.get('tourDate') as string;
     const travelCost = formData.get('travelCost') as string;
     const coverImage = formData.get('coverImage') as File;
@@ -170,6 +171,7 @@ export async function PUT(
       data: {
         title,
         textContent,
+        acc: acc && acc.trim() !== '' ? acc : null,
         coverImage: coverImagePath,
         coverImageName,
         pdfFile: pdfFilePath,

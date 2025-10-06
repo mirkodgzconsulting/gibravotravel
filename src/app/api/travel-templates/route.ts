@@ -25,6 +25,7 @@ export async function GET() {
         id: true,
         title: true,
         textContent: true,
+        acc: true,
         coverImage: true,
         coverImageName: true,
         pdfFile: true,
@@ -92,6 +93,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const title = formData.get('title') as string;
     const textContent = formData.get('textContent') as string;
+    const acc = formData.get('acc') as string;
     const tourDate = formData.get('tourDate') as string;
     const travelCost = formData.get('travelCost') as string;
     const coverImage = formData.get('coverImage') as File;
@@ -240,6 +242,7 @@ export async function POST(request: NextRequest) {
       data: {
         title,
         textContent,
+        acc: acc && acc.trim() !== '' ? acc : null,
         coverImage: coverImageUrl,
         coverImageName,
         pdfFile: pdfFileUrl,

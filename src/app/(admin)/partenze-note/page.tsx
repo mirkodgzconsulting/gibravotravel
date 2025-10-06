@@ -17,6 +17,7 @@ interface TravelNoteTemplate {
   id: string;
   title: string;
   textContent: string;
+  acc: string | null;
   coverImage: string | null;
   coverImageName: string | null;
   pdfFile: string | null;
@@ -36,6 +37,7 @@ interface TravelNoteTemplate {
 interface TemplateFormData {
   title: string;
   textContent: string;
+  acc: string;
   coverImage: File | null;
   pdfFile: File | null;
   tourDate: string;
@@ -56,6 +58,7 @@ export default function PartenzeNotePage() {
   const [formData, setFormData] = useState<TemplateFormData>({
     title: "",
     textContent: "",
+    acc: "",
     coverImage: null,
     pdfFile: null,
     tourDate: "",
@@ -119,6 +122,7 @@ export default function PartenzeNotePage() {
       const formDataToSend = new FormData();
       formDataToSend.append('title', formData.title);
       formDataToSend.append('textContent', formData.textContent);
+      formDataToSend.append('acc', formData.acc);
       formDataToSend.append('tourDate', formData.tourDate);
       formDataToSend.append('travelCost', formData.travelCost);
       
@@ -139,6 +143,7 @@ export default function PartenzeNotePage() {
         setFormData({
           title: "",
           textContent: "",
+          acc: "",
           coverImage: null,
           pdfFile: null,
           tourDate: "",
@@ -185,6 +190,7 @@ export default function PartenzeNotePage() {
     setFormData({
       title: template.title,
       textContent: template.textContent,
+      acc: template.acc || "",
       coverImage: null,
       pdfFile: null,
       tourDate: template.tourDate.split('T')[0], // Convertir a formato YYYY-MM-DD
@@ -202,6 +208,7 @@ export default function PartenzeNotePage() {
       const formDataToSend = new FormData();
       formDataToSend.append('title', formData.title);
       formDataToSend.append('textContent', formData.textContent);
+      formDataToSend.append('acc', formData.acc);
       formDataToSend.append('tourDate', formData.tourDate);
       formDataToSend.append('travelCost', formData.travelCost);
       
@@ -223,6 +230,7 @@ export default function PartenzeNotePage() {
         setFormData({
           title: "",
           textContent: "",
+          acc: "",
           coverImage: null,
           pdfFile: null,
           tourDate: "",
@@ -306,6 +314,7 @@ export default function PartenzeNotePage() {
     setFormData({
       title: "",
       textContent: "",
+      acc: "",
       coverImage: null,
       pdfFile: null,
       tourDate: "",
@@ -409,6 +418,20 @@ export default function PartenzeNotePage() {
               required
               rows={6}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              ACC
+            </label>
+            <input
+              type="text"
+              name="acc"
+              value={formData.acc}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              placeholder="Ingrese el valor ACC"
             />
           </div>
 

@@ -53,6 +53,7 @@ model TravelNoteTemplate {
   id              String   @id @default(cuid())
   title           String   // Título del tour
   textContent     String   // Plantilla de texto
+  acc             String?  // Campo ACC
   coverImage      String?  // URL del archivo (Vercel Blob o ruta local)
   coverImageName  String?  // Nombre original del archivo de imagen
   pdfFile         String?  // URL del archivo (Vercel Blob o ruta local)

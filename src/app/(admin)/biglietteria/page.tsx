@@ -326,6 +326,57 @@ export default function BiglietteriaPage() {
     }
   };
 
+  const handleGenerateRicevuta = async (recordId: string) => {
+    try {
+      setMessage({
+        type: 'success',
+        text: 'Generando ricevuta...'
+      });
+
+      const response = await fetch('/api/biglietteria/generate-ricevuta', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ recordId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al generar ricevuta');
+      }
+
+      // Descargar el archivo
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      
+      // Extraer el nombre del archivo del header Content-Disposition
+      const contentDisposition = response.headers.get('Content-Disposition');
+      const fileName = contentDisposition 
+        ? contentDisposition.split('filename=')[1].replace(/"/g, '')
+        : `Ricevuta_${recordId}_${new Date().getTime()}.docx`;
+      
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      setMessage({
+        type: 'success',
+        text: 'Ricevuta generata con successo!'
+      });
+    } catch (error) {
+      console.error('Error generating ricevuta:', error);
+      setMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Errore durante la generazione della ricevuta'
+      });
+    }
+  };
+
   // Filtrado y paginación
   const filteredRecords = records.filter(record => {
     const searchLower = searchTerm.toLowerCase();
@@ -609,6 +660,7 @@ export default function BiglietteriaPage() {
 
                             {/* Botón Recibo */}
                             <button
+                              onClick={() => handleGenerateRicevuta(record.id)}
                               className="p-2 bg-green-100 hover:bg-green-200 text-green-700 hover:text-green-800 dark:bg-green-900/20 dark:hover:bg-green-900/30 dark:text-green-400 dark:hover:text-green-300 rounded-lg transition-all duration-200 transform hover:scale-105"
                               title="Genera recibo"
                             >

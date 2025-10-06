@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useModal } from "@/hooks/useModal";
 import { useSearch } from "@/context/SearchContext";
@@ -63,6 +63,24 @@ export default function PartenzeNotePage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<TravelNoteTemplate | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const handleFormSubmit = async () => {
+    if (!formRef.current) return;
+    
+    // Crear un evento de submit artificial
+    const submitEvent = {
+      preventDefault: () => {},
+      currentTarget: formRef.current,
+      target: formRef.current
+    } as unknown as React.FormEvent<HTMLFormElement>;
+    
+    if (editingTemplate) {
+      await handleUpdateTemplate(submitEvent);
+    } else {
+      await handleSubmit(submitEvent);
+    }
+  };
 
   const fetchTemplates = useCallback(async () => {
     try {
@@ -353,14 +371,19 @@ export default function PartenzeNotePage() {
       <Modal
         isOpen={isModalOpen}
         onClose={closeModal}
-        className="max-w-lg mx-4"
+        className="max-w-lg mx-4 max-h-[90vh]"
       >
-        <div className="p-4">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-            {editingTemplate ? 'Modifica Modello' : 'Aggiungi Nuovo Modello'}
-          </h2>
+        <div className="flex flex-col h-full max-h-[90vh]">
+          {/* Header fijo */}
+          <div className="flex-shrink-0 p-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+              {editingTemplate ? 'Modifica Modello' : 'Aggiungi Nuovo Modello'}
+            </h2>
+          </div>
           
-          <form onSubmit={editingTemplate ? handleUpdateTemplate : handleSubmit} className="space-y-3">
+          {/* Contenido scrolleable */}
+          <div className="flex-1 overflow-y-auto p-4">
+            <form ref={formRef} onSubmit={editingTemplate ? handleUpdateTemplate : handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Titolo del Tour *
@@ -438,24 +461,29 @@ export default function PartenzeNotePage() {
             </div>
           </div>
 
-          <div className="flex justify-end space-x-3 pt-4">
-            <button
-              type="button"
-              onClick={closeModalAndReset}
-              disabled={isSubmitting}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
-            >
-              Annulla
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-4 py-2 bg-brand-500 text-white rounded-md hover:bg-brand-600 disabled:opacity-50"
-            >
-              {isSubmitting ? 'Salvataggio...' : (editingTemplate ? 'Aggiorna Modello' : 'Salva Modello')}
-            </button>
+            </form>
           </div>
-          </form>
+          
+          {/* Footer fijo */}
+          <div className="flex-shrink-0 p-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex justify-end space-x-3">
+              <button
+                type="button"
+                onClick={closeModalAndReset}
+                disabled={isSubmitting}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
+              >
+                Annulla
+              </button>
+              <button
+                onClick={handleFormSubmit}
+                disabled={isSubmitting}
+                className="px-4 py-2 bg-brand-500 text-white rounded-md hover:bg-brand-600 disabled:opacity-50"
+              >
+                {isSubmitting ? 'Salvataggio...' : (editingTemplate ? 'Aggiorna Modello' : 'Salva Modello')}
+              </button>
+            </div>
+          </div>
         </div>
       </Modal>
 

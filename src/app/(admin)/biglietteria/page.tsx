@@ -125,7 +125,7 @@ export default function BiglietteriaPage() {
     const isLocalDevelopment = typeof window !== 'undefined' && 
       (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
     
-    if (process.env.NODE_ENV === 'development' && isLocalDevelopment) {
+    if (isLocalDevelopment) {
       // Datos simulados para desarrollo
       setRecords([
         {
@@ -529,7 +529,7 @@ export default function BiglietteriaPage() {
   return (
     <div>
       {/* Indicador de modo desarrollo */}
-      {process.env.NODE_ENV === 'development' && isLocalDevelopment && (
+      {isLocalDevelopment && (
         <div className="mb-4 p-3 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 dark:bg-yellow-900/20 dark:border-yellow-400 dark:text-yellow-200">
           <div className="flex items-center">
             <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">

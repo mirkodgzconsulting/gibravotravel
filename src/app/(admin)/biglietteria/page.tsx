@@ -377,15 +377,30 @@ export default function BiglietteriaPage() {
     }
   };
 
-  // Filtrado y paginación
+  // Filtrado y paginación mejorado
   const filteredRecords = records.filter(record => {
+    if (!searchTerm) return true;
+    
     const searchLower = searchTerm.toLowerCase();
-    return (
-      record.cliente.toLowerCase().includes(searchLower) ||
-      record.passeggero.toLowerCase().includes(searchLower) ||
-      record.itinerario.toLowerCase().includes(searchLower) ||
-      record.iata.toLowerCase().includes(searchLower) ||
-      (record.pnr && record.pnr.toLowerCase().includes(searchLower))
+    const searchFields = [
+      record.cliente,
+      record.codiceFiscale,
+      record.indirizzo,
+      record.email,
+      record.numeroTelefono,
+      record.pagamento,
+      record.iata,
+      record.pnr,
+      record.passeggero,
+      record.itinerario,
+      record.servizio,
+      record.metodoPagamento,
+      record.origine,
+      record.creadoPor
+    ];
+
+    return searchFields.some(field => 
+      field && field.toString().toLowerCase().includes(searchLower)
     );
   });
 
@@ -487,14 +502,17 @@ export default function BiglietteriaPage() {
                 <span className="text-gray-500 dark:text-gray-400">registri</span>
               </div>
 
-              {/* Buscador */}
+              {/* Buscador mejorado */}
               <div className="relative">
+                <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Cerca biglietti..."
-                  className="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent py-2.5 pl-11 pr-4 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 xl:w-[300px]"
+                  placeholder="Cerca per Cliente, PNR, Passeggero, Itinerario..."
+                  className="dark:bg-dark-900 h-10 w-full rounded-lg border border-gray-300 bg-transparent py-2 pl-10 pr-4 text-xs text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 xl:w-[400px]"
                 />
               </div>
             </div>
@@ -504,64 +522,64 @@ export default function BiglietteriaPage() {
               <Table className="w-full min-w-[1800px]">
                 <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
                   <TableRow>
-                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    <TableCell isHeader className="px-3 py-3 font-bold text-white text-start text-xs bg-[#0366D6]">
                       Cliente
                     </TableCell>
-                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    <TableCell isHeader className="px-3 py-3 font-bold text-white text-start text-xs bg-[#0366D6]">
                       Codice Fiscale
                     </TableCell>
-                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    <TableCell isHeader className="px-3 py-3 font-bold text-white text-start text-xs bg-[#0366D6]">
                       Indirizzo
                     </TableCell>
-                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    <TableCell isHeader className="px-3 py-3 font-bold text-white text-start text-xs bg-[#0366D6]">
                       Email
                     </TableCell>
-                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    <TableCell isHeader className="px-3 py-3 font-bold text-white text-start text-xs bg-[#0366D6]">
                       Telefono
                     </TableCell>
-                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    <TableCell isHeader className="px-3 py-3 font-bold text-white text-start text-xs bg-[#0366D6]">
                       Pagamento
                     </TableCell>
-                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    <TableCell isHeader className="px-3 py-3 font-bold text-white text-start text-xs bg-[#0366D6]">
                       Data
                     </TableCell>
-                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    <TableCell isHeader className="px-3 py-3 font-bold text-white text-start text-xs bg-[#0366D6]">
                       IATA
                     </TableCell>
-                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    <TableCell isHeader className="px-3 py-3 font-bold text-white text-start text-xs bg-[#0366D6]">
                       PNR
                     </TableCell>
-                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    <TableCell isHeader className="px-3 py-3 font-bold text-white text-start text-xs bg-[#0366D6]">
                       Passeggero
                     </TableCell>
-                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    <TableCell isHeader className="px-3 py-3 font-bold text-white text-start text-xs bg-[#0366D6]">
                       Itinerario
                     </TableCell>
-                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    <TableCell isHeader className="px-3 py-3 font-bold text-white text-start text-xs bg-[#0366D6]">
                       Servizio
                     </TableCell>
-                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    <TableCell isHeader className="px-3 py-3 font-bold text-white text-start text-xs bg-[#0366D6]">
                       Neto (€)
                     </TableCell>
-                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    <TableCell isHeader className="px-3 py-3 font-bold text-white text-start text-xs bg-[#0366D6]">
                       Venduto (€)
                     </TableCell>
-                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    <TableCell isHeader className="px-3 py-3 font-bold text-white text-start text-xs bg-[#0366D6]">
                       Acconto (€)
                     </TableCell>
-                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    <TableCell isHeader className="px-3 py-3 font-bold text-white text-start text-xs bg-[#0366D6]">
                       Da Pagare (€)
                     </TableCell>
-                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    <TableCell isHeader className="px-3 py-3 font-bold text-white text-start text-xs bg-[#0366D6]">
                       Metodo Pag.
                     </TableCell>
-                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    <TableCell isHeader className="px-3 py-3 font-bold text-white text-start text-xs bg-[#0366D6]">
                       Fee AGV (€)
                     </TableCell>
-                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    <TableCell isHeader className="px-3 py-3 font-bold text-white text-start text-xs bg-[#0366D6]">
                       Origine
                     </TableCell>
-                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    <TableCell isHeader className="px-3 py-3 font-bold text-white text-start text-xs bg-[#0366D6]">
                       Azioni
                     </TableCell>
                   </TableRow>
@@ -577,83 +595,83 @@ export default function BiglietteriaPage() {
                   ) : (
                     currentData.map((record) => (
                       <TableRow key={record.id}>
-                        <TableCell className="px-5 py-4 sm:px-6 text-start">
-                          <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
+                        <TableCell className="px-3 py-2 text-start">
+                          <span className="block font-medium text-gray-800 text-xs dark:text-white/90 truncate max-w-[150px]" title={record.cliente}>
                             {record.cliente}
                           </span>
                         </TableCell>
-                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                        <TableCell className="px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 truncate max-w-[120px]">
                           {record.codiceFiscale}
                         </TableCell>
-                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                        <TableCell className="px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 truncate max-w-[150px]">
                           {record.indirizzo}
                         </TableCell>
-                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                        <TableCell className="px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 truncate max-w-[200px]">
                           {record.email}
                         </TableCell>
-                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                        <TableCell className="px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300">
                           {record.numeroTelefono}
                         </TableCell>
-                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                        <TableCell className="px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 truncate max-w-[120px]">
                           {record.pagamento}
                         </TableCell>
-                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                        <TableCell className="px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300">
                           {new Date(record.data).toLocaleDateString('it-IT')}
                         </TableCell>
-                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                        <TableCell className="px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300">
                           {record.iata}
                         </TableCell>
-                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                        <TableCell className="px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono">
                           {record.pnr || '-'}
                         </TableCell>
-                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                        <TableCell className="px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 truncate max-w-[120px]">
                           {record.passeggero}
                         </TableCell>
-                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                        <TableCell className="px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 truncate max-w-[150px]">
                           {record.itinerario}
                         </TableCell>
-                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                        <TableCell className="px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 truncate max-w-[120px]">
                           {record.servizio}
                         </TableCell>
-                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                        <TableCell className="px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono">
                           €{record.neto.toFixed(2)}
                         </TableCell>
-                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                        <TableCell className="px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono">
                           €{record.venduto.toFixed(2)}
                         </TableCell>
-                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                        <TableCell className="px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono">
                           €{record.acconto.toFixed(2)}
                         </TableCell>
-                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                        <TableCell className="px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono">
                           €{record.daPagare.toFixed(2)}
                         </TableCell>
-                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                        <TableCell className="px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 truncate max-w-[100px]">
                           {record.metodoPagamento}
                         </TableCell>
-                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                        <TableCell className="px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono">
                           €{record.feeAgv.toFixed(2)}
                         </TableCell>
-                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                        <TableCell className="px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 truncate max-w-[100px]">
                           {record.origine}
                         </TableCell>
-                        <TableCell className="px-4 py-3 text-start">
-                          <div className="flex items-center gap-2">
+                        <TableCell className="px-3 py-2 text-start">
+                          <div className="flex items-center gap-1">
                             {/* Botón Editar */}
                             <button
-                              className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-700 hover:text-blue-800 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-400 dark:hover:text-blue-300 rounded-lg transition-all duration-200 transform hover:scale-105"
-                              title="Modifica biglietto"
+                              className="p-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 hover:text-blue-800 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-400 dark:hover:text-blue-300 rounded transition-all duration-200 transform hover:scale-105"
+                              title="Modifica"
                             >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                               </svg>
                             </button>
 
                             {/* Botón Eliminar */}
                             <button
-                              className="p-2 bg-red-100 hover:bg-red-200 text-red-700 hover:text-red-800 dark:bg-red-900/20 dark:hover:bg-red-900/30 dark:text-red-400 dark:hover:text-red-300 rounded-lg transition-all duration-200 transform hover:scale-105"
-                              title="Elimina biglietto"
+                              className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 hover:text-red-800 dark:bg-red-900/20 dark:hover:bg-red-900/30 dark:text-red-400 dark:hover:text-red-300 rounded transition-all duration-200 transform hover:scale-105"
+                              title="Elimina"
                             >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                               </svg>
                             </button>
@@ -661,10 +679,10 @@ export default function BiglietteriaPage() {
                             {/* Botón Recibo */}
                             <button
                               onClick={() => handleGenerateRicevuta(record.id)}
-                              className="p-2 bg-green-100 hover:bg-green-200 text-green-700 hover:text-green-800 dark:bg-green-900/20 dark:hover:bg-green-900/30 dark:text-green-400 dark:hover:text-green-300 rounded-lg transition-all duration-200 transform hover:scale-105"
-                              title="Genera recibo"
+                              className="p-1.5 bg-green-100 hover:bg-green-200 text-green-700 hover:text-green-800 dark:bg-green-900/20 dark:hover:bg-green-900/30 dark:text-green-400 dark:hover:text-green-300 rounded transition-all duration-200 transform hover:scale-105"
+                              title="Ricevuta"
                             >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                               </svg>
                             </button>

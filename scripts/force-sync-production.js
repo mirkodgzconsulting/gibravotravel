@@ -144,8 +144,17 @@ async function forceSyncProduction() {
       console.log('   ⚠️  Error corrigiendo archivos, continuando...');
     }
 
-    // 6.1. Probar TOUR AEREO y PDFs específicamente
-    console.log('\n6.1. Probando TOUR AEREO y generación de PDFs...');
+    // 6.2. Corregir plantilla de recibo
+    console.log('\n6.2. Corrigiendo plantilla de recibo...');
+    try {
+      execSync('node scripts/fix-ricevuta-template.js', { stdio: 'inherit' });
+      console.log('   ✅ Plantilla de recibo corregida');
+    } catch (templateError) {
+      console.log('   ⚠️  Error corrigiendo plantilla, continuando...');
+    }
+
+    // 6.3. Probar TOUR AEREO y PDFs específicamente
+    console.log('\n6.3. Probando TOUR AEREO y generación de PDFs...');
     try {
       execSync('node scripts/test-tour-aereo-and-pdf.js', { stdio: 'inherit' });
       console.log('   ✅ Pruebas de TOUR AEREO y PDFs completadas');

@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
     };
 
     // Leer la plantilla HTML
-    const templatePath = path.join(process.cwd(), 'src', 'templates', 'ricevuta-template.html');
+    const templatePath = path.join(process.cwd(), 'public', 'templates', 'ricevuta-template.html');
     
     if (!fs.existsSync(templatePath)) {
       return NextResponse.json(

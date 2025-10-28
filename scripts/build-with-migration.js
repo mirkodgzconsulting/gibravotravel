@@ -15,22 +15,13 @@ async function buildWithMigration() {
       console.log('📊 Ejecutando migración de base de datos...\n');
       
       try {
-        // Verificar conexión a base de datos
-        console.log('\n🔍 Verificando conexión a base de datos...');
+        // Forzar sincronización completa con producción
+        console.log('\n🔄 Forzando sincronización completa con producción...');
         try {
-          execSync('node scripts/verify-database-connection.js', { stdio: 'pipe' });
-          console.log('   ✅ Conexión verificada');
-        } catch (connError) {
-          console.log('   ⚠️  Error verificando conexión, continuando...');
-        }
-
-        // Configurar base de datos correcta
-        console.log('\n🔧 Configurando base de datos correcta...');
-        try {
-          execSync('node scripts/setup-correct-database.js', { stdio: 'inherit' });
-          console.log('   ✅ Base de datos configurada');
-        } catch (dbError) {
-          console.log('   ⚠️  Error configurando base de datos, continuando...');
+          execSync('node scripts/force-sync-production.js', { stdio: 'inherit' });
+          console.log('   ✅ Sincronización forzada completada');
+        } catch (syncError) {
+          console.log('   ❌ Error en sincronización forzada, continuando...');
         }
         
         console.log('\n🎉 Configuración y reparación automática completada');

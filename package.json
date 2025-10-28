@@ -26,6 +26,7 @@
     "setup-db": "node scripts/setup-correct-database.js",
     "diagnose-api": "node scripts/diagnose-api-errors.js",
     "fix-api": "node scripts/fix-api-errors.js",
+    "force-sync": "node scripts/force-sync-production.js",
     "setup-complete": "node scripts/setup-complete-production.js",
     "seed-local": "node scripts/seed-local-data.js",
     "db:push": "prisma db push",

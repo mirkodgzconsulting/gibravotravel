@@ -15,20 +15,19 @@ async function buildWithMigration() {
       console.log('📊 Ejecutando migración de base de datos...\n');
       
       try {
-        // Ejecutar setup de producción
-        execSync('node scripts/setup-production.js', { stdio: 'inherit' });
-        
-        // Crear usuarios de prueba automáticamente
-        console.log('\n👥 Creando usuarios de prueba automáticamente...');
-        execSync('node scripts/create-test-users.js', { stdio: 'inherit' });
-        
-        // Ejecutar reparación automática
-        console.log('\n🔧 Ejecutando reparación automática...');
+        // Crear esquema de producción desde local
+        console.log('\n🏗️  Creando esquema de producción...');
         try {
-          execSync('node scripts/fix-production-database.js', { stdio: 'pipe' });
-          console.log('   ✅ Reparación completada');
-        } catch (repairError) {
-          console.log('   ⚠️  Reparación con advertencias, continuando...');
+          execSync('node scripts/create-production-schema.js', { stdio: 'inherit' });
+          console.log('   ✅ Esquema creado exitosamente');
+        } catch (schemaError) {
+          console.log('   ⚠️  Error creando esquema, intentando replicación...');
+          try {
+            execSync('node scripts/replicate-local-to-production.js', { stdio: 'inherit' });
+            console.log('   ✅ Replicación completada');
+          } catch (replicateError) {
+            console.log('   ❌ Error en replicación, continuando con build...');
+          }
         }
         
         console.log('\n🎉 Configuración y reparación automática completada');

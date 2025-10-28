@@ -135,6 +135,15 @@ async function forceSyncProduction() {
       console.log('   ⚠️  Error corrigiendo archivos, continuando...');
     }
 
+    // 6.1. Probar TOUR AEREO y PDFs específicamente
+    console.log('\n6.1. Probando TOUR AEREO y generación de PDFs...');
+    try {
+      execSync('node scripts/test-tour-aereo-and-pdf.js', { stdio: 'inherit' });
+      console.log('   ✅ Pruebas de TOUR AEREO y PDFs completadas');
+    } catch (testError) {
+      console.log('   ⚠️  Error en pruebas, continuando...');
+    }
+
     // 7. Crear plantillas de ejemplo
     console.log('\n7. Creando plantillas de ejemplo...');
     

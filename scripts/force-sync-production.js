@@ -126,8 +126,17 @@ async function forceSyncProduction() {
       }
     }
 
-    // 6. Crear plantillas de ejemplo
-    console.log('\n6. Creando plantillas de ejemplo...');
+    // 6. Corregir errores de archivos y PDFs
+    console.log('\n6. Corrigiendo errores de archivos y PDFs...');
+    try {
+      execSync('node scripts/fix-file-upload-errors.js', { stdio: 'inherit' });
+      console.log('   ✅ Errores de archivos corregidos');
+    } catch (fileError) {
+      console.log('   ⚠️  Error corrigiendo archivos, continuando...');
+    }
+
+    // 7. Crear plantillas de ejemplo
+    console.log('\n7. Creando plantillas de ejemplo...');
     
     try {
       await prisma.info.create({

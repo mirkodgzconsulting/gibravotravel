@@ -164,7 +164,6 @@ export async function PUT(
       });
 
       await clerk.users.updateUser(existingUser.clerkId, {
-        emailAddress: email,
         firstName: firstName,
         lastName: lastName,
         publicMetadata: {

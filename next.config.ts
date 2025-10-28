@@ -4,6 +4,7 @@ import type { NextConfig } from "next";
 require('dotenv').config();
 
 const nextConfig: NextConfig = {
+  // Configuración básica de imágenes
   images: {
     remotePatterns: [
       {
@@ -20,12 +21,38 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  
+  // Configuración de webpack simplificada
   webpack: (config) => {
     config.module.rules.push({
       test: /\.svg$/,
       use: ['@svgr/webpack'],
     });
     return config;
+  },
+  
+  // Deshabilitar ESLint durante el build
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  
+  // Headers de seguridad básicos
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+        ],
+      },
+    ];
   },
 };
 

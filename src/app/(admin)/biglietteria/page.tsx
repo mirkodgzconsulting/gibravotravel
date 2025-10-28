@@ -488,10 +488,8 @@ export default function BiglietteriaPage() {
   }, [formData.pasajeros, formData.acconto, calcularTotales]);
   
   // Cargar datos iniciales
-  useEffect(() => {
+  const fetchData = useCallback(async () => {
     if (roleLoading) return;
-    
-    const fetchData = async () => {
       try {
         setLoading(true);
         
@@ -618,10 +616,11 @@ export default function BiglietteriaPage() {
       } finally {
         setLoading(false);
       }
-    };
-    
+    }, [roleLoading, isUser]);
+
+  useEffect(() => {
     fetchData();
-  }, [roleLoading, isUser]);
+  }, [fetchData]);
   
   // ==================== HANDLERS ====================
   

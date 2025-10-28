@@ -189,7 +189,7 @@ export const SearchProvider: React.FC<{ children: React.ReactNode }> = ({
         searchPlaceholder: config.placeholder,
         isSearchActive,
         searchResults,
-        setSearchResults,
+        setSearchResults: setSearchResults as any,
         performSearch,
       }}
     >

@@ -1,6 +1,6 @@
 {
   "framework": "nextjs",
-  "buildCommand": "npm run build",
+  "buildCommand": "npm run build:production",
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "outputDirectory": ".next",
@@ -9,5 +9,8 @@
       "path": "/api/cron/notificaciones",
       "schedule": "0 1 * * *"
     }
-  ]
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
 }

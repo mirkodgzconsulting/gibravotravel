@@ -206,9 +206,8 @@ export default function AgentRankingChart({ selectedYear }: AgentRankingChartPro
       fontFamily: "Outfit",
       fontSize: "12px",
       markers: {
-        width: 12,
-        height: 12,
-        radius: 12,
+        size: 12,
+        strokeWidth: 0,
       },
     },
     colors: ["#2a31d8", "#465fff", "#7592ff", "#c2d6ff", "#e0e7ff"],

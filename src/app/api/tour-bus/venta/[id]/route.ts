@@ -238,6 +238,7 @@ export async function PUT(
           await tx.cuotaTourBus.create({
             data: {
               ventaTourBusId: id,
+              numeroCuota: cuota.numeroCuota || 1,
               fechaPago: new Date(cuota.fechaPago),
               precioPagar: parseFloat(cuota.precioPagar),
               metodoPagamento: cuota.metodoPagamento

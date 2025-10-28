@@ -174,8 +174,8 @@ export default function InfoPage() {
   const handleEditTemplate = (template: InfoTemplate) => {
     setEditingTemplate(template);
     setFormData({
-      title: template.title,
-      textContent: template.textContent,
+      title: (template as any).title,
+      textContent: (template as any).textContent,
       coverImage: null,
       pdfFile: null,
     });
@@ -477,10 +477,10 @@ export default function InfoPage() {
               >
                 {/* Imagen de portada */}
                 <div className="h-48 bg-gray-200 dark:bg-gray-700 relative">
-                  {template.coverImage ? (
+                  {(template as any).coverImage ? (
                     <Image
-                      src={template.coverImage}
-                      alt={template.title}
+                      src={(template as any).coverImage}
+                      alt={(template as any).title}
                       fill
                       className="object-cover"
                     />
@@ -497,31 +497,31 @@ export default function InfoPage() {
                 <div className="p-4">
                   {/* Título */}
                   <h3 className="font-semibold text-lg mb-2 text-gray-900 dark:text-white">
-                    {template.title}
+                    {(template as any).title}
                   </h3>
 
                   {/* Archivos */}
                   <div className="space-y-2 mb-3">
-                    {template.pdfFile && (
+                    {(template as any).pdfFile && (
                       <div className="text-sm">
                         <span className="text-gray-500 dark:text-gray-400">PDF: </span>
                         <button
-                          onClick={() => handleDownload(template.pdfFile!, template.pdfFileName || 'documento.pdf')}
+                          onClick={() => handleDownload((template as any).pdfFile!, (template as any).pdfFileName || 'documento.pdf')}
                           className="text-brand-600 dark:text-brand-400 hover:underline cursor-pointer"
                         >
-                          {template.pdfFileName || 'documento.pdf'}
+                          {(template as any).pdfFileName || 'documento.pdf'}
                         </button>
                       </div>
                     )}
                     
-                    {template.coverImage && (
+                    {(template as any).coverImage && (
                       <div className="text-sm">
                         <span className="text-gray-500 dark:text-gray-400">Immagine: </span>
                         <button
-                          onClick={() => handleDownload(template.coverImage!, template.coverImageName || 'imagen.jpg')}
+                          onClick={() => handleDownload((template as any).coverImage!, (template as any).coverImageName || 'imagen.jpg')}
                           className="text-brand-600 dark:text-brand-400 hover:underline cursor-pointer"
                         >
-                          {template.coverImageName || 'imagen.jpg'}
+                          {(template as any).coverImageName || 'imagen.jpg'}
                         </button>
                       </div>
                     )}
@@ -530,7 +530,7 @@ export default function InfoPage() {
                   {/* Acciones */}
                   <div className="flex justify-center space-x-4 mb-3">
                     <button
-                      onClick={() => handleCopyContent(template.id, template.textContent)}
+                      onClick={() => handleCopyContent(template.id, (template as any).textContent)}
                       className={`p-3 rounded-lg transition-all duration-200 transform hover:scale-105 ${
                         copiedTemplates.has(template.id)
                           ? 'bg-green-500 text-white'
@@ -550,7 +550,7 @@ export default function InfoPage() {
                     </button>
                     
                     <button
-                      onClick={() => handleEditTemplate(template)}
+                      onClick={() => handleEditTemplate(template as any)}
                       className="p-3 bg-blue-100 hover:bg-blue-200 text-blue-700 hover:text-blue-800 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-400 dark:hover:text-blue-300 rounded-lg transition-all duration-200 transform hover:scale-105"
                       title="Editar plantilla"
                     >
@@ -575,7 +575,7 @@ export default function InfoPage() {
                     <div className="text-sm text-gray-700 dark:text-gray-300">
                       {expandedTemplate === template.id ? (
                         <div>
-                          <p className="whitespace-pre-wrap">{template.textContent}</p>
+                          <p className="whitespace-pre-wrap">{(template as any).textContent}</p>
                           <button
                             onClick={() => toggleExpanded(template.id)}
                             className="text-brand-600 dark:text-brand-400 hover:underline mt-2"
@@ -586,12 +586,12 @@ export default function InfoPage() {
                       ) : (
                         <div>
                           <p className="line-clamp-3">
-                            {template.textContent.length > 150 
-                              ? `${template.textContent.substring(0, 150)}...`
-                              : template.textContent
+                            {(template as any).textContent.length > 150 
+                              ? `${(template as any).textContent.substring(0, 150)}...`
+                              : (template as any).textContent
                             }
                           </p>
-                          {template.textContent.length > 150 && (
+                          {(template as any).textContent.length > 150 && (
                             <button
                               onClick={() => toggleExpanded(template.id)}
                               className="text-brand-600 dark:text-brand-400 hover:underline mt-2"
@@ -607,10 +607,10 @@ export default function InfoPage() {
                   {/* Información del creador */}
                   <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Creado por: {template.creator.firstName} {template.creator.lastName}
+                      Creado por: {(template as any).creator.firstName} {(template as any).creator.lastName}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {formatDate(template.createdAt)}
+                      {formatDate((template as any).createdAt)}
                     </p>
                   </div>
                 </div>

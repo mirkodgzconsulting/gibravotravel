@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
           }
         }
       },
-      orderBy: { fechaInicio: 'asc' }
+      orderBy: { fecha: 'asc' }
     });
 
     return NextResponse.json({ 

@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
     }
 
-    let whereCondition = { isActive: true };
+    let whereCondition: any = { isActive: true };
 
     // Si se solicita userOnly, mostrar solo los clientes creados por este usuario
     if (userOnly) {

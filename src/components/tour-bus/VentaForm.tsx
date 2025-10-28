@@ -155,6 +155,10 @@ export default function VentaForm({
         fechaNacimiento: selectedClient.birthDate.split('T')[0],
         fermata: formData.fermata,
         numeroAsiento: formData.numeroAsiento,
+        tieneMascotas: formData.tieneMascotas,
+        numeroMascotas: formData.numeroMascotas,
+        tieneInfantes: formData.tieneInfantes,
+        numeroInfantes: formData.numeroInfantes,
       });
     }
   };
@@ -615,7 +619,7 @@ export default function VentaForm({
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {/* Select de cliente para acompañante */}
-              <div className="relative md:col-span-2" ref={el => acompananteDropdownRefs.current[index] = el}>
+              <div className="relative md:col-span-2" ref={el => { acompananteDropdownRefs.current[index] = el; }}>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Nome *
                 </label>

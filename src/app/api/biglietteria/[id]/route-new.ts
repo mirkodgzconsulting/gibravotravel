@@ -202,7 +202,7 @@ export async function PUT(
 
     // Procesar cuotas
     const cuotas = cuotasJson ? JSON.parse(cuotasJson) : [];
-    const cuotasConArchivos = [];
+    const cuotasConArchivos: any[] = [];
     
     if (numeroCuotas > 0 && cuotas.length > 0) {
       for (let i = 0; i < cuotas.length; i++) {

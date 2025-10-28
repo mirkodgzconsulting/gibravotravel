@@ -23,14 +23,16 @@ model User {
   biglietteria      Biglietteria[]
   clients           Client[]
   infoTemplates     Info[]
+  notificaciones    Notificacion[]
   routes            Route[]
   stops             Stop[]
   tourAereos        TourAereo[]
   tourBuses         TourBus[]
   ventasTourAereo   VentaTourAereo[]
   ventasTourBus     VentaTourBus[]
-  notificaciones    Notificacion[]
 
+  @@index([email], map: "idx_users_email")
+  @@index([role], map: "idx_users_role")
   @@map("users")
 }
 
@@ -196,6 +198,9 @@ model Biglietteria {
   cuotas           Cuota[]
   pasajeros        PasajeroBiglietteria[]
 
+  @@index([cliente], map: "idx_biglietteria_cliente")
+  @@index([createdAt], map: "idx_biglietteria_created_at")
+  @@index([data], map: "idx_biglietteria_data")
   @@map("biglietteria")
 }
 
@@ -229,6 +234,7 @@ model PasajeroBiglietteria {
   updatedAt            DateTime     @updatedAt
   biglietteria         Biglietteria @relation(fields: [biglietteriaId], references: [id], onDelete: Cascade)
 
+  @@index([estado], map: "idx_pasajeros_biglietteria_estado")
   @@map("pasajeros_biglietteria")
 }
 
@@ -246,6 +252,7 @@ model Cuota {
   updatedAt        DateTime     @updatedAt
   biglietteria     Biglietteria @relation(fields: [biglietteriaId], references: [id], onDelete: Cascade)
 
+  @@index([isPagato], map: "idx_cuotas_is_pagato")
   @@map("cuotas")
 }
 
@@ -337,6 +344,7 @@ model AsientoBus {
   tourBus         TourBus     @relation(fields: [tourBusId], references: [id], onDelete: Cascade)
 
   @@unique([tourBusId, numeroAsiento])
+  @@index([stato], map: "idx_asientos_bus_estado")
   @@map("asientos_bus")
 }
 
@@ -390,6 +398,7 @@ model VentaTourBus {
   creator            User                 @relation(fields: [createdBy], references: [id])
   tourBus            TourBus              @relation(fields: [tourBusId], references: [id], onDelete: Cascade)
 
+  @@index([createdAt], map: "idx_ventas_tour_bus_created_at")
   @@map("ventas_tour_bus")
 }
 
@@ -474,6 +483,7 @@ model VentaTourAereo {
   creator          User                  @relation(fields: [createdBy], references: [id])
   tourAereo        TourAereo             @relation(fields: [tourAereoId], references: [id], onDelete: Cascade)
 
+  @@index([createdAt], map: "idx_ventas_tour_aereo_created_at")
   @@map("ventas_tour_aereo")
 }
 
@@ -495,34 +505,52 @@ model CuotaVentaTourAereo {
 }
 
 model AgendaPersonal {
-  id            String           @id @default(cuid())
-  titulo        String
-  descripcion   String?
-  fecha         DateTime
-  tipo          AgendaTipo       @default(PERSONAL)
-  visibilidad   VisibilidadAgenda @default(PRIVADO)
-  color         String           @default("bg-purple-200 text-gray-800")
-  isActive      Boolean          @default(true)
-  createdBy     String
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-  creator       User             @relation(fields: [createdBy], references: [id])
-  recordatorio  RecordatorioAgenda?
+  id             String              @id @default(cuid())
+  titulo         String
+  descripcion    String?
+  fecha          DateTime
+  tipo           AgendaTipo          @default(PERSONAL)
+  color          String              @default("bg-purple-200 text-gray-800")
+  isActive       Boolean             @default(true)
+  createdBy      String
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  visibilidad    VisibilidadAgenda   @default(PRIVADO)
+  creator        User                @relation(fields: [createdBy], references: [id])
   notificaciones Notificacion[]
+  recordatorio   RecordatorioAgenda?
 
+  @@index([fecha], map: "idx_agendas_personales_fecha")
+  @@index([tipo], map: "idx_agendas_personales_tipo")
   @@map("agendas_personales")
 }
 
 model RecordatorioAgenda {
-  id           String         @id @default(cuid())
-  agendaId     String         @unique
-  diasAntes    Int            @default(0)  // 0 = mismo día, 1-5 = días antes
-  isActivo     Boolean        @default(true)
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  agenda       AgendaPersonal @relation(fields: [agendaId], references: [id], onDelete: Cascade)
+  id        String         @id @default(cuid())
+  agendaId  String         @unique
+  isActivo  Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  diasAntes Int            @default(0)
+  agenda    AgendaPersonal @relation(fields: [agendaId], references: [id], onDelete: Cascade)
 
   @@map("recordatorios_agenda")
+}
+
+model Notificacion {
+  id        String          @id @default(cuid())
+  userId    String
+  agendaId  String?
+  mensaje   String
+  tipo      String          @default("AGENDA")
+  isLeida   Boolean         @default(false)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  agenda    AgendaPersonal? @relation(fields: [agendaId], references: [id], onDelete: Cascade)
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt], map: "idx_notificaciones_created_at")
+  @@map("notificaciones")
 }
 
 enum TipoAsiento {
@@ -549,19 +577,4 @@ enum UserRole {
   USER
   ADMIN
   TI
-}
-
-model Notificacion {
-  id        String   @id @default(cuid())
-  userId    String
-  agendaId  String?
-  mensaje   String
-  tipo      String   @default("AGENDA") // AGENDA, SISTEMA, etc.
-  isLeida   Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  agenda    AgendaPersonal? @relation(fields: [agendaId], references: [id], onDelete: Cascade)
-
-  @@map("notificaciones")
 }

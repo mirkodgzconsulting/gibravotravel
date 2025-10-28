@@ -42,13 +42,13 @@ export async function PATCH(
     // Obtener el acconto inicial (antes de cuotas)
     // Si hay cuotas, el acconto inicial es: venduto - (suma de todas las cuotas)
     const totalCuotas = biglietteria.cuotas.reduce((sum, c) => sum + c.prezzo, 0);
-    const accontoInicial = biglietteria.venduto - totalCuotas;
+    const accontoInicial = biglietteria.vendutoTotal - totalCuotas;
     
     // El nuevo acconto es: accontoInicial + totalCuotasPagadas
     const nuevoAcconto = accontoInicial + totalCuotasPagadas;
     
     // El nuevo daPagare es: vendutoTotal - nuevoAcconto
-    const nuevoDaPagare = Math.max(0, biglietteria.venduto - nuevoAcconto);
+    const nuevoDaPagare = Math.max(0, biglietteria.vendutoTotal - nuevoAcconto);
 
     // Actualizar biglietteria con el nuevo Acconto y daPagare
     const updatedBiglietteria = await prisma.biglietteria.update({

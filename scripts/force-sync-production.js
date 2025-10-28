@@ -78,56 +78,51 @@ async function forceSyncProduction() {
       }
     }
 
-    // 5. Crear datos de referencia
-    console.log('\n5. Creando datos de referencia...');
-    
-    const referenceData = {
-      pagamento: [
-        { id: 'ref_pag_1', pagamento: 'Efectivo', isActive: true },
-        { id: 'ref_pag_2', pagamento: 'Transferencia', isActive: true },
-        { id: 'ref_pag_3', pagamento: 'Tarjeta', isActive: true }
-      ],
-      metodoPagamento: [
-        { id: 'ref_met_1', metodoPagamento: 'Efectivo', isActive: true },
-        { id: 'ref_met_2', metodoPagamento: 'Transferencia Bancaria', isActive: true },
-        { id: 'ref_met_3', metodoPagamento: 'Tarjeta de Crédito', isActive: true },
-        { id: 'ref_met_4', metodoPagamento: 'Tarjeta de Débito', isActive: true }
-      ],
-      servizio: [
-        { id: 'ref_serv_1', servizio: 'Vuelo', isActive: true },
-        { id: 'ref_serv_2', servizio: 'Hotel', isActive: true },
-        { id: 'ref_serv_3', servizio: 'Transfer', isActive: true },
-        { id: 'ref_serv_4', servizio: 'Excursión', isActive: true }
-      ],
-      iata: [
-        { id: 'ref_iata_1', iata: 'FCO', isActive: true },
-        { id: 'ref_iata_2', iata: 'MAD', isActive: true },
-        { id: 'ref_iata_3', iata: 'BCN', isActive: true },
-        { id: 'ref_iata_4', iata: 'LHR', isActive: true }
-      ],
-      fermataBus: [
-        { id: 'ref_ferm_1', fermata: 'Roma Termini', isActive: true },
-        { id: 'ref_ferm_2', fermata: 'Fiumicino', isActive: true },
-        { id: 'ref_ferm_3', fermata: 'Ciampino', isActive: true }
-      ],
-      statoBus: [
-        { id: 'ref_stato_1', stato: 'Libero', isActive: true },
-        { id: 'ref_stato_2', stato: 'Ocupado', isActive: true },
-        { id: 'ref_stato_3', stato: 'Reservado', isActive: true },
-        { id: 'ref_stato_4', stato: 'Mantenimiento', isActive: true }
-      ]
-    };
+    // 5. Importar datos reales de configuración
+    console.log('\n5. Importando datos reales de configuración...');
+    try {
+      execSync('node scripts/import-real-config-to-production.js', { stdio: 'inherit' });
+      console.log('   ✅ Datos reales de configuración importados');
+    } catch (configError) {
+      console.log('   ⚠️  Error importando datos reales, creando datos básicos...');
+      
+      // Fallback: crear datos básicos si falla la importación
+      const basicData = {
+        pagamento: [
+          { id: 'ref_pag_1', pagamento: 'Efectivo', isActive: true },
+          { id: 'ref_pag_2', pagamento: 'Transferencia', isActive: true }
+        ],
+        metodoPagamento: [
+          { id: 'ref_met_1', metodoPagamento: 'Efectivo', isActive: true },
+          { id: 'ref_met_2', metodoPagamento: 'Transferencia', isActive: true }
+        ],
+        servizio: [
+          { id: 'ref_serv_1', servizio: 'Vuelo', isActive: true },
+          { id: 'ref_serv_2', servizio: 'Hotel', isActive: true }
+        ],
+        iata: [
+          { id: 'ref_iata_1', iata: 'FCO', isActive: true },
+          { id: 'ref_iata_2', iata: 'MAD', isActive: true }
+        ],
+        fermataBus: [
+          { id: 'ref_ferm_1', fermata: 'Roma Termini', isActive: true },
+          { id: 'ref_ferm_2', fermata: 'Fiumicino', isActive: true }
+        ],
+        statoBus: [
+          { id: 'ref_stato_1', stato: 'Libre', isActive: true },
+          { id: 'ref_stato_2', stato: 'Ocupado', isActive: true }
+        ]
+      };
 
-    for (const [tableName, data] of Object.entries(referenceData)) {
-      try {
-        for (const item of data) {
-          await prisma[tableName].create({
-            data: item
-          });
+      for (const [tableName, data] of Object.entries(basicData)) {
+        try {
+          for (const item of data) {
+            await prisma[tableName].create({ data: item });
+          }
+          console.log(`   ✅ ${tableName}: ${data.length} registros básicos creados`);
+        } catch (error) {
+          console.log(`   ❌ Error en ${tableName}: ${error.message}`);
         }
-        console.log(`   ✅ ${tableName}: ${data.length} registros creados`);
-      } catch (error) {
-        console.log(`   ❌ Error en ${tableName}: ${error.message}`);
       }
     }
 

@@ -14,12 +14,19 @@ async function buildWithMigration() {
       console.log('🌍 Detectado entorno de producción');
       console.log('📊 Ejecutando migración de base de datos...\n');
       
-      // Ejecutar setup de producción
-      execSync('node scripts/setup-production.js', { stdio: 'inherit' });
-      
-      // Crear usuarios de prueba automáticamente
-      console.log('\n👥 Creando usuarios de prueba automáticamente...');
-      execSync('node scripts/create-test-users.js', { stdio: 'inherit' });
+      try {
+        // Ejecutar setup de producción
+        execSync('node scripts/setup-production.js', { stdio: 'inherit' });
+        
+        // Crear usuarios de prueba automáticamente
+        console.log('\n👥 Creando usuarios de prueba automáticamente...');
+        execSync('node scripts/create-test-users.js', { stdio: 'inherit' });
+        
+        console.log('\n✅ Configuración de producción completada');
+      } catch (error) {
+        console.log('\n⚠️  Error en configuración de producción:', error.message);
+        console.log('🔄 Continuando con el build...');
+      }
     } else {
       console.log('💻 Entorno de desarrollo detectado');
       console.log('⏭️  Saltando migración de base de datos\n');

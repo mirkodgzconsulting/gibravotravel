@@ -14,6 +14,8 @@
     "setup-local": "node scripts/setup-local-dev.js",
     "setup-production": "node scripts/setup-production.js",
     "verify-production": "node scripts/verify-production-setup.js",
+    "create-test-users": "node scripts/create-test-users.js",
+    "setup-complete": "node scripts/setup-complete-production.js",
     "seed-local": "node scripts/seed-local-data.js",
     "db:push": "prisma db push",
     "db:pull": "prisma db pull",

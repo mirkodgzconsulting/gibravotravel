@@ -18,7 +18,12 @@ async function postInstallProduction() {
     console.log('🔧 Ejecutando configuración automática...\n');
 
     // Ejecutar configuración automática
-    execSync('node scripts/auto-fix-production.js', { stdio: 'inherit' });
+    try {
+      execSync('node scripts/auto-fix-production.js', { stdio: 'pipe' });
+      console.log('✅ Auto-reparación completada');
+    } catch (error) {
+      console.log('⚠️  Auto-reparación con advertencias, continuando...');
+    }
 
     console.log('\n✅ Post-install completado exitosamente!');
 

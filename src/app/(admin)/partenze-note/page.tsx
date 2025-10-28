@@ -1,29 +1,27 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useUserRole } from "@/hooks/useUserRole";
-import { useModal } from "@/hooks/useModal";
 import { useSearch } from "@/context/SearchContext";
-import { Modal } from "@/components/ui/modal";
 import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
-import Button from "@/components/ui/button/Button";
-import { DatePicker } from "@/components/ui/date-picker/DatePicker";
 import { CopyNotification } from "@/components/ui/notification/CopyNotification";
 import Image from "next/image";
-import { useUser } from "@clerk/nextjs";
 
-interface TravelNoteTemplate {
+interface TourBus {
   id: string;
-  title: string;
-  textContent: string;
-  acc?: string | null;
+  titulo: string;
+  precioAdulto: number;
+  precioNino: number;
+  cantidadAsientos: number;
+  fechaCreacion: string;
+  fechaViaje: string | null;
+  acc: string | null;
   coverImage: string | null;
   coverImageName: string | null;
   pdfFile: string | null;
   pdfFileName: string | null;
-  tourDate: string;
-  travelCost: number | null;
+  descripcion: string | null;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -34,241 +32,102 @@ interface TravelNoteTemplate {
   };
 }
 
-interface TemplateFormData {
-  title: string;
-  textContent: string;
-  acc: string;
-  coverImage: File | null;
-  pdfFile: File | null;
-  tourDate: string;
-  travelCost: string;
+interface TourAereo {
+  id: string;
+  titulo: string;
+  precioAdulto: number;
+  precioNino: number;
+  meta: number;
+  fechaCreacion: string;
+  fechaViaje: string | null;
+  acc: string | null;
+  coverImage: string | null;
+  coverImageName: string | null;
+  pdfFile: string | null;
+  pdfFileName: string | null;
+  descripcion: string | null;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  creator: {
+    firstName: string | null;
+    lastName: string | null;
+    email: string;
+  };
 }
+
+// Tipo unificado para ambos tipos de tours
+type TourUnified = (TourBus & { tipo: 'bus' }) | (TourAereo & { tipo: 'aereo' });
 
 export default function PartenzeNotePage() {
   const { userRole, isLoading: roleLoading } = useUserRole();
-  const { user } = useUser();
-  const { isOpen: isModalOpen, openModal, closeModal } = useModal();
   const { searchTerm, searchResults } = useSearch();
-  const [templates, setTemplates] = useState<TravelNoteTemplate[]>([]);
+  const [tours, setTours] = useState<TourUnified[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [expandedTemplate, setExpandedTemplate] = useState<string | null>(null);
+  const [expandedTour, setExpandedTour] = useState<string | null>(null);
   const [showCopyNotification, setShowCopyNotification] = useState(false);
-  const [copiedTemplates, setCopiedTemplates] = useState<Set<string>>(new Set());
-  const [formData, setFormData] = useState<TemplateFormData>({
-    title: "",
-    textContent: "",
-    acc: "",
-    coverImage: null,
-    pdfFile: null,
-    tourDate: "",
-    travelCost: "",
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState<TravelNoteTemplate | null>(null);
-  const formRef = useRef<HTMLFormElement>(null);
+  const [copiedTours, setCopiedTours] = useState<Set<string>>(new Set());
 
-  const handleFormSubmit = async () => {
-    if (!formRef.current) return;
-    
-    // Crear un evento de submit artificial
-    const submitEvent = {
-      preventDefault: () => {},
-      currentTarget: formRef.current,
-      target: formRef.current
-    } as unknown as React.FormEvent<HTMLFormElement>;
-    
-    if (editingTemplate) {
-      await handleUpdateTemplate(submitEvent);
-    } else {
-      await handleSubmit(submitEvent);
-    }
-  };
-
-  const fetchTemplates = useCallback(async () => {
+  const fetchTours = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch('/api/travel-templates');
-      if (response.ok) {
-        const data = await response.json();
-        setTemplates(data.templates || []);
-      } else {
-        setError('Error al cargar plantillas');
-      }
+      
+      // Todos los usuarios ven todos los tours para poder reutilizar las descripciones
+      // Cargar tours de bus
+      const busResponse = await fetch('/api/tour-bus');
+      const busData = busResponse.ok ? await busResponse.json() : { tours: [] };
+      
+      // Cargar tours aéreos
+      const aereoResponse = await fetch('/api/tour-aereo');
+      const aereoData = aereoResponse.ok ? await aereoResponse.json() : { tours: [] };
+      
+      // Combinar y marcar el tipo
+      const busTours = (busData.tours || []).map((tour: TourBus) => ({ ...tour, tipo: 'bus' as const }));
+      const aereoTours = (aereoData.tours || []).map((tour: TourAereo) => ({ ...tour, tipo: 'aereo' as const }));
+      
+      // Combinar y ordenar por fecha de creación (más recientes primero)
+      const allTours = [...busTours, ...aereoTours].sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      
+      setTours(allTours);
     } catch {
       setError('Error de conexión');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [userRole]);
 
   useEffect(() => {
-    fetchTemplates();
-  }, [fetchTemplates]);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
-
-    setIsSubmitting(true);
-    try {
-      const formDataToSend = new FormData();
-      formDataToSend.append('title', formData.title);
-      formDataToSend.append('textContent', formData.textContent);
-      formDataToSend.append('acc', formData.acc);
-      formDataToSend.append('tourDate', formData.tourDate);
-      formDataToSend.append('travelCost', formData.travelCost);
-      
-      if (formData.coverImage) {
-        formDataToSend.append('coverImage', formData.coverImage);
-      }
-      if (formData.pdfFile) {
-        formDataToSend.append('pdfFile', formData.pdfFile);
-      }
-
-      const response = await fetch('/api/travel-templates', {
-        method: 'POST',
-        body: formDataToSend,
-      });
-
-      if (response.ok) {
-        closeModal();
-        setFormData({
-          title: "",
-          textContent: "",
-          acc: "",
-          coverImage: null,
-          pdfFile: null,
-          tourDate: "",
-          travelCost: "",
-        });
-        fetchTemplates();
-        setError(null);
-      } else {
-        const errorData = await response.json();
-        console.error('❌ API Error:', errorData);
-        setError(`Error al crear plantilla: ${errorData.error || 'Error desconocido'}`);
-      }
-    } catch (error) {
-      console.error('❌ Network Error:', error);
-      setError('Error de conexión con el servidor');
-    } finally {
-      setIsSubmitting(false);
+    if (!roleLoading) {
+      fetchTours();
     }
-  };
+  }, [roleLoading, fetchTours]);
 
-  const handleCopyContent = async (templateId: string, text: string) => {
+  const handleCopyContent = async (tourId: string, text: string | null) => {
     try {
-      await navigator.clipboard.writeText(text);
+      const contentToCopy = text || '';
+      await navigator.clipboard.writeText(contentToCopy);
       setShowCopyNotification(true);
       
       // Marcar como copiado
-      setCopiedTemplates(prev => new Set(prev).add(templateId));
+      setCopiedTours(prev => new Set(prev).add(tourId));
       
       // Resetear después de 3 segundos
       setTimeout(() => {
-        setCopiedTemplates(prev => {
+        setCopiedTours(prev => {
           const newSet = new Set(prev);
-          newSet.delete(templateId);
+          newSet.delete(tourId);
           return newSet;
         });
+        setShowCopyNotification(false);
       }, 3000);
     } catch {
       setError('Error al copiar al portapapeles');
     }
   };
-
-  const handleEditTemplate = (template: TravelNoteTemplate) => {
-    setEditingTemplate(template);
-    setFormData({
-      title: template.title,
-      textContent: template.textContent,
-      acc: template.acc || "",
-      coverImage: null,
-      pdfFile: null,
-      tourDate: template.tourDate.split('T')[0], // Convertir a formato YYYY-MM-DD
-      travelCost: template.travelCost?.toString() || "",
-    });
-    openModal();
-  };
-
-  const handleUpdateTemplate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingTemplate) return;
-
-    setIsSubmitting(true);
-    try {
-      const formDataToSend = new FormData();
-      formDataToSend.append('title', formData.title);
-      formDataToSend.append('textContent', formData.textContent);
-      formDataToSend.append('acc', formData.acc);
-      formDataToSend.append('tourDate', formData.tourDate);
-      formDataToSend.append('travelCost', formData.travelCost);
-      
-      if (formData.coverImage) {
-        formDataToSend.append('coverImage', formData.coverImage);
-      }
-      if (formData.pdfFile) {
-        formDataToSend.append('pdfFile', formData.pdfFile);
-      }
-
-      const response = await fetch(`/api/travel-templates/${editingTemplate.id}`, {
-        method: 'PUT',
-        body: formDataToSend,
-      });
-
-      if (response.ok) {
-        closeModal();
-        setEditingTemplate(null);
-        setFormData({
-          title: "",
-          textContent: "",
-          acc: "",
-          coverImage: null,
-          pdfFile: null,
-          tourDate: "",
-          travelCost: "",
-        });
-        fetchTemplates();
-        setError(null);
-      } else {
-        const errorData = await response.json();
-        setError(`Error al actualizar plantilla: ${errorData.error || 'Error desconocido'}`);
-      }
-    } catch {
-      setError('Error de conexión con el servidor');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleDeleteTemplate = async (id: string) => {
-    if (!confirm('¿Estás seguro de que quieres enviar esta plantilla a la papelera?')) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/travel-templates/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        fetchTemplates();
-      } else {
-        setError('Error al eliminar plantilla');
-      }
-    } catch {
-      setError('Error de conexión');
-    }
-  };
-
 
   const handleDownload = async (url: string, filename: string) => {
     try {
@@ -290,37 +149,22 @@ export default function PartenzeNotePage() {
   };
 
   const toggleExpanded = (id: string) => {
-    setExpandedTemplate(expandedTemplate === id ? null : id);
+    setExpandedTour(expandedTour === id ? null : id);
   };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('it-IT');
   };
 
-  const formatCurrency = (amount: number | null) => {
-    if (!amount) return 'N/A';
+  const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('it-IT', {
       style: 'currency',
       currency: 'EUR',
     }).format(amount);
   };
 
-  // Usar directamente los resultados de búsqueda o todas las plantillas
-  const filteredTemplates = searchTerm && searchResults.length > 0 ? searchResults : templates;
-
-  const closeModalAndReset = () => {
-    closeModal();
-    setEditingTemplate(null);
-    setFormData({
-      title: "",
-      textContent: "",
-      acc: "",
-      coverImage: null,
-      pdfFile: null,
-      tourDate: "",
-      travelCost: "",
-    });
-  };
+  // Usar directamente los resultados de búsqueda o todos los tours
+  const filteredTours: TourUnified[] = searchTerm && searchResults.length > 0 ? (searchResults as unknown as TourUnified[]) : tours;
 
   if (roleLoading) {
     return (
@@ -330,7 +174,7 @@ export default function PartenzeNotePage() {
     );
   }
 
-  if (!userRole || !['ADMIN', 'TI'].includes(userRole)) {
+  if (!userRole || !['ADMIN', 'TI', 'USER'].includes(userRole)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -338,7 +182,7 @@ export default function PartenzeNotePage() {
             Accesso Negato
           </h1>
           <p className="text-gray-600">
-            Solo gli amministratori possono accedere a questa sezione.
+            Solo gli utenti autorizzati possono accedere a questa sezione.
           </p>
         </div>
       </div>
@@ -352,163 +196,14 @@ export default function PartenzeNotePage() {
       {error && (
         <div className="mb-6 p-4 rounded-lg bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-200">
           <p>{error}</p>
-          <Button 
+          <button 
             onClick={() => setError(null)}
-            size="sm"
-            variant="outline"
-            className="mt-2"
+            className="mt-2 px-4 py-2 text-sm bg-red-200 hover:bg-red-300 dark:bg-red-800 dark:hover:bg-red-700 rounded"
           >
-            Chiudi
-          </Button>
+            Cerrar
+          </button>
         </div>
       )}
-
-      {/* Botones principales */}
-      <div className="flex justify-center gap-4 mb-8">
-        <button
-          onClick={openModal}
-          className="p-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg transition-colors duration-200 flex items-center justify-center shadow-md hover:shadow-lg"
-          title="Aggiungi Modello"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-        </button>
-      </div>
-
-      {/* Modal para agregar plantilla */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        className="max-w-lg mx-4 max-h-[90vh]"
-      >
-        <div className="flex flex-col h-full max-h-[90vh]">
-          {/* Header fijo */}
-          <div className="flex-shrink-0 p-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-              {editingTemplate ? 'Modifica Modello' : 'Aggiungi Nuovo Modello'}
-            </h2>
-          </div>
-          
-          {/* Contenido scrolleable */}
-          <div className="flex-1 overflow-y-auto p-4">
-            <form ref={formRef} onSubmit={editingTemplate ? handleUpdateTemplate : handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Titolo del Tour *
-            </label>
-            <input
-              type="text"
-              name="title"
-              value={formData.title}
-              onChange={handleInputChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Modello di Testo *
-            </label>
-            <textarea
-              name="textContent"
-              value={formData.textContent}
-              onChange={handleInputChange}
-              required
-              rows={6}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              ACC
-            </label>
-            <input
-              type="text"
-              name="acc"
-              value={formData.acc}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              placeholder="Ingrese el valor ACC"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Immagine di Copertina
-            </label>
-            <input
-              type="file"
-              accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-              onChange={(e) => setFormData(prev => ({ ...prev, coverImage: e.target.files?.[0] || null }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              File PDF/Documento
-            </label>
-            <input
-              type="file"
-              accept=".pdf,.doc,.docx"
-              onChange={(e) => setFormData(prev => ({ ...prev, pdfFile: e.target.files?.[0] || null }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <DatePicker
-              label="Data del Tour"
-              name="tourDate"
-              value={formData.tourDate}
-              onChange={(value) => setFormData(prev => ({ ...prev, tourDate: value }))}
-              required
-            />
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Costo del Viaggio
-              </label>
-              <input
-                type="number"
-                name="travelCost"
-                value={formData.travelCost}
-                onChange={handleInputChange}
-                step="0.01"
-                min="0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              />
-            </div>
-          </div>
-
-            </form>
-          </div>
-          
-          {/* Footer fijo */}
-          <div className="flex-shrink-0 p-4 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={closeModalAndReset}
-                disabled={isSubmitting}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
-              >
-                Annulla
-              </button>
-              <button
-                onClick={handleFormSubmit}
-                disabled={isSubmitting}
-                className="px-4 py-2 bg-brand-500 text-white rounded-md hover:bg-brand-600 disabled:opacity-50"
-              >
-                {isSubmitting ? 'Salvataggio...' : (editingTemplate ? 'Aggiorna Modello' : 'Salva Modello')}
-              </button>
-            </div>
-          </div>
-        </div>
-      </Modal>
 
       {/* Información de resultados de búsqueda */}
       {searchTerm && searchResults.length > 0 && (
@@ -532,29 +227,29 @@ export default function PartenzeNotePage() {
           <div className="flex justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500"></div>
           </div>
-        ) : templates.length === 0 ? (
+        ) : tours.length === 0 ? (
           <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-            <p>Nessun modello registrato</p>
-            <p className="text-sm mt-2">Clicca sull&apos;icona &quot;+&quot; per creare il primo</p>
+            <p>Nessun tour disponibile</p>
+            <p className="text-sm mt-2">I tours creati in &quot;Tours Bus&quot; e &quot;Tour Aereo&quot; appariranno qui</p>
           </div>
-        ) : filteredTemplates.length === 0 ? (
+        ) : filteredTours.length === 0 ? (
           <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-            <p>Nessun modello trovato con i filtri attuali</p>
+            <p>Nessun tour trovato con i filtri attuali</p>
             <p className="text-sm mt-2">Prova a modificare i criteri di ricerca</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredTemplates.map((template) => (
+            {filteredTours.map((tour) => (
               <div
-                key={template.id}
+                key={tour.id}
                 className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden border border-gray-200 dark:border-gray-700"
               >
                 {/* Imagen de portada */}
                 <div className="h-48 bg-gray-200 dark:bg-gray-700 relative">
-                  {template.coverImage ? (
+                  {tour.coverImage ? (
                     <Image
-                      src={template.coverImage}
-                      alt={template.title}
+                      src={tour.coverImage}
+                      alt={tour.titulo}
                       fill
                       className="object-cover"
                     />
@@ -569,69 +264,109 @@ export default function PartenzeNotePage() {
 
                 {/* Contenido de la tarjeta */}
                 <div className="p-4">
-                  {/* Título */}
-                  <h3 className="font-semibold text-lg mb-2 text-gray-900 dark:text-white">
-                    {template.title}
-                  </h3>
+                  {/* Título con icono */}
+                  <div className="flex items-center gap-2 mb-2">
+                    {tour.tipo === 'bus' ? (
+                      <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M4 16c0 .88.39 1.67 1 2.22V20a1 1 0 001 1h1a1 1 0 001-1v-1h8v1a1 1 0 001 1h1a1 1 0 001-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zm3.5 1c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-6H6V6h12v5z"/>
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-1.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-3.5l8 1.5z"/>
+                      </svg>
+                    )}
+                    <h3 className="font-semibold text-lg text-gray-900 dark:text-white">
+                      {tour.titulo}
+                    </h3>
+                  </div>
 
-                  {/* Fecha y costo */}
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      {formatDate(template.tourDate)}
-                    </span>
-                    <span className="text-sm font-medium text-brand-600 dark:text-brand-400">
-                      {formatCurrency(template.travelCost)}
-                    </span>
+                  {/* Fecha y precios */}
+                  <div className="mb-3 space-y-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        📅 {tour.fechaViaje ? formatDate(tour.fechaViaje) : 'Fecha no definida'}
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-gray-600 dark:text-gray-400">Adulto:</span>
+                        <span className="text-sm font-medium text-brand-600 dark:text-brand-400">
+                          {formatCurrency(tour.precioAdulto)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-gray-600 dark:text-gray-400">Niño:</span>
+                        <span className="text-sm font-medium text-brand-600 dark:text-brand-400">
+                          {formatCurrency(tour.precioNino)}
+                        </span>
+                      </div>
+                      {/* Información específica según el tipo */}
+                      {tour.tipo === 'bus' ? (
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-gray-600 dark:text-gray-400">Asientos:</span>
+                          <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                            {tour.cantidadAsientos}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-gray-600 dark:text-gray-400">Meta:</span>
+                          <span className="text-sm font-medium text-green-600 dark:text-green-400">
+                            {tour.meta}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Campo ACC */}
-                  {(template as TravelNoteTemplate & { acc?: string }).acc && (
+                  {tour.acc && (
                     <div className="mb-3">
                       <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        ACC: {(template as TravelNoteTemplate & { acc?: string }).acc}
+                        ACC: {tour.acc}
                       </span>
                     </div>
                   )}
 
                   {/* Archivos */}
                   <div className="space-y-2 mb-3">
-                    {template.pdfFile && (
+                    {tour.pdfFile && (
                       <div className="text-sm">
                         <span className="text-gray-500 dark:text-gray-400">PDF: </span>
                         <button
-                          onClick={() => handleDownload(template.pdfFile!, template.pdfFileName || 'documento.pdf')}
+                          onClick={() => handleDownload(tour.pdfFile!, tour.pdfFileName || 'documento.pdf')}
                           className="text-brand-600 dark:text-brand-400 hover:underline cursor-pointer"
                         >
-                          {template.pdfFileName || 'documento.pdf'}
+                          {tour.pdfFileName || 'documento.pdf'}
                         </button>
                       </div>
                     )}
                     
-                    {template.coverImage && (
+                    {tour.coverImage && (
                       <div className="text-sm">
                         <span className="text-gray-500 dark:text-gray-400">Immagine: </span>
                         <button
-                          onClick={() => handleDownload(template.coverImage!, template.coverImageName || 'imagen.jpg')}
+                          onClick={() => handleDownload(tour.coverImage!, tour.coverImageName || 'imagen.jpg')}
                           className="text-brand-600 dark:text-brand-400 hover:underline cursor-pointer"
                         >
-                          {template.coverImageName || 'imagen.jpg'}
+                          {tour.coverImageName || 'imagen.jpg'}
                         </button>
                       </div>
                     )}
                   </div>
 
-                  {/* Acciones */}
-                  <div className="flex justify-center space-x-4 mb-3">
+                  {/* Botón Copiar (único botón de acción) */}
+                  <div className="flex justify-center mb-3">
                     <button
-                      onClick={() => handleCopyContent(template.id, template.textContent)}
+                      onClick={() => handleCopyContent(tour.id, tour.descripcion)}
                       className={`p-3 rounded-lg transition-all duration-200 transform hover:scale-105 ${
-                        copiedTemplates.has(template.id)
+                        copiedTours.has(tour.id)
                           ? 'bg-green-500 text-white'
                           : 'bg-green-100 hover:bg-green-200 text-green-700 hover:text-green-800 dark:bg-green-900/20 dark:hover:bg-green-900/30 dark:text-green-400 dark:hover:text-green-300'
                       }`}
-                      title={copiedTemplates.has(template.id) ? "¡Copiado!" : "Copiar contenido"}
+                      title={copiedTours.has(tour.id) ? "¡Copiado!" : "Copiar contenido"}
                     >
-                      {copiedTemplates.has(template.id) ? (
+                      {copiedTours.has(tour.id) ? (
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
@@ -641,69 +376,51 @@ export default function PartenzeNotePage() {
                         </svg>
                       )}
                     </button>
-                    
-                    <button
-                      onClick={() => handleEditTemplate(template)}
-                      className="p-3 bg-blue-100 hover:bg-blue-200 text-blue-700 hover:text-blue-800 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-400 dark:hover:text-blue-300 rounded-lg transition-all duration-200 transform hover:scale-105"
-                      title="Editar plantilla"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                    </button>
-                    
-                    <button
-                      onClick={() => handleDeleteTemplate(template.id)}
-                      className="p-3 bg-red-100 hover:bg-red-200 text-red-700 hover:text-red-800 dark:bg-red-900/20 dark:hover:bg-red-900/30 dark:text-red-400 dark:hover:text-red-300 rounded-lg transition-all duration-200 transform hover:scale-105"
-                      title="Enviar a papelera"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
                   </div>
 
-                  {/* Texto de la plantilla */}
-                  <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
-                    <div className="text-sm text-gray-700 dark:text-gray-300">
-                      {expandedTemplate === template.id ? (
-                        <div>
-                          <p className="whitespace-pre-wrap">{template.textContent}</p>
-                          <button
-                            onClick={() => toggleExpanded(template.id)}
-                            className="text-brand-600 dark:text-brand-400 hover:underline mt-2"
-                          >
-                            Leggi meno
-                          </button>
-                        </div>
-                      ) : (
-                        <div>
-                          <p className="line-clamp-3">
-                            {template.textContent.length > 150 
-                              ? `${template.textContent.substring(0, 150)}...`
-                              : template.textContent
-                            }
-                          </p>
-                          {template.textContent.length > 150 && (
+                  {/* Texto de la descripción */}
+                  {tour.descripcion && (
+                    <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
+                      <div className="text-sm text-gray-700 dark:text-gray-300">
+                        {expandedTour === tour.id ? (
+                          <div>
+                            <p className="whitespace-pre-wrap">{tour.descripcion}</p>
                             <button
-                              onClick={() => toggleExpanded(template.id)}
+                              onClick={() => toggleExpanded(tour.id)}
                               className="text-brand-600 dark:text-brand-400 hover:underline mt-2"
                             >
-                              Leggi più
+                              Leggi meno
                             </button>
-                          )}
-                        </div>
-                      )}
+                          </div>
+                        ) : (
+                          <div>
+                            <p className="line-clamp-3">
+                              {tour.descripcion.length > 150 
+                                ? `${tour.descripcion.substring(0, 150)}...`
+                                : tour.descripcion
+                              }
+                            </p>
+                            {tour.descripcion.length > 150 && (
+                              <button
+                                onClick={() => toggleExpanded(tour.id)}
+                                className="text-brand-600 dark:text-brand-400 hover:underline mt-2"
+                              >
+                                Leggi più
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Información del creador */}
                   <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Creado por: {template.creator.firstName} {template.creator.lastName}
+                      Creato por: {tour.creator.firstName} {tour.creator.lastName}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {formatDate(template.createdAt)}
+                      {formatDate(tour.createdAt)}
                     </p>
                   </div>
                 </div>

@@ -16,9 +16,9 @@ export async function GET() {
     const userCount = await prisma.user.count();
     console.log(`✅ User count: ${userCount}`);
     
-    // Test 3: Contar plantillas
-    const templateCount = await prisma.travelNoteTemplate.count();
-    console.log(`✅ Template count: ${templateCount}`);
+    // Test 3: Contar tours de bus
+    const tourBusCount = await prisma.tourBus.count();
+    console.log(`✅ TourBus count: ${tourBusCount}`);
     
     // Test 4: Verificar usuario actual
     const { userId } = await auth();
@@ -35,7 +35,7 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       userCount,
-      templateCount,
+      tourBusCount,
       currentUser: userId ? await prisma.user.findUnique({
         where: { clerkId: userId },
         select: { id: true, email: true, role: true }

@@ -1,0 +1,32 @@
+{
+  "timestamp": "2025-10-28T17:22:27.321Z",
+  "database": {
+    "connection": "OK",
+    "status": "Optimized"
+  },
+  "users": {
+    "total": 4,
+    "active": 4
+  },
+  "referenceData": {
+    "metodoPagamento": 10,
+    "iata": 19,
+    "servizio": 7,
+    "fermataBus": 13,
+    "statoBus": 4
+  },
+  "businessData": {
+    "biglietteria": 3,
+    "tourBus": 1,
+    "tourAereo": 1,
+    "clients": 7
+  },
+  "optimizations": [
+    "Conexiones de base de datos optimizadas",
+    "Índices de rendimiento añadidos",
+    "Sistema de cache implementado",
+    "Logging estructurado configurado",
+    "Configuración de Next.js optimizada",
+    "Manejo de errores mejorado"
+  ]
+}

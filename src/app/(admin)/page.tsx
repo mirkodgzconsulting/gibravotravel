@@ -15,11 +15,8 @@ export default function DashboardPage() {
   const router = useRouter();
 
   useEffect(() => {
-    console.log('🔍 Dashboard useEffect:', { isLoaded, isSignedIn });
-    
     // Si Clerk está cargado y el usuario no está autenticado, redirigir a signin
     if (isLoaded && isSignedIn === false) {
-      console.log('🚀 User not authenticated, redirecting to signin');
       router.push("/signin");
       return;
     }

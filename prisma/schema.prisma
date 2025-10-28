@@ -7,28 +7,29 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum UserRole {
-  USER
-  ADMIN
-  TI
-}
-
 model User {
-  id          String   @id @default(cuid())
-  clerkId     String   @unique
-  email       String   @unique
-  firstName   String?
-  lastName    String?
-  phoneNumber String?
-  photo       String?
-  role        UserRole @default(USER)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relaciones
-  travelNoteTemplates TravelNoteTemplate[]
-  clients            Client[]
+  id                String           @id @default(cuid())
+  clerkId           String           @unique
+  email             String           @unique
+  firstName         String?
+  lastName          String?
+  phoneNumber       String?
+  photo             String?
+  role              UserRole         @default(USER)
+  isActive          Boolean          @default(true)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  agendasPersonales AgendaPersonal[]
+  biglietteria      Biglietteria[]
+  clients           Client[]
+  infoTemplates     Info[]
+  routes            Route[]
+  stops             Stop[]
+  tourAereos        TourAereo[]
+  tourBuses         TourBus[]
+  ventasTourAereo   VentaTourAereo[]
+  ventasTourBus     VentaTourBus[]
+  notificaciones    Notificacion[]
 
   @@map("users")
 }
@@ -48,183 +49,519 @@ model Departure {
   @@map("departures")
 }
 
-// Modelo para plantillas de notas de viaje
-model TravelNoteTemplate {
-  id              String   @id @default(cuid())
-  title           String   // Título del tour
-  textContent     String   // Plantilla de texto
-  acc             String?  // Campo ACC
-  coverImage      String?  // URL del archivo (Vercel Blob o ruta local)
-  coverImageName  String?  // Nombre original del archivo de imagen
-  pdfFile         String?  // URL del archivo (Vercel Blob o ruta local)
-  pdfFileName     String?  // Nombre original del archivo PDF
-  tourDate        DateTime // Fecha del tour
-  travelCost      Float?   // Costo del viaje
-  createdBy       String   // ID del usuario que creó la plantilla
-  isDeleted       Boolean  @default(false) // Para papelera
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  // Relación con el usuario que creó la plantilla
-  creator User @relation(fields: [createdBy], references: [clerkId])
-
-  @@map("travel_note_templates")
-}
-
 model Info {
-  id        String   @id @default(cuid())
-  title     String
-  content   String
-  category  String
-  published Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String   @id @default(cuid())
+  title          String
+  textContent    String
+  coverImage     String?
+  coverImageName String?
+  pdfFile        String?
+  pdfFileName    String?
+  createdBy      String
+  isDeleted      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  creator        User     @relation(fields: [createdBy], references: [clerkId])
 
   @@map("info")
 }
 
 model Route {
-  id          String      @id @default(cuid())
-  name        String
-  description String?
-  distance    Float?
-  duration    Int?
-  active      Boolean     @default(true)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  stops       RouteStop[]
+  id             String   @id @default(cuid())
+  title          String
+  textContent    String
+  coverImage     String?
+  coverImageName String?
+  pdfFile        String?
+  pdfFileName    String?
+  createdBy      String
+  isDeleted      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  creator        User     @relation(fields: [createdBy], references: [clerkId])
 
   @@map("routes")
 }
 
 model Stop {
-  id         String      @id @default(cuid())
-  name       String
-  address    String?
-  latitude   Float?
-  longitude  Float?
-  active     Boolean     @default(true)
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  routeStops RouteStop[]
+  id             String   @id @default(cuid())
+  title          String
+  textContent    String
+  coverImage     String?
+  coverImageName String?
+  pdfFile        String?
+  pdfFileName    String?
+  createdBy      String
+  isDeleted      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  creator        User     @relation(fields: [createdBy], references: [clerkId])
 
   @@map("stops")
 }
 
-model RouteStop {
-  id      String @id @default(cuid())
-  routeId String
-  stopId  String
-  order   Int    // orden de la parada en la ruta
-  
-  route Route @relation(fields: [routeId], references: [id], onDelete: Cascade)
-  stop  Stop  @relation(fields: [stopId], references: [id], onDelete: Cascade)
-
-  @@unique([routeId, stopId])
-  @@map("route_stops")
-}
-
-// Modelo para clientes
 model Client {
-  id              String   @id @default(cuid())
-  firstName       String   // Nome
-  lastName        String   // Cognome
-  fiscalCode      String   // Codice Fiscale
-  address         String   // Indirizzo
-  phoneNumber     String   // Telefono
-  email           String   @unique
-  birthPlace      String   // Nato a
-  birthDate       DateTime // Data di nascita
-  documents       String?  // Documenti (URLs o paths)
-  isActive        Boolean  @default(true)
-  createdBy       String   // ID del usuario que creó el cliente
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  // Relación con el usuario que creó el cliente
-  creator User @relation(fields: [createdBy], references: [clerkId])
+  id            String   @id @default(cuid())
+  firstName     String
+  lastName      String
+  fiscalCode    String
+  address       String
+  phoneNumber   String
+  email         String   @unique
+  birthPlace    String
+  birthDate     DateTime
+  document1     String?
+  document1Name String?
+  document2     String?
+  document2Name String?
+  document3     String?
+  document3Name String?
+  document4     String?
+  document4Name String?
+  isActive      Boolean  @default(true)
+  createdBy     String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  creator       User     @relation(fields: [createdBy], references: [clerkId])
 
   @@map("clients")
 }
 
-// Tablas de referencia/catálogo
-
 model Pagamento {
-  id         String   @id @default(cuid())
-  pagamento  String   @unique // Tipo de pago: acconto, acconto ricevuto, verificare, ricevuto, da pagare
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(cuid())
+  pagamento String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("pagamento")
 }
 
 model Iata {
-  id         String   @id @default(cuid())
-  iata       String   @unique // Aerolínea: suema, ryan air, flight genius, kkm, safer, booking
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(cuid())
+  iata      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("iata")
 }
 
 model Servizio {
-  id         String   @id @default(cuid())
-  servizio   String   @unique // Servicio: biglietto, express, hotel, bagaglio, cambio data, polizza, lettera di invito
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(cuid())
+  servizio  String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("servizio")
 }
 
 model MetodoPagamento {
-  id                 String   @id @default(cuid())
-  metodoPagamento    String   @unique // Método: cash, PostePay, bonifico, POS, Western, RIA
-  isActive           Boolean  @default(true)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id              String   @id @default(cuid())
+  metodoPagamento String   @unique
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@map("metodo_pagamento")
 }
 
-model Origine {
-  id         String   @id @default(cuid())
-  origine    String   @unique // Origen: WhatsApp, Facebook, Cliente, Passaparola
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  @@map("origine")
-}
-
-// Tabla para gestión de boletos/tickets de viaje
 model Biglietteria {
-  id                String   @id @default(cuid())
-  pagamento         String   // Tipo de pago (referencia a tabla Pagamento)
-  data              DateTime // Fecha de la transacción
-  iata              String   // Aerolínea (referencia a tabla Iata)
-  pnr               String?  // Código PNR del vuelo
-  passeggero        String   // Nombre del pasajero
-  itinerario        String   // Ruta del viaje
-  servizio          String   // Servicio (referencia a tabla Servizio)
-  neto              Float    // Precio neto
-  venduto           Float    // Precio vendido
-  acconto           Float    // Monto del anticipo
-  daPagare          Float    // Monto pendiente de pago
-  metodoPagamento   String   // Método de pago (referencia a tabla MetodoPagamento)
-  feeAgv            Float    // Fee de la agencia
-  origine           String   // Origen del cliente (referencia a tabla Origine)
-  cliente           String   // Nombre del cliente
-  codiceFiscale     String   // Código fiscal del cliente
-  indirizzo         String   // Dirección del cliente
-  email             String   // Email del cliente
-  numeroTelefono    String   // Número de teléfono del cliente
-  creadoPor         String   // Nombre de la persona que creó el registro
-  isActive          Boolean  @default(true)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id               String                 @id @default(cuid())
+  pagamento        String
+  data             DateTime
+  pnr              String?
+  itinerario       String
+  metodoPagamento  String
+  cliente          String
+  codiceFiscale    String
+  indirizzo        String
+  email            String
+  numeroTelefono   String
+  creadoPor        String
+  isActive         Boolean                @default(true)
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  netoPrincipal    Float                  @default(0)
+  vendutoTotal     Float                  @default(0)
+  acconto          Float                  @default(0)
+  daPagare         Float                  @default(0)
+  feeAgv           Float                  @default(0)
+  attachedFile     String?
+  attachedFileName String?
+  numeroCuotas     Int?
+  numeroPasajeros  Int                    @default(1)
+  creator          User                   @relation(fields: [creadoPor], references: [id])
+  cuotas           Cuota[]
+  pasajeros        PasajeroBiglietteria[]
 
   @@map("biglietteria")
+}
+
+model PasajeroBiglietteria {
+  id                   String       @id @default(cuid())
+  biglietteriaId       String
+  nombrePasajero       String
+  servizio             String
+  andata               DateTime?
+  ritorno              DateTime?
+  iata                 String?
+  netoBiglietteria     Float?
+  vendutoBiglietteria  Float?
+  tieneExpress         Boolean?     @default(false)
+  netoExpress          Float?
+  vendutoExpress       Float?
+  tienePolizza         Boolean?     @default(false)
+  netoPolizza          Float?
+  vendutoPolizza       Float?
+  tieneLetteraInvito   Boolean?     @default(false)
+  netoLetteraInvito    Float?
+  vendutoLetteraInvito Float?
+  tieneHotel           Boolean?     @default(false)
+  netoHotel            Float?
+  vendutoHotel         Float?
+  estado               String       @default("Pendiente")
+  fechaPago            DateTime?
+  fechaActivacion      DateTime?
+  notas                String?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  biglietteria         Biglietteria @relation(fields: [biglietteriaId], references: [id], onDelete: Cascade)
+
+  @@map("pasajeros_biglietteria")
+}
+
+model Cuota {
+  id               String       @id @default(cuid())
+  biglietteriaId   String
+  numeroCuota      Int
+  data             DateTime?
+  prezzo           Float
+  note             String?
+  isPagato         Boolean      @default(false)
+  attachedFile     String?
+  attachedFileName String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  biglietteria     Biglietteria @relation(fields: [biglietteriaId], references: [id], onDelete: Cascade)
+
+  @@map("cuotas")
+}
+
+model TourBus {
+  id               String         @id @default(cuid())
+  titulo           String
+  precioAdulto     Float          @default(0)
+  precioNino       Float          @default(0)
+  cantidadAsientos Int            @default(53)
+  fechaCreacion    DateTime       @default(now())
+  fechaViaje       DateTime?
+  fechaFin         DateTime?
+  acc              String?
+  bus              Float?
+  pasti            Float?
+  parking          Float?
+  coordinatore1    Float?
+  coordinatore2    Float?
+  ztl              Float?
+  hotel            Float?
+  polizza          Float?
+  tkt              Float?
+  autoservicio     String?
+  feeAgv           Float          @default(0)
+  coverImage       String?
+  coverImageName   String?
+  pdfFile          String?
+  pdfFileName      String?
+  descripcion      String?
+  isActive         Boolean        @default(true)
+  createdBy        String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  asientos         AsientoBus[]
+  creator          User           @relation(fields: [createdBy], references: [clerkId])
+  ventas           VentaAsiento[]
+  ventasTourBus    VentaTourBus[]
+
+  @@map("tour_bus")
+}
+
+model TourAereo {
+  id               String           @id @default(cuid())
+  titulo           String
+  precioAdulto     Float            @default(0)
+  precioNino       Float            @default(0)
+  fechaViaje       DateTime?
+  fechaFin         DateTime?
+  meta             Int              @default(0)
+  acc              String?
+  guidaLocale      Float?
+  coordinatore     Float?
+  transporte       Float?
+  notas            String?
+  notasCoordinador String?
+  feeAgv           Float            @default(0)
+  coverImage       String?
+  coverImageName   String?
+  pdfFile          String?
+  pdfFileName      String?
+  descripcion      String?
+  isActive         Boolean          @default(true)
+  createdBy        String
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  creator          User             @relation(fields: [createdBy], references: [clerkId])
+  ventas           VentaTourAereo[]
+
+  @@map("tour_aereo")
+}
+
+model AsientoBus {
+  id              String      @id @default(cuid())
+  tourBusId       String
+  numeroAsiento   Int
+  fila            Int
+  columna         String
+  tipo            TipoAsiento @default(NORMAL)
+  isVendido       Boolean     @default(false)
+  stato           String      @default("Libero")
+  precioVenta     Float?
+  fechaVenta      DateTime?
+  clienteNombre   String?
+  clienteTelefono String?
+  clienteEmail    String?
+  observaciones   String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  tourBus         TourBus     @relation(fields: [tourBusId], references: [id], onDelete: Cascade)
+
+  @@unique([tourBusId, numeroAsiento])
+  @@map("asientos_bus")
+}
+
+model VentaAsiento {
+  id              String   @id @default(cuid())
+  tourBusId       String
+  numeroAsiento   Int
+  clienteNombre   String
+  clienteTelefono String?
+  clienteEmail    String?
+  precioVenta     Float
+  fechaVenta      DateTime @default(now())
+  metodoPago      String?
+  observaciones   String?
+  createdBy       String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  tourBus         TourBus  @relation(fields: [tourBusId], references: [id], onDelete: Cascade)
+
+  @@map("ventas_asientos")
+}
+
+model VentaTourBus {
+  id                 String               @id @default(cuid())
+  tourBusId          String
+  clienteId          String?
+  clienteNombre      String
+  codiceFiscale      String
+  indirizzo          String
+  email              String
+  numeroTelefono     String
+  fechaNacimiento    DateTime
+  fermata            String
+  numeroAsiento      Int
+  tieneMascotas      Boolean              @default(false)
+  numeroMascotas     Int?
+  tieneInfantes      Boolean              @default(false)
+  numeroInfantes     Int?
+  totalAPagar        Float
+  acconto            Float
+  daPagare           Float
+  metodoPagamento    String
+  estadoPago         String
+  numeroAcompanantes Int                  @default(0)
+  numeroCuotas       Int?
+  createdBy          String
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  acompanantes       AcompananteTourBus[]
+  cuotas             CuotaTourBus[]
+  creator            User                 @relation(fields: [createdBy], references: [id])
+  tourBus            TourBus              @relation(fields: [tourBusId], references: [id], onDelete: Cascade)
+
+  @@map("ventas_tour_bus")
+}
+
+model AcompananteTourBus {
+  id             String       @id @default(cuid())
+  ventaTourBusId String
+  clienteId      String?
+  nombreCompleto String
+  telefono       String?
+  codiceFiscale  String?
+  esAdulto       Boolean      @default(true)
+  fermata        String
+  numeroAsiento  Int
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  ventaTourBus   VentaTourBus @relation(fields: [ventaTourBusId], references: [id], onDelete: Cascade)
+
+  @@map("acompanantes_tour_bus")
+}
+
+model CuotaTourBus {
+  id              String       @id @default(cuid())
+  ventaTourBusId  String
+  numeroCuota     Int
+  fechaPago       DateTime?
+  precioPagar     Float
+  metodoPagamento String
+  isPagado        Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  ventaTourBus    VentaTourBus @relation(fields: [ventaTourBusId], references: [id], onDelete: Cascade)
+
+  @@map("cuotas_tour_bus")
+}
+
+model FermataBus {
+  id        String   @id @default(cuid())
+  fermata   String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("fermata_bus")
+}
+
+model StatoBus {
+  id        String   @id @default(cuid())
+  stato     String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("stato_bus")
+}
+
+model VentaTourAereo {
+  id               String                @id @default(cuid())
+  tourAereoId      String
+  clienteId        String?
+  pasajero         String
+  codiceFiscale    String
+  indirizzo        String
+  email            String
+  numeroTelefono   String
+  paisOrigen       String
+  iata             String
+  pnr              String?
+  hotel            Float?
+  transfer         Float?
+  attachedFile     String?
+  attachedFileName String?
+  venduto          Float
+  acconto          Float
+  daPagare         Float
+  metodoPagamento  String
+  metodoCompra     String?
+  stato            String
+  createdBy        String
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  cuotas           CuotaVentaTourAereo[]
+  creator          User                  @relation(fields: [createdBy], references: [id])
+  tourAereo        TourAereo             @relation(fields: [tourAereoId], references: [id], onDelete: Cascade)
+
+  @@map("ventas_tour_aereo")
+}
+
+model CuotaVentaTourAereo {
+  id               String         @id @default(cuid())
+  ventaTourAereoId String
+  numeroCuota      Int
+  fechaPago        DateTime
+  monto            Float
+  nota             String?
+  estado           String         @default("Pendiente")
+  attachedFile     String?
+  attachedFileName String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  ventaTourAereo   VentaTourAereo @relation(fields: [ventaTourAereoId], references: [id], onDelete: Cascade)
+
+  @@map("cuotas_venta_tour_aereo")
+}
+
+model AgendaPersonal {
+  id            String           @id @default(cuid())
+  titulo        String
+  descripcion   String?
+  fecha         DateTime
+  tipo          AgendaTipo       @default(PERSONAL)
+  visibilidad   VisibilidadAgenda @default(PRIVADO)
+  color         String           @default("bg-purple-200 text-gray-800")
+  isActive      Boolean          @default(true)
+  createdBy     String
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  creator       User             @relation(fields: [createdBy], references: [id])
+  recordatorio  RecordatorioAgenda?
+  notificaciones Notificacion[]
+
+  @@map("agendas_personales")
+}
+
+model RecordatorioAgenda {
+  id           String         @id @default(cuid())
+  agendaId     String         @unique
+  diasAntes    Int            @default(0)  // 0 = mismo día, 1-5 = días antes
+  isActivo     Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  agenda       AgendaPersonal @relation(fields: [agendaId], references: [id], onDelete: Cascade)
+
+  @@map("recordatorios_agenda")
+}
+
+enum TipoAsiento {
+  NORMAL
+  PREMIUM
+  DISCAPACITADO
+  CONDUCTOR
+}
+
+enum AgendaTipo {
+  PERSONAL
+  REUNION
+  CITA
+  RECORDATORIO
+  TAREA
+}
+
+enum VisibilidadAgenda {
+  PRIVADO
+  PUBLICO
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  TI
+}
+
+model Notificacion {
+  id        String   @id @default(cuid())
+  userId    String
+  agendaId  String?
+  mensaje   String
+  tipo      String   @default("AGENDA") // AGENDA, SISTEMA, etc.
+  isLeida   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agenda    AgendaPersonal? @relation(fields: [agendaId], references: [id], onDelete: Cascade)
+
+  @@map("notificaciones")
 }

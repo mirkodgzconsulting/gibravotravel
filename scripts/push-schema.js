@@ -42,7 +42,7 @@ async function pushSchema() {
     
     const users = await prisma.user.count();
     const clients = await prisma.client.count();
-    const templates = await prisma.travelNoteTemplate.count();
+    const tourBuses = await prisma.tourBus.count();
     const departures = await prisma.departure.count();
     const info = await prisma.info.count();
     const routes = await prisma.route.count();
@@ -50,7 +50,7 @@ async function pushSchema() {
     
     console.log(`👥 Users: ${users} registros`);
     console.log(`👤 Clients: ${clients} registros`);
-    console.log(`📝 TravelNoteTemplates: ${templates} registros`);
+    console.log(`🚌 TourBuses: ${tourBuses} registros`);
     console.log(`🚀 Departures: ${departures} registros`);
     console.log(`ℹ️ Info: ${info} registros`);
     console.log(`🛣️ Routes: ${routes} registros`);

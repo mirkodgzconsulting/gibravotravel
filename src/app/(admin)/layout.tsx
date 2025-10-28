@@ -30,29 +30,21 @@ export default function AdminLayout({
   //   }
   // }, [isLoaded, isSignedIn, router]);
 
-  // Debug: Log del estado actual
-  useEffect(() => {
-    console.log('🔍 Layout useEffect:', { isLoaded, isSignedIn, roleLoading, userRole });
-  }, [isLoaded, isSignedIn, roleLoading, userRole]);
-
   // CRÍTICO: Usar useEffect para manejar la redirección con delay
   useEffect(() => {
-    if (isLoaded && isSignedIn && !roleLoading && userRole === null) {
-      console.log('❌ No role found after loading - scheduling redirect to unauthorized');
+    if (isLoaded && isSignedIn && !roleLoading && userRole === null && pathname !== '/unauthorized') {
       const timer = setTimeout(() => {
         // Verificar una vez más antes de redirigir
-        if (userRole === null) {
-          console.log('🚀 Executing redirect to unauthorized');
+        if (userRole === null && pathname !== '/unauthorized') {
           router.push("/unauthorized");
         }
       }, 3000); // Aumentar delay a 3 segundos
       
       return () => {
-        console.log('🔄 Clearing redirect timer');
         clearTimeout(timer);
       };
     }
-  }, [isLoaded, isSignedIn, roleLoading, userRole, router]);
+  }, [isLoaded, isSignedIn, roleLoading, userRole, router, pathname]);
 
   // Mostrar loading mientras Clerk se está cargando
   if (!isLoaded) {
@@ -79,7 +71,8 @@ export default function AdminLayout({
 
   // Si no hay rol pero todo está cargado Y el usuario está autenticado, mostrar loading temporal
   // Solo mostrar loading si realmente no hay rol después de un tiempo Y el usuario está autenticado
-  if (userRole === null && isLoaded && isSignedIn && !roleLoading) {
+  // EXCEPTO en la ruta /unauthorized donde debe mostrar la página directamente
+  if (userRole === null && isLoaded && isSignedIn && !roleLoading && pathname !== '/unauthorized') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -100,6 +93,11 @@ export default function AdminLayout({
 
   // Route-specific styles for the main content container
   const getRouteSpecificStyles = () => {
+    // Para rutas que empiezan con ciertos paths (incluyendo rutas dinámicas)
+    if (pathname.startsWith("/biglietteria")) {
+      return "p-4 w-full md:p-6"; // Ancho completo como TOUR AEREO
+    }
+    
     switch (pathname) {
       case "/text-generator":
         return "";
@@ -114,21 +112,19 @@ export default function AdminLayout({
     }
   };
 
-  // Dynamic class for main content margin based on sidebar state
+  // Fixed margin for main content (sidebar always 200px)
   const mainContentMargin = isMobileOpen
     ? "ml-0"
-    : isExpanded || isHovered
-    ? "xl:ml-[290px]"
-    : "xl:ml-[90px]";
+    : "xl:ml-[200px]";
 
   return (
-    <div className="min-h-screen xl:flex">
+    <div className="min-h-screen xl:flex overflow-x-hidden">
       {/* Sidebar and Backdrop */}
       <AppSidebar />
       <Backdrop />
       {/* Main Content Area */}
       <div
-        className={`flex-1 transition-all  duration-300 ease-in-out ${mainContentMargin}`}
+        className={`flex-1 transition-all duration-300 ease-in-out ${mainContentMargin} pt-[60px] xl:pt-[72px]`}
       >
         {/* Header */}
         <AppHeader />

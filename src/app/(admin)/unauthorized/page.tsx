@@ -1,11 +1,37 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useUser as useClerkUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 
 export default function UnauthorizedPage() {
-  const { user } = useClerkUser();
+  const { user, isLoaded } = useClerkUser();
+  const router = useRouter();
+
+  // Si el usuario no está autenticado, redirigir al login
+  useEffect(() => {
+    if (isLoaded && !user) {
+      router.push('/signin');
+    }
+  }, [isLoaded, user, router]);
+
+  // Mostrar loading mientras se verifica la autenticación
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-500 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Verificando autenticación...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Si no hay usuario, no mostrar nada (se redirigirá)
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
@@ -61,7 +87,7 @@ export default function UnauthorizedPage() {
           </div>
 
           <button
-            onClick={() => window.location.href = '/signin'}
+            onClick={() => router.push('/signin')}
             className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-brand-500 hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500"
           >
             Torna al Login

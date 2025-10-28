@@ -47,6 +47,11 @@ export default function CreaUtentiPage() {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string; password?: string } | null>(null);
   
+  // Estados para edición y eliminación
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  
   const [formData, setFormData] = useState<UserFormData>({
     email: "",
     firstName: "",
@@ -107,34 +112,38 @@ export default function CreaUtentiPage() {
       formDataToSend.append('phoneNumber', formData.phoneNumber);
       formDataToSend.append('role', formData.role);
       
-      // Debug: Log photo data before sending
-      console.log('📸 Frontend - Photo data:', {
-        hasPhoto: !!formData.photo,
-        photoName: formData.photo?.name,
-        photoSize: formData.photo?.size,
-        photoType: formData.photo?.type
-      });
-      
       if (formData.photo) {
         formDataToSend.append('photo', formData.photo);
-        console.log('✅ Frontend - Photo added to FormData');
-      } else {
-        console.log('⚠️ Frontend - No photo to send');
       }
 
-      const response = await fetch('/api/user/create', {
-        method: 'POST',
-        body: formDataToSend,
-      });
+      let response;
+      if (isEditMode && editingUser) {
+        // Modo edición
+        response = await fetch(`/api/user/${editingUser.id}`, {
+          method: 'PUT',
+          body: formDataToSend,
+        });
+      } else {
+        // Modo creación
+        response = await fetch('/api/user/create', {
+          method: 'POST',
+          body: formDataToSend,
+        });
+      }
 
       const data = await response.json();
 
       if (response.ok) {
         setMessage({ 
           type: 'success', 
-          text: data.message || 'Utente creato con successo!',
-          password: data.temporaryPassword 
+          text: isEditMode ? 'Usuario actualizado exitosamente' : (data.message || 'Usuario creado exitosamente'),
+          password: !isEditMode ? data.temporaryPassword : undefined
         });
+        
+        // Resetear estados de edición
+        setEditingUser(null);
+        setIsEditMode(false);
+        
         setFormData({
           email: "",
           firstName: "",
@@ -146,10 +155,16 @@ export default function CreaUtentiPage() {
         modal.closeModal();
         fetchUsers(); // Recargar la lista de usuarios
       } else {
-        setMessage({ type: 'error', text: data.error || 'Errore durante la creazione dell\'utente' });
+        setMessage({ 
+          type: 'error', 
+          text: data.error || (isEditMode ? 'Error al actualizar usuario' : 'Error al crear usuario')
+        });
       }
     } catch {
-      setMessage({ type: 'error', text: 'Errore durante la creazione dell\'utente' });
+      setMessage({ 
+        type: 'error', 
+        text: isEditMode ? 'Error al actualizar usuario' : 'Error al crear usuario'
+      });
     } finally {
       setSubmitting(false);
     }
@@ -166,6 +181,80 @@ export default function CreaUtentiPage() {
 
   const getStatusBadgeColor = (isActive: boolean) => {
     return isActive ? 'success' : 'error';
+  };
+
+  // Función para manejar edición
+  const handleEditUser = (user: User) => {
+    setEditingUser(user);
+    setIsEditMode(true);
+    
+    // Llenar el formulario con los datos del usuario
+    setFormData({
+      email: user.email,
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      phoneNumber: user.phoneNumber || '',
+      role: user.role,
+      photo: null // No pre-cargamos la foto existente
+    });
+    
+    modal.openModal();
+  };
+
+  // Función para manejar eliminación
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm('¿Estás seguro de que quieres eliminar este usuario? Esta acción no se puede deshacer y eliminará el usuario tanto del sistema como de Clerk.')) {
+      return;
+    }
+
+    setDeletingUserId(userId);
+    
+    try {
+      const response = await fetch(`/api/user/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        setMessage({
+          type: 'success',
+          text: 'Usuario eliminado exitosamente'
+        });
+        
+        // Recargar la lista de usuarios
+        fetchUsers();
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al eliminar usuario');
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      setMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Error al eliminar usuario'
+      });
+    } finally {
+      setDeletingUserId(null);
+    }
+  };
+
+  // Función para cancelar edición
+  const handleCancelEdit = () => {
+    setEditingUser(null);
+    setIsEditMode(false);
+    modal.closeModal();
+    
+    // Resetear formulario
+    setFormData({
+      email: "",
+      firstName: "",
+      lastName: "",
+      phoneNumber: "",
+      role: "USER",
+      photo: null,
+    });
   };
 
   if (roleLoading) {
@@ -266,10 +355,10 @@ export default function CreaUtentiPage() {
         <div className="space-y-6">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Registra Nuovo Utente
+              {isEditMode ? 'Modifica Utente' : 'Registra Nuovo Utente'}
             </h2>
             <p className="text-gray-600 dark:text-gray-400">
-              Compila i dati per creare un nuovo utente nel sistema
+              {isEditMode ? 'Modifica i dati dell\'utente' : 'Compila i dati per creare un nuovo utente nel sistema'}
             </p>
           </div>
 
@@ -369,7 +458,7 @@ export default function CreaUtentiPage() {
             <div className="flex gap-4 pt-4">
               <button
                 type="button"
-                onClick={modal.closeModal}
+                onClick={isEditMode ? handleCancelEdit : modal.closeModal}
                 className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
               >
                 Annulla
@@ -379,7 +468,7 @@ export default function CreaUtentiPage() {
                 disabled={submitting}
                 className="flex-1 px-4 py-2 text-sm font-medium text-white bg-brand-500 border border-transparent rounded-md hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {submitting ? "Creazione..." : "Crea Utente"}
+                {submitting ? (isEditMode ? "Aggiornamento..." : "Creazione...") : (isEditMode ? "Aggiorna Utente" : "Crea Utente")}
               </button>
             </div>
           </form>
@@ -509,7 +598,7 @@ export default function CreaUtentiPage() {
                           <div className="flex items-center gap-2">
                             {/* Botón Editar */}
                             <button
-                              onClick={() => console.log('Editar usuario:', user.id)}
+                              onClick={() => handleEditUser(user)}
                               className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-700 hover:text-blue-800 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-400 dark:hover:text-blue-300 rounded-lg transition-all duration-200 transform hover:scale-105"
                               title="Editar usuario"
                             >
@@ -520,8 +609,9 @@ export default function CreaUtentiPage() {
                             
                             {/* Botón Eliminar */}
                             <button
-                              onClick={() => console.log('Eliminar usuario:', user.id)}
-                              className="p-2 bg-red-100 hover:bg-red-200 text-red-700 hover:text-red-800 dark:bg-red-900/20 dark:hover:bg-red-900/30 dark:text-red-400 dark:hover:text-red-300 rounded-lg transition-all duration-200 transform hover:scale-105"
+                              onClick={() => handleDeleteUser(user.id)}
+                              disabled={deletingUserId === user.id}
+                              className="p-2 bg-red-100 hover:bg-red-200 text-red-700 hover:text-red-800 dark:bg-red-900/20 dark:hover:bg-red-900/30 dark:text-red-400 dark:hover:text-red-300 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Eliminar usuario"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

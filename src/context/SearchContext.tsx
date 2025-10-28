@@ -2,13 +2,54 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { usePathname } from "next/navigation";
 
+// Interfaces para los diferentes tipos de templates
+interface TourBus {
+  id: string;
+  titulo: string;
+  descripcion: string | null;
+  creator: {
+    firstName: string | null;
+    lastName: string | null;
+  };
+}
+
+interface InfoTemplate {
+  id: string;
+  title: string;
+  textContent: string;
+  creator: {
+    firstName: string | null;
+    lastName: string | null;
+  };
+}
+
+interface RouteTemplate {
+  id: string;
+  title: string;
+  textContent: string;
+  creator: {
+    firstName: string | null;
+    lastName: string | null;
+  };
+}
+
+interface StopTemplate {
+  id: string;
+  title: string;
+  textContent: string;
+  creator: {
+    firstName: string | null;
+    lastName: string | null;
+  };
+}
+
 type SearchContextType = {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   searchPlaceholder: string;
   isSearchActive: boolean;
-  searchResults: TravelNoteTemplate[];
-  setSearchResults: (results: TravelNoteTemplate[]) => void;
+  searchResults: TourBus[] | InfoTemplate[] | RouteTemplate[] | StopTemplate[];
+  setSearchResults: (results: TourBus[] | InfoTemplate[] | RouteTemplate[] | StopTemplate[]) => void;
   performSearch: (term: string) => void;
 };
 
@@ -22,31 +63,11 @@ export const useSearch = () => {
   return context;
 };
 
-interface TravelNoteTemplate {
-  id: string;
-  title: string;
-  textContent: string;
-  coverImage: string | null;
-  coverImageName: string | null;
-  pdfFile: string | null;
-  pdfFileName: string | null;
-  tourDate: string;
-  travelCost: number | null;
-  createdBy: string;
-  createdAt: string;
-  updatedAt: string;
-  creator: {
-    firstName: string | null;
-    lastName: string | null;
-    email: string;
-  };
-}
-
 export const SearchProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchResults, setSearchResults] = useState<TravelNoteTemplate[]>([]);
+  const [searchResults, setSearchResults] = useState<TourBus[]>([]);
   const pathname = usePathname();
 
   // Determinar placeholder y comportamiento según la ruta actual
@@ -54,6 +75,24 @@ export const SearchProvider: React.FC<{ children: React.ReactNode }> = ({
     if (pathname.includes('/partenze-note')) {
       return {
         placeholder: "Cerca nei modelli di viaggio...",
+        isActive: true,
+      };
+    }
+    if (pathname.includes('/info')) {
+      return {
+        placeholder: "Cerca nelle informazioni...",
+        isActive: true,
+      };
+    }
+    if (pathname.includes('/percorsi')) {
+      return {
+        placeholder: "Cerca nei percorsi...",
+        isActive: true,
+      };
+    }
+    if (pathname.includes('/fermate')) {
+      return {
+        placeholder: "Cerca nelle fermate...",
         isActive: true,
       };
     }
@@ -75,11 +114,47 @@ export const SearchProvider: React.FC<{ children: React.ReactNode }> = ({
 
     try {
       if (pathname.includes('/partenze-note')) {
-        // Búsqueda en plantillas de viaje
-        const response = await fetch('/api/travel-templates');
+        // Búsqueda en tours de bus
+        const response = await fetch('/api/tour-bus');
         if (response.ok) {
           const data = await response.json();
-          const filtered = data.templates.filter((template: TravelNoteTemplate) =>
+          const filtered = data.tours.filter((tour: TourBus) =>
+            tour.titulo.toLowerCase().includes(term.toLowerCase()) ||
+            (tour.descripcion && tour.descripcion.toLowerCase().includes(term.toLowerCase())) ||
+            `${tour.creator.firstName} ${tour.creator.lastName}`.toLowerCase().includes(term.toLowerCase())
+          );
+          setSearchResults(filtered);
+        }
+      } else if (pathname.includes('/info')) {
+        // Búsqueda en plantillas de información
+        const response = await fetch('/api/info');
+        if (response.ok) {
+          const data = await response.json();
+          const filtered = data.templates.filter((template: InfoTemplate) =>
+            template.title.toLowerCase().includes(term.toLowerCase()) ||
+            template.textContent.toLowerCase().includes(term.toLowerCase()) ||
+            `${template.creator.firstName} ${template.creator.lastName}`.toLowerCase().includes(term.toLowerCase())
+          );
+          setSearchResults(filtered);
+        }
+      } else if (pathname.includes('/percorsi')) {
+        // Búsqueda en plantillas de rutas
+        const response = await fetch('/api/percorsi');
+        if (response.ok) {
+          const data = await response.json();
+          const filtered = data.templates.filter((template: RouteTemplate) =>
+            template.title.toLowerCase().includes(term.toLowerCase()) ||
+            template.textContent.toLowerCase().includes(term.toLowerCase()) ||
+            `${template.creator.firstName} ${template.creator.lastName}`.toLowerCase().includes(term.toLowerCase())
+          );
+          setSearchResults(filtered);
+        }
+      } else if (pathname.includes('/fermate')) {
+        // Búsqueda en plantillas de fermate
+        const response = await fetch('/api/stop');
+        if (response.ok) {
+          const data = await response.json();
+          const filtered = data.templates.filter((template: StopTemplate) =>
             template.title.toLowerCase().includes(term.toLowerCase()) ||
             template.textContent.toLowerCase().includes(term.toLowerCase()) ||
             `${template.creator.firstName} ${template.creator.lastName}`.toLowerCase().includes(term.toLowerCase())

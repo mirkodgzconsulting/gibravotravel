@@ -24,7 +24,14 @@ interface Cliente {
   email: string;
   birthPlace: string;
   birthDate: string;
-  documents: string | null;
+  document1: string | null;
+  document1Name: string | null;
+  document2: string | null;
+  document2Name: string | null;
+  document3: string | null;
+  document3Name: string | null;
+  document4: string | null;
+  document4Name: string | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -44,18 +51,129 @@ interface ClienteFormData {
   email: string;
   birthPlace: string;
   birthDate: string;
-  documents?: File | null;
+  document1: File | null;
+  document2: File | null;
+  document3: File | null;
+  document4: File | null;
 }
 
-// Lista de países para el select
+// Lista completa de países para el select
 const paesi = [
-  "Italia", "Francia", "Germania", "Spagna", "Regno Unito", "Stati Uniti", 
-  "Canada", "Australia", "Brasile", "Argentina", "Messico", "Giappone", 
-  "Cina", "India", "Russia", "Altro"
+  // Europa
+  "Italia",
+  "España",
+  "Francia",
+  "Alemania",
+  "Reino Unido",
+  "Portugal",
+  "Países Bajos",
+  "Bélgica",
+  "Suiza",
+  "Austria",
+  "Grecia",
+  "Polonia",
+  "Rumania",
+  "Suecia",
+  "Noruega",
+  "Dinamarca",
+  "Finlandia",
+  "Irlanda",
+  "República Checa",
+  "Hungría",
+  "Bulgaria",
+  "Croacia",
+  "Eslovaquia",
+  "Eslovenia",
+  "Lituania",
+  "Letonia",
+  "Estonia",
+  "Luxemburgo",
+  "Malta",
+  "Chipre",
+  "Islandia",
+  "Serbia",
+  "Ucrania",
+  "Rusia",
+  "Turquía",
+  
+  // América Latina
+  "Argentina",
+  "Brasil",
+  "Chile",
+  "Colombia",
+  "México",
+  "Perú",
+  "Venezuela",
+  "Ecuador",
+  "Bolivia",
+  "Paraguay",
+  "Uruguay",
+  "Costa Rica",
+  "Panamá",
+  "Cuba",
+  "República Dominicana",
+  "Guatemala",
+  "Honduras",
+  "El Salvador",
+  "Nicaragua",
+  "Puerto Rico",
+  "Jamaica",
+  "Haití",
+  "Trinidad y Tobago",
+  
+  // América del Norte
+  "Estados Unidos",
+  "Canadá",
+  
+  // Asia
+  "China",
+  "Japón",
+  "India",
+  "Corea del Sur",
+  "Tailandia",
+  "Vietnam",
+  "Filipinas",
+  "Indonesia",
+  "Malasia",
+  "Singapur",
+  "Pakistán",
+  "Bangladesh",
+  "Afganistán",
+  "Irán",
+  "Irak",
+  "Israel",
+  "Arabia Saudita",
+  "Emiratos Árabes Unidos",
+  "Líbano",
+  "Jordania",
+  "Siria",
+  "Yemen",
+  
+  // África
+  "Egipto",
+  "Marruecos",
+  "Argelia",
+  "Túnez",
+  "Libia",
+  "Sudáfrica",
+  "Nigeria",
+  "Kenia",
+  "Etiopía",
+  "Ghana",
+  "Senegal",
+  "Costa de Marfil",
+  "Camerún",
+  
+  // Oceanía
+  "Australia",
+  "Nueva Zelanda",
+  
+  // Otros
+  "Otro"
 ];
 
 export default function ClientiPage() {
-  const { canAccessGestione, isLoading: roleLoading } = useUserRole();
+  const { canAccessGestione, isLoading: roleLoading, isUser } = useUserRole();
   const modal = useModal();
   const [clienti, setClienti] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,41 +193,47 @@ export default function ClientiPage() {
     email: "",
     birthPlace: "Italia",
     birthDate: "",
-    documents: null,
+    document1: null,
+    document2: null,
+    document3: null,
+    document4: null,
   });
 
   // Cargar clientes al montar el componente
   useEffect(() => {
-    fetchClienti();
-  }, []);
+    // Solo cargar cuando el rol esté completamente cargado
+    if (!roleLoading) {
+      fetchClienti();
+    }
+  }, [isUser, roleLoading]); // Recargar cuando cambie el rol del usuario o termine de cargar
 
   const fetchClienti = async () => {
     try {
       setLoading(true);
-      console.log('🔍 Fetching clienti...');
       
-      const response = await fetch('/api/clients');
-      console.log('🔍 Response status:', response.status);
-      console.log('🔍 Response ok:', response.ok);
+      // Verificación adicional: no hacer la llamada si el rol aún está cargando
+      if (roleLoading) {
+        setLoading(false);
+        return;
+      }
+      
+      // Si es USER, solo cargar sus propios clientes
+      const url = isUser ? '/api/clients?userOnly=true' : '/api/clients';
+      
+      
+      const response = await fetch(url);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('🔍 Data received:', data);
         setClienti(data.clients || []);
-        
-        if (data.clients && data.clients.length === 0) {
-          console.log('ℹ️ No hay clientes registrados aún');
-        }
       } else {
         const errorData = await response.json();
-        console.error('❌ Error response:', errorData);
         setMessage({ 
           type: 'error', 
           text: `Errore durante il caricamento: ${errorData.error || 'Error desconocido'}` 
         });
       }
     } catch (error) {
-      console.error('❌ Network error:', error);
       setMessage({ 
         type: 'error', 
         text: `Errore di connessione: ${error instanceof Error ? error.message : 'Error desconocido'}` 
@@ -130,7 +254,10 @@ export default function ClientiPage() {
       email: cliente.email,
       birthPlace: cliente.birthPlace,
       birthDate: cliente.birthDate.split('T')[0], // Convertir a formato YYYY-MM-DD
-      documents: null,
+      document1: null,
+      document2: null,
+      document3: null,
+      document4: null,
     });
     modal.openModal();
   };
@@ -153,20 +280,18 @@ export default function ClientiPage() {
       formDataToSend.append('birthPlace', formData.birthPlace);
       formDataToSend.append('birthDate', formData.birthDate);
       
-      if (formData.documents) {
-        formDataToSend.append('documents', formData.documents);
-      }
-
-      console.log('🔍 Updating client:', editingClient.id);
+      // Agregar archivos si se seleccionaron nuevos
+      if (formData.document1) formDataToSend.append('document1', formData.document1);
+      if (formData.document2) formDataToSend.append('document2', formData.document2);
+      if (formData.document3) formDataToSend.append('document3', formData.document3);
+      if (formData.document4) formDataToSend.append('document4', formData.document4);
 
       const response = await fetch(`/api/clients/${editingClient.id}`, {
         method: 'PUT',
         body: formDataToSend,
       });
 
-      console.log('🔍 Update response status:', response.status);
       const data = await response.json();
-      console.log('🔍 Update response data:', data);
 
       if (response.ok) {
         setMessage({ 
@@ -183,19 +308,20 @@ export default function ClientiPage() {
           email: "",
           birthPlace: "Italia",
           birthDate: "",
-          documents: null,
+          document1: null,
+          document2: null,
+          document3: null,
+          document4: null,
         });
         modal.closeModal();
         fetchClienti(); // Recargar la lista
       } else {
-        console.error('❌ Update error:', data);
         setMessage({ 
           type: 'error', 
           text: `${data.error || 'Errore durante l\'aggiornamento del cliente'}${data.details ? ': ' + data.details : ''}` 
         });
       }
     } catch (error) {
-      console.error('❌ Network error:', error);
       setMessage({ 
         type: 'error', 
         text: `Errore di connessione: ${error instanceof Error ? error.message : 'Error desconocido'}` 
@@ -211,15 +337,11 @@ export default function ClientiPage() {
     }
 
     try {
-      console.log('🔍 Deleting client:', clienteId);
-
       const response = await fetch(`/api/clients/${clienteId}`, {
         method: 'DELETE',
       });
 
-      console.log('🔍 Delete response status:', response.status);
       const data = await response.json();
-      console.log('🔍 Delete response data:', data);
 
       if (response.ok) {
         setMessage({ 
@@ -228,14 +350,12 @@ export default function ClientiPage() {
         });
         fetchClienti(); // Recargar la lista
       } else {
-        console.error('❌ Delete error:', data);
         setMessage({ 
           type: 'error', 
           text: `${data.error || 'Errore durante l\'eliminazione del cliente'}${data.details ? ': ' + data.details : ''}` 
         });
       }
     } catch (error) {
-      console.error('❌ Network error:', error);
       setMessage({ 
         type: 'error', 
         text: `Errore di connessione: ${error instanceof Error ? error.message : 'Error desconocido'}` 
@@ -306,11 +426,11 @@ export default function ClientiPage() {
     }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, documentNumber: 1 | 2 | 3 | 4) => {
     const file = e.target.files?.[0] || null;
     setFormData(prev => ({
       ...prev,
-      documents: file
+      [`document${documentNumber}`]: file
     }));
   };
 
@@ -320,6 +440,16 @@ export default function ClientiPage() {
     setMessage(null);
 
     try {
+      // Validar que document1 sea obligatorio
+      if (!formData.document1) {
+        setMessage({ 
+          type: 'error', 
+          text: 'Il primo documento è obbligatorio' 
+        });
+        setSubmitting(false);
+        return;
+      }
+
       const formDataToSend = new FormData();
       formDataToSend.append('firstName', formData.firstName);
       formDataToSend.append('lastName', formData.lastName);
@@ -330,22 +460,18 @@ export default function ClientiPage() {
       formDataToSend.append('birthPlace', formData.birthPlace);
       formDataToSend.append('birthDate', formData.birthDate);
       
-      if (formData.documents) {
-        formDataToSend.append('documents', formData.documents);
-      }
+      // Agregar archivos
+      if (formData.document1) formDataToSend.append('document1', formData.document1);
+      if (formData.document2) formDataToSend.append('document2', formData.document2);
+      if (formData.document3) formDataToSend.append('document3', formData.document3);
+      if (formData.document4) formDataToSend.append('document4', formData.document4);
 
-      console.log('🔍 Submitting client data...');
-      
       const response = await fetch('/api/clients', {
         method: 'POST',
         body: formDataToSend,
       });
 
-      console.log('🔍 Submit response status:', response.status);
-      console.log('🔍 Submit response ok:', response.ok);
-
       const data = await response.json();
-      console.log('🔍 Submit response data:', data);
 
       if (response.ok) {
         setMessage({ 
@@ -361,12 +487,14 @@ export default function ClientiPage() {
           email: "",
           birthPlace: "Italia",
           birthDate: "",
-          documents: null,
+          document1: null,
+          document2: null,
+          document3: null,
+          document4: null,
         });
         modal.closeModal();
         fetchClienti(); // Recargar la lista
       } else {
-        console.error('❌ Submit error:', data);
         setMessage({ 
           type: 'error', 
           text: `${data.error || 'Errore durante la creazione del cliente'}${data.details ? ': ' + data.details : ''}` 
@@ -409,6 +537,29 @@ export default function ClientiPage() {
     setCurrentPage(1);
   }, [searchTerm, itemsPerPage]);
 
+  // Manejar copia de texto completo para celdas truncadas
+  useEffect(() => {
+    const handleCopy = (event: ClipboardEvent) => {
+      const selection = window.getSelection();
+      if (!selection || !selection.rangeCount) return;
+
+      const range = selection.getRangeAt(0);
+      const selectedElement = range.commonAncestorContainer.parentElement;
+      
+      // Buscar si el elemento seleccionado tiene un data-full-value
+      if (selectedElement && selectedElement.hasAttribute('data-full-value')) {
+        const fullValue = selectedElement.getAttribute('data-full-value');
+        if (fullValue) {
+          event.preventDefault();
+          event.clipboardData?.setData('text/plain', fullValue);
+        }
+      }
+    };
+
+    document.addEventListener('copy', handleCopy);
+    return () => document.removeEventListener('copy', handleCopy);
+  }, []);
+
   if (roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -447,18 +598,6 @@ export default function ClientiPage() {
         </div>
       )}
 
-      {/* Botón principal centrado */}
-      <div className="text-center mb-8">
-        <button
-          onClick={modal.openModal}
-          className="p-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg transition-colors duration-200 flex items-center justify-center shadow-md hover:shadow-lg mx-auto"
-          title="Aggiungi Cliente"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-        </button>
-      </div>
 
       {/* Modal de registro */}
       <Modal
@@ -608,18 +747,92 @@ export default function ClientiPage() {
               </div>
             </div>
 
-            <div>
-              <label htmlFor="documents" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            {/* Sección de Documentos */}
+            <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
                 Documenti
-              </label>
-              <input
-                type="file"
-                id="documents"
-                name="documents"
-                accept="image/*,.pdf,.doc,.docx"
-                onChange={handleFileChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-              />
+              </h3>
+              
+              {/* Documento 1 - Obligatorio */}
+              <div>
+                <label htmlFor="document1" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Documento 1 * <span className="text-xs text-gray-500">(Obbligatorio)</span>
+                </label>
+                <input
+                  type="file"
+                  id="document1"
+                  name="document1"
+                  accept="image/*,.pdf,.doc,.docx"
+                  onChange={(e) => handleFileChange(e, 1)}
+                  required={!editingClient}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 dark:file:bg-brand-900/20 dark:file:text-brand-400"
+                />
+                {editingClient?.document1 && (
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Archivo actual: {editingClient.document1Name || 'documento.pdf'}
+                  </p>
+                )}
+              </div>
+
+              {/* Documento 2 - Opcional */}
+              <div>
+                <label htmlFor="document2" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Documento 2 <span className="text-xs text-gray-500">(Opzionale)</span>
+                </label>
+                <input
+                  type="file"
+                  id="document2"
+                  name="document2"
+                  accept="image/*,.pdf,.doc,.docx"
+                  onChange={(e) => handleFileChange(e, 2)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 dark:file:bg-brand-900/20 dark:file:text-brand-400"
+                />
+                {editingClient?.document2 && (
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Archivo actual: {editingClient.document2Name || 'documento.pdf'}
+                  </p>
+                )}
+              </div>
+
+              {/* Documento 3 - Opcional */}
+              <div>
+                <label htmlFor="document3" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Documento 3 <span className="text-xs text-gray-500">(Opzionale)</span>
+                </label>
+                <input
+                  type="file"
+                  id="document3"
+                  name="document3"
+                  accept="image/*,.pdf,.doc,.docx"
+                  onChange={(e) => handleFileChange(e, 3)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 dark:file:bg-brand-900/20 dark:file:text-brand-400"
+                />
+                {editingClient?.document3 && (
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Archivo actual: {editingClient.document3Name || 'documento.pdf'}
+                  </p>
+                )}
+              </div>
+
+              {/* Documento 4 - Opcional */}
+              <div>
+                <label htmlFor="document4" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Documento 4 <span className="text-xs text-gray-500">(Opzionale)</span>
+                </label>
+                <input
+                  type="file"
+                  id="document4"
+                  name="document4"
+                  accept="image/*,.pdf,.doc,.docx"
+                  onChange={(e) => handleFileChange(e, 4)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 dark:file:bg-brand-900/20 dark:file:text-brand-400"
+                />
+                {editingClient?.document4 && (
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Archivo actual: {editingClient.document4Name || 'documento.pdf'}
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="flex gap-4 pt-4">
@@ -637,7 +850,10 @@ export default function ClientiPage() {
                     email: "",
                     birthPlace: "Italia",
                     birthDate: "",
-                    documents: null,
+                    document1: null,
+                    document2: null,
+                    document3: null,
+                    document4: null,
                   });
                 }}
                 className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
@@ -669,10 +885,11 @@ export default function ClientiPage() {
         ) : (
           <div className="overflow-hidden bg-white dark:bg-white/[0.03] rounded-xl">
             {/* Header con selector y buscador */}
-            <div className="flex flex-col gap-2 px-4 py-4 border border-b-0 border-gray-100 dark:border-white/[0.05] rounded-t-xl sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-col gap-1 lg:gap-2 px-4 py-4 border border-b-0 border-gray-100 dark:border-white/[0.05] rounded-t-xl sm:flex-row sm:items-center sm:justify-between flex-wrap">
+              {/* Controles izquierdos */}
+              <div className="flex items-center gap-1 lg:gap-2 flex-wrap">
                 <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                  Clientes: {clienti.length.toLocaleString()}
+                  Record: {clienti.length.toLocaleString()}
                 </span>
                 <button
                   onClick={handleExportToExcel}
@@ -720,92 +937,92 @@ export default function ClientiPage() {
                     </svg>
                   </span>
                 </div>
-                <span className="text-gray-500 dark:text-gray-400">registri</span>
               </div>
 
-              <div className="relative">
-                <button className="absolute text-gray-500 -translate-y-1/2 left-4 top-1/2 dark:text-gray-400">
-                  <svg
-                    className="fill-current"
-                    width="20"
-                    height="20"
-                    viewBox="0 0 20 20"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      clipRule="evenodd"
-                      d="M3.04199 9.37363C3.04199 5.87693 5.87735 3.04199 9.37533 3.04199C12.8733 3.04199 15.7087 5.87693 15.7087 9.37363C15.7087 12.8703 12.8733 15.7053 9.37533 15.7053C5.87735 15.7053 3.04199 12.8703 3.04199 9.37363ZM9.37533 1.54199C5.04926 1.54199 1.54199 5.04817 1.54199 9.37363C1.54199 13.6991 5.04926 17.2053 9.37533 17.2053C11.2676 17.2053 13.0032 16.5344 14.3572 15.4176L17.1773 18.238C17.4702 18.5309 17.945 18.5309 18.2379 18.238C18.5308 17.9451 18.5309 17.4703 18.238 17.1773L15.4182 14.3573C16.5367 13.0033 17.2087 11.2669 17.2087 9.37363C17.2087 5.04817 13.7014 1.54199 9.37533 1.54199Z"
-                      fill=""
-                    />
+              {/* Buscador y botón Nuovo */}
+              <div className="flex items-center gap-1 lg:gap-2 flex-shrink-0">
+                {/* Buscador mejorado */}
+                <div className="relative">
+                  <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Cerca clienti..."
+                    className="dark:bg-dark-900 h-10 w-full rounded-lg border border-gray-300 bg-transparent py-2 pl-10 pr-4 text-xs text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 xl:w-[250px] lg:w-[200px] md:w-[180px]"
+                  />
+                </div>
+                
+                {/* Botón Nuovo */}
+                <button
+                  onClick={modal.openModal}
+                  className="flex items-center gap-2 px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg transition-colors duration-200 whitespace-nowrap"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Nuovo
                 </button>
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Cerca clienti..."
-                  className="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent py-2.5 pl-11 pr-4 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 xl:w-[300px]"
-                />
               </div>
             </div>
 
             <div className="max-w-full overflow-x-auto">
-              <Table>
+              <Table className="min-w-[1200px]">
                 <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
                   <TableRow>
                     <TableCell
                       isHeader
-                      className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                      className="px-3 py-2 font-bold text-white text-start text-xs bg-[#0366D6] w-[150px]"
                     >
                       Cliente
                     </TableCell>
                     <TableCell
                       isHeader
-                      className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                      className="px-3 py-2 font-bold text-white text-start text-xs bg-[#0366D6] w-[140px]"
                     >
                       Codice Fiscale
                     </TableCell>
                     <TableCell
                       isHeader
-                      className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                      className="px-3 py-2 font-bold text-white text-start text-xs bg-[#0366D6] w-[120px]"
                     >
                       Telefono
                     </TableCell>
                     <TableCell
                       isHeader
-                      className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                      className="px-3 py-2 font-bold text-white text-start text-xs bg-[#0366D6] w-[200px]"
                     >
                       Email
                     </TableCell>
                     <TableCell
                       isHeader
-                      className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                      className="px-3 py-2 font-bold text-white text-start text-xs bg-[#0366D6] w-[180px]"
                     >
                       Indirizzo
                     </TableCell>
                     <TableCell
                       isHeader
-                      className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                      className="px-3 py-2 font-bold text-white text-start text-xs bg-[#0366D6] w-[100px]"
                     >
                       Nato a
                     </TableCell>
                     <TableCell
                       isHeader
-                      className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                      className="px-3 py-2 font-bold text-white text-start text-xs bg-[#0366D6] w-[120px]"
                     >
                       Data Nascita
                     </TableCell>
                     <TableCell
                       isHeader
-                      className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                      className="px-3 py-2 font-bold text-white text-start text-xs bg-[#0366D6] w-[140px]"
                     >
-                      Registrato da
+                      Agente
                     </TableCell>
                     <TableCell
                       isHeader
-                      className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                      className="px-3 py-2 font-bold text-white text-start text-xs bg-[#0366D6] w-[120px] sticky right-0 z-10 shadow-lg"
                     >
                       Azioni
                     </TableCell>
@@ -822,42 +1039,51 @@ export default function ClientiPage() {
                   ) : (
                     currentData.map((cliente) => (
                       <TableRow key={cliente.id}>
-                        <TableCell className="px-5 py-4 sm:px-6 text-start">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
-                              <div className="w-full h-full flex items-center justify-center text-gray-500 dark:text-gray-400 text-sm font-medium">
-                                {cliente.firstName[0]?.toUpperCase()}
-                              </div>
-                            </div>
-                            <div>
-                              <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
-                                {cliente.firstName} {cliente.lastName}
-                              </span>
-                            </div>
-                          </div>
+                        <TableCell className="px-3 py-2 text-start w-[150px]">
+                          <span className="text-gray-600 dark:text-gray-300 text-xs">
+                            {cliente.firstName} {cliente.lastName}
+                          </span>
                         </TableCell>
-                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                          {cliente.fiscalCode}
+                        <TableCell className="px-3 py-2 text-start w-[140px]">
+                          <span className="text-gray-600 dark:text-gray-300 text-xs">
+                            {cliente.fiscalCode}
+                          </span>
                         </TableCell>
-                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                          {cliente.phoneNumber}
+                        <TableCell className="px-3 py-2 text-start w-[120px]">
+                          <span className="text-gray-600 dark:text-gray-300 text-xs">
+                            {cliente.phoneNumber}
+                          </span>
                         </TableCell>
-                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                          {cliente.email}
+                        <TableCell className="px-3 py-2 text-start w-[200px]">
+                          <span className="text-gray-600 dark:text-gray-300 text-xs">
+                            {cliente.email}
+                          </span>
                         </TableCell>
-                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                          {cliente.address}
+                        <TableCell className="px-3 py-2 text-start w-[180px]">
+                          <span 
+                            className="text-gray-600 dark:text-gray-300 text-xs truncate"
+                            title={cliente.address}
+                            data-full-value={cliente.address}
+                          >
+                            {cliente.address.length > 25 ? `${cliente.address.substring(0, 25)}...` : cliente.address}
+                          </span>
                         </TableCell>
-                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                          {cliente.birthPlace}
+                        <TableCell className="px-3 py-2 text-start w-[100px]">
+                          <span className="text-gray-600 dark:text-gray-300 text-xs">
+                            {cliente.birthPlace}
+                          </span>
                         </TableCell>
-                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                          {new Date(cliente.birthDate).toLocaleDateString('it-IT')}
+                        <TableCell className="px-3 py-2 text-start w-[120px]">
+                          <span className="text-gray-600 dark:text-gray-300 text-xs">
+                            {new Date(cliente.birthDate).toLocaleDateString('it-IT')}
+                          </span>
                         </TableCell>
-                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                          {cliente.creator?.firstName} {cliente.creator?.lastName}
+                        <TableCell className="px-3 py-2 text-start w-[140px]">
+                          <span className="text-gray-600 dark:text-gray-300 text-xs">
+                            {cliente.creator?.firstName} {cliente.creator?.lastName}
+                          </span>
                         </TableCell>
-                        <TableCell className="px-4 py-3 text-start">
+                        <TableCell className="px-3 py-2 text-start w-[120px] sticky right-0 z-10 bg-white dark:bg-gray-900">
                           <div className="flex items-center gap-2">
                             {/* Botón Editar */}
                             <button

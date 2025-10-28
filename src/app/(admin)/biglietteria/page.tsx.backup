@@ -1,0 +1,2898 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useModal } from "@/hooks/useModal";
+import { Modal } from "@/components/ui/modal";
+import * as XLSX from 'xlsx';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+interface Cuota {
+  id: string;
+  numeroCuota: number;
+  data: string | null;
+  prezzo: number;
+  note: string | null;
+  isPagato: boolean;
+  attachedFile: string | null;
+  attachedFileName: string | null;
+}
+
+// Nueva interfaz para pasajeros individuales
+interface PasajeroData {
+  id?: string;
+  nombrePasajero: string;
+  servizio: string;
+  andata: string;
+  ritorno: string;
+  netoBiglietteria: string;
+  vendutoBiglietteria: string;
+  tieneExpress: boolean;
+  netoExpress: string;
+  vendutoExpress: string;
+  tienePolizza: boolean;
+  netoPolizza: string;
+  vendutoPolizza: string;
+  tieneLetteraInvito: boolean;
+  netoLetteraInvito: string;
+  vendutoLetteraInvito: string;
+  tieneHotel: boolean;
+  netoHotel: string;
+  vendutoHotel: string;
+}
+
+interface BiglietteriaRecord {
+  id: string;
+  pagamento: string;
+  data: string;
+  iata: string;
+  pnr: string | null;
+  itinerario: string;
+  metodoPagamento: string;
+  netoPrincipal: number;
+  vendutoTotal: number;
+  acconto: number;
+  daPagare: number;
+  feeAgv: number;
+  cliente: string;
+  codiceFiscale: string;
+  indirizzo: string;
+  email: string;
+  numeroTelefono: string;
+  creadoPor: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  attachedFile: string | null;
+  attachedFileName: string | null;
+  numeroCuotas: number | null;
+  numeroPasajeros: number;
+  cuotas?: Cuota[];
+  pasajeros?: PasajeroData[];
+}
+
+interface Client {
+  id: string;
+  firstName: string;
+  lastName: string;
+  fiscalCode: string;
+  address: string;
+  email: string;
+  phoneNumber: string;
+}
+
+interface BiglietteriaFormData {
+  cliente: string;
+  codiceFiscale: string;
+  indirizzo: string;
+  email: string;
+  numeroTelefono: string;
+  pagamento: string;
+  data: string;
+  iata: string;
+  pnr: string;
+  itinerario: string;
+  metodoPagamento: string;
+  numeroPasajeros: number;
+  pasajeros: PasajeroData[];
+  // Campos calculados
+  netoPrincipal: string;
+  vendutoTotal: string;
+  acconto: string;
+  daPagare: string;
+  feeAgv: string;
+}
+
+
+
+export default function BiglietteriaPage() {
+  const { canAccessGestione, isLoading: roleLoading, userRole, isUser } = useUserRole();
+  
+  // Debug logs
+  console.log('🔍 BiglietteriaPage - userRole:', userRole, 'isUser:', isUser, 'canAccessGestione:', canAccessGestione, 'roleLoading:', roleLoading);
+  const { isOpen: isModalOpen, openModal, closeModal } = useModal();
+  
+  const [records, setRecords] = useState<BiglietteriaRecord[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  
+  // Estados para edición y eliminación
+  const [editingRecord, setEditingRecord] = useState<BiglietteriaRecord | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [deletingRecordId, setDeletingRecordId] = useState<string | null>(null);
+  
+  // Estados para visualización de archivos
+  const [viewingFiles, setViewingFiles] = useState<BiglietteriaRecord | null>(null);
+  const [isFileViewerOpen, setIsFileViewerOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  
+  // Estado para edición inline de Pagamento
+  const [editingPagamentoId, setEditingPagamentoId] = useState<string | null>(null);
+  
+  // Estados para filtro de fechas
+  const [fechaDesde, setFechaDesde] = useState<string>('');
+  const [fechaHasta, setFechaHasta] = useState<string>('');
+  
+  // Estado para filtro de usuario creador
+  const [filtroCreador, setFiltroCreador] = useState<string>('');
+  const [usuarios, setUsuarios] = useState<Array<{ clerkId: string; firstName: string; lastName: string; role: string }>>([]);
+  const [showCreadorDropdown, setShowCreadorDropdown] = useState<boolean>(false);
+  const [creadorSearchTerm, setCreadorSearchTerm] = useState<string>('');
+  
+  // Estados para selección de cliente
+  const [selectedClientId, setSelectedClientId] = useState<string>('');
+  const [clientSearchTerm, setClientSearchTerm] = useState<string>('');
+  const [showClientDropdown, setShowClientDropdown] = useState<boolean>(false);
+  
+  // Estados para multiselect de servizio
+  const [showServizioDropdown, setShowServizioDropdown] = useState<boolean>(false);
+  const [servizioSearchTerm, setServizioSearchTerm] = useState<string>('');
+  
+  // Estados para búsqueda y paginación
+  const [searchTerm, setSearchTerm] = useState('');
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+  
+  // Estados para datos de referencia
+  const [pagamenti, setPagamenti] = useState<string[]>([]);
+  const [iataList, setIataList] = useState<string[]>([]);
+  const [servizi, setServizi] = useState<string[]>([]);
+  const [metodiPagamento, setMetodiPagamento] = useState<string[]>([]);
+
+  // Estados para archivos adjuntos
+  const [attachedFile, setAttachedFile] = useState<File | null>(null);
+  
+  // Estados para sistema de cuotas
+  const [numeroCuotas, setNumeroCuotas] = useState<number>(0);
+  const [cuotas, setCuotas] = useState<Array<{
+    numeroCuota: number;
+    data: string;
+    prezzo: string;
+    note: string;
+    attachedFile: File | null;
+  }>>([]);
+  
+  // Estado para control de carga de cuotas en edición
+  const [isLoadingCuotas, setIsLoadingCuotas] = useState(false);
+  
+  // Ref para controlar si las cuotas ya fueron inicializadas
+  const cuotasInicializadas = React.useRef(false);
+
+  // Servicios con costo adicional
+  const additionalCostServices = ['Express', 'Polizza', 'Lettera di Invito', 'Hotel'];
+  
+  // Función para verificar si se seleccionó Biglietteria
+  const hasBiglietteria = () => {
+    return formData.servizio.some(service => {
+      const serviceLower = service.toLowerCase().trim();
+      return serviceLower.includes('biglietteria');
+    });
+  };
+  
+  // Función para verificar si se seleccionó algún servicio con costo adicional
+  const hasAdditionalCostService = () => {
+    return formData.servizio.some(service => {
+      const serviceLower = service.toLowerCase().trim();
+      return additionalCostServices.some(additionalService => {
+        const additionalLower = additionalService.toLowerCase().trim();
+        return serviceLower.includes(additionalLower) ||
+               additionalLower.includes(serviceLower) ||
+               serviceLower === additionalLower;
+      });
+    });
+  };
+  
+  // Función para verificar si se debe mostrar campos de fechas
+  const shouldShowDateFields = () => {
+    // Solo mostrar fechas si hay Biglietteria
+    // Si solo hay servicios adicionales sin Biglietteria, NO mostrar fechas (ventas sin boleto)
+    return hasBiglietteria();
+  };
+  
+
+  // Función para verificar si se debe mostrar campos monetarios básicos (Neto, Venduto, etc.)
+  const shouldShowBasicMonetaryFields = () => {
+    // Mostrar campos básicos si hay Biglietteria (con o sin servicios adicionales)
+    return hasBiglietteria();
+  };
+
+  // Función para verificar si se debe mostrar campos de servicios adicionales (Neto/Venduto del servicio)
+  const shouldShowAdditionalServiceFields = () => {
+    // Mostrar campos de servicios adicionales si hay servicios adicionales (con o sin Biglietteria)
+    return hasAdditionalCostService();
+  };
+
+  const [formData, setFormData] = useState<BiglietteriaFormData>({
+    cliente: '',
+    codiceFiscale: '',
+    indirizzo: '',
+    email: '',
+    numeroTelefono: '',
+    pagamento: '',
+    data: new Date().toISOString().split('T')[0], // Fecha de hoy por defecto
+    iata: '',
+    pnr: '',
+    passeggero: '',
+    itinerario: '',
+    servizio: [],
+    neto: '',
+    venduto: '',
+    acconto: '',
+    daPagare: '',
+    metodoPagamento: '',
+    feeAgv: '',
+    // Servicios con costo adicional
+    express: '',
+    polizza: '',
+    letteraInvito: '',
+    hotel: '',
+    // Venduto de servicios adicionales
+    expressVenduto: '',
+    polizzaVenduto: '',
+    letteraInvitoVenduto: '',
+    hotelVenduto: '',
+    // Fechas de viaje
+    andata: '',
+    ritorno: '',
+  });
+
+
+  // Fetch datos iniciales
+  useEffect(() => {
+    fetchClients();
+    fetchUsuarios();
+    fetchReferenceData();
+  }, []);
+
+  // Fetch records cuando el rol esté cargado
+  useEffect(() => {
+    if (!roleLoading) {
+      console.log('🔍 useEffect fetchRecords - roleLoading:', roleLoading, 'userRole:', userRole, 'isUser:', isUser);
+      fetchRecords();
+    }
+  }, [roleLoading, isUser]);
+
+  // Manejar copia de texto completo para celdas truncadas
+  useEffect(() => {
+    const handleCopy = (event: ClipboardEvent) => {
+      const selection = window.getSelection();
+      if (!selection || !selection.rangeCount) return;
+
+      const range = selection.getRangeAt(0);
+      const selectedElement = range.commonAncestorContainer.parentElement;
+      
+      // Buscar si el elemento seleccionado tiene un data-full-value
+      if (selectedElement && selectedElement.hasAttribute('data-full-value')) {
+        const fullValue = selectedElement.getAttribute('data-full-value');
+        if (fullValue) {
+          event.preventDefault();
+          event.clipboardData?.setData('text/plain', fullValue);
+        }
+      }
+    };
+
+    document.addEventListener('copy', handleCopy);
+    return () => document.removeEventListener('copy', handleCopy);
+  }, []);
+
+  const fetchRecords = async () => {
+    try {
+      setLoading(true);
+      // Para usuarios con rol USER, solo mostrar sus propios registros
+      const url = isUser ? '/api/biglietteria?userOnly=true' : '/api/biglietteria';
+      console.log('🔍 fetchRecords - userRole:', userRole, 'isUser:', isUser, 'url:', url);
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('🔍 fetchRecords - records loaded:', data.records?.length || 0);
+        setRecords(data.records || []);
+      } else {
+        console.error('Error fetching records:', response.status, response.statusText);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchClients = async () => {
+    try {
+      const response = await fetch('/api/clients');
+      if (response.ok) {
+        const data = await response.json();
+        setClients(data.clients || []);
+      }
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+    }
+  };
+
+  const fetchUsuarios = async () => {
+    try {
+      const response = await fetch('/api/users');
+      if (response.ok) {
+        const data = await response.json();
+        setUsuarios(data.users || []);
+      }
+    } catch (error) {
+      console.error('Error fetching usuarios:', error);
+    }
+  };
+
+  const fetchReferenceData = async () => {
+    try {
+      // Fetch pagamenti
+      const pagResponse = await fetch('/api/reference/pagamento');
+      if (pagResponse.ok) {
+        const pagData = await pagResponse.json();
+        setPagamenti(pagData.map((p: { pagamento: string }) => p.pagamento));
+      }
+
+      // Fetch iata
+      const iataResponse = await fetch('/api/reference/iata');
+      if (iataResponse.ok) {
+        const iataData = await iataResponse.json();
+        setIataList(iataData.map((i: { iata: string }) => i.iata));
+      }
+
+      // Fetch servizi
+      const servResponse = await fetch('/api/reference/servizio');
+      if (servResponse.ok) {
+        const servData = await servResponse.json();
+        const serviziList = servData.map((s: { servizio: string }) => s.servizio);
+        setServizi(serviziList);
+        console.log('🔍 Servicios disponibles:', serviziList);
+      }
+
+      // Fetch metodi pagamento
+      const metResponse = await fetch('/api/reference/metodo-pagamento');
+      if (metResponse.ok) {
+        const metData = await metResponse.json();
+        setMetodiPagamento(metData.map((m: { metodoPagamento: string }) => m.metodoPagamento));
+      }
+
+    } catch (error) {
+      console.error('Error fetching reference data:', error);
+    }
+  };
+
+  // Detectar montaje en el cliente
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Calcular daPagare automáticamente
+  useEffect(() => {
+    const venduto = parseFloat(formData.venduto) || 0;
+    const acconto = formData.acconto ? parseFloat(formData.acconto) : 0;
+    
+    // Si no hay acconto, daPagare es 0
+    const daPagare = acconto > 0 ? venduto - acconto : 0;
+    
+    setFormData(prev => ({ ...prev, daPagare: daPagare.toString() }));
+    
+    // Si daPagare cambió a 0, resetear cuotas
+    if (daPagare === 0) {
+      setNumeroCuotas(0);
+      setCuotas([]);
+    }
+  }, [formData.venduto, formData.acconto]);
+
+  // Manejar cambio de número de cuotas
+  useEffect(() => {
+    // No sobrescribir cuotas si estamos cargando desde edición
+    if (isLoadingCuotas) {
+      return;
+    }
+    
+    // Si ya fueron inicializadas, no volver a crear cuotas vacías
+    if (cuotasInicializadas.current && numeroCuotas > 0) {
+      return;
+    }
+    
+    if (numeroCuotas > 0) {
+      const nuevasCuotas = Array.from({ length: numeroCuotas }, (_, i) => ({
+        numeroCuota: i + 1,
+        data: '',
+        prezzo: '',
+        note: '',
+        attachedFile: null
+      }));
+      setCuotas(nuevasCuotas);
+      cuotasInicializadas.current = true;
+    } else {
+      setCuotas([]);
+      cuotasInicializadas.current = false;
+    }
+  }, [numeroCuotas, isLoadingCuotas]);
+
+  // Calcular Fee AGV automáticamente (Venduto - Neto)
+  useEffect(() => {
+    const venduto = parseFloat(formData.venduto) || 0;
+    const neto = parseFloat(formData.neto) || 0;
+    
+    const feeAgv = venduto - neto;
+    
+    setFormData(prev => ({ ...prev, feeAgv: feeAgv.toFixed(2) }));
+  }, [formData.venduto, formData.neto]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setMessage(null);
+
+    try {
+      // Validar cuotas si existen
+      if (numeroCuotas > 0 && cuotas.length > 0) {
+        const daPagare = parseFloat(formData.daPagare || '0');
+        const totalCuotas = cuotas.reduce((sum, cuota) => sum + (parseFloat(cuota.prezzo) || 0), 0);
+        
+        // Validar que la suma de las cuotas sea exactamente igual a Da Pagare
+        if (Math.abs(totalCuotas - daPagare) > 0.01) { // Tolerancia de 1 centavo por redondeo
+          setMessage({
+            type: 'error',
+            text: `La suma de las cuotas (€${totalCuotas.toFixed(2)}) debe ser exactamente igual a Da Pagare (€${daPagare.toFixed(2)})`
+          });
+          setSubmitting(false);
+          return;
+        }
+
+        // Validar que todas las cuotas tengan un valor
+        const cuotasVacias = cuotas.filter(c => !c.prezzo || parseFloat(c.prezzo) <= 0);
+        if (cuotasVacias.length > 0) {
+          setMessage({
+            type: 'error',
+            text: 'Todas las cuotas deben tener un valor (Prezzo) mayor a 0'
+          });
+          setSubmitting(false);
+          return;
+        }
+
+        // Validar que ninguna cuota individual exceda Da Pagare
+        const cuotaExcedente = cuotas.find(c => parseFloat(c.prezzo) > daPagare);
+        if (cuotaExcedente) {
+          setMessage({
+            type: 'error',
+            text: `Ninguna cuota puede ser mayor que Da Pagare (€${daPagare.toFixed(2)})`
+          });
+          setSubmitting(false);
+          return;
+        }
+      }
+
+      // Preparar FormData para envío (para soportar archivos)
+      const formDataToSend = new FormData();
+      
+      // Agregar todos los campos del formulario
+      Object.entries(formData).forEach(([key, value]) => {
+        if (key === 'servizio') {
+          formDataToSend.append(key, JSON.stringify(value));
+        } else {
+          formDataToSend.append(key, value);
+        }
+      });
+      
+      // Asegurar fecha válida
+      if (!formData.data) {
+        formDataToSend.set('data', new Date().toISOString().split('T')[0]);
+      }
+      
+      // Agregar archivo principal si existe
+      if (attachedFile) {
+        formDataToSend.append('attachedFile', attachedFile);
+      }
+      
+      // Agregar información de cuotas
+      formDataToSend.append('numeroCuotas', (numeroCuotas > 0 ? numeroCuotas : 0).toString());
+      
+      if (numeroCuotas > 0 && cuotas.length > 0) {
+        // Enviar cuotas como JSON (sin archivos)
+        const cuotasData = cuotas.map(c => ({
+          numeroCuota: c.numeroCuota,
+          data: c.data,
+          prezzo: c.prezzo,
+          note: c.note
+        }));
+        formDataToSend.append('cuotas', JSON.stringify(cuotasData));
+        
+        // Agregar archivos de cuotas
+        cuotas.forEach((cuota, index) => {
+          if (cuota.attachedFile) {
+            formDataToSend.append(`cuotaFile_${index}`, cuota.attachedFile);
+          }
+        });
+      }
+
+      let response;
+      if (isEditMode && editingRecord) {
+        // Modo edición
+        response = await fetch(`/api/biglietteria/${editingRecord.id}`, {
+          method: 'PUT',
+          body: formDataToSend, // Sin Content-Type header para FormData
+        });
+      } else {
+        // Modo creación
+        response = await fetch('/api/biglietteria', {
+          method: 'POST',
+          body: formDataToSend, // Sin Content-Type header para FormData
+        });
+      }
+
+      if (response.ok) {
+        setMessage({
+          type: 'success',
+          text: isEditMode ? 'Registro actualizado exitosamente' : 'Registro de biglietteria creado exitosamente'
+        });
+        
+        // Resetear estados de edición
+        setEditingRecord(null);
+        setIsEditMode(false);
+        
+        setFormData({
+          cliente: '',
+          codiceFiscale: '',
+          indirizzo: '',
+          email: '',
+          numeroTelefono: '',
+          pagamento: '',
+          data: new Date().toISOString().split('T')[0],
+          iata: '',
+          pnr: '',
+          passeggero: '',
+          itinerario: '',
+          servizio: [],
+          neto: '',
+          venduto: '',
+          acconto: '',
+          daPagare: '',
+          metodoPagamento: '',
+          feeAgv: '',
+          // Servicios con costo adicional
+          express: '',
+          polizza: '',
+          letteraInvito: '',
+          hotel: '',
+          // Venduto de servicios adicionales
+          expressVenduto: '',
+          polizzaVenduto: '',
+          letteraInvitoVenduto: '',
+          hotelVenduto: '',
+          // Fechas de viaje
+          andata: '',
+          ritorno: '',
+        });
+        
+        // Resetear estados de cliente
+        setSelectedClientId('');
+        setClientSearchTerm('');
+        setShowClientDropdown(false);
+        
+        // Resetear archivos
+        setAttachedFile(null);
+        
+        // Resetear cuotas
+        setNumeroCuotas(0);
+        setCuotas([]);
+        setIsLoadingCuotas(false);
+        cuotasInicializadas.current = false;
+        
+        closeModal();
+        fetchRecords();
+      } else {
+        const errorData = await response.json();
+        setMessage({
+          type: 'error',
+          text: errorData.error || (isEditMode ? 'Error al actualizar el registro' : 'Error al crear el registro')
+        });
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      setMessage({
+        type: 'error',
+        text: 'Error de conexión'
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleClientSelect = (clientId: string) => {
+    const selectedClient = clients.find(c => c.id === clientId);
+    if (selectedClient) {
+      setSelectedClientId(clientId);
+      setClientSearchTerm(`${selectedClient.firstName} ${selectedClient.lastName}`);
+      setShowClientDropdown(false);
+      
+      setFormData(prev => ({
+        ...prev,
+        cliente: `${selectedClient.firstName} ${selectedClient.lastName}`,
+        codiceFiscale: selectedClient.fiscalCode,
+        indirizzo: selectedClient.address,
+        email: selectedClient.email,
+        numeroTelefono: selectedClient.phoneNumber
+      }));
+    }
+  };
+
+  // Función para filtrar clientes basado en la búsqueda
+  const filteredClients = clients.filter(client => 
+    `${client.firstName} ${client.lastName}`.toLowerCase().includes(clientSearchTerm.toLowerCase())
+  );
+
+  // Función para filtrar servicios basado en la búsqueda
+  const filteredServizi = servizi.filter(servizio => 
+    servizio.toLowerCase().includes(servizioSearchTerm.toLowerCase())
+  );
+
+  // Funciones para manejar selección múltiple de servizio
+  const handleServizioToggle = (servizio: string) => {
+    setFormData(prev => ({
+      ...prev,
+      servizio: prev.servizio.includes(servizio)
+        ? prev.servizio.filter(s => s !== servizio)
+        : [...prev.servizio, servizio]
+    }));
+  };
+
+  const handleServizioRemove = (servizio: string) => {
+    setFormData(prev => ({
+      ...prev,
+      servizio: prev.servizio.filter(s => s !== servizio)
+    }));
+  };
+
+  // Cerrar dropdown al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.client-dropdown-container')) {
+        setShowClientDropdown(false);
+      }
+      if (!target.closest('.creador-dropdown-container')) {
+        setShowCreadorDropdown(false);
+      }
+      if (!target.closest('.servizio-dropdown-container')) {
+        setShowServizioDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleExportToExcel = () => {
+    try {
+      const exportData = records.map(record => ({
+        'Cliente': record.cliente,
+        'Codice Fiscale': record.codiceFiscale,
+        'Indirizzo': record.indirizzo,
+        'Email': record.email,
+        'Numero Telefono': record.numeroTelefono,
+        'Pagamento': record.pagamento,
+        'Data': record.data ? new Date(record.data).toLocaleDateString('it-IT') : '',
+        'IATA': record.iata,
+        'PNR': record.pnr || '',
+        'Passeggero': record.passeggero,
+        'Itinerario': record.itinerario,
+        'Servizio': typeof record.servizio === 'string' ? record.servizio : record.servizio.join(', '),
+        'Neto': record.neto,
+        'Venduto': record.venduto,
+        'Acconto': record.acconto,
+        'Da Pagare': record.daPagare,
+        'Metodo Pagamento': record.metodoPagamento,
+        'Fee AGV': record.feeAgv,
+        'Express Venduto': record.expressVenduto || 0,
+        'Express Neto': record.express || 0,
+        'Polizza Venduto': record.polizzaVenduto || 0,
+        'Polizza Neto': record.polizza || 0,
+        'Letter di Invito Venduto': record.letteraInvitoVenduto || 0,
+        'Letter di Invito Neto': record.letteraInvito || 0,
+        'Hotel Venduto': record.hotelVenduto || 0,
+        'Hotel Neto': record.hotel || 0,
+        'Andata': record.andata ? new Date(record.andata).toLocaleDateString('it-IT') : '',
+        'Ritorno': record.ritorno ? new Date(record.ritorno).toLocaleDateString('it-IT') : '',
+        'Creado Por': record.creadoPor,
+        'Data Registro': record.createdAt ? new Date(record.createdAt).toLocaleDateString('it-IT') : ''
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Biglietteria');
+
+      const fileName = `biglietteria_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+
+      setMessage({
+        type: 'success',
+        text: `File Excel esportato con successo: ${fileName} (${records.length} registri)`
+      });
+    } catch (error) {
+      console.error('❌ Export error:', error);
+      setMessage({
+        type: 'error',
+        text: 'Errore durante l\'esportazione del file Excel'
+      });
+    }
+  };
+
+  const handleGenerateRicevuta = async (recordId: string) => {
+    try {
+      setMessage({
+        type: 'success',
+        text: 'Generando ricevuta...'
+      });
+
+      const response = await fetch('/api/biglietteria/generate-ricevuta', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ recordId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al generar ricevuta');
+      }
+
+      // Descargar el archivo
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      
+      // Extraer el nombre del archivo del header Content-Disposition
+      const contentDisposition = response.headers.get('Content-Disposition');
+      const fileName = contentDisposition 
+        ? contentDisposition.split('filename=')[1].replace(/"/g, '')
+        : `Ricevuta_${recordId}_${new Date().getTime()}.docx`;
+      
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      setMessage({
+        type: 'success',
+        text: 'Ricevuta generata con successo!'
+      });
+    } catch (error) {
+      console.error('Error generating ricevuta:', error);
+      setMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Errore durante la generazione della ricevuta'
+      });
+    }
+  };
+
+  // Función para manejar edición
+  const handleEditRecord = (record: BiglietteriaRecord) => {
+    setEditingRecord(record);
+    setIsEditMode(true);
+    
+    // Buscar el cliente por nombre para establecer el ID
+    const matchingClient = clients.find(c => 
+      `${c.firstName} ${c.lastName}` === record.cliente
+    );
+    
+    if (matchingClient) {
+      setSelectedClientId(matchingClient.id);
+      setClientSearchTerm(record.cliente);
+    } else {
+      setSelectedClientId('');
+      setClientSearchTerm(record.cliente);
+    }
+    
+    // Llenar el formulario con los datos del registro
+    setFormData({
+      cliente: record.cliente,
+      codiceFiscale: record.codiceFiscale,
+      indirizzo: record.indirizzo,
+      email: record.email,
+      numeroTelefono: record.numeroTelefono,
+      pagamento: record.pagamento,
+      data: record.data ? new Date(record.data).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      iata: record.iata,
+      pnr: record.pnr || '',
+      passeggero: record.passeggero,
+      itinerario: record.itinerario,
+      servizio: typeof record.servizio === 'string' ? 
+        (record.servizio ? record.servizio.split(', ').filter(s => s.trim()) : []) : 
+        record.servizio,
+      neto: record.neto.toString(),
+      venduto: record.venduto.toString(),
+      acconto: record.acconto.toString(),
+      daPagare: record.daPagare.toString(),
+      metodoPagamento: record.metodoPagamento,
+      feeAgv: record.feeAgv.toString(),
+      // Servicios con costo adicional
+      express: record.express?.toString() || '',
+      polizza: record.polizza?.toString() || '',
+      letteraInvito: record.letteraInvito?.toString() || '',
+      hotel: record.hotel?.toString() || '',
+      // Venduto de servicios adicionales
+      expressVenduto: record.expressVenduto?.toString() || '',
+      polizzaVenduto: record.polizzaVenduto?.toString() || '',
+      letteraInvitoVenduto: record.letteraInvitoVenduto?.toString() || '',
+      hotelVenduto: record.hotelVenduto?.toString() || '',
+      // Fechas de viaje
+      andata: record.andata ? new Date(record.andata).toISOString().split('T')[0] : '',
+      ritorno: record.ritorno ? new Date(record.ritorno).toISOString().split('T')[0] : '',
+    });
+    
+    // Cargar datos de cuotas si existen
+    if (record.numeroCuotas && record.numeroCuotas > 0) {
+      // IMPORTANTE: Activar flag ANTES de cambiar numeroCuotas
+      setIsLoadingCuotas(true);
+      cuotasInicializadas.current = false; // Reset para permitir carga desde edición
+      
+      // Usar setTimeout para asegurar que el flag se establezca antes
+      setTimeout(() => {
+        setNumeroCuotas(record.numeroCuotas || 0);
+        
+        // Convertir las cuotas del registro al formato del formulario
+        if (record.cuotas && record.cuotas.length > 0) {
+          const cuotasFormato = record.cuotas.map(cuota => ({
+            numeroCuota: cuota.numeroCuota,
+            data: cuota.data ? new Date(cuota.data).toISOString().split('T')[0] : '',
+            prezzo: cuota.prezzo.toString(),
+            note: cuota.note || '',
+            attachedFile: null // Los archivos existentes no se cargan como File, solo se muestran como URLs
+          }));
+          setCuotas(cuotasFormato);
+          cuotasInicializadas.current = true; // Marcar como inicializadas después de cargar
+        }
+        
+        // Desactivar flag después de cargar
+        setTimeout(() => setIsLoadingCuotas(false), 50);
+      }, 0);
+    } else {
+      setNumeroCuotas(0);
+      setCuotas([]);
+      cuotasInicializadas.current = false;
+    }
+    
+    openModal();
+  };
+
+  // Función para manejar eliminación
+  const handleDeleteRecord = async (recordId: string) => {
+    if (!confirm('¿Estás seguro de que quieres eliminar este registro? Esta acción no se puede deshacer.')) {
+      return;
+    }
+
+    setDeletingRecordId(recordId);
+    
+    try {
+      const response = await fetch(`/api/biglietteria/${recordId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        setMessage({
+          type: 'success',
+          text: 'Registro eliminado exitosamente'
+        });
+        
+        // Recargar la lista de registros
+        fetchRecords();
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al eliminar registro');
+      }
+    } catch (error) {
+      console.error('Error deleting record:', error);
+      setMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Error al eliminar registro'
+      });
+    } finally {
+      setDeletingRecordId(null);
+    }
+  };
+
+  // Función para abrir visor de archivos
+  const handleViewFiles = (record: BiglietteriaRecord) => {
+    setViewingFiles(record);
+    setIsFileViewerOpen(true);
+  };
+
+  // Función para cerrar visor de archivos
+  const handleCloseFileViewer = () => {
+    setViewingFiles(null);
+    setIsFileViewerOpen(false);
+  };
+
+  // Función para descargar archivos (igual que en PARTENZE/NOTE)
+  const handleDownload = async (url: string, filename: string) => {
+    try {
+      console.log('🔍 Intentando descargar:', { url, filename });
+      
+      const response = await fetch(url);
+      console.log('🔍 Response status:', response.status);
+      console.log('🔍 Response headers:', Object.fromEntries(response.headers.entries()));
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const blob = await response.blob();
+      console.log('🔍 Blob size:', blob.size, 'bytes');
+      console.log('🔍 Blob type:', blob.type);
+      
+      if (blob.size === 0) {
+        throw new Error('El archivo está vacío');
+      }
+      
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+      
+      console.log('✅ Descarga completada exitosamente');
+    } catch (error) {
+      console.error('❌ Error downloading file:', error);
+      console.log('🔄 Intentando fallback...');
+      // Fallback: abrir en nueva pestaña
+      window.open(url, '_blank');
+    }
+  };
+
+  // Función para contar archivos de un registro
+  const countFiles = (record: BiglietteriaRecord): number => {
+    let count = 0;
+    if (record.attachedFile) count++;
+    if (record.cuotas) {
+      count += record.cuotas.filter(c => c.attachedFile).length;
+    }
+    return count;
+  };
+
+  // Función para cancelar edición
+  const handleCancelEdit = () => {
+    setEditingRecord(null);
+    setIsEditMode(false);
+    closeModal();
+    
+    // Resetear formulario
+    setFormData({
+      cliente: '',
+      codiceFiscale: '',
+      indirizzo: '',
+      email: '',
+      numeroTelefono: '',
+      pagamento: '',
+      data: new Date().toISOString().split('T')[0],
+      iata: '',
+      pnr: '',
+      passeggero: '',
+      itinerario: '',
+      servizio: [],
+      neto: '',
+      venduto: '',
+      acconto: '',
+      daPagare: '',
+      metodoPagamento: '',
+      feeAgv: '',
+      // Servicios con costo adicional
+      express: '',
+      polizza: '',
+      letteraInvito: '',
+      hotel: '',
+      // Venduto de servicios adicionales
+      expressVenduto: '',
+      polizzaVenduto: '',
+      letteraInvitoVenduto: '',
+      hotelVenduto: '',
+      // Fechas de viaje
+      andata: '',
+      ritorno: '',
+    });
+    
+    // Resetear estados de cliente
+    setSelectedClientId('');
+    setClientSearchTerm('');
+    setShowClientDropdown(false);
+    
+    // Resetear archivos
+    setAttachedFile(null);
+    
+    // Resetear cuotas
+    setNumeroCuotas(0);
+    setCuotas([]);
+    setIsLoadingCuotas(false);
+    cuotasInicializadas.current = false;
+  };
+
+  // Filtrado y paginación mejorado
+  const filteredRecords = records.filter(record => {
+    // Filtro por búsqueda de texto
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      const searchFields = [
+        record.cliente,
+        record.codiceFiscale,
+        record.indirizzo,
+        record.email,
+        record.numeroTelefono,
+        record.pagamento,
+        record.iata,
+        record.pnr,
+        record.passeggero,
+        record.itinerario,
+        typeof record.servizio === 'string' ? record.servizio : record.servizio.join(' '),
+        record.metodoPagamento,
+        record.creadoPor
+      ];
+
+      const matchesSearch = searchFields.some(field => 
+        field && field.toString().toLowerCase().includes(searchLower)
+      );
+      
+      if (!matchesSearch) return false;
+    }
+    
+    // Filtro por rango de fechas
+    if (fechaDesde || fechaHasta) {
+      const recordDate = new Date(record.data);
+      recordDate.setHours(0, 0, 0, 0); // Normalizar a medianoche
+      
+      if (fechaDesde) {
+        const desde = new Date(fechaDesde);
+        desde.setHours(0, 0, 0, 0);
+        if (recordDate < desde) return false;
+      }
+      
+      if (fechaHasta) {
+        const hasta = new Date(fechaHasta);
+        hasta.setHours(23, 59, 59, 999); // Incluir todo el día
+        if (recordDate > hasta) return false;
+      }
+    }
+    
+    // Filtro por creador
+    if (filtroCreador && record.creadoPor !== filtroCreador) {
+      return false;
+    }
+    
+    return true;
+  });
+
+  const totalItems = filteredRecords.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentData = filteredRecords.slice(startIndex, endIndex);
+
+
+  if (roleLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-500"></div>
+      </div>
+    );
+  }
+
+  if (!canAccessGestione) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Accesso Negato</h1>
+          <p className="text-gray-600">Non hai i permessi per accedere a questa sezione.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+
+      {/* Mensaje de estado */}
+      {message && (
+        <div className={`mb-6 p-4 rounded-lg ${
+          message.type === 'success'
+            ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200'
+            : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-200'
+        }`}>
+          <p className="font-medium">{message.text}</p>
+        </div>
+      )}
+
+
+      {/* Tabla de registros */}
+      <div className="w-full max-w-none border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] rounded-2xl">
+        {loading ? (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500"></div>
+          </div>
+        ) : (
+          <div className="overflow-hidden bg-white dark:bg-white/[0.03] rounded-xl max-w-none">
+            {/* Header con selector y buscador */}
+            <div className="flex flex-col gap-4 px-4 py-4 border border-b-0 border-gray-100 dark:border-white/[0.05] rounded-t-xl lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-wrap items-center gap-1 lg:gap-2">
+                <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                  Record: {records.length.toLocaleString()}
+                </span>
+                <button
+                  onClick={handleExportToExcel}
+                  className="flex items-center gap-1 px-3 py-1 text-xs bg-green-100 hover:bg-green-200 text-green-700 hover:text-green-800 dark:bg-green-900/20 dark:hover:bg-green-900/30 dark:text-green-400 dark:hover:text-green-300 rounded transition-colors duration-200"
+                  title="Esporta tutti i biglietti in Excel"
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Excel
+                </button>
+                {/* Paginación selector */}
+                <span className="text-xs text-gray-500 dark:text-gray-400">Mostra</span>
+                <div className="relative z-20 bg-transparent">
+                  <select
+                    className="w-full py-2 pl-3 pr-8 text-sm text-gray-800 bg-transparent border border-gray-300 rounded-lg appearance-none dark:bg-dark-900 h-9 bg-none shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                    value={itemsPerPage}
+                    onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                  >
+                    {[10, 15, 50, 100].map((value) => (
+                      <option
+                        key={value}
+                        value={value}
+                        className="text-gray-500 dark:bg-gray-900 dark:text-gray-400"
+                      >
+                        {value}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                {/* Filtro de fechas */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500 dark:text-gray-400">Dal</span>
+                  <div 
+                    className="relative cursor-pointer"
+                    onClick={(e) => {
+                      const input = e.currentTarget.querySelector('input');
+                      if (input) {
+                        input.showPicker?.();
+                        input.focus();
+                      }
+                    }}
+                  >
+                    <input
+                      type="date"
+                      value={fechaDesde}
+                      onChange={(e) => {
+                        setFechaDesde(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.currentTarget.showPicker?.();
+                      }}
+                      className="py-2 pl-9 pr-3 text-xs text-gray-800 bg-transparent border border-gray-300 rounded-lg dark:bg-dark-900 h-9 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800 cursor-pointer w-[130px]"
+                      style={{ colorScheme: 'light dark' }}
+                    />
+                    <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">Al</span>
+                  <div 
+                    className="relative cursor-pointer"
+                    onClick={(e) => {
+                      const input = e.currentTarget.querySelector('input');
+                      if (input) {
+                        input.showPicker?.();
+                        input.focus();
+                      }
+                    }}
+                  >
+                    <input
+                      type="date"
+                      value={fechaHasta}
+                      onChange={(e) => {
+                        setFechaHasta(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.currentTarget.showPicker?.();
+                      }}
+                      className="py-2 pl-9 pr-3 text-xs text-gray-800 bg-transparent border border-gray-300 rounded-lg dark:bg-dark-900 h-9 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800 cursor-pointer w-[130px]"
+                      style={{ colorScheme: 'light dark' }}
+                    />
+                    <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  {(fechaDesde || fechaHasta) && (
+                    <button
+                      onClick={() => {
+                        setFechaDesde('');
+                        setFechaHasta('');
+                        setCurrentPage(1);
+                      }}
+                      className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
+                      title="Cancella filtro"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+                
+                {/* Filtro por Creador - Solo visible para ADMIN y TI */}
+                {!isUser && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Agente</span>
+                    <div className="relative creador-dropdown-container">
+                      <input
+                        type="text"
+                        value={creadorSearchTerm}
+                        onChange={(e) => {
+                          setCreadorSearchTerm(e.target.value);
+                          setShowCreadorDropdown(true);
+                          if (!e.target.value) {
+                            setFiltroCreador('');
+                            setCurrentPage(1);
+                          }
+                        }}
+                        onFocus={() => setShowCreadorDropdown(true)}
+                        placeholder="Tutti"
+                        className="py-2 pl-3 pr-8 text-xs text-gray-800 bg-transparent border border-gray-300 rounded-lg dark:bg-dark-900 h-9 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800 w-[140px]"
+                      />
+                      {/* Ícono de dropdown */}
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                      
+                      {/* Dropdown de usuarios */}
+                      {showCreadorDropdown && (
+                        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                          {/* Opción "Tutti" */}
+                          <div
+                            onClick={() => {
+                              setFiltroCreador('');
+                              setCreadorSearchTerm('');
+                              setShowCreadorDropdown(false);
+                              setCurrentPage(1);
+                            }}
+                            className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-xs text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700"
+                          >
+                            Tutti
+                          </div>
+                          
+                          {/* Lista de usuarios filtrados */}
+                          {usuarios
+                            .filter(usuario => {
+                              const nombreCompleto = `${usuario.firstName} ${usuario.lastName}`.trim().toLowerCase();
+                              return nombreCompleto.includes(creadorSearchTerm.toLowerCase());
+                            })
+                            .map((usuario) => {
+                              const nombreCompleto = `${usuario.firstName} ${usuario.lastName}`.trim();
+                              return (
+                                <div
+                                  key={usuario.clerkId}
+                                  onClick={() => {
+                                    setFiltroCreador(nombreCompleto);
+                                    setCreadorSearchTerm(nombreCompleto);
+                                    setShowCreadorDropdown(false);
+                                    setCurrentPage(1);
+                                  }}
+                                  className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-xs text-gray-900 dark:text-white"
+                                >
+                                  {nombreCompleto} ({usuario.role})
+                                </div>
+                              );
+                            })}
+                          
+                          {/* Mensaje cuando no hay resultados */}
+                          {creadorSearchTerm && usuarios.filter(usuario => {
+                            const nombreCompleto = `${usuario.firstName} ${usuario.lastName}`.trim().toLowerCase();
+                            return nombreCompleto.includes(creadorSearchTerm.toLowerCase());
+                          }).length === 0 && (
+                            <div className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">
+                              Nessun utente trovato
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    {filtroCreador && (
+                      <button
+                        onClick={() => {
+                          setFiltroCreador('');
+                          setCreadorSearchTerm('');
+                          setCurrentPage(1);
+                        }}
+                        className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
+                        title="Cancella filtro"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Buscador y botón Nuovo */}
+              <div className="flex items-center gap-1 lg:gap-2 flex-shrink-0">
+                {/* Buscador mejorado */}
+                <div className="relative">
+                  <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Cerca per Cliente, PNR, Passeggero, Itinerario..."
+                    className="dark:bg-dark-900 h-10 w-full rounded-lg border border-gray-300 bg-transparent py-2 pl-10 pr-4 text-xs text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 xl:w-[250px] lg:w-[200px] md:w-[180px]"
+                  />
+                </div>
+                
+                {/* Botón Nuovo */}
+                <button
+                  onClick={openModal}
+                  className="flex items-center gap-2 px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg transition-colors duration-200 whitespace-nowrap"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Nuovo
+                </button>
+              </div>
+            </div>
+
+            {/* Tabla */}
+            <div className="w-full max-w-none overflow-x-auto xl:overflow-x-auto">
+              <Table className="w-full min-w-[800px] sm:min-w-[1200px] xl:min-w-[2500px] responsive-table">
+
+                <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
+                  <TableRow>
+                    <TableCell isHeader className="table-header-custom w-[120px] sm:w-[140px] xl:w-[160px]">
+                      Cliente
+                    </TableCell>
+                    <TableCell isHeader className="table-header-custom w-[100px] sm:w-[140px] xl:w-[160px]">
+                      Codice Fiscale
+                    </TableCell>
+                    <TableCell isHeader className="table-header-custom w-[120px] sm:w-[140px] xl:w-[160px]">
+                      Indirizzo
+                    </TableCell>
+                    <TableCell isHeader className="table-header-custom w-[140px] sm:w-[160px] xl:w-[180px]">
+                      Email
+                    </TableCell>
+                    <TableCell isHeader className="table-header-custom w-[100px] sm:w-[140px] xl:w-[160px]">
+                      Telefono
+                    </TableCell>
+                    <TableCell isHeader className="table-header-custom w-[100px] sm:w-[110px] xl:w-[120px]">
+                      Stato
+                    </TableCell>
+                    <TableCell isHeader className="table-header-custom w-[80px] sm:w-[90px] xl:w-[100px]">
+                      Data
+                    </TableCell>
+                    <TableCell isHeader className="table-header-custom w-[80px] sm:w-[100px] xl:w-[120px]">
+                      IATA
+                    </TableCell>
+                    <TableCell isHeader className="table-header-custom w-[100px] sm:w-[110px] xl:w-[120px]">
+                      PNR
+                    </TableCell>
+                    <TableCell isHeader className="table-header-custom w-[100px] sm:w-[110px] xl:w-[120px]">
+                      Passeggero
+                    </TableCell>
+                    <TableCell isHeader className="table-header-custom w-[100px] sm:w-[120px] xl:w-[140px]">
+                      Itinerario
+                    </TableCell>
+                    <TableCell isHeader className="table-header-custom w-[80px] sm:w-[100px] xl:w-[120px]">
+                      Servizio
+                    </TableCell>
+                    <TableCell isHeader className="table-header-custom w-[60px] sm:w-[70px] xl:w-[80px]">
+                      Neto
+                    </TableCell>
+                    <TableCell isHeader className="table-header-custom w-[60px] sm:w-[70px] xl:w-[80px]">
+                      Venduto
+                    </TableCell>
+                    <TableCell isHeader className="table-header-custom w-[60px] sm:w-[70px] xl:w-[80px]">
+                      Acconto
+                    </TableCell>
+                    <TableCell isHeader className="table-header-custom w-[70px] sm:w-[75px] xl:w-[80px]">
+                      DaPagare
+                    </TableCell>
+                    <TableCell isHeader className="table-header-custom w-[80px] sm:w-[90px] xl:w-[100px]">
+                      MetodoPag.
+                    </TableCell>
+                    <TableCell isHeader className="table-header-custom w-[60px] sm:w-[70px] xl:w-[80px]">
+                      FEE/AGV
+                    </TableCell>
+                    <TableCell isHeader className="table-header-custom w-[60px] sm:w-[70px] xl:w-[80px]">
+                      Express Venduto
+                    </TableCell>
+                    <TableCell isHeader className="table-header-custom w-[60px] sm:w-[70px] xl:w-[80px]">
+                      Express Neto
+                    </TableCell>
+                    <TableCell isHeader className="table-header-custom w-[60px] sm:w-[70px] xl:w-[80px]">
+                      Polizza Venduto
+                    </TableCell>
+                    <TableCell isHeader className="table-header-custom w-[60px] sm:w-[70px] xl:w-[80px]">
+                      Polizza Neto
+                    </TableCell>
+                    <TableCell isHeader className="table-header-custom w-[60px] sm:w-[70px] xl:w-[80px]">
+                      Letter Venduto
+                    </TableCell>
+                    <TableCell isHeader className="table-header-custom w-[60px] sm:w-[70px] xl:w-[80px]">
+                      Letter Neto
+                    </TableCell>
+                    <TableCell isHeader className="table-header-custom w-[60px] sm:w-[70px] xl:w-[80px]">
+                      Hotel Venduto
+                    </TableCell>
+                    <TableCell isHeader className="table-header-custom w-[60px] sm:w-[70px] xl:w-[80px]">
+                      Hotel Neto
+                    </TableCell>
+                    <TableCell isHeader className="table-header-custom w-[80px] sm:w-[90px] xl:w-[100px]">
+                      Agente
+                    </TableCell>
+                    <TableCell isHeader className="table-header-custom w-[60px] sm:w-[70px] xl:w-[80px]">
+                      Files
+                    </TableCell>
+                    <TableCell isHeader className="table-header-custom w-[100px] sm:w-[110px] xl:w-[120px] sticky right-0 bg-blue-600 z-10 shadow-lg">
+                      Azioni
+                    </TableCell>
+                  </TableRow>
+                </TableHeader>
+
+                <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
+                  {currentData.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={27} className="px-5 py-8 text-center text-gray-500 dark:text-gray-400">
+                        {searchTerm ? 'Nessun record trovato con i criteri di ricerca' : 'Nessun record registrato'}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    currentData.map((record) => (
+                      <TableRow key={record.id}>
+                        <TableCell className="w-[120px] sm:w-[140px] xl:w-[160px] px-3 py-2 text-start">
+                          <span className="block font-medium text-gray-800 text-xs dark:text-white/90 truncate" title={record.cliente}>
+                            {record.cliente}
+                          </span>
+                        </TableCell>
+                        <TableCell className="w-[100px] sm:w-[140px] xl:w-[160px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 truncate">
+                          {record.codiceFiscale}
+                        </TableCell>
+                        <TableCell className="w-[120px] sm:w-[140px] xl:w-[160px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 truncate">
+                          <span 
+                            title={record.indirizzo}
+                            data-full-value={record.indirizzo}
+                          >
+                            {record.indirizzo.length > 25 ? `${record.indirizzo.substring(0, 25)}...` : record.indirizzo}
+                          </span>
+                        </TableCell>
+                        <TableCell className="w-[140px] sm:w-[160px] xl:w-[180px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 truncate">
+                          {record.email}
+                        </TableCell>
+                        <TableCell className="w-[100px] sm:w-[140px] xl:w-[160px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 truncate">
+                          {record.numeroTelefono}
+                        </TableCell>
+                        <TableCell className="w-[120px] px-3 py-2">
+                          {editingPagamentoId === record.id ? (
+                            <select
+                              value={record.pagamento}
+                              autoFocus
+                              onBlur={() => setEditingPagamentoId(null)}
+                              onChange={async (e) => {
+                                const newValue = e.target.value;
+                                setEditingPagamentoId(null);
+                                
+                                try {
+                                  const response = await fetch(`/api/biglietteria/${record.id}`, {
+                                    method: 'PATCH',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({ pagamento: newValue }),
+                                  });
+
+                                  if (response.ok) {
+                                    setRecords(prev => prev.map(r => 
+                                      r.id === record.id ? { ...r, pagamento: newValue } : r
+                                    ));
+                                    setMessage({
+                                      type: 'success',
+                                      text: 'Pagamento aggiornato'
+                                    });
+                                    setTimeout(() => setMessage(null), 3000);
+                                  } else {
+                                    throw new Error('Error al actualizar');
+                                  }
+                                } catch (error) {
+                                  setMessage({
+                                    type: 'error',
+                                    text: 'Error al actualizar pagamento'
+                                  });
+                                  setTimeout(() => setMessage(null), 3000);
+                                }
+                              }}
+                              className="w-full px-2 py-1 text-xs border border-brand-500 rounded focus:ring-2 focus:ring-brand-500 focus:outline-none dark:bg-gray-800 dark:border-brand-400 dark:text-white"
+                            >
+                              {pagamenti.map((pag) => (
+                                <option key={pag} value={pag}>
+                                  {pag}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <div
+                              onClick={() => setEditingPagamentoId(record.id)}
+                              className={`text-xs truncate cursor-pointer px-2 py-1 rounded text-center font-medium ${
+                                record.pagamento === 'Acconto' ? 'bg-gray-500 text-white' :
+                                record.pagamento === 'Acconto verificato' ? 'bg-purple-400 text-white' :
+                                record.pagamento === 'Ricevuto' ? 'bg-green-500 text-white' :
+                                record.pagamento === 'Verificato' ? 'bg-purple-600 text-white' :
+                                'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                              }`}
+                              title="Clic para editar"
+                            >
+                              {record.pagamento}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="w-[100px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 truncate">
+                          {new Date(record.data).toLocaleDateString('it-IT')}
+                        </TableCell>
+                        <TableCell className="w-[120px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 truncate">
+                          {record.iata}
+                        </TableCell>
+                        <TableCell className="w-[120px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono truncate">
+                          {record.pnr || '-'}
+                        </TableCell>
+                        <TableCell className="w-[120px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 truncate">
+                          {record.passeggero}
+                        </TableCell>
+                        <TableCell className="w-[140px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 truncate">
+                          {record.itinerario}
+                        </TableCell>
+                        <TableCell className="w-[120px] px-3 py-2 text-start text-xs">
+                          <span 
+                            className="text-gray-600 dark:text-gray-300 text-xs truncate" 
+                            title={typeof record.servizio === 'string' ? record.servizio : record.servizio.join(', ')}
+                            data-full-value={typeof record.servizio === 'string' ? record.servizio : record.servizio.join(', ')}
+                          >
+                            {(() => {
+                              const servizioText = typeof record.servizio === 'string' ? record.servizio : record.servizio.join(', ');
+                              return servizioText.length > 25 ? `${servizioText.substring(0, 25)}...` : servizioText;
+                            })()}
+                          </span>
+                        </TableCell>
+                        <TableCell className="w-[80px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono truncate">
+                          €{record.neto.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="w-[80px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono truncate">
+                          €{record.venduto.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="w-[80px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono truncate">
+                          €{record.acconto.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="w-[80px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono truncate">
+                          €{record.daPagare.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="w-[100px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 truncate">
+                          {record.metodoPagamento}
+                        </TableCell>
+                        <TableCell className="w-[80px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono truncate">
+                          €{record.feeAgv.toFixed(2)}
+                        </TableCell>
+                        
+                        {/* Columna Express Venduto */}
+                        <TableCell className="w-[80px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono truncate">
+                          {record.expressVenduto ? `€${record.expressVenduto.toFixed(2)}` : '-'}
+                        </TableCell>
+                        
+                        {/* Columna Express Neto */}
+                        <TableCell className="w-[80px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono truncate">
+                          {record.express ? `€${record.express.toFixed(2)}` : '-'}
+                        </TableCell>
+                        
+                        {/* Columna Polizza Venduto */}
+                        <TableCell className="w-[80px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono truncate">
+                          {record.polizzaVenduto ? `€${record.polizzaVenduto.toFixed(2)}` : '-'}
+                        </TableCell>
+                        
+                        {/* Columna Polizza Neto */}
+                        <TableCell className="w-[80px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono truncate">
+                          {record.polizza ? `€${record.polizza.toFixed(2)}` : '-'}
+                        </TableCell>
+                        
+                        {/* Columna Letter di Invito Venduto */}
+                        <TableCell className="w-[80px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono truncate">
+                          {record.letteraInvitoVenduto ? `€${record.letteraInvitoVenduto.toFixed(2)}` : '-'}
+                        </TableCell>
+                        
+                        {/* Columna Letter di Invito Neto */}
+                        <TableCell className="w-[80px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono truncate">
+                          {record.letteraInvito ? `€${record.letteraInvito.toFixed(2)}` : '-'}
+                        </TableCell>
+                        
+                        {/* Columna Hotel Venduto */}
+                        <TableCell className="w-[80px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono truncate">
+                          {record.hotelVenduto ? `€${record.hotelVenduto.toFixed(2)}` : '-'}
+                        </TableCell>
+                        
+                        {/* Columna Hotel Neto */}
+                        <TableCell className="w-[80px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono truncate">
+                          {record.hotel ? `€${record.hotel.toFixed(2)}` : '-'}
+                        </TableCell>
+                        
+                        {/* Columna Creato da */}
+                        <TableCell className="w-[100px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 truncate">
+                          {record.creadoPor}
+                        </TableCell>
+                        
+                        {/* Columna Files */}
+                        <TableCell className="w-[80px] px-3 py-2 text-center">
+                          <button
+                            onClick={() => handleViewFiles(record)}
+                            disabled={countFiles(record) === 0}
+                            className={`inline-flex items-center gap-1 px-2 py-1 rounded transition-all duration-200 ${
+                              countFiles(record) > 0
+                                ? 'bg-purple-100 hover:bg-purple-200 text-purple-700 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 dark:text-purple-400 cursor-pointer'
+                                : 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600'
+                            }`}
+                            title={countFiles(record) > 0 ? `Ver ${countFiles(record)} archivo(s)` : 'Sin archivos'}
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                            </svg>
+                            {countFiles(record) > 0 && (
+                              <span className="text-xs font-semibold">{countFiles(record)}</span>
+                            )}
+                          </button>
+                        </TableCell>
+                        
+                        <TableCell className="w-[120px] px-3 py-2 text-start sticky right-0 bg-white dark:bg-gray-900 z-10 border-l border-gray-200 dark:border-gray-700 shadow-lg">
+                          <div className="flex items-center gap-1">
+                            {/* Botón Editar */}
+                            <button
+                              onClick={() => handleEditRecord(record)}
+                              className="p-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 hover:text-blue-800 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-400 dark:hover:text-blue-300 rounded transition-all duration-200 transform hover:scale-105"
+                              title="Modifica"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+
+                            {/* Botón Eliminar */}
+                            <button
+                              onClick={() => handleDeleteRecord(record.id)}
+                              disabled={deletingRecordId === record.id}
+                              className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 hover:text-red-800 dark:bg-red-900/20 dark:hover:bg-red-900/30 dark:text-red-400 dark:hover:text-red-300 rounded transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Elimina"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+
+                            {/* Botón Recibo */}
+                            <button
+                              onClick={() => handleGenerateRicevuta(record.id)}
+                              className="p-1.5 bg-green-100 hover:bg-green-200 text-green-700 hover:text-green-800 dark:bg-green-900/20 dark:hover:bg-green-900/30 dark:text-green-400 dark:hover:text-green-300 rounded transition-all duration-200 transform hover:scale-105"
+                              title="Ricevuta"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                            </button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                  {/* Footer de totales DENTRO del scroll - EXACTAMENTE como WordPress */}
+                  {filteredRecords.length > 0 && (
+                    <TableRow className="bg-gray-50 dark:bg-gray-700 border-t-2 border-gray-300 dark:border-gray-600">
+                      {/* Columnas que NO tienen totales - vacías */}
+                      <TableCell className="w-[160px] px-3 py-3"><span></span></TableCell> {/* Cliente */}
+                      <TableCell className="w-[160px] px-3 py-3"><span></span></TableCell> {/* Codice Fiscale */}
+                      <TableCell className="w-[160px] px-3 py-3"><span></span></TableCell> {/* Indirizzo */}
+                      <TableCell className="w-[180px] px-3 py-3"><span></span></TableCell> {/* Email */}
+                      <TableCell className="w-[160px] px-3 py-3"><span></span></TableCell> {/* Telefono */}
+                      <TableCell className="w-[120px] px-3 py-3"><span></span></TableCell> {/* Pagamento */}
+                      <TableCell className="w-[100px] px-3 py-3"><span></span></TableCell> {/* Data */}
+                      <TableCell className="w-[120px] px-3 py-3"><span></span></TableCell> {/* IATA */}
+                      <TableCell className="w-[120px] px-3 py-3"><span></span></TableCell> {/* PNR */}
+                      <TableCell className="w-[120px] px-3 py-3"><span></span></TableCell> {/* Passeggero */}
+                      <TableCell className="w-[140px] px-3 py-3"><span></span></TableCell> {/* Itinerario */}
+                      <TableCell className="w-[120px] px-3 py-3"><span></span></TableCell> {/* Servizio */}
+                      
+                      {/* Neto Total - CENTRADO EXACTAMENTE */}
+                      <TableCell className="w-[80px] px-3 py-3 text-center">
+                        <div className="font-bold text-gray-900 dark:text-white text-xs">
+                          Σ = {filteredRecords.reduce((sum, record) => sum + record.neto, 0).toFixed(2)}
+                        </div>
+                      </TableCell>
+                      
+                      {/* Venduto Total - CENTRADO EXACTAMENTE */}
+                      <TableCell className="w-[80px] px-3 py-3 text-center">
+                        <div className="font-bold text-gray-900 dark:text-white text-xs">
+                          Σ = {filteredRecords.reduce((sum, record) => sum + record.venduto, 0).toFixed(2)}
+                        </div>
+                      </TableCell>
+                      
+                      {/* Acconto - sin total */}
+                      <TableCell className="w-[80px] px-3 py-3 text-center">
+                        <div className="text-xs text-gray-400 dark:text-gray-500">
+                          -
+                        </div>
+                      </TableCell>
+                      
+                      {/* Da Pagare - sin total */}
+                      <TableCell className="w-[80px] px-3 py-3 text-center">
+                        <div className="text-xs text-gray-400 dark:text-gray-500">
+                          -
+                        </div>
+                      </TableCell>
+                      
+                      {/* Metodo Pag - sin total */}
+                      <TableCell className="w-[100px] px-3 py-3 text-center">
+                        <div className="text-xs text-gray-400 dark:text-gray-500">
+                          -
+                        </div>
+                      </TableCell>
+                      
+                      {/* Fee AGV Total - CENTRADO EXACTAMENTE Y FUNCIONANDO */}
+                      <TableCell className="w-[80px] px-3 py-3 text-center">
+                        <div className="font-bold text-gray-900 dark:text-white text-xs">
+                          Σ = {filteredRecords.reduce((sum, record) => sum + record.feeAgv, 0).toFixed(2)}
+                        </div>
+                      </TableCell>
+                      
+                      
+                      {/* Files - sin total */}
+                      <TableCell className="w-[80px] px-3 py-3 text-center">
+                        <div className="text-xs text-gray-400 dark:text-gray-500">
+                          -
+                        </div>
+                      </TableCell>
+                      
+                      {/* Express Venduto - sin total */}
+                      <TableCell className="w-[80px] px-3 py-3 text-center">
+                        <div className="text-xs text-gray-400 dark:text-gray-500">
+                          -
+                        </div>
+                      </TableCell>
+                      
+                      {/* Express Neto - sin total */}
+                      <TableCell className="w-[80px] px-3 py-3 text-center">
+                        <div className="text-xs text-gray-400 dark:text-gray-500">
+                          -
+                        </div>
+                      </TableCell>
+                      
+                      {/* Polizza Venduto - sin total */}
+                      <TableCell className="w-[80px] px-3 py-3 text-center">
+                        <div className="text-xs text-gray-400 dark:text-gray-500">
+                          -
+                        </div>
+                      </TableCell>
+                      
+                      {/* Polizza Neto - sin total */}
+                      <TableCell className="w-[80px] px-3 py-3 text-center">
+                        <div className="text-xs text-gray-400 dark:text-gray-500">
+                          -
+                        </div>
+                      </TableCell>
+                      
+                      {/* Letter di Invito Venduto - sin total */}
+                      <TableCell className="w-[80px] px-3 py-3 text-center">
+                        <div className="text-xs text-gray-400 dark:text-gray-500">
+                          -
+                        </div>
+                      </TableCell>
+                      
+                      {/* Letter di Invito Neto - sin total */}
+                      <TableCell className="w-[80px] px-3 py-3 text-center">
+                        <div className="text-xs text-gray-400 dark:text-gray-500">
+                          -
+                        </div>
+                      </TableCell>
+                      
+                      {/* Hotel Venduto - sin total */}
+                      <TableCell className="w-[80px] px-3 py-3 text-center">
+                        <div className="text-xs text-gray-400 dark:text-gray-500">
+                          -
+                        </div>
+                      </TableCell>
+                      
+                      {/* Hotel Neto - sin total */}
+                      <TableCell className="w-[80px] px-3 py-3 text-center">
+                        <div className="text-xs text-gray-400 dark:text-gray-500">
+                          -
+                        </div>
+                      </TableCell>
+                      
+                      {/* Creato da - sin total */}
+                      <TableCell className="w-[100px] px-3 py-3 text-center">
+                        <div className="text-xs text-gray-400 dark:text-gray-500">
+                          -
+                        </div>
+                      </TableCell>
+                      
+                      {/* Files - sin total */}
+                      <TableCell className="w-[80px] px-3 py-3 text-center">
+                        <div className="text-xs text-gray-400 dark:text-gray-500">
+                          -
+                        </div>
+                      </TableCell>
+                      
+                      {/* Azioni - sin total */}
+                      <TableCell className="w-[120px] px-3 py-3 text-center sticky right-0 bg-white dark:bg-gray-900 z-10 border-l border-gray-200 dark:border-gray-700 shadow-lg">
+                        <div className="text-xs text-gray-400 dark:text-gray-500">
+                          -
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Footer de paginación */}
+            <div className="border border-t-0 rounded-b-xl border-gray-100 py-4 pl-[18px] pr-4 dark:border-white/[0.05]">
+              <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between">
+                {/* Información de registros mostrados */}
+                <div className="pb-3 xl:pb-0">
+                  <p className="pb-3 text-sm font-medium text-center text-gray-500 border-b border-gray-100 dark:border-gray-800 dark:text-gray-400 xl:border-b-0 xl:pb-0 xl:text-left">
+                    Mostrando {startIndex + 1} a {endIndex} di {totalItems} registri
+                  </p>
+                </div>
+
+                {/* Controles de paginación */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:hover:bg-gray-700 dark:text-white"
+                  >
+                    Precedente
+                  </button>
+                  
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`px-3 py-1 text-sm rounded-md ${
+                            currentPage === pageNum
+                              ? 'bg-brand-500 text-white'
+                              : 'border border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700 dark:text-white'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:hover:bg-gray-700 dark:text-white"
+                  >
+                    Successivo
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Modal para agregar/editar */}
+      <Modal isOpen={isModalOpen} onClose={closeModal}>
+        <div className="w-[700px] max-h-[90vh] bg-white dark:bg-gray-800 rounded-lg shadow-xl flex flex-col mx-auto">
+          {/* Header fijo */}
+          <div className="flex-shrink-0 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
+              {isEditMode ? 'Modifica Vendita' : 'Nuova Vendita'}
+            </h2>
+          </div>
+          
+          {/* Contenido con scroll */}
+          <div className="flex-1 overflow-y-auto px-8 py-6">
+            <form onSubmit={handleSubmit} className="space-y-8">
+            {/* Cliente */}
+            <div className="w-full">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Cliente *
+              </label>
+              <div className="relative client-dropdown-container">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={clientSearchTerm}
+                    onChange={(e) => {
+                      setClientSearchTerm(e.target.value);
+                      setShowClientDropdown(true);
+                      setSelectedClientId('');
+                    }}
+                    onFocus={() => setShowClientDropdown(true)}
+                    placeholder="Seleziona un cliente o cerca per nome..."
+                    className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                    required
+                  />
+                  {/* Ícono de búsqueda */}
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                </div>
+                
+                {/* Dropdown de clientes */}
+                {showClientDropdown && filteredClients.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {filteredClients.map((client) => (
+                      <div
+                        key={client.id}
+                        onClick={() => handleClientSelect(client.id)}
+                        className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-sm text-gray-900 dark:text-white"
+                      >
+                        {client.firstName} {client.lastName}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Mensaje cuando no hay resultados */}
+                {showClientDropdown && clientSearchTerm && filteredClients.length === 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg">
+                    <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                      Nessun cliente trovato
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Campos automáticos del cliente */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Codice Fiscale
+                </label>
+                <input
+                  type="text"
+                  value={formData.codiceFiscale}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Indirizzo
+                </label>
+                <input
+                  type="text"
+                  value={formData.indirizzo}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Numero di Telefono
+                </label>
+                <input
+                  type="text"
+                  value={formData.numeroTelefono}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
+            </div>
+
+            {/* Campos principales */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Pagamento *
+                </label>
+                <select
+                  value={formData.pagamento}
+                  onChange={(e) => setFormData(prev => ({ ...prev, pagamento: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                  required
+                >
+                  <option value="">Seleziona</option>
+                  {pagamenti.map((pagamento) => (
+                    <option key={pagamento} value={pagamento}>
+                      {pagamento}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Data *
+                </label>
+                <input
+                  type="date"
+                  value={formData.data}
+                  onChange={(e) => setFormData(prev => ({ ...prev, data: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  IATA *
+                </label>
+                <select
+                  value={formData.iata}
+                  onChange={(e) => setFormData(prev => ({ ...prev, iata: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                  required
+                >
+                  <option value="">Seleziona</option>
+                  {iataList.map((iata) => (
+                    <option key={iata} value={iata}>
+                      {iata}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  PNR
+                </label>
+                <input
+                  type="text"
+                  value={formData.pnr}
+                  onChange={(e) => setFormData(prev => ({ ...prev, pnr: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Passeggero *
+                </label>
+                <input
+                  type="text"
+                  value={formData.passeggero}
+                  onChange={(e) => setFormData(prev => ({ ...prev, passeggero: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="w-full">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Itinerario *
+              </label>
+              <input
+                type="text"
+                value={formData.itinerario}
+                onChange={(e) => setFormData(prev => ({ ...prev, itinerario: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Servizio *
+                </label>
+                <div className="relative servizio-dropdown-container">
+                  {/* Campo de entrada con servicios seleccionados */}
+                  <div
+                    onClick={() => setShowServizioDropdown(!showServizioDropdown)}
+                    className="w-full min-h-[42px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white cursor-pointer flex flex-wrap gap-1 items-center"
+                  >
+                    {formData.servizio.length > 0 ? (
+                      formData.servizio.map((servizio) => (
+                        <span
+                          key={servizio}
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-brand-100 text-brand-800 text-xs rounded-md"
+                        >
+                          {servizio}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleServizioRemove(servizio);
+                            }}
+                            className="text-brand-600 hover:text-brand-800"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-gray-500 dark:text-gray-400">Seleziona servizi...</span>
+                    )}
+                    <svg 
+                      className={`ml-auto w-4 h-4 text-gray-400 transition-transform ${showServizioDropdown ? 'rotate-180' : ''}`} 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+
+                  {/* Dropdown */}
+                  {showServizioDropdown && (
+                    <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-hidden">
+                      {/* Barra de búsqueda */}
+                      <div className="p-2 border-b border-gray-200 dark:border-gray-700">
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={servizioSearchTerm}
+                            onChange={(e) => setServizioSearchTerm(e.target.value)}
+                            placeholder="Search..."
+                            className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <svg className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                        </div>
+                      </div>
+
+                      {/* Lista de opciones */}
+                      <div className="max-h-48 overflow-y-auto">
+                        {filteredServizi.map((servizio) => (
+                          <div
+                            key={servizio}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleServizioToggle(servizio);
+                            }}
+                            className={`px-3 py-2 cursor-pointer text-sm flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                              formData.servizio.includes(servizio) 
+                                ? 'bg-brand-50 text-brand-700 dark:bg-brand-900 dark:text-brand-300' 
+                                : 'text-gray-900 dark:text-white'
+                            }`}
+                          >
+                            <span>{servizio}</span>
+                            {formData.servizio.includes(servizio) && (
+                              <svg className="w-4 h-4 text-brand-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                            )}
+                          </div>
+                        ))}
+                        
+                        {/* Mensaje cuando no hay resultados */}
+                        {servizioSearchTerm && filteredServizi.length === 0 && (
+                          <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                            Nessun servizio trovato
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+
+            {/* Campos de fechas de viaje - Solo se muestran si hay Biglietteria */}
+            {shouldShowDateFields() && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Andata
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.andata}
+                    onChange={(e) => setFormData(prev => ({ ...prev, andata: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Ritorno
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.ritorno}
+                    onChange={(e) => setFormData(prev => ({ ...prev, ritorno: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                  />
+                </div>
+              </div>
+            )}
+
+
+            {/* Campos de servicios adicionales (Neto/Venduto del servicio) - Solo se muestran si hay servicios adicionales */}
+            {shouldShowAdditionalServiceFields() && (
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+                <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-4">
+                  Costos de Servicios Adicionales
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {formData.servizio.some(service => service.toLowerCase().includes('express')) && (
+                    <div className="space-y-4 p-6 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                      <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Express</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Neto (€)
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={formData.express}
+                            onChange={(e) => setFormData(prev => ({ ...prev, express: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            placeholder="0.00"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Venduto (€)
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={formData.expressVenduto || ''}
+                            onChange={(e) => setFormData(prev => ({ ...prev, expressVenduto: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            placeholder="0.00"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {formData.servizio.some(service => service.toLowerCase().includes('polizza')) && (
+                    <div className="space-y-4 p-6 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                      <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Polizza</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Neto (€)
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={formData.polizza}
+                            onChange={(e) => setFormData(prev => ({ ...prev, polizza: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            placeholder="0.00"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Venduto (€)
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={formData.polizzaVenduto || ''}
+                            onChange={(e) => setFormData(prev => ({ ...prev, polizzaVenduto: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            placeholder="0.00"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {formData.servizio.some(service => service.toLowerCase().includes('letter') || service.toLowerCase().includes('invito')) && (
+                    <div className="space-y-4 p-6 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                      <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Letter di Invito</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Neto (€)
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={formData.letteraInvito}
+                            onChange={(e) => setFormData(prev => ({ ...prev, letteraInvito: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            placeholder="0.00"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Venduto (€)
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={formData.letteraInvitoVenduto || ''}
+                            onChange={(e) => setFormData(prev => ({ ...prev, letteraInvitoVenduto: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            placeholder="0.00"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {formData.servizio.some(service => service.toLowerCase().includes('hotel')) && (
+                    <div className="space-y-4 p-6 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                      <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Hotel</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Neto (€)
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={formData.hotel}
+                            onChange={(e) => setFormData(prev => ({ ...prev, hotel: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            placeholder="0.00"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Venduto (€)
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={formData.hotelVenduto || ''}
+                            onChange={(e) => setFormData(prev => ({ ...prev, hotelVenduto: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            placeholder="0.00"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Campos monetarios básicos - Solo se muestran si hay Biglietteria */}
+            {shouldShowBasicMonetaryFields() && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Neto *
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.neto}
+                  onChange={(e) => setFormData(prev => ({ ...prev, neto: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Venduto *
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.venduto}
+                  onChange={(e) => setFormData(prev => ({ ...prev, venduto: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Acconto (opcional)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.acconto}
+                  onChange={(e) => setFormData(prev => ({ ...prev, acconto: e.target.value }))}
+                  placeholder="0.00"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Da Pagare (calcolato)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.daPagare || ''}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
+            </div>
+            )}
+
+            {/* Archivo Adjunto - Solo se muestra si hay Biglietteria */}
+            {shouldShowBasicMonetaryFields() && (
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Archivo Adjunto (opcional)
+                </label>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf,.doc,.docx"
+                  onChange={(e) => setAttachedFile(e.target.files?.[0] || null)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 dark:file:bg-brand-900/20 dark:file:text-brand-400"
+                />
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Puedes subir imágenes (JPG, PNG, GIF, WEBP) o documentos (PDF, DOC, DOCX). Máximo 10MB.
+                </p>
+                {attachedFile && (
+                  <div className="mt-2 flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Archivo seleccionado: {attachedFile.name}</span>
+                  </div>
+                )}
+                
+                {/* Mostrar archivo existente en modo edición */}
+                {isEditMode && editingRecord?.attachedFile && !attachedFile && (
+                  <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Archivo actual:</p>
+                    <div className="flex items-center gap-3">
+                      {editingRecord.attachedFile.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                        <img 
+                          src={editingRecord.attachedFile} 
+                          alt="Preview" 
+                          className="w-16 h-16 object-cover rounded border border-gray-300 dark:border-gray-600"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 flex items-center justify-center bg-gray-200 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600">
+                          <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-700 dark:text-gray-300">{editingRecord.attachedFileName}</p>
+                        <a
+                          href={editingRecord.attachedFile}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                        >
+                          Ver archivo
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            )}
+
+            {/* Sistema de Cuotas - Solo si hay Biglietteria y Da Pagare > 0 */}
+            {shouldShowBasicMonetaryFields() && parseFloat(formData.daPagare || '0') > 0 && (
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+                <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-4">
+                  Sistema de Cuotas
+                </h3>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Número de Cuotas
+                  </label>
+                  <select
+                    value={numeroCuotas}
+                    onChange={(e) => setNumeroCuotas(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                  >
+                    <option value={0}>Sin cuotas</option>
+                    <option value={1}>1 cuota</option>
+                    <option value={2}>2 cuotas</option>
+                  </select>
+                </div>
+
+                {/* Campos dinámicos de cuotas */}
+                {cuotas.map((cuota, index) => (
+                  <div key={index} className="mb-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+                      Cuota {cuota.numeroCuota}
+                    </h4>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Data
+                        </label>
+                        <input
+                          type="date"
+                          value={cuota.data}
+                          onChange={(e) => {
+                            const nuevasCuotas = [...cuotas];
+                            nuevasCuotas[index] = { ...cuota, data: e.target.value };
+                            setCuotas(nuevasCuotas);
+                          }}
+                          className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Prezzo *
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={cuota.prezzo}
+                          onChange={(e) => {
+                            const nuevasCuotas = [...cuotas];
+                            nuevasCuotas[index] = { ...cuota, prezzo: e.target.value };
+                            setCuotas(nuevasCuotas);
+                          }}
+                          max={parseFloat(formData.daPagare || '0')}
+                          required
+                          className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Note
+                        </label>
+                        <input
+                          type="text"
+                          value={cuota.note}
+                          onChange={(e) => {
+                            const nuevasCuotas = [...cuotas];
+                            nuevasCuotas[index] = { ...cuota, note: e.target.value };
+                            setCuotas(nuevasCuotas);
+                          }}
+                          placeholder="Note opzionali"
+                          className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Archivo adjunto para la cuota */}
+                    <div className="mt-3">
+                      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Comprobante de Pago (opcional)
+                      </label>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf"
+                        onChange={(e) => {
+                          const nuevasCuotas = [...cuotas];
+                          nuevasCuotas[index] = { ...cuota, attachedFile: e.target.files?.[0] || null };
+                          setCuotas(nuevasCuotas);
+                        }}
+                        className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 dark:file:bg-brand-900/20 dark:file:text-brand-400"
+                      />
+                      {cuota.attachedFile && (
+                        <div className="mt-1 flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span>{cuota.attachedFile.name}</span>
+                        </div>
+                      )}
+                      
+                      {/* Mostrar archivo existente de la cuota en modo edición */}
+                      {isEditMode && editingRecord?.cuotas?.[index]?.attachedFile && !cuota.attachedFile && (
+                        <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded">
+                          <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Archivo actual:</p>
+                          <div className="flex items-center gap-2">
+                            {editingRecord.cuotas[index].attachedFile!.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                              <img 
+                                src={editingRecord.cuotas[index].attachedFile!} 
+                                alt="Preview" 
+                                className="w-12 h-12 object-cover rounded border border-gray-300 dark:border-gray-600"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 flex items-center justify-center bg-gray-200 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600">
+                                <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                </svg>
+                              </div>
+                            )}
+                            <div className="flex-1">
+                              <p className="text-xs text-gray-700 dark:text-gray-300">{editingRecord.cuotas[index].attachedFileName}</p>
+                              <a
+                                href={editingRecord.cuotas[index].attachedFile!}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                              >
+                                Ver
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Validación visual de cuotas */}
+                {cuotas.length > 0 && (
+                  <div className="mt-4 p-4 rounded-lg border-2">
+                    {(() => {
+                      const daPagare = parseFloat(formData.daPagare || '0');
+                      const totalCuotas = cuotas.reduce((sum, c) => sum + (parseFloat(c.prezzo) || 0), 0);
+                      const diferencia = totalCuotas - daPagare;
+                      const esValido = Math.abs(diferencia) < 0.01;
+
+                      return (
+                        <div className={`${esValido ? 'bg-green-50 border-green-300 dark:bg-green-900/20 dark:border-green-700' : 'bg-red-50 border-red-300 dark:bg-red-900/20 dark:border-red-700'}`}>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className={`text-sm font-medium ${esValido ? 'text-green-800 dark:text-green-300' : 'text-red-800 dark:text-red-300'}`}>
+                                {esValido ? '✓ Validación correcta' : 'Le quote devono essere pari al totale rimanente'}
+                              </p>
+                              <p className={`text-xs ${esValido ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                Somma delle rate: €{totalCuotas.toFixed(2)} | Da Pagare: €{daPagare.toFixed(2)}
+                              </p>
+                              {!esValido && (
+                                <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                                  {diferencia > 0 
+                                    ? `Excede por €${diferencia.toFixed(2)}` 
+                                    : `Falta €${Math.abs(diferencia).toFixed(2)}`}
+                                </p>
+                              )}
+                            </div>
+                            {esValido ? (
+                              <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            ) : (
+                              <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Fee AGV - Solo se muestra si hay Biglietteria */}
+            {shouldShowBasicMonetaryFields() && (
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Fee AGV (calcolato) *
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.feeAgv}
+                      readOnly
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-900 dark:text-white cursor-not-allowed"
+                      required
+                    />
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Calculado automáticamente
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Método de Pago - SIEMPRE VISIBLE AL FINAL */}
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+              <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-4">
+                Método de Pago
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Metodo Pagamento *
+                  </label>
+                <select
+                  value={formData.metodoPagamento}
+                  onChange={(e) => setFormData(prev => ({ ...prev, metodoPagamento: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                  required
+                >
+                  <option value="">Seleziona</option>
+                  {metodiPagamento.map((metodo) => (
+                    <option key={metodo} value={metodo}>
+                      {metodo}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            </div>
+
+            </form>
+          </div>
+          
+          {/* Footer fijo con botones */}
+          <div className="flex-shrink-0 px-8 py-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-b-lg">
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={isEditMode ? handleCancelEdit : closeModal}
+                className="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors duration-200"
+              >
+                Annulla
+              </button>
+              <button
+                type="submit"
+                disabled={submitting}
+                onClick={handleSubmit}
+                className="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {submitting ? (isEditMode ? 'Aggiornando...' : 'Salvando...') : (isEditMode ? 'Aggiorna' : 'Salva')}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal de Visualización de Archivos */}
+      {isMounted && isFileViewerOpen && viewingFiles && createPortal(
+        <div className="fixed inset-0 bg-white bg-opacity-80 dark:bg-gray-900 dark:bg-opacity-80 flex items-center justify-center z-[999999] p-4" onClick={handleCloseFileViewer}>
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Comprobantes de Pago</h2>
+              <button
+                onClick={handleCloseFileViewer}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-4">
+              {/* Archivo Principal */}
+              {viewingFiles.attachedFile && (
+                <div>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Archivo Principal</p>
+                  {viewingFiles.attachedFile.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                    <img 
+                      src={viewingFiles.attachedFile} 
+                      alt="Archivo principal" 
+                      className="w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={() => handleDownload(viewingFiles.attachedFile!, viewingFiles.attachedFileName || 'archivo_principal.jpg')}
+                    />
+                  ) : (
+                    <button
+                      onClick={() => handleDownload(viewingFiles.attachedFile!, viewingFiles.attachedFileName || 'documento.pdf')}
+                      className="block w-full p-4 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left"
+                    >
+                      <p className="text-sm text-gray-900 dark:text-white">{viewingFiles.attachedFileName}</p>
+                      <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Clic para descargar</p>
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Archivos de Cuotas */}
+              {viewingFiles.cuotas && viewingFiles.cuotas.filter(c => c.attachedFile).map((cuota) => (
+                <div key={cuota.id}>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Cuota {cuota.numeroCuota}
+                  </p>
+                  {cuota.attachedFile!.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                    <img 
+                      src={cuota.attachedFile!} 
+                      alt={`Cuota ${cuota.numeroCuota}`} 
+                      className="w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={() => handleDownload(cuota.attachedFile!, cuota.attachedFileName || `cuota_${cuota.numeroCuota}.jpg`)}
+                    />
+                  ) : (
+                    <button
+                      onClick={() => handleDownload(cuota.attachedFile!, cuota.attachedFileName || `cuota_${cuota.numeroCuota}.pdf`)}
+                      className="block w-full p-4 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left"
+                    >
+                      <p className="text-sm text-gray-900 dark:text-white">{cuota.attachedFileName}</p>
+                      <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Clic para descargar</p>
+                    </button>
+                  )}
+                </div>
+              ))}
+
+              {/* Sin archivos */}
+              {!viewingFiles.attachedFile && (!viewingFiles.cuotas || viewingFiles.cuotas.filter(c => c.attachedFile).length === 0) && (
+                <div className="text-center py-12">
+                  <p className="text-gray-500 dark:text-gray-400">No hay archivos adjuntos</p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="border-t border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-end">
+              <button
+                onClick={handleCloseFileViewer}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"
+              >
+                Chiudi
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+    </div>
+  );
+}

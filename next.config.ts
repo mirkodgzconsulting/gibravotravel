@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
+// Cargar variables de entorno
+require('dotenv').config();
+
 const nextConfig: NextConfig = {
-  /* config options here */
   images: {
     remotePatterns: [
       {
@@ -18,10 +20,10 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  webpack(config) {
+  webpack: (config) => {
     config.module.rules.push({
       test: /\.svg$/,
-      use: ["@svgr/webpack"],
+      use: ['@svgr/webpack'],
     });
     return config;
   },

@@ -1,159 +1,190 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 import { auth } from '@clerk/nextjs/server';
 import { v2 as cloudinary } from 'cloudinary';
+import { prisma } from '@/lib/prisma';
 
 // Configurar Cloudinary
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dummy',
-  api_key: process.env.CLOUDINARY_API_KEY || 'dummy',
-  api_secret: process.env.CLOUDINARY_API_SECRET || 'dummy',
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dskliu1ig',
+  api_key: process.env.CLOUDINARY_API_KEY || '538724966551851',
+  api_secret: process.env.CLOUDINARY_API_SECRET || 'Q1fP7-pH6iiltPbFNkqPn0d93no',
 });
 
-// GET - Obtener todos los clientes
-export async function GET() {
+// GET - Listar todos los clientes activos
+export async function GET(request: NextRequest) {
   try {
-    console.log('🔍 GET /api/clients - Iniciando...');
-    
     const { userId } = await auth();
-    console.log('🔍 User ID:', userId);
     
     if (!userId) {
-      console.log('❌ No autorizado - userId es null');
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    // Verificar si la tabla existe y tiene datos
-    const clientCount = await prisma.client.count();
-    console.log('🔍 Total clientes en DB:', clientCount);
+    const { searchParams } = new URL(request.url);
+    const userOnly = searchParams.get('userOnly') === 'true';
+
+    // Buscar el usuario en la base de datos para verificar su rol
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId }
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
+    }
+
+    let whereCondition = { isActive: true };
+
+    // Si se solicita userOnly, mostrar solo los clientes creados por este usuario
+    if (userOnly) {
+      whereCondition = {
+        ...whereCondition,
+        createdBy: userId
+      };
+    }
 
     const clients = await prisma.client.findMany({
+      where: whereCondition,
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        fiscalCode: true,
+        address: true,
+        email: true,
+        phoneNumber: true,
+        birthPlace: true,
+        birthDate: true,
+        document1: true,
+        document1Name: true,
+        document2: true,
+        document2Name: true,
+        document3: true,
+        document3Name: true,
+        document4: true,
+        document4Name: true,
+        isActive: true,
+        createdBy: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      orderBy: [
+        { firstName: 'asc' },
+        { lastName: 'asc' }
+      ]
+    });
+
+    // Obtener información de los creadores
+    const creatorIds = [...new Set(clients.map(c => c.createdBy))];
+    const creators = await prisma.user.findMany({
       where: {
-        isActive: true
+        clerkId: {
+          in: creatorIds,
+        },
       },
-      include: {
-        creator: {
-          select: {
-            firstName: true,
-            lastName: true,
-            email: true
-          }
-        }
+      select: {
+        clerkId: true,
+        firstName: true,
+        lastName: true,
+        email: true,
       },
-      orderBy: {
-        createdAt: 'desc'
-      }
     });
 
-    console.log('🔍 Clientes encontrados:', clients.length);
-    console.log('🔍 Primer cliente:', clients[0] || 'No hay clientes');
+    // Combinar datos
+    const clientsWithCreators = clients.map(client => ({
+      ...client,
+      creator: creators.find(c => c.clerkId === client.createdBy) || {
+        firstName: null,
+        lastName: null,
+        email: 'Usuario no encontrado',
+      },
+    }));
 
-    return NextResponse.json({ 
-      clients,
-      total: clientCount,
-      active: clients.length 
-    });
+    return NextResponse.json({ clients: clientsWithCreators });
+
   } catch (error) {
-    console.error('❌ Error fetching clients:', error);
-    console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-    return NextResponse.json({ 
-      error: 'Error interno del servidor',
-      details: error instanceof Error ? error.message : 'Error desconocido'
-    }, { status: 500 });
+    console.error('Error fetching clients:', error);
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }
 
 // POST - Crear nuevo cliente
 export async function POST(request: NextRequest) {
   try {
-    console.log('🔍 POST /api/clients - Iniciando...');
-    
     const { userId } = await auth();
-    console.log('🔍 User ID:', userId);
-    
     if (!userId) {
-      console.log('❌ No autorizado - userId es null');
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    // Verificar rol del usuario
-    const user = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      select: { role: true, firstName: true, lastName: true }
-    });
-
-    console.log('🔍 Usuario encontrado:', user);
-
-    if (!user) {
-      console.log('❌ Usuario no encontrado en la base de datos');
-      return NextResponse.json({ error: 'Usuario no encontrado en la base de datos' }, { status: 404 });
-    }
-
-    if (!['ADMIN', 'TI'].includes(user.role)) {
-      console.log('❌ Rol insuficiente:', user.role);
-      return NextResponse.json({ error: 'No tienes permisos para crear clientes' }, { status: 403 });
-    }
-
     const formData = await request.formData();
-    
     const firstName = formData.get('firstName') as string;
     const lastName = formData.get('lastName') as string;
     const fiscalCode = formData.get('fiscalCode') as string;
     const address = formData.get('address') as string;
-    const phoneNumber = formData.get('phoneNumber') as string;
     const email = formData.get('email') as string;
+    const phoneNumber = formData.get('phoneNumber') as string;
     const birthPlace = formData.get('birthPlace') as string;
     const birthDate = formData.get('birthDate') as string;
-    const documents = formData.get('documents') as File | null;
+    
+    // Obtener archivos
+    const document1 = formData.get('document1') as File | null;
+    const document2 = formData.get('document2') as File | null;
+    const document3 = formData.get('document3') as File | null;
+    const document4 = formData.get('document4') as File | null;
 
-    console.log('🔍 Datos recibidos:', {
-      firstName,
-      lastName,
-      fiscalCode,
-      address,
-      phoneNumber,
-      email,
-      birthPlace,
-      birthDate,
-      hasDocuments: !!documents
-    });
-
-    // Validaciones básicas
-    if (!firstName || !lastName || !fiscalCode || !address || !phoneNumber || !email || !birthPlace || !birthDate) {
-      console.log('❌ Campos faltantes:', {
-        firstName: !!firstName,
-        lastName: !!lastName,
-        fiscalCode: !!fiscalCode,
-        address: !!address,
-        phoneNumber: !!phoneNumber,
-        email: !!email,
-        birthPlace: !!birthPlace,
-        birthDate: !!birthDate
-      });
-      return NextResponse.json({ error: 'Todos los campos obligatorios deben ser completados' }, { status: 400 });
+    // Validaciones
+    if (!firstName || !lastName || !fiscalCode || !email || !phoneNumber) {
+      return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 });
     }
 
-    // Verificar si el email ya existe
-    const existingClient = await prisma.client.findUnique({
-      where: { email }
+    // Validar que document1 sea obligatorio
+    if (!document1 || document1.size === 0) {
+      return NextResponse.json({ error: 'El primer documento es obligatorio' }, { status: 400 });
+    }
+
+    // Verificar si ya existe un cliente con el mismo código fiscal
+    const existingClient = await prisma.client.findFirst({
+      where: { fiscalCode }
     });
 
     if (existingClient) {
-      return NextResponse.json({ error: 'Ya existe un cliente con este email' }, { status: 400 });
+      return NextResponse.json({ error: 'Ya existe un cliente con este código fiscal' }, { status: 400 });
     }
 
-    let documentsUrl = null;
+    // Validar tamaños de archivos (10MB máximo por archivo)
+    const maxFileSize = 10 * 1024 * 1024; // 10MB
+    const files = [document1, document2, document3, document4].filter(f => f && f.size > 0);
+    
+    for (const file of files) {
+      if (file && file.size > maxFileSize) {
+        return NextResponse.json({ 
+          error: `El archivo ${file.name} es demasiado grande. Máximo 10MB por archivo.` 
+        }, { status: 400 });
+      }
+    }
 
-    // Procesar documentos si existen
-    if (documents && documents.size > 0) {
+    // Subir archivos a Cloudinary en paralelo
+    const uploadPromises = [];
+    const documentData: {
+      document1?: string;
+      document1Name?: string;
+      document2?: string;
+      document2Name?: string;
+      document3?: string;
+      document3Name?: string;
+      document4?: string;
+      document4Name?: string;
+    } = {};
+
+    // Función helper para subir archivo
+    const uploadFile = async (file: File, index: number) => {
       try {
-        const buffer = await documents.arrayBuffer();
-
-        const result = await new Promise((resolve, reject) => {
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+        
+        const result = await new Promise<any>((resolve, reject) => {
           cloudinary.uploader.upload_stream(
             {
-              resource_type: 'raw',
-              folder: 'clients/documents'
+              folder: 'gibravotravel/clients/documents',
+              resource_type: 'auto', // Permite imágenes y PDFs
             },
             (error, result) => {
               if (error) reject(error);
@@ -162,53 +193,73 @@ export async function POST(request: NextRequest) {
           ).end(buffer);
         });
 
-        documentsUrl = (result as { secure_url: string }).secure_url;
-      } catch (uploadError) {
-        console.error('Error uploading documents:', uploadError);
-        return NextResponse.json({ error: 'Error al subir documentos' }, { status: 500 });
+        return {
+          index,
+          url: result.secure_url,
+          name: file.name
+        };
+      } catch (error) {
+        throw new Error(`Error subiendo archivo ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
+    };
+
+    // Subir todos los archivos en paralelo
+    if (document1 && document1.size > 0) uploadPromises.push(uploadFile(document1, 1));
+    if (document2 && document2.size > 0) uploadPromises.push(uploadFile(document2, 2));
+    if (document3 && document3.size > 0) uploadPromises.push(uploadFile(document3, 3));
+    if (document4 && document4.size > 0) uploadPromises.push(uploadFile(document4, 4));
+
+    try {
+      const uploadResults = await Promise.all(uploadPromises);
+      
+      uploadResults.forEach(result => {
+        if (result.index === 1) {
+          documentData.document1 = result.url;
+          documentData.document1Name = result.name;
+        } else if (result.index === 2) {
+          documentData.document2 = result.url;
+          documentData.document2Name = result.name;
+        } else if (result.index === 3) {
+          documentData.document3 = result.url;
+          documentData.document3Name = result.name;
+        } else if (result.index === 4) {
+          documentData.document4 = result.url;
+          documentData.document4Name = result.name;
+        }
+      });
+    } catch (uploadError) {
+      return NextResponse.json({ 
+        error: 'Error subiendo archivos a Cloudinary',
+        details: uploadError instanceof Error ? uploadError.message : 'Unknown error'
+      }, { status: 500 });
     }
 
-    // Crear cliente
-    console.log('🔍 Creando cliente en la base de datos...');
-    
-    const client = await prisma.client.create({
+    // Crear el cliente
+    const newClient = await prisma.client.create({
       data: {
         firstName,
         lastName,
         fiscalCode,
-        address,
-        phoneNumber,
+        address: address || '',
         email,
-        birthPlace,
-        birthDate: new Date(birthDate),
-        documents: documentsUrl,
+        phoneNumber,
+        birthPlace: birthPlace || '',
+        birthDate: birthDate ? new Date(birthDate) : new Date(),
+        ...documentData,
         createdBy: userId
-      },
-      include: {
-        creator: {
-          select: {
-            firstName: true,
-            lastName: true,
-            email: true
-          }
-        }
       }
     });
 
-    console.log('✅ Cliente creado exitosamente:', client.id);
-
     return NextResponse.json({ 
-      client,
-      message: 'Cliente creado exitosamente' 
-    }, { status: 201 });
+      client: newClient,
+      message: 'Cliente creato con successo!' 
+    });
 
-  } catch (error) {
-    console.error('❌ Error creating client:', error);
-    console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+  } catch (error: any) {
+    console.error('Error creating client:', error);
     return NextResponse.json({ 
       error: 'Error interno del servidor',
-      details: error instanceof Error ? error.message : 'Error desconocido'
+      details: error.message
     }, { status: 500 });
   }
 }

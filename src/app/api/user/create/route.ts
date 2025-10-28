@@ -7,9 +7,6 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     
-    // Debug: Log all form data keys
-    console.log('🔍 FormData keys:', Array.from(formData.keys()));
-    
     const email = formData.get('email') as string;
     const firstName = formData.get('firstName') as string;
     const lastName = formData.get('lastName') as string;
@@ -17,16 +14,6 @@ export async function POST(request: NextRequest) {
     const role = formData.get('role') as string;
     const photo = formData.get('photo') as File | null;
     
-    // Debug: Log all received data
-    console.log('📋 Received data:', {
-      email,
-      firstName,
-      lastName,
-      phoneNumber,
-      role,
-      photoReceived: !!photo,
-      photoType: photo?.constructor?.name || 'null'
-    });
 
     if (!email) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
@@ -52,18 +39,10 @@ export async function POST(request: NextRequest) {
 
     let photoPath = null;
 
-    // Debug: Verificar si hay imagen
-    console.log('📸 Debug - Photo received:', {
-      hasPhoto: !!photo,
-      photoSize: photo?.size || 0,
-      photoName: photo?.name || 'no name',
-      photoType: photo?.type || 'no type'
-    });
 
     // Manejar la imagen si se proporciona
     if (photo && photo.size > 0) {
       try {
-        console.log('🔄 Procesando imagen...');
         const bytes = await photo.arrayBuffer();
         const buffer = Buffer.from(bytes);
         
@@ -73,13 +52,8 @@ export async function POST(request: NextRequest) {
         const base64Image = buffer.toString('base64');
         const dataUrl = `data:${photo.type};base64,${base64Image}`;
         
-        console.log('🔄 Convertiendo imagen a base64...');
-        console.log('📏 Tamaño de base64:', dataUrl.length, 'caracteres');
-        
         // Guardar como base64 en lugar de archivo
         photoPath = dataUrl;
-        
-        console.log('✅ Imagen guardada localmente:', photoPath);
       } catch (fileError) {
         console.error('❌ Error guardando imagen:', fileError);
         console.error('❌ Error details:', {
@@ -89,8 +63,6 @@ export async function POST(request: NextRequest) {
         });
         // Continuar sin imagen si hay error
       }
-    } else {
-      console.log('⚠️ No hay imagen para procesar o imagen vacía');
     }
 
     // Crear cliente de Clerk
@@ -116,7 +88,6 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      console.log('✅ Usuario creado en Clerk:', clerkUser.id);
     } catch (clerkError) {
       console.error('❌ Error creando usuario en Clerk:', clerkError);
       
@@ -141,8 +112,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Debug: Log photoPath before saving to database
-    console.log('💾 Saving to database with photoPath:', photoPath);
 
     // Crear usuario en Prisma con el clerkId real
     const user = await prisma.user.create({
@@ -157,13 +126,6 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Debug: Log saved user data
-    console.log('✅ User saved to database:', {
-      id: user.id,
-      email: user.email,
-      photo: user.photo,
-      photoPath: photoPath
-    });
 
     return NextResponse.json({ 
       user, 

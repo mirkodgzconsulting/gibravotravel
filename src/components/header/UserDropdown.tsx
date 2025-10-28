@@ -1,12 +1,20 @@
 "use client";
 import Image from "next/image";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { useUser, useClerk } from "@clerk/nextjs";
 
+interface UserProfile {
+  photo: string | null;
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const { user } = useUser();
   const { signOut } = useClerk();
 
@@ -18,9 +26,27 @@ export default function UserDropdown() {
     setIsOpen(false);
   }
 
+  // Obtener perfil del usuario desde la base de datos
+  const fetchUserProfile = async () => {
+    try {
+      const response = await fetch('/api/user/profile');
+      if (response.ok) {
+        const data = await response.json();
+        setUserProfile(data.user);
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchUserProfile();
+    }
+  }, [user]);
+
   const handleSignOut = async () => {
     try {
-      console.log('🚀 Signing out user...');
       await signOut({ redirectUrl: '/signin' });
       closeDropdown();
     } catch (error) {
@@ -36,22 +62,50 @@ export default function UserDropdown() {
         className="flex items-center dropdown-toggle text-gray-700 dark:text-gray-400 dropdown-toggle"
       >
         <span className="mr-3 overflow-hidden rounded-full h-11 w-11">
-          {user?.imageUrl ? (
+          {userProfile?.photo ? (
+            <Image
+              width={44}
+              height={44}
+              src={userProfile.photo}
+              alt="User"
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                // Si la imagen falla, mostrar las iniciales
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                const parent = target.parentElement;
+                if (parent) {
+                  const fallback = document.createElement('div');
+                  fallback.className = 'w-full h-full bg-brand-500 flex items-center justify-center text-white font-semibold text-sm';
+                  fallback.textContent = userProfile?.firstName?.charAt(0) || user?.firstName?.charAt(0) || user?.emailAddresses[0]?.emailAddress?.charAt(0) || 'U';
+                  parent.appendChild(fallback);
+                }
+              }}
+            />
+          ) : user?.imageUrl ? (
             <Image
               width={44}
               height={44}
               src={user.imageUrl}
               alt="User"
               className="w-full h-full object-cover"
+              onError={(e) => {
+                // Si la imagen de Clerk falla, mostrar las iniciales
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                const parent = target.parentElement;
+                if (parent) {
+                  const fallback = document.createElement('div');
+                  fallback.className = 'w-full h-full bg-brand-500 flex items-center justify-center text-white font-semibold text-sm';
+                  fallback.textContent = userProfile?.firstName?.charAt(0) || user?.firstName?.charAt(0) || user?.emailAddresses[0]?.emailAddress?.charAt(0) || 'U';
+                  parent.appendChild(fallback);
+                }
+              }}
             />
           ) : (
-            <Image
-              width={44}
-              height={44}
-              src="/images/user/owner.png"
-              alt="User"
-              className="w-full h-full object-cover"
-            />
+            <div className="w-full h-full bg-brand-500 flex items-center justify-center text-white font-semibold text-sm">
+              {userProfile?.firstName?.charAt(0) || user?.firstName?.charAt(0) || user?.emailAddresses[0]?.emailAddress?.charAt(0) || 'U'}
+            </div>
           )}
         </span>
 
@@ -86,10 +140,10 @@ export default function UserDropdown() {
       >
         <div>
           <span className="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">
-            {user?.fullName || "Amministratore GiBravo Travel"}
+            {userProfile ? `${userProfile.firstName} ${userProfile.lastName}` : user?.fullName || "Amministratore GiBravo Travel"}
           </span>
           <span className="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
-            {user?.primaryEmailAddress?.emailAddress || "admin@gibravo-travel.com"}
+            {userProfile?.email || user?.primaryEmailAddress?.emailAddress || "admin@gibravo-travel.com"}
           </span>
         </div>
 
@@ -98,7 +152,7 @@ export default function UserDropdown() {
             <DropdownItem
               onItemClick={closeDropdown}
               tag="a"
-              href="/profile"
+              href="/user-profile"
               className="flex items-center gap-3 px-3 py-2 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
             >
               <svg
@@ -123,7 +177,7 @@ export default function UserDropdown() {
             <DropdownItem
               onItemClick={closeDropdown}
               tag="a"
-              href="/profile"
+              href="/user-profile"
               className="flex items-center gap-3 px-3 py-2 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
             >
               <svg
@@ -148,7 +202,7 @@ export default function UserDropdown() {
             <DropdownItem
               onItemClick={closeDropdown}
               tag="a"
-              href="/profile"
+              href="/user-profile"
               className="flex items-center gap-3 px-3 py-2 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
             >
               <svg

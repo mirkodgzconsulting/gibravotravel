@@ -6,7 +6,6 @@ import { SidebarProvider } from "@/context/SidebarContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { SearchProvider } from "@/context/SearchContext";
 import { ClerkProvider } from "@clerk/nextjs";
-import DevelopmentBypass from "@/components/DevelopmentBypass";
 import type { Metadata } from "next";
 
 const outfit = Outfit({
@@ -25,23 +24,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider
-      signInUrl="/signin"
-      signUpUrl="/signin"
-      afterSignInUrl="/"
-      afterSignOutUrl="/signin"
-    >
-      <html lang="it">
-        <body className={`${outfit.className} dark:bg-gray-900`}>
-          <DevelopmentBypass>
-            <ThemeProvider>
-              <SearchProvider>
-                <SidebarProvider>{children}</SidebarProvider>
-              </SearchProvider>
-            </ThemeProvider>
-          </DevelopmentBypass>
-        </body>
-      </html>
-    </ClerkProvider>
+    <html lang="it" suppressHydrationWarning>
+      <body className={`${outfit.className} dark:bg-gray-900`}>
+        <ClerkProvider
+          signInUrl="/signin"
+          signUpUrl="/signin"
+          afterSignInUrl="/"
+          afterSignOutUrl="/signin"
+        >
+          <ThemeProvider>
+            <SearchProvider>
+              <SidebarProvider>{children}</SidebarProvider>
+            </SearchProvider>
+          </ThemeProvider>
+        </ClerkProvider>
+      </body>
+    </html>
   );
 }

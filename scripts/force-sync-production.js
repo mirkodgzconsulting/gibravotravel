@@ -126,8 +126,17 @@ async function forceSyncProduction() {
       }
     }
 
-    // 6. Corregir errores de archivos y PDFs
-    console.log('\n6. Corrigiendo errores de archivos y PDFs...');
+    // 6. Corregir configuración de Cloudinary
+    console.log('\n6. Corrigiendo configuración de Cloudinary...');
+    try {
+      execSync('node scripts/fix-cloudinary-config.js', { stdio: 'inherit' });
+      console.log('   ✅ Configuración de Cloudinary corregida');
+    } catch (cloudinaryError) {
+      console.log('   ⚠️  Error corrigiendo Cloudinary, continuando...');
+    }
+
+    // 6.1. Corregir errores de archivos y PDFs
+    console.log('\n6.1. Corrigiendo errores de archivos y PDFs...');
     try {
       execSync('node scripts/fix-file-upload-errors.js', { stdio: 'inherit' });
       console.log('   ✅ Errores de archivos corregidos');

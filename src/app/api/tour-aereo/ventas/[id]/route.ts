@@ -4,11 +4,17 @@ import { prisma } from '@/lib/prisma';
 import { v2 as cloudinary } from 'cloudinary';
 
 // Configurar Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dskliu1ig',
-  api_key: process.env.CLOUDINARY_API_KEY || '538724966551851',
-  api_secret: process.env.CLOUDINARY_API_SECRET || 'Q1fP7-pH6iiltPbFNkqPn0d93no',
-});
+if (process.env.CLOUDINARY_URL) {
+  cloudinary.config({
+    secure: true
+  });
+} else {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dskliu1ig',
+    api_key: process.env.CLOUDINARY_API_KEY || '538724966551851',
+    api_secret: process.env.CLOUDINARY_API_SECRET || 'Q1fP7-pH6iiltPbFNkqPn0d93no',
+  });
+}
 
 // PATCH - Actualizar el estado de una venta específica
 export async function PATCH(

@@ -87,7 +87,7 @@ async function forceSyncProduction() {
         { id: 'ref_pag_2', pagamento: 'Transferencia', isActive: true },
         { id: 'ref_pag_3', pagamento: 'Tarjeta', isActive: true }
       ],
-      metodo_pagamento: [
+      metodoPagamento: [
         { id: 'ref_met_1', metodoPagamento: 'Efectivo', isActive: true },
         { id: 'ref_met_2', metodoPagamento: 'Transferencia Bancaria', isActive: true },
         { id: 'ref_met_3', metodoPagamento: 'Tarjeta de Crédito', isActive: true },
@@ -105,12 +105,12 @@ async function forceSyncProduction() {
         { id: 'ref_iata_3', iata: 'BCN', isActive: true },
         { id: 'ref_iata_4', iata: 'LHR', isActive: true }
       ],
-      fermata_bus: [
+      fermataBus: [
         { id: 'ref_ferm_1', fermata: 'Roma Termini', isActive: true },
         { id: 'ref_ferm_2', fermata: 'Fiumicino', isActive: true },
         { id: 'ref_ferm_3', fermata: 'Ciampino', isActive: true }
       ],
-      stato_bus: [
+      statoBus: [
         { id: 'ref_stato_1', stato: 'Libero', isActive: true },
         { id: 'ref_stato_2', stato: 'Ocupado', isActive: true },
         { id: 'ref_stato_3', stato: 'Reservado', isActive: true },

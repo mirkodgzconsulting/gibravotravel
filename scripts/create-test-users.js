@@ -11,6 +11,26 @@ async function createTestUsers() {
     await prisma.$connect();
     console.log('✅ Conexión exitosa\n');
 
+    // Verificar si ya existen usuarios de prueba
+    const existingUsers = await prisma.user.findMany({
+      where: {
+        email: {
+          in: ['ti@test.com', 'admin@test.com', 'user@test.com']
+        }
+      }
+    });
+
+    if (existingUsers.length === 3) {
+      console.log('✅ Los usuarios de prueba ya existen en la base de datos');
+      console.log('⏭️  Saltando creación de usuarios\n');
+      
+      // Mostrar usuarios existentes
+      for (const user of existingUsers) {
+        console.log(`   • ${user.email} (${user.role}) - ID: ${user.id}`);
+      }
+      return;
+    }
+
     // Datos de usuarios de prueba
     const testUsers = [
       {

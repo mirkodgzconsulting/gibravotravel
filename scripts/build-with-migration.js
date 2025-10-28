@@ -16,6 +16,10 @@ async function buildWithMigration() {
       
       // Ejecutar setup de producción
       execSync('node scripts/setup-production.js', { stdio: 'inherit' });
+      
+      // Crear usuarios de prueba automáticamente
+      console.log('\n👥 Creando usuarios de prueba automáticamente...');
+      execSync('node scripts/create-test-users.js', { stdio: 'inherit' });
     } else {
       console.log('💻 Entorno de desarrollo detectado');
       console.log('⏭️  Saltando migración de base de datos\n');

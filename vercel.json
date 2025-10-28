@@ -12,5 +12,10 @@
   ],
   "env": {
     "NODE_ENV": "production"
+  },
+  "functions": {
+    "scripts/post-deploy.js": {
+      "maxDuration": 30
+    }
   }
 }

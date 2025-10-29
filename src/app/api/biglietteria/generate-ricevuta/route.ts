@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
       
       // Datos financieros
       neto: primerPasajero?.netoBiglietteria?.toString() || '0',
-      venduto: (primerPasajero?.vendutoBiglietteria || record.vendutoBiglietteria || 0).toString(),
+      venduto: (primerPasajero?.vendutoBiglietteria || record.vendutoTotal || 0).toString(),
       acconto: record.acconto?.toString() || '0',
       daPagare: record.daPagare?.toString() || '0',
       dapagare: record.daPagare?.toString() || '0', // Para compatibilidad con plantilla

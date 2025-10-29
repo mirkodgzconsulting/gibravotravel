@@ -111,13 +111,34 @@ export async function POST(request: NextRequest) {
       codicefiscale: record.codiceFiscale || 'No especificado',
       
       // Cuotas - mapear campos correctamente
-      cuotas: (record.cuotas || []).map(cuota => ({
-        numero: cuota.numeroCuota || '',
-        precio: cuota.prezzo?.toString() || '0',
-        fecha: cuota.data ? new Date(cuota.data).toLocaleDateString('it-IT') : 'Sin fecha',
-        estado: cuota.isPagato ? 'Pagato' : 'Pendiente',
-        statusClass: cuota.isPagato ? 'status-paid' : 'status-pending'
-      })),
+      cuotas: (record.cuotas || []).map(cuota => {
+        console.log('🔍 [RICEVUTA API] Cuota data:', {
+          numeroCuota: cuota.numeroCuota,
+          data: cuota.data,
+          dataType: typeof cuota.data,
+          dataValue: cuota.data
+        });
+        
+        let fechaFormateada = 'Sin fecha';
+        if (cuota.data) {
+          try {
+            const fecha = new Date(cuota.data);
+            if (!isNaN(fecha.getTime())) {
+              fechaFormateada = fecha.toLocaleDateString('it-IT');
+            }
+          } catch (error) {
+            console.log('❌ [RICEVUTA API] Error formateando fecha:', error);
+          }
+        }
+        
+        return {
+          numero: cuota.numeroCuota || '',
+          precio: cuota.prezzo?.toString() || '0',
+          fecha: fechaFormateada,
+          estado: cuota.isPagato ? 'Pagato' : 'Pendiente',
+          statusClass: cuota.isPagato ? 'status-paid' : 'status-pending'
+        };
+      }),
       tieneCuotas: (record.cuotas?.length || 0) > 0
     };
 

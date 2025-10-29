@@ -135,6 +135,7 @@ export async function POST(request: NextRequest) {
           numero: cuota.numeroCuota || '',
           precio: cuota.prezzo?.toString() || '0',
           fecha: fechaFormateada,
+          fechaCuota: fechaFormateada, // Para evitar conflicto con fecha actual
           estado: cuota.isPagato ? 'Pagato' : 'Pendiente',
           statusClass: cuota.isPagato ? 'status-paid' : 'status-pending'
         };

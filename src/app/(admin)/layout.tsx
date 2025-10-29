@@ -30,22 +30,8 @@ export default function AdminLayout({
   //   }
   // }, [isLoaded, isSignedIn, router]);
 
-  // CRÍTICO: Usar useEffect para manejar la redirección con delay más largo
-  useEffect(() => {
-    if (isLoaded && isSignedIn && !roleLoading && userRole === null && pathname !== '/unauthorized' && pathname !== '/') {
-      const timer = setTimeout(() => {
-        // Verificar una vez más antes de redirigir
-        if (userRole === null && pathname !== '/unauthorized' && pathname !== '/') {
-          console.log('🔴 Redirecting to unauthorized - userRole is null after timeout');
-          router.push("/unauthorized");
-        }
-      }, 5000); // Aumentar delay a 5 segundos para dar tiempo a que se cargue el rol
-      
-      return () => {
-        clearTimeout(timer);
-      };
-    }
-  }, [isLoaded, isSignedIn, roleLoading, userRole, router, pathname]);
+  // NO redirigir automáticamente - solo mostrar loading mientras carga
+  // La validación de permisos se hace a nivel de página
 
   // Mostrar loading mientras Clerk se está cargando
   if (!isLoaded) {
@@ -70,21 +56,14 @@ export default function AdminLayout({
   //   return null;
   // }
 
-  // Mostrar loading mientras se verifica el rol del usuario
-  if (roleLoading) {
+  // Mostrar loading solo en la primera carga o si el rol está cargando
+  // Permitir continuar si el rol es null PERO el loading ha terminado (el localStorage tiene algo)
+  if (roleLoading && !userRole) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-500"></div>
       </div>
     );
-  }
-
-  // Si no hay rol pero todo está cargado Y el usuario está autenticado, redirigir a unauthorized
-  // EXCEPTO en la ruta /unauthorized donde debe mostrar la página directamente
-  // Y EXCEPTO en la ruta raíz / donde se maneja la redirección a dashboard-viajes
-  if (userRole === null && isLoaded && isSignedIn && !roleLoading && pathname !== '/unauthorized' && pathname !== '/') {
-    router.push('/unauthorized');
-    return null;
   }
 
   // Si el usuario no está autenticado, no mostrar nada (se redirigirá)

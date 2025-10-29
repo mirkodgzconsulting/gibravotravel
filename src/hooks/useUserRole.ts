@@ -1,35 +1,74 @@
 "use client";
 
 import { useUser as useClerkUser } from "@clerk/nextjs";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 type UserRole = 'USER' | 'ADMIN' | 'TI';
 
 export function useUserRole() {
   const { user: clerkUser, isLoaded } = useClerkUser();
-  const [userRole, setUserRole] = useState<UserRole | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasTriedFetch, setHasTriedFetch] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
+  
+  // Inicializar desde localStorage si existe
+  const [userRole, setUserRole] = useState<UserRole | null>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('userRole');
+      return stored as UserRole | null;
+    }
+    return null;
+  });
+  
+  const [isLoading, setIsLoading] = useState(() => {
+    // Si tenemos rol en localStorage, no empezar en loading
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('userRole');
+      return !stored;
+    }
+    return true;
+  });
+  const hasFetchedRef = useRef<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    let isMounted = true;
+    // Cleanup anterior request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Si no está cargado Clerk o no hay usuario
+    if (!isLoaded || !clerkUser) {
+      // Limpiar localStorage si no hay usuario
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('userRole');
+      }
+      setUserRole(null);
+      setIsLoading(false);
+      hasFetchedRef.current = null;
+      return;
+    }
+
+    // Si ya tenemos un rol en localStorage y coincide con el usuario actual, no hacer fetch
+    const storedRole = typeof window !== 'undefined' ? localStorage.getItem('userRole') : null;
+    const storedUserId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
+    
+    if (storedRole && storedUserId === clerkUser.id && userRole === storedRole) {
+      setIsLoading(false);
+      return;
+    }
+
+    // Si ya se cargó el rol para este usuario específico, no volver a intentar
+    if (hasFetchedRef.current === clerkUser.id && userRole !== null) {
+      return;
+    }
+
+    // Crear nuevo AbortController
+    abortControllerRef.current = new AbortController();
+    const signal = abortControllerRef.current.signal;
 
     async function fetchUserRole() {
-      if (!isLoaded || !clerkUser) {
-        if (isMounted) {
-          setUserRole(null);
-          setIsLoading(false);
-          setHasTriedFetch(false);
-          setRetryCount(0);
-        }
-        return;
-      }
-
-      // Solo marcar que intentamos una vez si no tenemos rol
-      if (!hasTriedFetch) {
-        setHasTriedFetch(true);
-      }
+      if (!clerkUser) return;
+      
+      hasFetchedRef.current = clerkUser.id;
+      setIsLoading(true);
       
       try {
         console.log('🔍 Fetching user role for clerkId:', clerkUser.id);
@@ -38,45 +77,52 @@ export function useUserRole() {
           headers: {
             'Content-Type': 'application/json',
           },
-          signal: AbortSignal.timeout(10000),
-          cache: 'no-store' // Forzar no cache
+          signal,
+          cache: 'no-store'
         });
         
         console.log('📡 Response status:', response.status);
         
+        if (signal.aborted) return;
+        
         if (response.ok) {
           const data = await response.json();
           console.log('✅ User role data:', data);
-          if (isMounted) {
+          if (!signal.aborted) {
+            // Guardar en localStorage
+            if (typeof window !== 'undefined' && clerkUser) {
+              localStorage.setItem('userRole', data.role);
+              localStorage.setItem('userId', clerkUser.id);
+            }
             setUserRole(data.role);
           }
         } else if (response.status === 404) {
           console.log('❌ User not found in database');
-          if (isMounted) {
+          if (!signal.aborted) {
+            // Limpiar localStorage si el usuario no existe
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('userRole');
+              localStorage.removeItem('userId');
+            }
             setUserRole(null);
           }
         } else {
           console.error('Error fetching user role:', response.status, response.statusText);
-          if (isMounted) {
+          if (!signal.aborted) {
             setUserRole(null);
           }
         }
-      } catch (error) {
+      } catch (error: any) {
+        if (error.name === 'AbortError') {
+          console.log('⚠️ Request aborted');
+          return;
+        }
         console.error('Network error fetching user role:', error);
-        if (isMounted) {
+        if (!signal.aborted) {
           setUserRole(null);
         }
-        
-        // Retry logic para errores de red
-        if (retryCount < 2 && isMounted) {
-          setTimeout(() => {
-            if (isMounted) {
-              setRetryCount(prev => prev + 1);
-            }
-          }, 1000 * (retryCount + 1));
-        }
       } finally {
-        if (isMounted) {
+        if (!signal.aborted) {
           setIsLoading(false);
         }
       }
@@ -85,9 +131,11 @@ export function useUserRole() {
     fetchUserRole();
 
     return () => {
-      isMounted = false;
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
     };
-  }, [isLoaded, clerkUser, retryCount]);
+  }, [isLoaded, clerkUser?.id]);
 
   return {
     userRole,

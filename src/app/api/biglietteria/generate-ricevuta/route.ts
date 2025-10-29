@@ -201,6 +201,19 @@ export async function POST(request: NextRequest) {
     });
 
     console.log('✅ [RICEVUTA API] Placeholders reemplazados');
+    
+    // Verificar si el HTML final tiene los campos eliminados (para debug)
+    console.log('🔍 [RICEVUTA API] Verificando HTML final...');
+    console.log('🔍 [RICEVUTA API] ¿HTML final tiene "Neto:"?', html.includes('Neto:'));
+    console.log('🔍 [RICEVUTA API] ¿HTML final tiene "Fee/AGV"?', html.includes('Fee/AGV'));
+    console.log('🔍 [RICEVUTA API] Cuántas veces aparece "Dettagli di Pagamento":', (html.match(/Dettagli di Pagamento/g) || []).length);
+    
+    // Extraer y loggear la sección de Dettagli di Pagamento para análisis
+    const pagamentoMatch = html.match(/Dettagli di Pagamento[\s\S]*?<\/table>/);
+    if (pagamentoMatch) {
+      console.log('🔍 [RICEVUTA API] Contenido de Dettagli di Pagamento:');
+      console.log(pagamentoMatch[0].substring(0, 500)); // Primeros 500 caracteres
+    }
 
     // Convertir logo a base64
     console.log('🔍 [RICEVUTA API] Procesando logo...');

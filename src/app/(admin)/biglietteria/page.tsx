@@ -900,7 +900,10 @@ export default function BiglietteriaPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al generar ricevuta');
+        console.error('❌ [FRONTEND] Error response:', errorData);
+        console.error('❌ [FRONTEND] Response status:', response.status);
+        console.error('❌ [FRONTEND] Response headers:', Object.fromEntries(response.headers.entries()));
+        throw new Error(errorData.error || `Error al generar ricevuta (${response.status})`);
       }
 
       // Descargar el archivo
@@ -926,7 +929,8 @@ export default function BiglietteriaPage() {
         text: 'Ricevuta generata con successo!'
       });
     } catch (error) {
-      console.error('Error generating ricevuta:', error);
+      console.error('❌ [FRONTEND] Error generating ricevuta:', error);
+      console.error('❌ [FRONTEND] Error stack:', error instanceof Error ? error.stack : 'No stack');
       setMessage({
         type: 'error',
         text: error instanceof Error ? error.message : 'Errore durante la generazione della ricevuta'

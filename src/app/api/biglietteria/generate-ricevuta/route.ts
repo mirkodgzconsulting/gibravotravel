@@ -5,11 +5,15 @@ import fs from 'fs';
 import path from 'path';
 
 export async function POST(request: NextRequest) {
-  console.log('🔍 [RICEVUTA API] Iniciando generación de recibo...');
+  console.log('🔍 [RICEVUTA API] ===== INICIANDO GENERACIÓN DE RECIBO =====');
+  console.log('🔍 [RICEVUTA API] Timestamp:', new Date().toISOString());
+  console.log('🔍 [RICEVUTA API] Environment:', process.env.NODE_ENV);
+  console.log('🔍 [RICEVUTA API] Vercel:', process.env.VERCEL);
   
   try {
+    console.log('🔍 [RICEVUTA API] Parsing request body...');
     const { recordId } = await request.json();
-    console.log(`🔍 [RICEVUTA API] Record ID: ${recordId}`);
+    console.log(`🔍 [RICEVUTA API] Record ID recibido: ${recordId}`);
 
     if (!recordId) {
       console.log('❌ [RICEVUTA API] Record ID is required');
@@ -20,6 +24,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Obtener el registro de la base de datos con todos los pasajeros y cuotas
+    console.log('🔍 [RICEVUTA API] ===== CONSULTANDO BASE DE DATOS =====');
     console.log('🔍 [RICEVUTA API] Obteniendo registro de la base de datos...');
     const record = await prisma.biglietteria.findUnique({
       where: { id: recordId },
@@ -49,6 +54,9 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`✅ [RICEVUTA API] Registro encontrado: ${record.cliente}`);
+    console.log(`🔍 [RICEVUTA API] Pasajeros: ${record.pasajeros?.length || 0}`);
+    console.log(`🔍 [RICEVUTA API] Cuotas: ${record.cuotas?.length || 0}`);
+    console.log(`🔍 [RICEVUTA API] Creator: ${record.creator?.email || 'No creator'}`);
 
     // Función para normalizar servicios (eliminar duplicados y estandarizar)
     const normalizeServizi = (servizi: string[]): string[] => {
@@ -59,6 +67,7 @@ export async function POST(request: NextRequest) {
     };
 
     // Generar datos para la plantilla
+    console.log('🔍 [RICEVUTA API] ===== GENERANDO DATOS =====');
     console.log('🔍 [RICEVUTA API] Generando datos para la plantilla...');
     const agenteName = record.creator 
       ? `${record.creator.firstName || ''} ${record.creator.lastName || ''}`.trim() || record.creator.email
@@ -85,11 +94,14 @@ export async function POST(request: NextRequest) {
     };
 
     console.log('✅ [RICEVUTA API] Datos generados');
+    console.log('🔍 [RICEVUTA API] Datos generados:', JSON.stringify(data, null, 2));
 
     // Leer la plantilla HTML
+    console.log('🔍 [RICEVUTA API] ===== PROCESANDO PLANTILLA =====');
     console.log('🔍 [RICEVUTA API] Leyendo plantilla...');
     const templatePath = path.join(process.cwd(), 'public', 'templates', 'ricevuta-template.html');
     console.log(`🔍 [RICEVUTA API] Ruta de plantilla: ${templatePath}`);
+    console.log(`🔍 [RICEVUTA API] process.cwd(): ${process.cwd()}`);
     
     if (!fs.existsSync(templatePath)) {
       console.log('❌ [RICEVUTA API] Template file not found');
@@ -147,6 +159,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generar PDF con Puppeteer
+    console.log('🔍 [RICEVUTA API] ===== INICIANDO PUPPETEER =====');
     console.log('🔍 [RICEVUTA API] Iniciando Puppeteer...');
     
     // Configuración optimizada para Vercel
@@ -166,7 +179,7 @@ export async function POST(request: NextRequest) {
       ]
     };
 
-    console.log('🔍 [RICEVUTA API] Configuración de Puppeteer:', puppeteerConfig);
+    console.log('🔍 [RICEVUTA API] Configuración de Puppeteer:', JSON.stringify(puppeteerConfig, null, 2));
     
     const browser = await puppeteer.launch(puppeteerConfig);
     console.log('✅ [RICEVUTA API] Browser lanzado');

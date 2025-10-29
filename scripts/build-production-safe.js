@@ -33,13 +33,13 @@ async function buildProductionSafe() {
           console.log('   ⚠️  Error corrigiendo archivos, continuando...');
         }
 
-        // Corregir plantilla de recibo
-        console.log('\n📄 Corrigiendo plantilla de recibo...');
+        // Corregir generación de recibos completamente
+        console.log('\n📄 Corrigiendo generación de recibos...');
         try {
-          execSync('node scripts/fix-ricevuta-template.js', { stdio: 'inherit' });
-          console.log('   ✅ Plantilla de recibo corregida');
-        } catch (templateError) {
-          console.log('   ⚠️  Error corrigiendo plantilla, continuando...');
+          execSync('node scripts/fix-ricevuta-production.js', { stdio: 'inherit' });
+          console.log('   ✅ Generación de recibos corregida');
+        } catch (ricevutaError) {
+          console.log('   ⚠️  Error corrigiendo recibos, continuando...');
         }
 
         console.log('\n🎉 Configuración segura completada (datos preservados)');

@@ -64,16 +64,19 @@ export async function POST(request: NextRequest) {
       ? `${record.creator.firstName || ''} ${record.creator.lastName || ''}`.trim() || record.creator.email
       : 'Usuario';
 
+    // Obtener datos del primer pasajero (como en el frontend)
+    const primerPasajero = record.pasajeros?.[0];
+    
     const data = {
       cliente: record.cliente || '',
-      passeggero: record.pasajeros?.[0]?.nombre || '',
+      passeggero: primerPasajero?.nombrePasajero || '',
       pnr: record.pnr || '',
       itinerario: record.itinerario || '',
-      servizio: record.servizio || '',
+      servizio: primerPasajero?.servizio || '',
       metodoPagamento: record.metodoPagamento || '',
       agente: agenteName,
-      neto: record.neto?.toString() || '0',
-      venduto: record.venduto?.toString() || '0',
+      neto: primerPasajero?.netoBiglietteria?.toString() || '0',
+      venduto: primerPasajero?.vendutoBiglietteria?.toString() || '0',
       acconto: record.acconto?.toString() || '0',
       daPagare: record.daPagare?.toString() || '0',
       feeAgv: record.feeAgv?.toString() || '0',

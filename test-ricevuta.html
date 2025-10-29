@@ -267,7 +267,7 @@
             <div class="client-info">
                 <div class="info-item">
                     <span class="info-label">Cliente:</span>
-                    <span class="info-value">{{cliente}}</span>
+                    <span class="info-value">Andres Rojas Perpetuo</span>
                 </div>
                 <div class="info-item">
                     <span class="info-label">Codice Fiscale:</span>
@@ -289,23 +289,23 @@
         <table class="info-table">
             <tr>
                 <td class="label">Servizio:</td>
-                <td class="value">{{servizio}}</td>
+                <td class="value"></td>
             </tr>
             <tr>
                 <td class="label">Itinerario:</td>
-                <td class="value">{{itinerario}}</td>
+                <td class="value">Lima roma lima</td>
             </tr>
             <tr>
                 <td class="label">PNR:</td>
-                <td class="value">{{pnr}}</td>
+                <td class="value">dasd4ff4</td>
             </tr>
             <tr>
                 <td class="label">Passeggeri:</td>
-                <td class="value">{{passeggero}}</td>
+                <td class="value"></td>
             </tr>
             <tr>
                 <td class="label">Agente:</td>
-                <td class="value">{{agente}}</td>
+                <td class="value">TI Test</td>
             </tr>
         </table>
         
@@ -314,36 +314,36 @@
         <table class="info-table">
             <tr>
                 <td class="label">Neto:</td>
-                <td class="value">{{neto}}</td>
+                <td class="value">0</td>
             </tr>
             <tr>
                 <td class="label">Totale Venduto:</td>
-                <td class="value">{{venduto}}</td>
+                <td class="value">0</td>
             </tr>
             <tr>
                 <td class="label">Acconto:</td>
-                <td class="value">{{acconto}}</td>
+                <td class="value">500</td>
             </tr>
             <tr>
                 <td class="label">Da Pagare:</td>
-                <td class="value"><strong>{{daPagare}}</strong></td>
+                <td class="value"><strong>600</strong></td>
             </tr>
             <tr>
                 <td class="label">Fee/AGV:</td>
-                <td class="value"><strong>{{feeAgv}}</strong></td>
+                <td class="value"><strong>220</strong></td>
             </tr>
             <tr>
                 <td class="label">Metodo di Pagamento:</td>
-                <td class="value"><strong>{{metodoPagamento}}</strong></td>
+                <td class="value"><strong>Cash</strong></td>
             </tr>
         </table>
         
         <!-- Sección de Cuotas -->
-        {{#tieneCuotas}}
+        
         <div class="cuotas-section">
             <div class="section-title">Note di Pagamento</div>
             <div class="cuotas-list">
-                {{#cuotas}}
+                
                 <div class="cuota-item">
                     <div>
                         <span class="cuota-number">{{numero}}</span>
@@ -354,10 +354,21 @@
                         <span class="cuota-status {{statusClass}}">{{estado}}</span>
                     </div>
                 </div>
-                {{/cuotas}}
+                
+                <div class="cuota-item">
+                    <div>
+                        <span class="cuota-number">{{numero}}</span>
+                        <span style="margin-left: 10px;">{{precio}}</span>
+                        <span style="margin-left: 15px; color: #666; font-size: 11px;">{{fecha}}</span>
+                    </div>
+                    <div>
+                        <span class="cuota-status {{statusClass}}">{{estado}}</span>
+                    </div>
+                </div>
+                
             </div>
         </div>
-        {{/tieneCuotas}}
+        
         
         <!-- Footer -->
         <div class="footer">

@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev ",
     "build": "prisma generate && next build ",
-    "build:production": "node scripts/build-with-migration.js",
+    "build:production": "node scripts/build-production-safe.js",
+    "build:production-force": "node scripts/build-with-migration.js",
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate && node scripts/post-install-production.js",

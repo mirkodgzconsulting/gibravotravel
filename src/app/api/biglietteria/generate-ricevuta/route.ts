@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
     // Leer la plantilla HTML
     console.log('🔍 [RICEVUTA API] ===== PROCESANDO PLANTILLA =====');
     console.log('🔍 [RICEVUTA API] Leyendo plantilla...');
-    const templatePath = path.join(process.cwd(), 'public', 'templates', 'ricevuta-template.html');
+    const templatePath = path.join(process.cwd(), 'public', 'templates', 'ricevuta-template-v2.html');
     console.log(`🔍 [RICEVUTA API] Ruta de plantilla: ${templatePath}`);
     console.log(`🔍 [RICEVUTA API] process.cwd(): ${process.cwd()}`);
     

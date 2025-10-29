@@ -6,7 +6,7 @@ export async function GET() {
   console.log('🔍 [SHOW TEMPLATE] Mostrando plantilla actual...');
   
   try {
-    const templatePath = path.join(process.cwd(), 'public', 'templates', 'ricevuta-template.html');
+    const templatePath = path.join(process.cwd(), 'public', 'templates', 'ricevuta-template-v2.html');
     
     if (!fs.existsSync(templatePath)) {
       return NextResponse.json({

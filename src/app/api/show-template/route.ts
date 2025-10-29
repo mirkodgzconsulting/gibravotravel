@@ -24,6 +24,12 @@ export async function GET() {
     const noteDiPagamentoMatch = content.match(/Note di Pagamento/);
     const fontSizeMatch = content.match(/font-size:\s*(\d+)px/);
     const logoHeightMatch = content.match(/\.logo\s*\{[^}]*height:\s*(\d+)px/);
+    const hasNetoField = content.includes('Neto:');
+    const hasFeeAgvField = content.includes('Fee/AGV');
+    const dettagliPagamentoCount = (content.match(/Dettagli di Pagamento/g) || []).length;
+    
+    // Extraer sección de Dettagli di Pagamento
+    const pagamentoSection = content.match(/Dettagli di Pagamento[\s\S]*?<\/table>/)?.[0] || '';
     
     console.log('🔍 [SHOW TEMPLATE] Análisis completado');
     
@@ -41,7 +47,11 @@ export async function GET() {
         fontSize: fontSizeMatch ? fontSizeMatch[1] + 'px' : 'Not found',
         logoHeight: logoHeightMatch ? logoHeightMatch[1] + 'px' : 'Not found',
         cuotasPendientesLine: cuotasPendientesMatch ? cuotasPendientesMatch[0] : null,
-        noteDiPagamentoLine: noteDiPagamentoMatch ? noteDiPagamentoMatch[0] : null
+        noteDiPagamentoLine: noteDiPagamentoMatch ? noteDiPagamentoMatch[0] : null,
+        hasNetoField: hasNetoField,
+        hasFeeAgvField: hasFeeAgvField,
+        dettagliPagamentoCount: dettagliPagamentoCount,
+        pagamentoSection: pagamentoSection.substring(0, 1000)
       },
       environment: {
         NODE_ENV: process.env.NODE_ENV,

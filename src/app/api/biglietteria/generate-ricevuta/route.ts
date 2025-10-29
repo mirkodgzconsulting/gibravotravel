@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
       
       // Datos adicionales del cliente (placeholders)
       indirizzo: record.indirizzo || 'No especificado',
-      codicefiscale: record.codicefiscale || 'No especificado',
+      codicefiscale: record.codiceFiscale || 'No especificado',
       
       // Cuotas
       cuotas: record.cuotas || [],

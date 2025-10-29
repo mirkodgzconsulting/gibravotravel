@@ -52,6 +52,16 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // Headers especiales para el template (NO cachear)
+      {
+        source: '/templates/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate, max-age=0',
+          },
+        ],
+      },
     ];
   },
 };

@@ -1,9 +1,10 @@
-Template updated: 2025-10-29T21:30:00Z
-Version: RECEIPT_CLEAN_v1
+Template updated: 2025-10-29T23:35:00Z
+Version: RECEIPT_CLEAN_v2_FINAL
 Changes:
-- Removed Neto and Fee/AGV fields
+- Removed Neto and Fee/AGV fields - CONFIRMED
 - Added company information section
 - Added Euro symbol (€) to all amounts
 - Increased font sizes (body: 13px, headers: 22px)
 - Improved design with border-radius
 - Fixed Totale Venduto to show correct value
+- Removed duplicate template in src/templates

@@ -167,6 +167,11 @@ export async function POST(request: NextRequest) {
 
     let html = fs.readFileSync(templatePath, 'utf-8');
     console.log(`✅ [RICEVUTA API] Plantilla leída (${html.length} caracteres)`);
+    
+    // Verificar si el template tiene los campos eliminados (para debug)
+    console.log('🔍 [RICEVUTA API] Verificando template...');
+    console.log('🔍 [RICEVUTA API] ¿Tiene "Neto:"?', html.includes('Neto:'));
+    console.log('🔍 [RICEVUTA API] ¿Tiene "Fee/AGV"?', html.includes('Fee/AGV'));
 
     // Reemplazar placeholders con datos
     console.log('🔍 [RICEVUTA API] Reemplazando placeholders...');

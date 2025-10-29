@@ -916,7 +916,7 @@ export default function BiglietteriaPage() {
       const contentDisposition = response.headers.get('Content-Disposition');
       const fileName = contentDisposition 
         ? contentDisposition.split('filename=')[1].replace(/"/g, '')
-        : `Ricevuta_${recordId}_${new Date().getTime()}.docx`;
+        : `Ricevuta_${recordId}_${new Date().getTime()}.pdf`;
       
       a.download = fileName;
       document.body.appendChild(a);

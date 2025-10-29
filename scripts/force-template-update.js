@@ -1,9 +1,37 @@
-<!DOCTYPE html>
+const fs = require('fs');
+const path = require('path');
+
+console.log('🔄 FORZANDO ACTUALIZACIÓN DE PLANTILLA');
+console.log('=====================================\n');
+
+// 1. Verificar plantilla actual
+console.log('1. Verificando plantilla actual...');
+const templatePath = path.join(process.cwd(), 'public', 'templates', 'ricevuta-template.html');
+
+if (fs.existsSync(templatePath)) {
+  const content = fs.readFileSync(templatePath, 'utf-8');
+  console.log(`   📏 Tamaño actual: ${content.length} caracteres`);
+  
+  const hasCuotasPendientes = content.includes('Cuotas Pendientes');
+  const hasNoteDiPagamento = content.includes('Note di Pagamento');
+  
+  console.log(`   🔍 Contiene "Cuotas Pendientes": ${hasCuotasPendientes ? '✅' : '❌'}`);
+  console.log(`   🔍 Contiene "Note di Pagamento": ${hasNoteDiPagamento ? '❌' : '✅'}`);
+  
+  if (hasNoteDiPagamento) {
+    console.log('   ⚠️  PROBLEMA: La plantilla contiene "Note di Pagamento"');
+  }
+}
+
+// 2. Crear plantilla completamente nueva con timestamp
+console.log('\n2. Creando plantilla nueva con timestamp...');
+const timestamp = new Date().toISOString();
+const newTemplate = `<!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ricevuta - 2025-10-29T11:45:00.345Z</title>
+    <title>Ricevuta - ${timestamp}</title>
     <style>
         @page {
             size: A4;
@@ -419,4 +447,26 @@
         </div>
     </div>
 </body>
-</html>
+</html>`;
+
+// Escribir la nueva plantilla
+fs.writeFileSync(templatePath, newTemplate);
+console.log(`   ✅ Plantilla recreada con timestamp: ${timestamp}`);
+
+// 3. Verificar la nueva plantilla
+console.log('\n3. Verificando nueva plantilla...');
+const newContent = fs.readFileSync(templatePath, 'utf-8');
+const hasCuotasPendientes = newContent.includes('Cuotas Pendientes');
+const hasNoteDiPagamento = newContent.includes('Note di Pagamento');
+
+console.log(`   📏 Nuevo tamaño: ${newContent.length} caracteres`);
+console.log(`   🔍 Contiene "Cuotas Pendientes": ${hasCuotasPendientes ? '✅' : '❌'}`);
+console.log(`   🔍 Contiene "Note di Pagamento": ${hasNoteDiPagamento ? '❌' : '✅'}`);
+
+if (hasCuotasPendientes && !hasNoteDiPagamento) {
+  console.log('   ✅ Plantilla correcta creada');
+} else {
+  console.log('   ❌ Error en la plantilla');
+}
+
+console.log('\n✅ Actualización forzada completada');

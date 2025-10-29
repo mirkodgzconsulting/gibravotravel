@@ -19,6 +19,10 @@ export async function GET() {
     const content = fs.readFileSync(templatePath, 'utf-8');
     const stats = fs.statSync(templatePath);
     
+    // Log el contenido completo para debug (SOLO EN PRODUCCIÓN)
+    console.log('🔍 [SHOW TEMPLATE] Contenido del archivo (primeros 2000 chars):');
+    console.log(content.substring(0, 2000));
+    
     // Buscar contenido específico
     const cuotasPendientesMatch = content.match(/Cuotas Pendientes/);
     const noteDiPagamentoMatch = content.match(/Note di Pagamento/);

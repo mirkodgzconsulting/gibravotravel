@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
       cuotas: (record.cuotas || []).map(cuota => ({
         numero: cuota.numeroCuota || '',
         precio: cuota.prezzo?.toString() || '0',
-        fecha: cuota.data ? new Date(cuota.data).toLocaleDateString('it-IT') : '',
+        fecha: cuota.data ? new Date(cuota.data).toLocaleDateString('it-IT') : 'Sin fecha',
         estado: cuota.isPagato ? 'Pagato' : 'Pendiente',
         statusClass: cuota.isPagato ? 'status-paid' : 'status-pending'
       })),

@@ -1,0 +1,9 @@
+Template updated: 2025-10-29T11:15:00Z
+Version: SUPER_COMPACT_v3
+Changes:
+- Font size: 7px
+- Logo height: 25px
+- Header font: 9px
+- Title: "Cuotas Pendientes"
+- Padding: 5px
+- Line-height: 1.0

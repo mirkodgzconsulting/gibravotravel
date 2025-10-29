@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 import fs from 'fs';
 import path from 'path';
 
@@ -162,8 +163,14 @@ export async function POST(request: NextRequest) {
     console.log('🔍 [RICEVUTA API] ===== INICIANDO PUPPETEER =====');
     console.log('🔍 [RICEVUTA API] Iniciando Puppeteer...');
     
-    // Configuración optimizada para Vercel
-    const puppeteerConfig = {
+    // Configuración optimizada para Vercel con Chrome incluido
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
+    
+    const puppeteerConfig = isProduction ? {
+      args: chromium.args,
+      executablePath: await chromium.executablePath(),
+      headless: true,
+    } : {
       headless: true,
       args: [
         '--no-sandbox',
@@ -180,6 +187,7 @@ export async function POST(request: NextRequest) {
     };
 
     console.log('🔍 [RICEVUTA API] Configuración de Puppeteer:', JSON.stringify(puppeteerConfig, null, 2));
+    console.log('🔍 [RICEVUTA API] Es producción:', isProduction);
     
     const browser = await puppeteer.launch(puppeteerConfig);
     console.log('✅ [RICEVUTA API] Browser lanzado');

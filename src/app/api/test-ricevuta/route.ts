@@ -38,8 +38,17 @@ export async function GET() {
     // 5. Verificar Puppeteer
     console.log('🔍 [TEST RICEVUTA] Verificando Puppeteer...');
     try {
-      const puppeteer = require('puppeteer');
-      console.log('   Puppeteer disponible:', !!puppeteer);
+      const puppeteer = require('puppeteer-core');
+      const chromium = require('@sparticuz/chromium');
+      console.log('   Puppeteer-core disponible:', !!puppeteer);
+      console.log('   Chromium disponible:', !!chromium);
+      
+      // Probar configuración de Vercel
+      const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
+      if (isProduction) {
+        const executablePath = await chromium.executablePath();
+        console.log('   Chrome executable path:', executablePath);
+      }
     } catch (puppeteerError) {
       console.log('   Error con Puppeteer:', puppeteerError instanceof Error ? puppeteerError.message : 'Unknown error');
     }

@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-core');
+const chromium = require('@sparticuz/chromium');
 const fs = require('fs');
 const path = require('path');
 
@@ -141,17 +142,9 @@ async function testRicevutaApi() {
       {
         name: 'Configuración para Vercel',
         config: {
+          args: chromium.args,
+          executablePath: await chromium.executablePath(),
           headless: true,
-          args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--single-process',
-            '--disable-gpu'
-          ]
         }
       }
     ];

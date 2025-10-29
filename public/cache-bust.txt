@@ -1,2 +1,2 @@
-Cache bust file - 2025-10-29T12:00:00Z
-This file forces Vercel to clear cache
+Cache bust file - 2025-10-29T22:45:00Z
+This file forces Vercel to clear cache - FORCE UPDATE FOR RECEIPT TEMPLATE

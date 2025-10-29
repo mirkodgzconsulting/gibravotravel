@@ -26,6 +26,7 @@
     "setup-db": "node scripts/setup-correct-database.js",
     "diagnose-api": "node scripts/diagnose-api-errors.js",
     "fix-api": "node scripts/fix-api-errors.js",
+    "sync-production": "node scripts/safe-sync-production.js",
     "force-sync": "node scripts/force-sync-production.js",
     "export-config": "node scripts/export-local-config-data.js",
     "import-config": "node scripts/import-real-config-to-production.js",

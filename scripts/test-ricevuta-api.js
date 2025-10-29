@@ -101,8 +101,14 @@ async function testRicevutaApi() {
       indirizzo: record.indirizzo || 'No especificado',
       codicefiscale: record.codiceFiscale || 'No especificado',
       
-      // Cuotas
-      cuotas: record.cuotas || [],
+      // Cuotas - mapear campos correctamente
+      cuotas: (record.cuotas || []).map(cuota => ({
+        numero: cuota.numeroCuota || '',
+        precio: cuota.prezzo?.toString() || '0',
+        fecha: cuota.data ? new Date(cuota.data).toLocaleDateString('it-IT') : '',
+        estado: cuota.isPagato ? 'Pagato' : 'Pendiente',
+        statusClass: cuota.isPagato ? 'status-paid' : 'status-pending'
+      })),
       tieneCuotas: (record.cuotas?.length || 0) > 0
     };
 

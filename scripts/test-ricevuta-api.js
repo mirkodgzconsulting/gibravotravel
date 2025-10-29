@@ -91,6 +91,7 @@ async function testRicevutaApi() {
       venduto: primerPasajero?.vendutoBiglietteria?.toString() || '0',
       acconto: record.acconto?.toString() || '0',
       daPagare: record.daPagare?.toString() || '0',
+      dapagare: record.daPagare?.toString() || '0', // Para compatibilidad con plantilla
       feeAgv: record.feeAgv?.toString() || '0',
       
       // Fechas

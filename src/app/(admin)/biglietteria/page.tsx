@@ -878,7 +878,6 @@ export default function BiglietteriaPage() {
     if (record.cuotas) {
       count += record.cuotas.filter(c => c.attachedFile).length;
     }
-    console.log(`🔍 countFiles - Record ID: ${record.id}, attachedFile: ${record.attachedFile}, cuotas: ${record.cuotas?.length}, total count: ${count}`);
     return count;
   };
   

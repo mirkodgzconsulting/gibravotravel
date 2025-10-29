@@ -84,7 +84,7 @@ export default function AgentRankingChart({ selectedYear }: AgentRankingChartPro
         console.log('📊 Biglietteria - Total records:', biglietteriaRecords.length);
         
         // Debug: verificar fechas de los registros
-        const recordYears = biglietteriaRecords.map(record => new Date(record.data).getFullYear());
+        const recordYears = biglietteriaRecords.map((record: any) => new Date(record.data).getFullYear());
         const uniqueYears = [...new Set(recordYears)];
         console.log('📅 Years in biglietteria data:', uniqueYears);
         
@@ -101,7 +101,7 @@ export default function AgentRankingChart({ selectedYear }: AgentRankingChartPro
         console.log('✈️ Tour Aereo - Total tours:', tourAereoTours.length);
         
         // Debug: verificar fechas de los tours
-        const tourAereoYears = tourAereoTours.map(tour => new Date(tour.fechaViaje).getFullYear());
+        const tourAereoYears = tourAereoTours.map((tour: any) => new Date(tour.fechaViaje).getFullYear());
         const uniqueTourAereoYears = [...new Set(tourAereoYears)];
         console.log('📅 Years in tour aereo data:', uniqueTourAereoYears);
         
@@ -122,7 +122,7 @@ export default function AgentRankingChart({ selectedYear }: AgentRankingChartPro
         console.log('🚌 Tour Bus - Total tours:', tourBusTours.length);
         
         // Debug: verificar fechas de los tours
-        const tourBusYears = tourBusTours.map(tour => new Date(tour.fechaViaje).getFullYear());
+        const tourBusYears = tourBusTours.map((tour: any) => new Date(tour.fechaViaje).getFullYear());
         const uniqueTourBusYears = [...new Set(tourBusYears)];
         console.log('📅 Years in tour bus data:', uniqueTourBusYears);
         
@@ -139,7 +139,7 @@ export default function AgentRankingChart({ selectedYear }: AgentRankingChartPro
         });
 
         // Convert to the format expected by the chart
-        const chartData: AgentData[] = Array.from(allAgents).map(agentName => {
+        const chartData: AgentData[] = Array.from(allAgents).map((agentName: string) => {
           const monthlyData = Array.from({ length: 12 }, (_, month) => {
             const startDate = new Date(selectedYear, month, 1);
             const endDate = new Date(selectedYear, month + 1, 0, 23, 59, 59);
@@ -266,7 +266,7 @@ export default function AgentRankingChart({ selectedYear }: AgentRankingChartPro
 
         console.log('Agent Data for Chart:', chartData);
         console.log('Number of agents found:', chartData.length);
-        console.log('Agent names:', chartData.map(agent => agent.agentName));
+        console.log('Agent names:', chartData.map((agent: AgentData) => agent.agentName));
         
         // Debug: mostrar datos de cada agente
         chartData.forEach((agent, index) => {
@@ -380,13 +380,13 @@ export default function AgentRankingChart({ selectedYear }: AgentRankingChartPro
     if (!agentData || !Array.isArray(agentData)) {
       return [];
     }
-    const seriesData = agentData.map(agent => ({
+    const seriesData = agentData.map((agent: AgentData) => ({
       name: agent.agentName,
       data: agent.monthlyData
     }));
     console.log('Series Data for Chart:', seriesData);
     console.log('Number of series:', seriesData.length);
-    console.log('Series names:', seriesData.map(s => s.name));
+    console.log('Series names:', seriesData.map((s: any) => s.name));
     return seriesData;
   }, [agentData]);
 

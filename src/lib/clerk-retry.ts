@@ -34,7 +34,15 @@ export class ClerkRetryService {
     this.backoffMultiplier = options.backoffMultiplier || 2;
   }
 
-  async createUserWithRetry(params: CreateUserParams) {
+  async createUserWithRetry(params: CreateUserParams): Promise<{
+    success: true;
+    user: any;
+    attempt: number;
+  } | {
+    success: false;
+    error: Error | null;
+    attempts: number;
+  }> {
     let lastError: Error | null = null;
     
     for (let attempt = 1; attempt <= this.maxRetries; attempt++) {

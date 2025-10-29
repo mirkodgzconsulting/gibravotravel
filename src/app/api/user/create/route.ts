@@ -127,6 +127,13 @@ export async function POST(request: NextRequest) {
     }
 
     const clerkUser = clerkResult.user;
+    if (!clerkUser) {
+      console.error('❌ [USER CREATE] clerkUser es undefined después de éxito');
+      return NextResponse.json({ 
+        error: 'Internal server error: clerkUser is undefined' 
+      }, { status: 500 });
+    }
+    
     console.log(`✅ [USER CREATE] Usuario creado en Clerk después de ${clerkResult.attempt} intentos: ${clerkUser.id}`);
 
 

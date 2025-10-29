@@ -77,7 +77,15 @@ export async function POST(request: NextRequest) {
     // Obtener datos del primer pasajero (como en el frontend)
     const primerPasajero = record.pasajeros?.[0];
     
+    // Generar fecha actual
+    const fechaActual = new Date().toLocaleDateString('it-IT', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
     const data = {
+      // Datos del cliente
       cliente: record.cliente || '',
       passeggero: primerPasajero?.nombrePasajero || '',
       pnr: record.pnr || '',
@@ -85,11 +93,23 @@ export async function POST(request: NextRequest) {
       servizio: primerPasajero?.servizio || '',
       metodoPagamento: record.metodoPagamento || '',
       agente: agenteName,
+      
+      // Datos financieros
       neto: primerPasajero?.netoBiglietteria?.toString() || '0',
       venduto: primerPasajero?.vendutoBiglietteria?.toString() || '0',
       acconto: record.acconto?.toString() || '0',
       daPagare: record.daPagare?.toString() || '0',
       feeAgv: record.feeAgv?.toString() || '0',
+      
+      // Fechas
+      fecha: fechaActual,
+      date: fechaActual,
+      
+      // Datos adicionales del cliente (placeholders)
+      indirizzo: record.indirizzo || 'No especificado',
+      codicefiscale: record.codicefiscale || 'No especificado',
+      
+      // Cuotas
       cuotas: record.cuotas || [],
       tieneCuotas: (record.cuotas?.length || 0) > 0
     };

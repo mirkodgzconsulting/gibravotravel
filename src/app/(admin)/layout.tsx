@@ -30,15 +30,16 @@ export default function AdminLayout({
   //   }
   // }, [isLoaded, isSignedIn, router]);
 
-  // CRÍTICO: Usar useEffect para manejar la redirección con delay
+  // CRÍTICO: Usar useEffect para manejar la redirección con delay más largo
   useEffect(() => {
-    if (isLoaded && isSignedIn && !roleLoading && userRole === null && pathname !== '/unauthorized') {
+    if (isLoaded && isSignedIn && !roleLoading && userRole === null && pathname !== '/unauthorized' && pathname !== '/') {
       const timer = setTimeout(() => {
         // Verificar una vez más antes de redirigir
-        if (userRole === null && pathname !== '/unauthorized') {
+        if (userRole === null && pathname !== '/unauthorized' && pathname !== '/') {
+          console.log('🔴 Redirecting to unauthorized - userRole is null after timeout');
           router.push("/unauthorized");
         }
-      }, 3000); // Aumentar delay a 3 segundos
+      }, 5000); // Aumentar delay a 5 segundos para dar tiempo a que se cargue el rol
       
       return () => {
         clearTimeout(timer);

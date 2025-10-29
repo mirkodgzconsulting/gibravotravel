@@ -13,22 +13,23 @@ export function useUserRole() {
   const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
+    let isMounted = true;
 
     async function fetchUserRole() {
       if (!isLoaded || !clerkUser) {
-        setUserRole(null);
-        setIsLoading(false);
-        setHasTriedFetch(false);
-        setRetryCount(0);
+        if (isMounted) {
+          setUserRole(null);
+          setIsLoading(false);
+          setHasTriedFetch(false);
+          setRetryCount(0);
+        }
         return;
       }
 
-      // Si ya intentamos y tenemos un rol, no volver a intentar
-      if (hasTriedFetch && userRole !== null) {
-        return;
+      // Solo marcar que intentamos una vez si no tenemos rol
+      if (!hasTriedFetch) {
+        setHasTriedFetch(true);
       }
-
-      setHasTriedFetch(true);
       
       try {
         console.log('🔍 Fetching user role for clerkId:', clerkUser.id);
@@ -37,7 +38,8 @@ export function useUserRole() {
           headers: {
             'Content-Type': 'application/json',
           },
-          signal: AbortSignal.timeout(10000)
+          signal: AbortSignal.timeout(10000),
+          cache: 'no-store' // Forzar no cache
         });
         
         console.log('📡 Response status:', response.status);
@@ -45,32 +47,47 @@ export function useUserRole() {
         if (response.ok) {
           const data = await response.json();
           console.log('✅ User role data:', data);
-          setUserRole(data.role);
+          if (isMounted) {
+            setUserRole(data.role);
+          }
         } else if (response.status === 404) {
           console.log('❌ User not found in database');
-          setUserRole(null);
+          if (isMounted) {
+            setUserRole(null);
+          }
         } else {
           console.error('Error fetching user role:', response.status, response.statusText);
-          setUserRole(null);
+          if (isMounted) {
+            setUserRole(null);
+          }
         }
       } catch (error) {
         console.error('Network error fetching user role:', error);
-        setUserRole(null);
+        if (isMounted) {
+          setUserRole(null);
+        }
         
         // Retry logic para errores de red
-        if (retryCount < 2) {
+        if (retryCount < 2 && isMounted) {
           setTimeout(() => {
-            setRetryCount(prev => prev + 1);
-            setHasTriedFetch(false);
+            if (isMounted) {
+              setRetryCount(prev => prev + 1);
+            }
           }, 1000 * (retryCount + 1));
         }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     }
 
     fetchUserRole();
-  }, [isLoaded, clerkUser, hasTriedFetch, retryCount, userRole]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isLoaded, clerkUser, retryCount]);
 
   return {
     userRole,

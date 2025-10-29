@@ -43,101 +43,101 @@ const homeItems: NavItem[] = [
     icon: <GridIcon />,
     name: "Dashboard",
     subItems: [
-      { name: "E-commerce", path: "/" },
-      { name: "Analytics", path: "/analytics" },
-      { name: "Marketing", path: "/marketing" },
-      { name: "CRM", path: "/crm" },
-      { name: "Magazzino", path: "/stocks" },
-      { name: "SaaS", path: "/saas", new: true },
-      { name: "Logistica", path: "/logistics", new: true },
+      // { name: "E-commerce", path: "/" },
+      // { name: "Analytics", path: "/analytics" },
+      // { name: "Marketing", path: "/marketing" },
+      // { name: "CRM", path: "/crm" },
+      // { name: "Magazzino", path: "/stocks" },
+      // { name: "SaaS", path: "/saas", new: true },
+      // { name: "Logistica", path: "/logistics", new: true },
       { name: "Dashboard Viajes", path: "/dashboard-viajes" },
     ],
   },
-  {
-    name: "Assistente AI",
-    icon: <AiIcon />,
-    new: true,
-    subItems: [
-      {
-        name: "Generatore Testi",
-        path: "/text-generator",
-      },
-      {
-        name: "Generatore Immagini",
-        path: "/image-generator",
-      },
-      {
-        name: "Generatore Codice",
-        path: "/code-generator",
-      },
-      {
-        name: "Generatore Video",
-        path: "/video-generator",
-      },
-    ],
-  },
-  {
-    name: "E-commerce",
-    icon: <CartIcon />,
-    new: true,
-    subItems: [
-      { name: "Prodotti", path: "/products-list" },
-      { name: "Aggiungi Prodotto", path: "/add-product" },
-      { name: "Fatturazione", path: "/billing" },
-      { name: "Fatture", path: "/invoices" },
-      { name: "Fattura Singola", path: "/single-invoice" },
-      { name: "Crea Fattura", path: "/create-invoice" },
-      { name: "Transazioni", path: "/transactions" },
-      { name: "Transazione Singola", path: "/single-transaction" },
-    ],
-  },
-  {
-    icon: <CalenderIcon />,
-    name: "Calendario",
-    path: "/calendar",
-  },
-  {
-    name: "Attività",
-    icon: <TaskIcon />,
-    subItems: [
-      { name: "Lista", path: "/task-list", pro: false },
-      { name: "Kanban", path: "/task-kanban", pro: false },
-    ],
-  },
-  {
-    name: "Moduli",
-    icon: <ListIcon />,
-    subItems: [
-      { name: "Elementi Modulo", path: "/form-elements", pro: false },
-      { name: "Layout Modulo", path: "/form-layout", pro: false },
-    ],
-  },
-  {
-    name: "Tabelle",
-    icon: <TableIcon />,
-    subItems: [
-      { name: "Tabelle Base", path: "/basic-tables", pro: false },
-      { name: "Tabelle Dati", path: "/data-tables", pro: false },
-    ],
-  },
-  {
-    name: "Pagine",
-    icon: <PageIcon />,
-    subItems: [
-      { name: "Gestione File", path: "/file-manager" },
-      { name: "Tabelle Prezzi", path: "/pricing-tables" },
-      { name: "FAQ", path: "/faq" },
-      { name: "Chiavi API", path: "/api-keys", new: true },
-      { name: "Integrazioni", path: "/integrations", new: true },
-      { name: "Pagina Vuota", path: "/blank" },
-      { name: "Errore 404", path: "/error-404" },
-      { name: "Errore 500", path: "/error-500" },
-      { name: "Errore 503", path: "/error-503" },
-      { name: "Prossimamente", path: "/coming-soon" },
-      { name: "Manutenzione", path: "/maintenance" },
-      { name: "Successo", path: "/success" },
-    ],
-  },
+  // {
+  //   name: "Assistente AI",
+  //   icon: <AiIcon />,
+  //   new: true,
+  //   subItems: [
+  //     {
+  //       name: "Generatore Testi",
+  //       path: "/text-generator",
+  //     },
+  //     {
+  //       name: "Generatore Immagini",
+  //       path: "/image-generator",
+  //     },
+  //     {
+  //       name: "Generatore Codice",
+  //       path: "/code-generator",
+  //     },
+  //     {
+  //       name: "Generatore Video",
+  //       path: "/video-generator",
+  //     },
+  //   ],
+  // },
+  // {
+  //   name: "E-commerce",
+  //   icon: <CartIcon />,
+  //   new: true,
+  //   subItems: [
+  //     { name: "Prodotti", path: "/products-list" },
+  //     { name: "Aggiungi Prodotto", path: "/add-product" },
+  //     { name: "Fatturazione", path: "/billing" },
+  //     { name: "Fatture", path: "/invoices" },
+  //     { name: "Fattura Singola", path: "/single-invoice" },
+  //     { name: "Crea Fattura", path: "/create-invoice" },
+  //     { name: "Transazioni", path: "/transactions" },
+  //     { name: "Transazione Singola", path: "/single-transaction" },
+  //   ],
+  // },
+  // {
+  //   icon: <CalenderIcon />,
+  //   name: "Calendario",
+  //   path: "/calendar",
+  // },
+  // {
+  //   name: "Attività",
+  //   icon: <TaskIcon />,
+  //   subItems: [
+  //     { name: "Lista", path: "/task-list", pro: false },
+  //     { name: "Kanban", path: "/task-kanban", pro: false },
+  //   ],
+  // },
+  // {
+  //   name: "Moduli",
+  //   icon: <ListIcon />,
+  //   subItems: [
+  //     { name: "Elementi Modulo", path: "/form-elements", pro: false },
+  //     { name: "Layout Modulo", path: "/form-layout", pro: false },
+  //   ],
+  // },
+  // {
+  //   name: "Tabelle",
+  //   icon: <TableIcon />,
+  //   subItems: [
+  //     { name: "Tabelle Base", path: "/basic-tables", pro: false },
+  //     { name: "Tabelle Dati", path: "/data-tables", pro: false },
+  //   ],
+  // },
+  // {
+  //   name: "Pagine",
+  //   icon: <PageIcon />,
+  //   subItems: [
+  //     { name: "Gestione File", path: "/file-manager" },
+  //     { name: "Tabelle Prezzi", path: "/pricing-tables" },
+  //     { name: "FAQ", path: "/faq" },
+  //     { name: "Chiavi API", path: "/api-keys", new: true },
+  //     { name: "Integrazioni", path: "/integrations", new: true },
+  //     { name: "Pagina Vuota", path: "/blank" },
+  //     { name: "Errore 404", path: "/error-404" },
+  //     { name: "Errore 500", path: "/error-500" },
+  //     { name: "Errore 503", path: "/error-503" },
+  //     { name: "Prossimamente", path: "/coming-soon" },
+  //     { name: "Manutenzione", path: "/maintenance" },
+  //     { name: "Successo", path: "/success" },
+  //   ],
+  // },
 ];
 
 const modelloItems: NavItem[] = [
@@ -225,83 +225,6 @@ const utentiItems: NavItem[] = [
 ];
 
 
-const othersItems: NavItem[] = [
-  {
-    icon: <PieChartIcon />,
-    name: "Grafici",
-    subItems: [
-      { name: "Grafico a Linee", path: "/line-chart", pro: false },
-      { name: "Grafico a Barre", path: "/bar-chart", pro: false },
-      { name: "Grafico a Torta", path: "/pie-chart", pro: false },
-    ],
-  },
-  {
-    icon: <BoxCubeIcon />,
-    name: "Elementi UI",
-    subItems: [
-      { name: "Avvisi", path: "/alerts" },
-      { name: "Avatar", path: "/avatars" },
-      { name: "Badge", path: "/badge" },
-      { name: "Breadcrumb", path: "/breadcrumb" },
-      { name: "Pulsanti", path: "/buttons" },
-      { name: "Gruppo Pulsanti", path: "/buttons-group" },
-      { name: "Card", path: "/cards" },
-      { name: "Carosello", path: "/carousel" },
-      { name: "Menu a Tendina", path: "/dropdowns" },
-      { name: "Immagini", path: "/images" },
-      { name: "Link", path: "/links" },
-      { name: "Lista", path: "/list" },
-      { name: "Modali", path: "/modals" },
-      { name: "Notifiche", path: "/notifications" },
-      { name: "Paginazione", path: "/pagination" },
-      { name: "Popover", path: "/popovers" },
-      { name: "Barra Progresso", path: "/progress-bar" },
-      { name: "Nastri", path: "/ribbons" },
-      { name: "Spinner", path: "/spinners" },
-      { name: "Tab", path: "/tabs" },
-      { name: "Tooltip", path: "/tooltips" },
-      { name: "Video", path: "/videos" },
-    ],
-  },
-  {
-    icon: <PlugInIcon />,
-    name: "Autenticazione",
-    subItems: [
-      { name: "Accedi", path: "/signin", pro: false },
-      { name: "Registrati", path: "/signup", pro: false },
-      { name: "Reimposta Password", path: "/reset-password" },
-      {
-        name: "Verifica a Due Fattori",
-        path: "/two-step-verification",
-      },
-    ],
-  },
-];
-
-const supportItems: NavItem[] = [
-  {
-    icon: <ChatIcon />,
-    name: "Chat",
-    path: "/chat",
-  },
-  {
-    icon: <CallIcon />,
-    name: "Supporto",
-    new: true,
-    subItems: [
-      { name: "Lista Supporto", path: "/support-tickets" },
-      { name: "Risposta Supporto", path: "/support-ticket-reply" },
-    ],
-  },
-  {
-    icon: <MailIcon />,
-    name: "Email",
-    subItems: [
-      { name: "Posta in Arrivo", path: "/inbox" },
-      { name: "Dettagli", path: "/inbox-details" },
-    ],
-  },
-];
 
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered, toggleMobileSidebar } = useSidebar();
@@ -310,7 +233,7 @@ const AppSidebar: React.FC = () => {
 
   const renderMenuItems = (
     navItems: NavItem[],
-    menuType: "home" | "modello" | "gestione" | "utenti" | "support" | "others"
+    menuType: "home" | "modello" | "gestione" | "utenti"
   ) => (
     <ul className="flex flex-col gap-1">
       {navItems.map((nav, index) => (
@@ -425,7 +348,7 @@ const AppSidebar: React.FC = () => {
   );
 
   const [openSubmenu, setOpenSubmenu] = useState<{
-    type: "home" | "modello" | "gestione" | "utenti" | "support" | "others";
+    type: "home" | "modello" | "gestione" | "utenti";
     index: number;
   } | null>(null);
   const [subMenuHeight, setSubMenuHeight] = useState<Record<string, number>>(
@@ -440,7 +363,7 @@ const AppSidebar: React.FC = () => {
   useEffect(() => {
     // Check if the current path matches any submenu item
     let submenuMatched = false;
-    ["home", "modello", "gestione", "utenti", "support", "others"].forEach((menuType) => {
+    ["home", "modello", "gestione", "utenti"].forEach((menuType) => {
       const items =
         menuType === "home"
           ? homeItems
@@ -448,17 +371,13 @@ const AppSidebar: React.FC = () => {
           ? modelloItems
           : menuType === "gestione"
           ? gestioneItems
-          : menuType === "utenti"
-          ? utentiItems
-          : menuType === "support"
-          ? supportItems
-          : othersItems;
+          : utentiItems;
       items.forEach((nav, index) => {
         if (nav.subItems) {
           nav.subItems.forEach((subItem) => {
             if (isActive(subItem.path)) {
               setOpenSubmenu({
-                type: menuType as "home" | "gestione" | "utenti" | "support" | "others",
+                type: menuType as "home" | "modello" | "gestione" | "utenti",
                 index,
               });
               submenuMatched = true;
@@ -489,7 +408,7 @@ const AppSidebar: React.FC = () => {
 
   const handleSubmenuToggle = (
     index: number,
-    menuType: "home" | "modello" | "gestione" | "utenti" | "support" | "others"
+    menuType: "home" | "modello" | "gestione" | "utenti"
   ) => {
     setOpenSubmenu((prevOpenSubmenu) => {
       if (
@@ -619,40 +538,6 @@ const AppSidebar: React.FC = () => {
                 {renderMenuItems(utentiItems, "utenti")}
               </div>
             )}
-            {/* SUPPORTO - Comentado para presentación */}
-            <div>
-              <h2
-                className={`mb-4 text-xs uppercase flex leading-5 text-gray-400 ${
-                  !isExpanded && !isHovered
-                    ? "xl:justify-center"
-                    : "justify-start"
-                }`}
-              >
-                {isExpanded || isHovered || isMobileOpen ? (
-                  "Supporto"
-                ) : (
-                  <HorizontaLDots />
-                )}
-              </h2>
-              {renderMenuItems(supportItems, "support")}
-            </div>
-            {/* ALTRI */}
-            <div>
-              <h2
-                className={`mb-4 text-xs uppercase flex leading-5 text-gray-400 ${
-                  !isExpanded && !isHovered
-                    ? "xl:justify-center"
-                    : "justify-start"
-                }`}
-              >
-                {isExpanded || isHovered || isMobileOpen ? (
-                  "Altri"
-                ) : (
-                  <HorizontaLDots />
-                )}
-              </h2>
-              {renderMenuItems(othersItems, "others")}
-            </div>
           </div>
         </nav>
         {isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null}

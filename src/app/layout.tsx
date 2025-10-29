@@ -29,7 +29,7 @@ export default function RootLayout({
         <ClerkProvider
           signInUrl="/signin"
           signUpUrl="/signin"
-          afterSignInUrl="/dashboard-viajes"
+          afterSignInUrl="/"
           afterSignOutUrl="/signin"
         >
           <ThemeProvider>

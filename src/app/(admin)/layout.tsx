@@ -55,6 +55,15 @@ export default function AdminLayout({
     );
   }
 
+  // En la ruta raíz, mostrar loading mientras se carga el rol para evitar pestañeo
+  if (pathname === '/' && isLoaded && isSignedIn && (roleLoading || !userRole)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-500"></div>
+      </div>
+    );
+  }
+
   // Remover esta verificación - se maneja en cada página individual
   // if (isLoaded && isSignedIn === false) {
   //   return null;
@@ -69,21 +78,12 @@ export default function AdminLayout({
     );
   }
 
-  // Si no hay rol pero todo está cargado Y el usuario está autenticado, mostrar loading temporal
-  // Solo mostrar loading si realmente no hay rol después de un tiempo Y el usuario está autenticado
+  // Si no hay rol pero todo está cargado Y el usuario está autenticado, redirigir a unauthorized
   // EXCEPTO en la ruta /unauthorized donde debe mostrar la página directamente
-  if (userRole === null && isLoaded && isSignedIn && !roleLoading && pathname !== '/unauthorized') {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-500 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Verificando permisos...</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-            Si tienes permisos, serás redirigido automáticamente
-          </p>
-        </div>
-      </div>
-    );
+  // Y EXCEPTO en la ruta raíz / donde se maneja la redirección a dashboard-viajes
+  if (userRole === null && isLoaded && isSignedIn && !roleLoading && pathname !== '/unauthorized' && pathname !== '/') {
+    router.push('/unauthorized');
+    return null;
   }
 
   // Si el usuario no está autenticado, no mostrar nada (se redirigirá)

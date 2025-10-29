@@ -367,9 +367,9 @@ export default function DashboardViajesPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="w-full px-4 sm:px-6 lg:px-8">
         {/* Filtro de Rango de Fechas para los primeros 6 gráficos */}
-        <div className="mb-8 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-2 mb-2">
+        <div className="mb-8 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 text-center">
+          <div className="space-y-4">
+            <div className="flex items-center justify-center gap-2 mb-2">
               <svg className="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
@@ -378,7 +378,7 @@ export default function DashboardViajesPage() {
               </h3>
             </div>
             
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-wrap items-center justify-center gap-4">
               <div className="flex items-center gap-2">
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
                   Desde:

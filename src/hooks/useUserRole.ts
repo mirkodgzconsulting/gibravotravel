@@ -31,6 +31,7 @@ export function useUserRole() {
       setHasTriedFetch(true);
       
       try {
+        console.log('🔍 Fetching user role for clerkId:', clerkUser.id);
         const response = await fetch(`/api/user/role?clerkId=${clerkUser.id}`, {
           method: 'GET',
           headers: {
@@ -39,10 +40,14 @@ export function useUserRole() {
           signal: AbortSignal.timeout(10000)
         });
         
+        console.log('📡 Response status:', response.status);
+        
         if (response.ok) {
           const data = await response.json();
+          console.log('✅ User role data:', data);
           setUserRole(data.role);
         } else if (response.status === 404) {
+          console.log('❌ User not found in database');
           setUserRole(null);
         } else {
           console.error('Error fetching user role:', response.status, response.statusText);

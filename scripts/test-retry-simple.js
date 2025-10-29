@@ -1,51 +1,79 @@
 const { PrismaClient } = require('@prisma/client');
-
-// Importar el servicio de reintentos de manera compatible con CommonJS
-async function importClerkRetryService() {
-  try {
-    const { clerkRetryService } = await import('../src/lib/clerk-retry.ts');
-    return clerkRetryService;
-  } catch (error) {
-    console.error('Error importing clerk retry service:', error);
-    return null;
-  }
-}
+const { createClerkClient } = require('@clerk/backend');
 
 const prisma = new PrismaClient();
 
-async function testRetrySystem() {
-  console.log('🧪 PROBANDO SISTEMA DE REINTENTOS');
-  console.log('=================================');
+async function testRetrySimple() {
+  console.log('🧪 PROBANDO SISTEMA DE REINTENTOS SIMPLE');
+  console.log('========================================');
 
   try {
-    // Importar el servicio de reintentos
-    const clerkRetryService = await importClerkRetryService();
-    if (!clerkRetryService) {
-      console.log('❌ No se pudo importar el servicio de reintentos');
+    // Verificar configuración
+    if (!process.env.CLERK_SECRET_KEY) {
+      console.log('❌ CLERK_SECRET_KEY no está configurada');
       return;
     }
-    // Crear múltiples usuarios para probar la robustez
+
+    const clerk = createClerkClient({
+      secretKey: process.env.CLERK_SECRET_KEY,
+    });
+
+    // Función de reintentos simple
+    async function createUserWithRetry(userData, maxRetries = 3) {
+      let lastError = null;
+      
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          console.log(`🔄 Intento ${attempt}/${maxRetries} - Creando usuario: ${userData.email}`);
+          
+          const user = await clerk.users.createUser({
+            emailAddress: [userData.email],
+            firstName: userData.firstName,
+            lastName: userData.lastName,
+            password: userData.password,
+            skipPasswordChecks: true,
+            publicMetadata: {
+              role: userData.role,
+              phoneNumber: userData.phoneNumber,
+            },
+          });
+          
+          console.log(`✅ Usuario creado exitosamente en intento ${attempt}: ${user.id}`);
+          return { success: true, user, attempt };
+          
+        } catch (error) {
+          lastError = error;
+          console.log(`❌ Intento ${attempt} falló: ${error.message}`);
+          
+          if (attempt < maxRetries) {
+            const delay = 1000 * Math.pow(2, attempt - 1); // 1s, 2s, 4s
+            console.log(`⏳ Esperando ${delay}ms antes del siguiente intento...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+        }
+      }
+      
+      console.log(`❌ Todos los intentos fallaron para usuario: ${userData.email}`);
+      return { success: false, error: lastError, attempts: maxRetries };
+    }
+
+    // Crear usuarios de prueba
     const testUsers = [
       {
         email: `test-retry-1-${Date.now()}@example.com`,
         firstName: 'Test',
         lastName: 'Retry 1',
         phoneNumber: '+1234567890',
-        role: 'USER'
+        role: 'USER',
+        password: Math.random().toString(36).slice(-12) + 'A1!'
       },
       {
         email: `test-retry-2-${Date.now()}@example.com`,
         firstName: 'Test',
         lastName: 'Retry 2',
         phoneNumber: '+1234567891',
-        role: 'ADMIN'
-      },
-      {
-        email: `test-retry-3-${Date.now()}@example.com`,
-        firstName: 'Test',
-        lastName: 'Retry 3',
-        phoneNumber: '+1234567892',
-        role: 'TI'
+        role: 'ADMIN',
+        password: Math.random().toString(36).slice(-12) + 'A1!'
       }
     ];
 
@@ -57,19 +85,7 @@ async function testRetrySystem() {
       console.log(`\n🔄 Procesando usuario ${i + 1}/${testUsers.length}: ${user.email}`);
       
       const startTime = Date.now();
-      
-      const result = await clerkRetryService.createUserWithRetry({
-        emailAddress: [user.email],
-        firstName: user.firstName,
-        lastName: user.lastName,
-        password: Math.random().toString(36).slice(-12) + 'A1!',
-        skipPasswordChecks: true,
-        publicMetadata: {
-          role: user.role,
-          phoneNumber: user.phoneNumber,
-        },
-      });
-      
+      const result = await createUserWithRetry(user);
       const endTime = Date.now();
       const duration = endTime - startTime;
       
@@ -85,8 +101,12 @@ async function testRetrySystem() {
         console.log(`   ✅ Éxito en ${result.attempt} intentos (${duration}ms)`);
         
         // Limpiar usuario de prueba
-        await clerkRetryService.deleteUserWithRetry(result.user.id);
-        console.log(`   🧹 Usuario eliminado`);
+        try {
+          await clerk.users.deleteUser(result.user.id);
+          console.log(`   🧹 Usuario eliminado`);
+        } catch (deleteError) {
+          console.log(`   ⚠️  Error eliminando usuario: ${deleteError.message}`);
+        }
       } else {
         console.log(`   ❌ Falló después de ${result.attempts} intentos (${duration}ms)`);
         console.log(`   📝 Error: ${result.error?.message || 'Unknown'}`);
@@ -99,13 +119,9 @@ async function testRetrySystem() {
     
     const successCount = results.filter(r => r.success).length;
     const failureCount = results.filter(r => !r.success).length;
-    const totalAttempts = results.reduce((sum, r) => sum + (r.attempts || 0), 0);
-    const avgDuration = results.reduce((sum, r) => sum + parseInt(r.duration), 0) / results.length;
     
     console.log(`✅ Usuarios creados exitosamente: ${successCount}/${testUsers.length}`);
     console.log(`❌ Usuarios fallidos: ${failureCount}/${testUsers.length}`);
-    console.log(`🔄 Total de intentos: ${totalAttempts}`);
-    console.log(`⏱️  Duración promedio: ${Math.round(avgDuration)}ms`);
     
     console.log('\n📋 DETALLES POR USUARIO:');
     results.forEach((result, index) => {
@@ -131,4 +147,4 @@ async function testRetrySystem() {
   }
 }
 
-testRetrySystem();
+testRetrySimple();

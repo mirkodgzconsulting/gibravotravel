@@ -28,8 +28,8 @@ export async function GET(request: NextRequest) {
 
     // 2. Verificar formato de las claves
     console.log('\n2. Verificando formato de las claves...');
-    const secretKey = process.env.CLERK_SECRET_KEY;
-    const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+    const secretKey = process.env.CLERK_SECRET_KEY || '';
+    const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || '';
     
     const secretKeyFormat = secretKey.startsWith('sk_');
     const publishableKeyFormat = publishableKey.startsWith('pk_');

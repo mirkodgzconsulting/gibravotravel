@@ -22,8 +22,12 @@ export class ClerkRetryService {
   private backoffMultiplier: number;
 
   constructor(options: RetryOptions = {}) {
+    if (!process.env.CLERK_SECRET_KEY) {
+      throw new Error('CLERK_SECRET_KEY is not configured');
+    }
+    
     this.clerk = createClerkClient({
-      secretKey: process.env.CLERK_SECRET_KEY!,
+      secretKey: process.env.CLERK_SECRET_KEY,
     });
     this.maxRetries = options.maxRetries || 3;
     this.delayMs = options.delayMs || 1000;

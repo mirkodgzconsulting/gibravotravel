@@ -41,7 +41,7 @@ export async function GET() {
       const puppeteer = require('puppeteer');
       console.log('   Puppeteer disponible:', !!puppeteer);
     } catch (puppeteerError) {
-      console.log('   Error con Puppeteer:', puppeteerError.message);
+      console.log('   Error con Puppeteer:', puppeteerError instanceof Error ? puppeteerError.message : 'Unknown error');
     }
 
     // 6. Obtener un registro de prueba

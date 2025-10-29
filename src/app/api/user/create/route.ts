@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { UserRole } from '@prisma/client';
-import { createClerkClient } from '@clerk/backend';
+import { clerkRetryService } from '@/lib/clerk-retry';
 
 export async function POST(request: NextRequest) {
   try {
@@ -65,48 +65,41 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Crear cliente de Clerk
-    const clerk = createClerkClient({
-      secretKey: process.env.CLERK_SECRET_KEY!,
-    });
-
     // Generar password temporal
     const temporaryPassword = Math.random().toString(36).slice(-12) + 'A1!';
 
-    let clerkUser;
-    try {
-      // Crear usuario en Clerk
-      clerkUser = await clerk.users.createUser({
-        emailAddress: [email],
-        firstName: firstName,
-        lastName: lastName,
-        password: temporaryPassword,
-        skipPasswordChecks: true, // Permitir password temporal
-        publicMetadata: {
-          role: role,
-          phoneNumber: phoneNumber,
-        },
-      });
+    console.log('🔄 [USER CREATE] Intentando crear usuario en Clerk con reintentos...');
+    
+    // Crear usuario en Clerk con reintentos automáticos
+    const clerkResult = await clerkRetryService.createUserWithRetry({
+      emailAddress: [email],
+      firstName: firstName,
+      lastName: lastName,
+      password: temporaryPassword,
+      skipPasswordChecks: true,
+      publicMetadata: {
+        role: role,
+        phoneNumber: phoneNumber,
+      },
+    });
 
-    } catch (clerkError) {
-      console.error('❌ Error creando usuario en Clerk:', clerkError);
-      console.error('❌ Error details:', {
-        message: clerkError instanceof Error ? clerkError.message : 'Unknown error',
-        stack: clerkError instanceof Error ? clerkError.stack : 'No stack trace',
-        name: clerkError instanceof Error ? clerkError.name : 'UnknownError'
-      });
+    if (!clerkResult.success) {
+      console.error('❌ [USER CREATE] Todos los reintentos fallaron para Clerk');
+      console.error('❌ [USER CREATE] Error final:', clerkResult.error);
       
       // Determinar el tipo de error
-      let errorMessage = 'Clerk creation failed. Manual registration required.';
-      if (clerkError instanceof Error) {
-        if (clerkError.message.includes('Invalid API key')) {
+      let errorMessage = 'Clerk creation failed after multiple attempts. Manual registration required.';
+      if (clerkResult.error instanceof Error) {
+        if (clerkResult.error.message.includes('Invalid API key')) {
           errorMessage = 'Clerk API key invalid. Check environment variables.';
-        } else if (clerkError.message.includes('Forbidden')) {
+        } else if (clerkResult.error.message.includes('Forbidden')) {
           errorMessage = 'Clerk API key lacks permissions. Check key configuration.';
-        } else if (clerkError.message.includes('User already exists')) {
+        } else if (clerkResult.error.message.includes('User already exists')) {
           errorMessage = 'User already exists in Clerk. Check email address.';
-        } else if (clerkError.message.includes('Invalid email')) {
+        } else if (clerkResult.error.message.includes('Invalid email')) {
           errorMessage = 'Invalid email format. Please check email address.';
+        } else if (clerkRetryService.isRecoverableError(clerkResult.error)) {
+          errorMessage = 'Clerk service temporarily unavailable. User created in database only.';
         }
       }
       
@@ -128,9 +121,13 @@ export async function POST(request: NextRequest) {
         role: fallbackUser.role,
         message: `User created in database only. ${errorMessage}`,
         temporaryPassword: null,
-        clerkError: clerkError instanceof Error ? clerkError.message : 'Unknown error'
+        clerkError: clerkResult.error instanceof Error ? clerkResult.error.message : 'Unknown error',
+        attempts: clerkResult.attempts
       });
     }
+
+    const clerkUser = clerkResult.user;
+    console.log(`✅ [USER CREATE] Usuario creado en Clerk después de ${clerkResult.attempt} intentos: ${clerkUser.id}`);
 
 
     // Crear usuario en Prisma con el clerkId real

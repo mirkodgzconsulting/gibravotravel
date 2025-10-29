@@ -46,17 +46,22 @@ export function useUserRole() {
       return;
     }
 
-    // Si ya tenemos un rol en localStorage y coincide con el usuario actual, no hacer fetch
+    // Si ya tenemos un rol en localStorage y coincide con el usuario actual
     const storedRole = typeof window !== 'undefined' ? localStorage.getItem('userRole') : null;
     const storedUserId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
     
-    if (storedRole && storedUserId === clerkUser.id && userRole === storedRole) {
+    if (storedRole && storedUserId === clerkUser.id) {
+      console.log('✅ Using cached role from localStorage:', storedRole);
+      if (userRole !== storedRole) {
+        setUserRole(storedRole as UserRole);
+      }
       setIsLoading(false);
       return;
     }
 
     // Si ya se cargó el rol para este usuario específico, no volver a intentar
     if (hasFetchedRef.current === clerkUser.id && userRole !== null) {
+      console.log('✅ Already fetched role for this user:', userRole);
       return;
     }
 

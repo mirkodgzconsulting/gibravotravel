@@ -1,9 +1,9 @@
-Template updated: 2025-10-29T11:15:00Z
-Version: SUPER_COMPACT_v3
+Template updated: 2025-10-29T21:30:00Z
+Version: RECEIPT_CLEAN_v1
 Changes:
-- Font size: 7px
-- Logo height: 25px
-- Header font: 9px
-- Title: "Cuotas Pendientes"
-- Padding: 5px
-- Line-height: 1.0
+- Removed Neto and Fee/AGV fields
+- Added company information section
+- Added Euro symbol (€) to all amounts
+- Increased font sizes (body: 13px, headers: 22px)
+- Improved design with border-radius
+- Fixed Totale Venduto to show correct value

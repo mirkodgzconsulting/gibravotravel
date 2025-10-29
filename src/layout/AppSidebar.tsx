@@ -43,101 +43,101 @@ const homeItems: NavItem[] = [
     icon: <GridIcon />,
     name: "Dashboard",
     subItems: [
-      // { name: "E-commerce", path: "/" },
-      // { name: "Analytics", path: "/analytics" },
-      // { name: "Marketing", path: "/marketing" },
-      // { name: "CRM", path: "/crm" },
-      // { name: "Magazzino", path: "/stocks" },
-      // { name: "SaaS", path: "/saas", new: true },
-      // { name: "Logistica", path: "/logistics", new: true },
+      { name: "E-commerce", path: "/" },
+      { name: "Analytics", path: "/analytics" },
+      { name: "Marketing", path: "/marketing" },
+      { name: "CRM", path: "/crm" },
+      { name: "Magazzino", path: "/stocks" },
+      { name: "SaaS", path: "/saas", new: true },
+      { name: "Logistica", path: "/logistics", new: true },
       { name: "Dashboard Viajes", path: "/dashboard-viajes" },
     ],
   },
-  // {
-  //   name: "Assistente AI",
-  //   icon: <AiIcon />,
-  //   new: true,
-  //   subItems: [
-  //     {
-  //       name: "Generatore Testi",
-  //       path: "/text-generator",
-  //     },
-  //     {
-  //       name: "Generatore Immagini",
-  //       path: "/image-generator",
-  //     },
-  //     {
-  //       name: "Generatore Codice",
-  //       path: "/code-generator",
-  //     },
-  //     {
-  //       name: "Generatore Video",
-  //       path: "/video-generator",
-  //     },
-  //   ],
-  // },
-  // {
-  //   name: "E-commerce",
-  //   icon: <CartIcon />,
-  //   new: true,
-  //   subItems: [
-  //     { name: "Prodotti", path: "/products-list" },
-  //     { name: "Aggiungi Prodotto", path: "/add-product" },
-  //     { name: "Fatturazione", path: "/billing" },
-  //     { name: "Fatture", path: "/invoices" },
-  //     { name: "Fattura Singola", path: "/single-invoice" },
-  //     { name: "Crea Fattura", path: "/create-invoice" },
-  //     { name: "Transazioni", path: "/transactions" },
-  //     { name: "Transazione Singola", path: "/single-transaction" },
-  //   ],
-  // },
-  // {
-  //   icon: <CalenderIcon />,
-  //   name: "Calendario",
-  //   path: "/calendar",
-  // },
-  // {
-  //   name: "Attività",
-  //   icon: <TaskIcon />,
-  //   subItems: [
-  //     { name: "Lista", path: "/task-list", pro: false },
-  //     { name: "Kanban", path: "/task-kanban", pro: false },
-  //   ],
-  // },
-  // {
-  //   name: "Moduli",
-  //   icon: <ListIcon />,
-  //   subItems: [
-  //     { name: "Elementi Modulo", path: "/form-elements", pro: false },
-  //     { name: "Layout Modulo", path: "/form-layout", pro: false },
-  //   ],
-  // },
-  // {
-  //   name: "Tabelle",
-  //   icon: <TableIcon />,
-  //   subItems: [
-  //     { name: "Tabelle Base", path: "/basic-tables", pro: false },
-  //     { name: "Tabelle Dati", path: "/data-tables", pro: false },
-  //   ],
-  // },
-  // {
-  //   name: "Pagine",
-  //   icon: <PageIcon />,
-  //   subItems: [
-  //     { name: "Gestione File", path: "/file-manager" },
-  //     { name: "Tabelle Prezzi", path: "/pricing-tables" },
-  //     { name: "FAQ", path: "/faq" },
-  //     { name: "Chiavi API", path: "/api-keys", new: true },
-  //     { name: "Integrazioni", path: "/integrations", new: true },
-  //     { name: "Pagina Vuota", path: "/blank" },
-  //     { name: "Errore 404", path: "/error-404" },
-  //     { name: "Errore 500", path: "/error-500" },
-  //     { name: "Errore 503", path: "/error-503" },
-  //     { name: "Prossimamente", path: "/coming-soon" },
-  //     { name: "Manutenzione", path: "/maintenance" },
-  //     { name: "Successo", path: "/success" },
-  //   ],
-  // },
+  {
+    name: "Assistente AI",
+    icon: <AiIcon />,
+    new: true,
+    subItems: [
+      {
+        name: "Generatore Testi",
+        path: "/text-generator",
+      },
+      {
+        name: "Generatore Immagini",
+        path: "/image-generator",
+      },
+      {
+        name: "Generatore Codice",
+        path: "/code-generator",
+      },
+      {
+        name: "Generatore Video",
+        path: "/video-generator",
+      },
+    ],
+  },
+  {
+    name: "E-commerce",
+    icon: <CartIcon />,
+    new: true,
+    subItems: [
+      { name: "Prodotti", path: "/products-list" },
+      { name: "Aggiungi Prodotto", path: "/add-product" },
+      { name: "Fatturazione", path: "/billing" },
+      { name: "Fatture", path: "/invoices" },
+      { name: "Fattura Singola", path: "/single-invoice" },
+      { name: "Crea Fattura", path: "/create-invoice" },
+      { name: "Transazioni", path: "/transactions" },
+      { name: "Transazione Singola", path: "/single-transaction" },
+    ],
+  },
+  {
+    icon: <CalenderIcon />,
+    name: "Calendario",
+    path: "/calendar",
+  },
+  {
+    name: "Attività",
+    icon: <TaskIcon />,
+    subItems: [
+      { name: "Lista", path: "/task-list", pro: false },
+      { name: "Kanban", path: "/task-kanban", pro: false },
+    ],
+  },
+  {
+    name: "Moduli",
+    icon: <ListIcon />,
+    subItems: [
+      { name: "Elementi Modulo", path: "/form-elements", pro: false },
+      { name: "Layout Modulo", path: "/form-layout", pro: false },
+    ],
+  },
+  {
+    name: "Tabelle",
+    icon: <TableIcon />,
+    subItems: [
+      { name: "Tabelle Base", path: "/basic-tables", pro: false },
+      { name: "Tabelle Dati", path: "/data-tables", pro: false },
+    ],
+  },
+  {
+    name: "Pagine",
+    icon: <PageIcon />,
+    subItems: [
+      { name: "Gestione File", path: "/file-manager" },
+      { name: "Tabelle Prezzi", path: "/pricing-tables" },
+      { name: "FAQ", path: "/faq" },
+      { name: "Chiavi API", path: "/api-keys", new: true },
+      { name: "Integrazioni", path: "/integrations", new: true },
+      { name: "Pagina Vuota", path: "/blank" },
+      { name: "Errore 404", path: "/error-404" },
+      { name: "Errore 500", path: "/error-500" },
+      { name: "Errore 503", path: "/error-503" },
+      { name: "Prossimamente", path: "/coming-soon" },
+      { name: "Manutenzione", path: "/maintenance" },
+      { name: "Successo", path: "/success" },
+    ],
+  },
 ];
 
 const modelloItems: NavItem[] = [
@@ -620,7 +620,7 @@ const AppSidebar: React.FC = () => {
               </div>
             )}
             {/* SUPPORTO - Comentado para presentación */}
-            {/* <div>
+            <div>
               <h2
                 className={`mb-4 text-xs uppercase flex leading-5 text-gray-400 ${
                   !isExpanded && !isHovered
@@ -635,9 +635,9 @@ const AppSidebar: React.FC = () => {
                 )}
               </h2>
               {renderMenuItems(supportItems, "support")}
-            </div> */}
-            {/* ALTRI - Comentado para presentación */}
-            {/* <div>
+            </div>
+            {/* ALTRI */}
+            <div>
               <h2
                 className={`mb-4 text-xs uppercase flex leading-5 text-gray-400 ${
                   !isExpanded && !isHovered
@@ -652,7 +652,7 @@ const AppSidebar: React.FC = () => {
                 )}
               </h2>
               {renderMenuItems(othersItems, "others")}
-            </div> */}
+            </div>
           </div>
         </nav>
         {isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null}

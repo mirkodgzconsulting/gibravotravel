@@ -197,6 +197,7 @@ export default function AgentSalesPercentageChart({ dateRange, userId }: AgentSa
       enabled: true,
       style: {
         fontFamily: "Outfit",
+        fontSize: '12px',
       },
       custom: function({series, seriesIndex, dataPointIndex, w}) {
         const value = series[seriesIndex][dataPointIndex];
@@ -204,24 +205,11 @@ export default function AgentSalesPercentageChart({ dateRange, userId }: AgentSa
         const feeAmount = agentData[dataPointIndex]?.feeAmount || 0;
         
         return `
-          <div style="
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            font-family: 'Outfit', sans-serif;
-            min-width: 200px;
-          ">
-            <div style="font-weight: 600; color: #374151; margin-bottom: 8px;">
-              ${agentName}
-            </div>
-            <div style="color: #6b7280; font-size: 14px; margin-bottom: 4px;">
-              ${value.toFixed(2)}%
-            </div>
-            <div style="color: #6b7280; font-size: 14px;">
-              ${feeAmount.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0 })}
-            </div>
+          <div style="margin-bottom: 4px;">
+            <span style="color: #6b7280;">Porcentaje:</span> ${value.toFixed(2)}%
+          </div>
+          <div>
+            <span style="color: #6b7280;">Monto:</span> ${feeAmount.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0 })}
           </div>
         `;
       }

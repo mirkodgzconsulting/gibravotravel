@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-// import Chart from "react-apexcharts";
+import Chart from "react-apexcharts";
 import { ApexOptions } from "apexcharts";
 import ChartTab from "../common/ChartTab";
 

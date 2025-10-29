@@ -90,6 +90,25 @@ export async function POST(request: NextRequest) {
 
     } catch (clerkError) {
       console.error('❌ Error creando usuario en Clerk:', clerkError);
+      console.error('❌ Error details:', {
+        message: clerkError instanceof Error ? clerkError.message : 'Unknown error',
+        stack: clerkError instanceof Error ? clerkError.stack : 'No stack trace',
+        name: clerkError instanceof Error ? clerkError.name : 'UnknownError'
+      });
+      
+      // Determinar el tipo de error
+      let errorMessage = 'Clerk creation failed. Manual registration required.';
+      if (clerkError instanceof Error) {
+        if (clerkError.message.includes('Invalid API key')) {
+          errorMessage = 'Clerk API key invalid. Check environment variables.';
+        } else if (clerkError.message.includes('Forbidden')) {
+          errorMessage = 'Clerk API key lacks permissions. Check key configuration.';
+        } else if (clerkError.message.includes('User already exists')) {
+          errorMessage = 'User already exists in Clerk. Check email address.';
+        } else if (clerkError.message.includes('Invalid email')) {
+          errorMessage = 'Invalid email format. Please check email address.';
+        }
+      }
       
       // Si hay error en Clerk, intentar crear solo en Prisma como fallback
       const fallbackUser = await prisma.user.create({
@@ -107,8 +126,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ 
         user: fallbackUser, 
         role: fallbackUser.role,
-        message: 'User created in database only. Clerk creation failed. Manual registration required.',
+        message: `User created in database only. ${errorMessage}`,
         temporaryPassword: null,
+        clerkError: clerkError instanceof Error ? clerkError.message : 'Unknown error'
       });
     }
 

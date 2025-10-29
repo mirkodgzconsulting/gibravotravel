@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ricevuta</title>
+    <title>Ricevuta - 2025-10-29T11:45:00.345Z</title>
     <style>
         @page {
             size: A4;
@@ -13,9 +13,10 @@
         body {
             font-family: 'Arial', sans-serif;
             margin: 0;
-            padding: 40px;
-            font-size: 12px;
+            padding: 5px;
+            font-size: 7px;
             color: #333;
+            line-height: 1.0;
         }
         
         .container {
@@ -28,14 +29,14 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 3px solid #1e40af;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
+            border-bottom: 1px solid #1e40af;
+            padding-bottom: 3px;
+            margin-bottom: 5px;
         }
         
         .logo {
-            height: 80px;
-            max-width: 200px;
+            height: 25px;
+            max-width: 80px;
         }
         
         .header-title {
@@ -45,37 +46,37 @@
         
         .header-title h1 {
             margin: 0;
-            font-size: 28px;
+            font-size: 9px;
             font-weight: bold;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 0.5px;
         }
         
         .header-title p {
-            margin: 5px 0 0 0;
-            font-size: 10px;
+            margin: 1px 0 0 0;
+            font-size: 5px;
             color: #666;
         }
         
         /* Información del Cliente */
         .client-section {
-            margin-bottom: 30px;
+            margin-bottom: 5px;
         }
         
         .section-title {
             background-color: #1e40af;
             color: white;
-            padding: 8px 15px;
+            padding: 2px 4px;
             font-weight: bold;
-            margin-bottom: 10px;
-            font-size: 13px;
+            margin-bottom: 2px;
+            font-size: 8px;
         }
         
         .client-info {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 15px;
+            gap: 2px;
+            margin-bottom: 3px;
         }
         
         .info-item {
@@ -86,24 +87,24 @@
         .info-label {
             font-weight: bold;
             color: #1e40af;
-            font-size: 11px;
-            margin-bottom: 3px;
+            font-size: 6px;
+            margin-bottom: 0px;
         }
         
         .info-value {
             color: #333;
-            font-size: 12px;
+            font-size: 7px;
         }
         
         /* Tabla de Información */
         .info-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 25px;
+            margin-bottom: 5px;
         }
         
         .info-table td {
-            padding: 10px;
+            padding: 2px;
             border: 1px solid #ddd;
             vertical-align: top;
         }
@@ -113,31 +114,34 @@
             font-weight: bold;
             color: #1e40af;
             width: 35%;
+            font-size: 6px;
         }
         
         .info-table .value {
             background-color: #fff;
             color: #333;
+            font-size: 7px;
         }
         
         /* Sección de Cuotas */
         .cuotas-section {
-            margin-top: 30px;
+            margin-top: 5px;
             page-break-inside: avoid;
         }
         
         .cuotas-list {
             background-color: #f9fafb;
-            border: 2px solid #1e40af;
-            padding: 15px;
-            border-radius: 5px;
+            border: 1px solid #1e40af;
+            padding: 3px;
+            border-radius: 2px;
         }
         
         .cuota-item {
             display: flex;
             justify-content: space-between;
-            padding: 8px 0;
+            padding: 1px 0;
             border-bottom: 1px solid #e5e7eb;
+            font-size: 6px;
         }
         
         .cuota-item:last-child {
@@ -155,9 +159,9 @@
         }
         
         .cuota-status {
-            font-size: 10px;
-            padding: 2px 8px;
-            border-radius: 3px;
+            font-size: 5px;
+            padding: 1px 2px;
+            border-radius: 1px;
         }
         
         .status-paid {
@@ -172,80 +176,80 @@
         
         /* Footer */
         .footer {
-            margin-top: 50px;
-            padding-top: 20px;
-            border-top: 2px solid #e5e7eb;
+            margin-top: 5px;
+            padding-top: 3px;
+            border-top: 1px solid #e5e7eb;
             text-align: center;
-            font-size: 10px;
+            font-size: 5px;
             color: #666;
         }
 
         /* Segunda página - Restricciones */
         .restrictions-page {
             page-break-before: always;
-            padding-top: 20px;
+            padding-top: 5px;
         }
 
         .restrictions-header {
             text-align: center;
-            margin-bottom: 30px;
-            border-bottom: 3px solid #1e40af;
-            padding-bottom: 20px;
+            margin-bottom: 5px;
+            border-bottom: 1px solid #1e40af;
+            padding-bottom: 5px;
         }
 
         .restrictions-title {
-            font-size: 24px;
+            font-size: 12px;
             font-weight: bold;
             color: #1e40af;
-            margin-bottom: 10px;
+            margin-bottom: 3px;
         }
 
         .restrictions-content {
-            font-size: 11px;
-            line-height: 1.6;
+            font-size: 6px;
+            line-height: 1.1;
             color: #333;
         }
 
         .restrictions-content h3 {
             color: #1e40af;
-            font-size: 14px;
-            margin: 20px 0 10px 0;
+            font-size: 7px;
+            margin: 5px 0 2px 0;
             font-weight: bold;
         }
 
         .restrictions-content ol {
-            margin: 10px 0;
-            padding-left: 20px;
+            margin: 2px 0;
+            padding-left: 8px;
         }
 
         .restrictions-content li {
-            margin-bottom: 8px;
+            margin-bottom: 2px;
         }
 
         .restrictions-content ul {
-            margin: 5px 0;
-            padding-left: 20px;
+            margin: 1px 0;
+            padding-left: 8px;
         }
 
         .restrictions-footer {
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 2px solid #e5e7eb;
+            margin-top: 10px;
+            padding-top: 5px;
+            border-top: 1px solid #e5e7eb;
             text-align: center;
-            font-size: 10px;
+            font-size: 5px;
             color: #666;
         }
 
         .signature-section {
-            margin-top: 30px;
+            margin-top: 5px;
             text-align: center;
         }
 
         .signature-line {
             border-bottom: 1px solid #333;
-            width: 300px;
-            margin: 20px auto;
-            height: 30px;
+            width: 120px;
+            margin: 5px auto;
+            height: 8px;
         }
     </style>
 </head>
@@ -313,6 +317,10 @@
         <div class="section-title">Dettagli di Pagamento</div>
         <table class="info-table">
             <tr>
+                <td class="label">Neto:</td>
+                <td class="value">{{neto}}</td>
+            </tr>
+            <tr>
                 <td class="label">Totale Venduto:</td>
                 <td class="value">{{venduto}}</td>
             </tr>
@@ -321,26 +329,30 @@
                 <td class="value">{{acconto}}</td>
             </tr>
             <tr>
-                <td class="label">Metodo di Pagamento:</td>
-                <td class="value"><strong>{{metodoPagamento}}</strong></td>
+                <td class="label">Da Pagare:</td>
+                <td class="value"><strong>{{daPagare}}</strong></td>
             </tr>
             <tr>
-                <td class="label">Da Pagare:</td>
-                <td class="value"><strong>{{dapagare}}</strong></td>
+                <td class="label">Fee/AGV:</td>
+                <td class="value"><strong>{{feeAgv}}</strong></td>
+            </tr>
+            <tr>
+                <td class="label">Metodo di Pagamento:</td>
+                <td class="value"><strong>{{metodoPagamento}}</strong></td>
             </tr>
         </table>
         
         <!-- Sección de Cuotas -->
         {{#tieneCuotas}}
         <div class="cuotas-section">
-            <div class="section-title">Note di Pagamento</div>
+            <div class="section-title">Cuotas Pendientes</div>
             <div class="cuotas-list">
                 {{#cuotas}}
                 <div class="cuota-item">
                     <div>
                         <span class="cuota-number">{{numero}}</span>
-                        <span style="margin-left: 10px;">{{precio}}</span>
-                        <span style="margin-left: 15px; color: #666; font-size: 11px;">{{fecha}}</span>
+                        <span style="margin-left: 3px;">{{precio}}</span>
+                        <span style="margin-left: 5px; color: #666; font-size: 5px;">{{fecha}}</span>
                     </div>
                     <div>
                         <span class="cuota-status {{statusClass}}">{{estado}}</span>

@@ -77,6 +77,10 @@ export async function POST(request: NextRequest) {
     // Obtener datos del primer pasajero (como en el frontend)
     const primerPasajero = record.pasajeros?.[0];
     
+    // Log para debugging
+    console.log('🔍 [RICEVUTA API] Primer pasajero:', primerPasajero);
+    console.log('🔍 [RICEVUTA API] vendutoBiglietteria:', primerPasajero?.vendutoBiglietteria);
+    
     // Generar fecha actual
     const fechaActual = new Date().toLocaleDateString('it-IT', {
       year: 'numeric',
@@ -96,7 +100,7 @@ export async function POST(request: NextRequest) {
       
       // Datos financieros
       neto: primerPasajero?.netoBiglietteria?.toString() || '0',
-      venduto: primerPasajero?.vendutoBiglietteria?.toString() || '0',
+      venduto: (primerPasajero?.vendutoBiglietteria || record.vendutoBiglietteria || 0).toString(),
       acconto: record.acconto?.toString() || '0',
       daPagare: record.daPagare?.toString() || '0',
       dapagare: record.daPagare?.toString() || '0', // Para compatibilidad con plantilla

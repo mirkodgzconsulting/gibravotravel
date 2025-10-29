@@ -1,0 +1,114 @@
+{
+  "timestamp": "2025-10-29T21:21:38.043Z",
+  "tables": [
+    {
+      "name": "User",
+      "records": 5
+    },
+    {
+      "name": "Client",
+      "records": 8
+    },
+    {
+      "name": "Biglietteria",
+      "records": 4
+    },
+    {
+      "name": "PasajeroBiglietteria",
+      "records": 5
+    },
+    {
+      "name": "Cuota",
+      "records": 5
+    },
+    {
+      "name": "TourAereo",
+      "records": 2
+    },
+    {
+      "name": "VentaTourAereo",
+      "records": 9
+    },
+    {
+      "name": "CuotaVentaTourAereo",
+      "records": 12
+    },
+    {
+      "name": "TourBus",
+      "records": 1
+    },
+    {
+      "name": "VentaTourBus",
+      "records": 20
+    },
+    {
+      "name": "CuotaTourBus",
+      "records": 26
+    },
+    {
+      "name": "AcompananteTourBus",
+      "records": 20
+    },
+    {
+      "name": "AsientoBus",
+      "records": 53
+    },
+    {
+      "name": "VentaAsiento",
+      "records": 0
+    },
+    {
+      "name": "Departure",
+      "records": 0
+    },
+    {
+      "name": "Route",
+      "records": 0
+    },
+    {
+      "name": "Stop",
+      "records": 0
+    },
+    {
+      "name": "FermataBus",
+      "records": 13
+    },
+    {
+      "name": "StatoBus",
+      "records": 4
+    },
+    {
+      "name": "Servizio",
+      "records": 7
+    },
+    {
+      "name": "MetodoPagamento",
+      "records": 10
+    },
+    {
+      "name": "Iata",
+      "records": 19
+    },
+    {
+      "name": "Info",
+      "records": 1
+    },
+    {
+      "name": "Pagamento",
+      "records": 4
+    },
+    {
+      "name": "Notificacion",
+      "records": 5
+    },
+    {
+      "name": "AgendaPersonal",
+      "records": 12
+    },
+    {
+      "name": "RecordatorioAgenda",
+      "records": 12
+    }
+  ],
+  "totalRecords": 257
+}

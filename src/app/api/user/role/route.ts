@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { createClerkClient } from '@clerk/backend';
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,34 +21,7 @@ export async function GET(request: NextRequest) {
 
     if (!user) {
       console.log('❌ [ROLE API] User not found in database for clerkId:', clerkId);
-      // Auto-provision: crear usuario con rol USER usando datos desde Clerk
-      try {
-        const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY! });
-        const clerkUser = await clerk.users.getUser(clerkId);
-        const email = clerkUser.primaryEmailAddress?.emailAddress || clerkUser.emailAddresses?.[0]?.emailAddress || '';
-        const firstName = clerkUser.firstName || '';
-        const lastName = clerkUser.lastName || '';
-
-        const created = await prisma.user.upsert({
-          where: { clerkId },
-          update: {},
-          create: {
-            clerkId,
-            email,
-            firstName,
-            lastName,
-            role: 'USER',
-            isActive: true,
-          },
-          select: { role: true },
-        });
-
-        console.log('✅ [ROLE API] Auto-provisioned user with role USER');
-        return NextResponse.json({ role: created.role });
-      } catch (provisionErr) {
-        console.error('❌ [ROLE API] Auto-provision failed:', provisionErr);
-        return NextResponse.json({ error: 'User not found' }, { status: 404 });
-      }
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     console.log('✅ [ROLE API] User found:', { role: user.role, name: `${user.firstName} ${user.lastName}`, email: user.email });

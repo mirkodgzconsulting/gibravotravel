@@ -11,6 +11,7 @@ import Button from "@/components/ui/button/Button";
 import { CopyNotification } from "@/components/ui/notification/CopyNotification";
 import { BusIcon, CalendarIcon, UsersIcon, DollarSignIcon, TrashIcon, EditIcon, EyeIcon } from "lucide-react";
 import Image from "next/image";
+import { cachedFetch, invalidateCacheByPrefix } from "@/utils/cachedFetch";
 
 interface TourBus {
   id: string;
@@ -132,14 +133,9 @@ export default function TourBusPage() {
       setLoading(true);
       setError(null);
       
-      // Todos los usuarios ven todos los tours para poder realizar ventas
-      const response = await fetch('/api/tour-bus');
-      if (response.ok) {
-        const data = await response.json();
-        setTours(data.tours || []);
-      } else {
-        setError('Error al cargar tours');
-      }
+      // Todos los usuarios ven todos los tours para poder realizar ventas (con cache en memoria)
+      const data = await cachedFetch<{ tours: any[] }>(`/api/tour-bus`, { ttlMs: 15000 });
+      setTours(data.tours || []);
     } catch {
       setError('Error de conexión');
     } finally {
@@ -197,6 +193,8 @@ export default function TourBusPage() {
 
       if (response.ok) {
         const data = await response.json();
+        // Invalidar cache para ver el cambio al instante
+        invalidateCacheByPrefix('/api/tour-bus');
         setTours(prev => [data.tour, ...prev]);
         setFormData({
           titulo: "",

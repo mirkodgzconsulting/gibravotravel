@@ -8,6 +8,7 @@ import { Modal } from "@/components/ui/modal";
 import PassengerDetailsTable from "@/components/PassengerDetailsTable";
 import PassengerDetailsTableSimple from "@/components/PassengerDetailsTableSimple";
 import * as XLSX from 'xlsx';
+import { cachedFetch } from "@/utils/cachedFetch";
 import {
   Table,
   TableBody,
@@ -493,26 +494,15 @@ export default function BiglietteriaPage() {
       try {
         setLoading(true);
         
-        // Cargar registros
-        const recordsRes = await fetch(`/api/biglietteria${isUser ? '?userOnly=true' : ''}`);
-        if (recordsRes.ok) {
-          const data = await recordsRes.json();
-          setRecords(data.records || []);
-        }
+        // Cargar registros (con cache en memoria)
+        const recordsData = await cachedFetch<{ records: any[] }>(`/api/biglietteria${isUser ? '?userOnly=true' : ''}`, { ttlMs: 15000 });
+        setRecords(recordsData.records || []);
         
         // Cargar clientes
         try {
-          const clientsRes = await fetch(`/api/clients${isUser ? '?userOnly=true' : ''}`);
-          
-          if (clientsRes.ok) {
-            const data = await clientsRes.json();
-            // La API devuelve { clients: [...] }, no directamente un array
-            const clientsArray = data.clients || data;
-            setClients(Array.isArray(clientsArray) ? clientsArray : []);
-          } else {
-            console.error('Error loading clients:', clientsRes.status, clientsRes.statusText);
-            setClients([]);
-          }
+          const clientsData = await cachedFetch<any>(`/api/clients${isUser ? '?userOnly=true' : ''}`, { ttlMs: 15000 });
+          const clientsArray = clientsData.clients || clientsData;
+          setClients(Array.isArray(clientsArray) ? clientsArray : []);
         } catch (error) {
           console.error('Error fetching clients:', error);
           setClients([]);
@@ -521,47 +511,25 @@ export default function BiglietteriaPage() {
         // Cargar servicios
         try {
           console.log('🔍 Cargando servicios...');
-          const serviziRes = await fetch('/api/servizi');
-          console.log('🔍 Respuesta servizi:', serviziRes.status, serviziRes.ok);
-          
-          if (serviziRes.ok) {
-            const data = await serviziRes.json();
-            console.log('🔍 Datos servizi recibidos:', data?.length, data);
-            setServizi(Array.isArray(data) ? data : []);
-          } else {
-            console.error('Error loading servizi:', serviziRes.status, serviziRes.statusText);
-            setServizi([]);
-          }
+          const serviziData = await cachedFetch<any[]>('/api/servizi', { ttlMs: 15000 });
+          console.log('🔍 Datos servizi recibidos:', serviziData?.length);
+          setServizi(Array.isArray(serviziData) ? serviziData : []);
         } catch (error) {
           console.error('Error fetching servizi:', error);
           setServizi([]);
         }
         
         // Cargar usuarios para filtro
-        const usersRes = await fetch('/api/users');
-        if (usersRes.ok) {
-          const data = await usersRes.json();
-          setUsuarios(data);
-        }
+        const usersData = await cachedFetch<any[]>('/api/users', { ttlMs: 15000 });
+        setUsuarios(Array.isArray(usersData) ? usersData : []);
         
         // Cargar pagamentos
         try {
           console.log('🔍 Cargando pagamentos...');
-          const pagamentosRes = await fetch('/api/pagamento');
-          console.log('🔍 Respuesta pagamentos:', pagamentosRes.status, pagamentosRes.ok);
-          
-          if (pagamentosRes.ok) {
-            const data = await pagamentosRes.json();
-            console.log('🔍 Datos pagamentos recibidos:', data);
-            // La API devuelve directamente un array de objetos
-            const pagamentosArray = Array.isArray(data) ? data : [];
-            const pagamentosNombres = pagamentosArray.map((p: any) => p.pagamento);
-            console.log('🔍 Pagamentos procesados:', pagamentosNombres);
-            setPagamentos(pagamentosNombres);
-          } else {
-            console.error('Error loading pagamentos:', pagamentosRes.status, pagamentosRes.statusText);
-            setPagamentos([]);
-          }
+          const pagamentosData = await cachedFetch<any[]>('/api/pagamento', { ttlMs: 15000 });
+          const pagamentosArray = Array.isArray(pagamentosData) ? pagamentosData : [];
+          const pagamentosNombres = pagamentosArray.map((p: any) => p.pagamento);
+          setPagamentos(pagamentosNombres);
         } catch (error) {
           console.error('Error fetching pagamentos:', error);
           setPagamentos([]);
@@ -570,20 +538,10 @@ export default function BiglietteriaPage() {
         // Cargar IATA
         try {
           console.log('🔍 Cargando IATA...');
-          const iataRes = await fetch('/api/iata');
-          console.log('🔍 Respuesta IATA:', iataRes.status, iataRes.ok);
-          
-          if (iataRes.ok) {
-            const data = await iataRes.json();
-            console.log('🔍 Datos IATA recibidos:', data);
-            const iataArray = Array.isArray(data) ? data : [];
-            const iataNombres = iataArray.map((i: any) => i.iata);
-            console.log('🔍 IATA procesados:', iataNombres);
-            setIataList(iataNombres);
-          } else {
-            console.error('Error loading IATA:', iataRes.status, iataRes.statusText);
-            setIataList([]);
-          }
+          const iataData = await cachedFetch<any[]>('/api/iata', { ttlMs: 15000 });
+          const iataArray = Array.isArray(iataData) ? iataData : [];
+          const iataNombres = iataArray.map((i: any) => i.iata);
+          setIataList(iataNombres);
         } catch (error) {
           console.error('Error fetching IATA:', error);
           setIataList([]);
@@ -592,20 +550,10 @@ export default function BiglietteriaPage() {
         // Cargar MetodoPagamento
         try {
           console.log('🔍 Cargando MetodoPagamento...');
-          const metodoPagamentoRes = await fetch('/api/metodo-pagamento');
-          console.log('🔍 Respuesta MetodoPagamento:', metodoPagamentoRes.status, metodoPagamentoRes.ok);
-          
-          if (metodoPagamentoRes.ok) {
-            const data = await metodoPagamentoRes.json();
-            console.log('🔍 Datos MetodoPagamento recibidos:', data);
-            const metodoPagamentoArray = data.metodosPagamento || [];
-            const metodoPagamentoNombres = metodoPagamentoArray.map((m: any) => m.metodoPagamento);
-            console.log('🔍 MetodoPagamento procesados:', metodoPagamentoNombres);
-            setMetodoPagamentoList(metodoPagamentoNombres);
-          } else {
-            console.error('Error loading MetodoPagamento:', metodoPagamentoRes.status, metodoPagamentoRes.statusText);
-            setMetodoPagamentoList([]);
-          }
+          const metodoData = await cachedFetch<{ metodosPagamento: any[] }>('/api/metodo-pagamento', { ttlMs: 15000 });
+          const metodoPagamentoArray = metodoData.metodosPagamento || [];
+          const metodoPagamentoNombres = metodoPagamentoArray.map((m: any) => m.metodoPagamento);
+          setMetodoPagamentoList(metodoPagamentoNombres);
         } catch (error) {
           console.error('Error fetching MetodoPagamento:', error);
           setMetodoPagamentoList([]);

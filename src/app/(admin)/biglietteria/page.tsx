@@ -494,8 +494,8 @@ export default function BiglietteriaPage() {
       try {
         setLoading(true);
         
-        // Cargar registros (sin restricción por usuario)
-        const recordsData = await cachedFetch<{ records: any[] }>(`/api/biglietteria`, { ttlMs: 15000 });
+        // Cargar registros: para USER solo sus propios registros; para ADMIN/TI todos
+        const recordsData = await cachedFetch<{ records: any[] }>(`/api/biglietteria${isUser ? '?userOnly=true' : ''}`, { ttlMs: 15000 });
         setRecords(recordsData.records || []);
         
         // Cargar clientes

@@ -8,16 +8,6 @@ const globalForPrisma = globalThis as unknown as {
 const createPrismaClient = () => {
   return new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-    datasources: {
-      db: {
-        // Configurar pool de conexiones más robusto
-        url: process.env.DATABASE_URL,
-      },
-    },
-    // Configurar timeout para evitar conexiones colgadas
-    __internal: {
-      useUds: false,
-    },
   })
 }
 

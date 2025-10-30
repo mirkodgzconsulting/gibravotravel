@@ -205,7 +205,7 @@ export default function ClientiPage() {
     if (!roleLoading) {
       fetchClienti();
     }
-  }, [isUser, roleLoading]); // Recargar cuando cambie el rol del usuario o termine de cargar
+  }, [roleLoading]); // Cargar cuando termine de cargar el rol
 
   const fetchClienti = async () => {
     try {
@@ -217,11 +217,8 @@ export default function ClientiPage() {
         return;
       }
       
-      // Si es USER, solo cargar sus propios clientes
-      const url = isUser ? '/api/clients?userOnly=true' : '/api/clients';
-      
-      
-      const response = await fetch(url);
+      // Todos los roles (ADMIN, TI, USER) deben ver la misma información completa
+      const response = await fetch('/api/clients');
       
       if (response.ok) {
         const data = await response.json();

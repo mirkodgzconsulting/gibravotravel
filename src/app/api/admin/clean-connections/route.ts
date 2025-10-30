@@ -5,18 +5,45 @@ export async function POST() {
   try {
     console.log('🧹 Cleaning database connections...');
     
-    // Desconectar Prisma para cerrar todas las conexiones
-    await prisma.$disconnect();
+    // Verificar DATABASE_URL
+    const dbUrl = process.env.DATABASE_URL;
+    if (!dbUrl) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'DATABASE_URL no configurada en las variables de entorno'
+        },
+        { status: 500 }
+      );
+    }
     
-    console.log('✅ Database connections closed');
+    console.log('🔍 DATABASE_URL:', dbUrl.replace(/:[^:@]+@/, ':****@')); // Ocultar password
+    
+    try {
+      // Desconectar Prisma para cerrar todas las conexiones
+      await prisma.$disconnect();
+      console.log('✅ Database connections closed');
+    } catch (disconnectError) {
+      console.warn('⚠️ Error during disconnect (continuando de todas formas):', disconnectError);
+    }
     
     // Esperar un momento para que las conexiones se cierren completamente
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // Reconectar
-    await prisma.$connect();
-    
-    console.log('✅ Database reconnected');
+    try {
+      // Reconectar
+      await prisma.$connect();
+      console.log('✅ Database reconnected');
+    } catch (connectError) {
+      console.error('❌ Error during reconnect:', connectError);
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Error al reconectar: ${connectError instanceof Error ? connectError.message : 'Error desconocido'}`
+        },
+        { status: 500 }
+      );
+    }
     
     return NextResponse.json({
       success: true,

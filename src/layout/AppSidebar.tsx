@@ -222,6 +222,11 @@ const utentiItems: NavItem[] = [
     name: "Database Admin",
     path: "/database-admin",
   },
+  {
+    icon: <AiIcon />,
+    name: "Limpiar Conexiones BD",
+    path: "/limpiar-conexiones",
+  },
 ];
 
 

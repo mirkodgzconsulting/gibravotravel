@@ -437,15 +437,6 @@ export default function ClientiPage() {
     setMessage(null);
 
     try {
-      // Validar que document1 sea obligatorio
-      if (!formData.document1) {
-        setMessage({ 
-          type: 'error', 
-          text: 'Il primo documento è obbligatorio' 
-        });
-        setSubmitting(false);
-        return;
-      }
 
       const formDataToSend = new FormData();
       formDataToSend.append('firstName', formData.firstName);
@@ -750,10 +741,10 @@ export default function ClientiPage() {
                 Documenti
               </h3>
               
-              {/* Documento 1 - Obligatorio */}
+              {/* Documento 1 - Opcionale */}
               <div>
                 <label htmlFor="document1" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Documento 1 * <span className="text-xs text-gray-500">(Obbligatorio)</span>
+                  Documento 1 <span className="text-xs text-gray-500">(Opzionale)</span>
                 </label>
                 <input
                   type="file"
@@ -761,7 +752,6 @@ export default function ClientiPage() {
                   name="document1"
                   accept="image/*,.pdf,.doc,.docx"
                   onChange={(e) => handleFileChange(e, 1)}
-                  required={!editingClient}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 dark:file:bg-brand-900/20 dark:file:text-brand-400"
                 />
                 {editingClient?.document1 && (

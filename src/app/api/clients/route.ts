@@ -135,10 +135,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 });
     }
 
-    // Validar que document1 sea obligatorio
-    if (!document1 || document1.size === 0) {
-      return NextResponse.json({ error: 'El primer documento es obligatorio' }, { status: 400 });
-    }
+    // document1 es opcional (como los demás documentos)
 
     // Verificar si ya existe un cliente con el mismo código fiscal
     const existingClient = await prisma.client.findFirst({

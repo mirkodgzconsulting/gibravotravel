@@ -282,6 +282,7 @@ const AppSidebar: React.FC = () => {
           ) : (
             nav.path && (
               <Link
+                prefetch
                 href={nav.path}
                 className={`menu-item group ${
                   isActive(nav.path) ? "menu-item-active" : "menu-item-inactive"
@@ -309,6 +310,7 @@ const AppSidebar: React.FC = () => {
                 {nav.subItems.map((subItem) => (
                   <li key={subItem.name}>
                     <Link
+                      prefetch
                       href={subItem.path}
                       className={`menu-dropdown-item ${
                         isActive(subItem.path)
@@ -443,7 +445,7 @@ const AppSidebar: React.FC = () => {
         }`}
       >
       <div className="py-8 flex justify-start">
-        <Link href="/">
+        <Link href="/" prefetch>
           <>
             <Image
               className="dark:hidden"

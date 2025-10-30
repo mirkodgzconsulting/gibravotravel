@@ -120,7 +120,10 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    return NextResponse.json({ tours });
+    const res = NextResponse.json({ tours });
+    // Cache privada corta para mejorar retorno a la vista
+    res.headers.set('Cache-Control', 'private, max-age=15, must-revalidate');
+    return res;
 
   } catch (error) {
     console.error('Error fetching tour buses:', error);

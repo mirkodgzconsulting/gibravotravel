@@ -73,7 +73,10 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    return NextResponse.json({ records });
+    const res = NextResponse.json({ records });
+    // Cache privada y corta para acelerar navegación de ida y vuelta
+    res.headers.set('Cache-Control', 'private, max-age=15, must-revalidate');
+    return res;
   } catch (error) {
     console.error('Error fetching biglietteria records:', error);
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });

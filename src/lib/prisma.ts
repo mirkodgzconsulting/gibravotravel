@@ -6,8 +6,16 @@ const globalForPrisma = globalThis as unknown as {
 
 // Crear una instancia de PrismaClient con configuración optimizada
 const createPrismaClient = () => {
+  // Si DATABASE_URL existe, usarla. Si no, usar PRISMA_DATABASE_URL
+  const databaseUrl = process.env.DATABASE_URL || process.env.PRISMA_DATABASE_URL;
+  
   return new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    datasources: {
+      db: {
+        url: databaseUrl,
+      },
+    },
   })
 }
 

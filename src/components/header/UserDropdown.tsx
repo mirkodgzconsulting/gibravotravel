@@ -46,6 +46,15 @@ export default function UserDropdown() {
     }
   }, [user]);
 
+  // Escuchar evento global para refrescar inmediatamente los datos del perfil (avatar)
+  useEffect(() => {
+    const handler = () => {
+      fetchUserProfile();
+    };
+    window.addEventListener('profile-updated', handler as EventListener);
+    return () => window.removeEventListener('profile-updated', handler as EventListener);
+  }, []);
+
   const handleSignOut = async () => {
     try {
       await signOut({ redirectUrl: '/signin' });

@@ -494,13 +494,13 @@ export default function BiglietteriaPage() {
       try {
         setLoading(true);
         
-        // Cargar registros (con cache en memoria)
-        const recordsData = await cachedFetch<{ records: any[] }>(`/api/biglietteria${isUser ? '?userOnly=true' : ''}`, { ttlMs: 15000 });
+        // Cargar registros (sin restricción por usuario)
+        const recordsData = await cachedFetch<{ records: any[] }>(`/api/biglietteria`, { ttlMs: 15000 });
         setRecords(recordsData.records || []);
         
         // Cargar clientes
         try {
-          const clientsData = await cachedFetch<any>(`/api/clients${isUser ? '?userOnly=true' : ''}`, { ttlMs: 15000 });
+          const clientsData = await cachedFetch<any>(`/api/clients`, { ttlMs: 15000 });
           const clientsArray = clientsData.clients || clientsData;
           setClients(Array.isArray(clientsArray) ? clientsArray : []);
         } catch (error) {
@@ -2092,6 +2092,7 @@ export default function BiglietteriaPage() {
                     onChange={(e) => setFormData(prev => ({ ...prev, codiceFiscale: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     required
+                    readOnly={!!selectedClientId}
                   />
                 </div>
                 
@@ -2105,6 +2106,7 @@ export default function BiglietteriaPage() {
                     onChange={(e) => setFormData(prev => ({ ...prev, indirizzo: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     required
+                    readOnly={!!selectedClientId}
                   />
                 </div>
                 
@@ -2118,6 +2120,7 @@ export default function BiglietteriaPage() {
                     onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     required
+                    readOnly={!!selectedClientId}
                   />
                 </div>
                 
@@ -2131,6 +2134,7 @@ export default function BiglietteriaPage() {
                     onChange={(e) => setFormData(prev => ({ ...prev, numeroTelefono: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     required
+                    readOnly={!!selectedClientId}
                   />
                 </div>
               </div>

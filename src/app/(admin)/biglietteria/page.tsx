@@ -2011,7 +2011,7 @@ export default function BiglietteriaPage() {
       {/* Modal del formulario */}
       {isMounted && isModalOpen && createPortal(
         <Modal isOpen={isModalOpen} onClose={handleCancelEdit} className="p-6 md:p-8">
-          <div className="mb-4">
+          <div className="mb-4 text-center">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
               {isEditMode ? "Editar Registro" : "Nuevo Registro"}
             </h2>
@@ -3090,7 +3090,7 @@ export default function BiglietteriaPage() {
             )}
             
             {/* Botones de acción */}
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex justify-center gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
               <button
                 type="button"
                 onClick={handleCancelEdit}

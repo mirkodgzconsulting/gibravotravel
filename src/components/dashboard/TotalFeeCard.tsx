@@ -66,19 +66,37 @@ export default function TotalFeeCard({ dateRange, userId }: TotalFeeCardProps) {
           biglietteriaFee += record.feeAgv || 0;
         });
 
-        // Calculate TOUR BUS fees
+        // Calculate TOUR BUS fees - Same logic as other charts
         tourBusTours.forEach((tour: any) => {
           const tourFechaViaje = new Date(tour.fechaViaje);
           if (tourFechaViaje >= startDate && tourFechaViaje <= endDate) {
-            toursBusFee += tour.feeAgv || 0;
+            // Calcular costos totales del tour (una sola vez por tour)
+            const spesaTotale = (tour.bus || 0) + (tour.pasti || 0) + (tour.parking || 0) + 
+                               (tour.coordinatore1 || 0) + (tour.coordinatore2 || 0) + 
+                               (tour.ztl || 0) + (tour.hotel || 0) + (tour.polizza || 0) + (tour.tkt || 0);
+            
+            // Calcular ingresos totales de todas las ventas del tour
+            const ricavoTotale = tour.ventasTourBus?.reduce((ventaSum: number, venta: any) => {
+              return ventaSum + (venta.acconto || 0);
+            }, 0) || 0;
+            
+            // FEE/AGV = Ingresos totales - Costos totales (por tour)
+            toursBusFee += (ricavoTotale - spesaTotale);
           }
         });
 
-        // Calculate TOUR AEREO fees
+        // Calculate TOUR AEREO fees - Same logic as other charts
         tourAereoTours.forEach((tour: any) => {
           const tourFechaViaje = new Date(tour.fechaViaje);
           if (tourFechaViaje >= startDate && tourFechaViaje <= endDate) {
-            tourAereoFee += tour.feeAgv || 0;
+            if (tour.ventas?.length > 0) {
+              tourAereoFee += tour.ventas.reduce((ventaSum: number, venta: any) => {
+                const costosTotales = (venta.transfer || 0) + (tour.guidaLocale || 0) + 
+                                    (tour.coordinatore || 0) + (tour.transporte || 0) + (venta.hotel || 0);
+                const fee = (venta.venduto || 0) - costosTotales;
+                return ventaSum + fee;
+              }, 0);
+            }
           }
         });
 

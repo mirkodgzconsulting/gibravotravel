@@ -82,10 +82,27 @@ export default function DashboardViajesPage() {
 
   // Obtener el ID del usuario actual para filtrado
   useEffect(() => {
-    // Para USER, podemos usar directamente el clerkId como identificador del usuario actual
-    if (clerkUser && isUser) {
-      setCurrentUserId(clerkUser.id);
-    }
+    // Para USER, necesitamos obtener el user.id de la base de datos
+    const fetchUserId = async () => {
+      if (clerkUser && isUser) {
+        try {
+          const response = await fetch(`/api/user/role?clerkId=${clerkUser.id}`);
+          if (response.ok) {
+            const data = await response.json();
+            // Necesitamos obtener el user.id, no solo el rol
+            const userResponse = await fetch(`/api/user/profile`);
+            if (userResponse.ok) {
+              const userData = await userResponse.json();
+              setCurrentUserId(userData.id || userData.clerkId);
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching user ID:', error);
+        }
+      }
+    };
+    
+    fetchUserId();
   }, [clerkUser, isUser]);
 
   // Memoized year options
@@ -467,7 +484,8 @@ export default function DashboardViajesPage() {
             </div>
           </div>
           <AgentRankingChart 
-            selectedYear={selectedYear} 
+            selectedYear={selectedYear}
+            userId={isUser ? currentUserId || undefined : undefined}
           />
         </div>
 
@@ -476,7 +494,7 @@ export default function DashboardViajesPage() {
           {/* Header con título */}
           <div className="flex items-center justify-center mb-6">
             <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-              FEE/AGV Statistics
+              {isUser ? "Mis Estadísticas FEE/AGV" : "FEE/AGV Statistics"}
             </h3>
           </div>
 

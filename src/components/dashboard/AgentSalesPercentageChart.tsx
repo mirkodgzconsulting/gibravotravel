@@ -73,7 +73,7 @@ export default function AgentSalesPercentageChart({ dateRange, userId }: AgentSa
           }
         });
 
-        // Process TOUR AEREO data
+        // Process TOUR AEREO data - Calculate fee per sale
         const tourAereoTours = tourAereoData.tours || [];
         const filteredTourAereoTours = tourAereoTours.filter((tour: any) => {
           const tourFechaViaje = new Date(tour.fechaViaje);
@@ -81,23 +81,28 @@ export default function AgentSalesPercentageChart({ dateRange, userId }: AgentSa
         });
 
         filteredTourAereoTours.forEach((tour: any) => {
-          const tourFee = tour.feeAgv || 0;
-          if (tourFee > 0) {
-            // For tours, we need to attribute the fee to the agents who made sales
-            if (tour.ventas && tour.ventas.length > 0) {
-              const feePerSale = tourFee / tour.ventas.length;
-              tour.ventas.forEach((venta: any) => {
-                const agentName = venta.creator?.firstName 
-                  ? `${venta.creator.firstName}${venta.creator.lastName ? ` ${venta.creator.lastName}` : ''}`.trim()
-                  : venta.creator?.email || 'Usuario';
-                
-                if (agentFeeMap.has(agentName)) {
-                  agentFeeMap.set(agentName, agentFeeMap.get(agentName)! + feePerSale);
-                } else {
-                  agentFeeMap.set(agentName, feePerSale);
-                }
-              });
-            }
+          // Calculate tour-level costs
+          const tourCostos = (tour.guidaLocale || 0) + (tour.coordinatore || 0) + (tour.transporte || 0);
+          
+          // Process each venta in this tour
+          if (tour.ventas && tour.ventas.length > 0) {
+            tour.ventas.forEach((venta: any) => {
+              const agentName = venta.creator?.firstName 
+                ? `${venta.creator.firstName}${venta.creator.lastName ? ` ${venta.creator.lastName}` : ''}`.trim()
+                : venta.creator?.email || 'Usuario';
+              
+              // Calculate total costs for this venta
+              const costosTotales = (venta.transfer || 0) + (venta.hotel || 0) + tourCostos;
+              
+              // Calculate fee for this specific venta: VENDUTO - COSTOS TOTALES
+              const ventaFee = (venta.venduto || 0) - costosTotales;
+              
+              if (agentFeeMap.has(agentName)) {
+                agentFeeMap.set(agentName, agentFeeMap.get(agentName)! + ventaFee);
+              } else {
+                agentFeeMap.set(agentName, ventaFee);
+              }
+            });
           }
         });
 

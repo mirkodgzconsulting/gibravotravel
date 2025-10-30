@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
     const userOnly = searchParams.get('userOnly') === 'true';
     const fechaDesde = searchParams.get('fechaDesde');
     const fechaHasta = searchParams.get('fechaHasta');
+    const userIdParam = searchParams.get('userId'); // Para dashboard-viajes
 
     let whereCondition: any = { isActive: true };
 
@@ -38,15 +39,19 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    if (userOnly) {
+    // Si viene userIdParam, usar ese para filtrar por user.id directamente
+    if (userIdParam) {
+      // userIdParam es el user.id (UUID/CUID), no clerkId
+      whereCondition.creadoPor = userIdParam;
+    } else if (userOnly) {
+      // Para userOnly, necesitamos obtener el user.id del usuario actual
       const user = await prisma.user.findUnique({
         where: { clerkId: userId },
-        select: { firstName: true, lastName: true }
+        select: { id: true }
       });
 
       if (user) {
-        const createdBy = `${user.firstName || ''} ${user.lastName || ''}`.trim();
-        whereCondition.creadoPor = createdBy;
+        whereCondition.creadoPor = user.id;
       }
     }
 

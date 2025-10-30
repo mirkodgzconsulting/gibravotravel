@@ -20,9 +20,10 @@ interface AgentData {
 
 interface AgentRankingChartProps {
   selectedYear: number;
+  userId?: string;
 }
 
-export default function AgentRankingChart({ selectedYear }: AgentRankingChartProps) {
+export default function AgentRankingChart({ selectedYear, userId }: AgentRankingChartProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [agentData, setAgentData] = useState<AgentData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,19 +56,19 @@ export default function AgentRankingChart({ selectedYear }: AgentRankingChartPro
 
   const categories = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-  // Fetch data when year changes
+  // Fetch data when year or userId changes
   useEffect(() => {
     const fetchAgentData = async () => {
       try {
         setLoading(true);
         setError(null);
-        console.log('🔍 Fetching data for year:', selectedYear);
 
         // Fetch all data sources once
+        const userIdParam = userId ? `?userId=${userId}` : '';
         const [biglietteriaResponse, tourAereoResponse, tourBusResponse] = await Promise.all([
-          fetch('/api/biglietteria'),
-          fetch('/api/tour-aereo'),
-          fetch('/api/tour-bus')
+          fetch(`/api/biglietteria${userIdParam}`),
+          fetch(`/api/tour-aereo${userIdParam}`),
+          fetch(`/api/tour-bus${userIdParam}`)
         ]);
 
         const [biglietteriaData, tourAereoData, tourBusData] = await Promise.all([
@@ -81,12 +82,6 @@ export default function AgentRankingChart({ selectedYear }: AgentRankingChartPro
 
         // Process BIGLIETTERIA data - Replicar lógica de BiglietteriaUserSalesChart
         const biglietteriaRecords = biglietteriaData.records || [];
-        console.log('📊 Biglietteria - Total records:', biglietteriaRecords.length);
-        
-        // Debug: verificar fechas de los registros
-        const recordYears = biglietteriaRecords.map((record: any) => new Date(record.data).getFullYear());
-        const uniqueYears = [...new Set(recordYears)];
-        console.log('📅 Years in biglietteria data:', uniqueYears);
         
         biglietteriaRecords.forEach((record: any) => {
           // Usar la misma lógica que BiglietteriaUserSalesChart
@@ -98,12 +93,6 @@ export default function AgentRankingChart({ selectedYear }: AgentRankingChartPro
 
         // Process TOUR AEREO data - Replicar lógica de TourAereoUserSalesChart
         const tourAereoTours = tourAereoData.tours || [];
-        console.log('✈️ Tour Aereo - Total tours:', tourAereoTours.length);
-        
-        // Debug: verificar fechas de los tours
-        const tourAereoYears = tourAereoTours.map((tour: any) => new Date(tour.fechaViaje).getFullYear());
-        const uniqueTourAereoYears = [...new Set(tourAereoYears)];
-        console.log('📅 Years in tour aereo data:', uniqueTourAereoYears);
         
         tourAereoTours.forEach((tour: any) => {
           // Usar la misma lógica que TourAereoUserSalesChart
@@ -119,12 +108,6 @@ export default function AgentRankingChart({ selectedYear }: AgentRankingChartPro
 
         // Process TOUR BUS data - Replicar lógica de TourBusUserSalesChart
         const tourBusTours = tourBusData.tours || [];
-        console.log('🚌 Tour Bus - Total tours:', tourBusTours.length);
-        
-        // Debug: verificar fechas de los tours
-        const tourBusYears = tourBusTours.map((tour: any) => new Date(tour.fechaViaje).getFullYear());
-        const uniqueTourBusYears = [...new Set(tourBusYears)];
-        console.log('📅 Years in tour bus data:', uniqueTourBusYears);
         
         tourBusTours.forEach((tour: any) => {
           // Usar la misma lógica que TourBusUserSalesChart
@@ -263,17 +246,6 @@ export default function AgentRankingChart({ selectedYear }: AgentRankingChartPro
             tourBusData
           };
         });
-
-        console.log('Agent Data for Chart:', chartData);
-        console.log('Number of agents found:', chartData.length);
-        console.log('Agent names:', chartData.map((agent: AgentData) => agent.agentName));
-        
-        // Debug: mostrar datos de cada agente
-        chartData.forEach((agent, index) => {
-          console.log(`Agent ${index + 1}: ${agent.agentName}`);
-          console.log(`  Monthly data:`, agent.monthlyData);
-          console.log(`  Total sales:`, agent.monthlyData.reduce((a, b) => a + b, 0));
-        });
         
         setAgentData(chartData);
       } catch (err) {
@@ -285,7 +257,7 @@ export default function AgentRankingChart({ selectedYear }: AgentRankingChartPro
     };
 
     fetchAgentData();
-  }, [selectedYear]);
+  }, [selectedYear, userId]);
 
   const chartOptions: ApexOptions = useMemo(() => ({
     colors: generateColors(agentData?.length || 0),
@@ -384,9 +356,6 @@ export default function AgentRankingChart({ selectedYear }: AgentRankingChartPro
       name: agent.agentName,
       data: agent.monthlyData
     }));
-    console.log('Series Data for Chart:', seriesData);
-    console.log('Number of series:', seriesData.length);
-    console.log('Series names:', seriesData.map((s: any) => s.name));
     return seriesData;
   }, [agentData]);
 
@@ -433,7 +402,7 @@ export default function AgentRankingChart({ selectedYear }: AgentRankingChartPro
     <div className="rounded-2xl border border-gray-200 bg-white px-5 pt-5 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6 sm:pt-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-          Ranking Agente
+          {userId ? "Mi Ranking" : "Ranking Agente"}
         </h3>
         <div className="relative h-fit">
           <button onClick={toggleDropdown} className="dropdown-toggle">

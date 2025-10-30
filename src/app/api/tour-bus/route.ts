@@ -60,6 +60,7 @@ export async function GET(request: NextRequest) {
     const userOnly = searchParams.get('userOnly') === 'true';
     const fechaDesde = searchParams.get('fechaDesde');
     const fechaHasta = searchParams.get('fechaHasta');
+    const userIdParam = searchParams.get('userId'); // Para dashboard-viajes
 
     // Buscar el usuario en la base de datos
     const user = await prisma.user.findUnique({
@@ -95,6 +96,7 @@ export async function GET(request: NextRequest) {
         },
         asientos: true,
         ventasTourBus: {
+          where: userIdParam ? { createdBy: userIdParam } : undefined,
           select: {
             id: true,
             acconto: true,

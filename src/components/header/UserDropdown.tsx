@@ -57,7 +57,21 @@ export default function UserDropdown() {
 
   const handleSignOut = async () => {
     try {
+      // Limpiar rol local para evitar estados intermedios
+      try {
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('userId');
+      } catch {}
+
+      // Fallback duro si Clerk no redirige en 3s
+      const fallback = setTimeout(() => {
+        try {
+          window.location.href = '/signin';
+        } catch {}
+      }, 3000);
+
       await signOut({ redirectUrl: '/signin' });
+      clearTimeout(fallback);
       closeDropdown();
     } catch (error) {
       console.error('❌ Error during sign out:', error);

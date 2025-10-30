@@ -131,10 +131,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Tour no encontrado' }, { status: 404 });
     }
 
-    // Verificar permisos (solo el creador o TI/ADMIN pueden editar)
-    if (tourExistente.createdBy !== userId && !['TI', 'ADMIN'].includes(user.role)) {
-      return NextResponse.json({ error: 'No tienes permisos para editar este tour' }, { status: 403 });
-    }
+    // Permitir edición a cualquier usuario autenticado
 
     // Validaciones
     if (!titulo || !precioAdulto || !precioNino) {
@@ -358,10 +355,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Tour no encontrado' }, { status: 404 });
     }
 
-    // Verificar permisos (solo el creador o TI/ADMIN pueden eliminar)
-    if (tour.createdBy !== userId && !['TI', 'ADMIN'].includes(user.role)) {
-      return NextResponse.json({ error: 'No tienes permisos para eliminar este tour' }, { status: 403 });
-    }
+    // Permitir eliminación a cualquier usuario autenticado (con validaciones existentes)
 
     // Verificar si hay asientos vendidos
     const asientosVendidos = await prisma.asientoBus.findMany({

@@ -80,18 +80,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Tour no encontrado' }, { status: 404 });
     }
 
-    // Verificar permisos para edición - solo USER puede editar tours que creó
-    const user = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      select: { role: true }
-    });
-
-    if (user?.role === 'USER' && existingTour.createdBy !== userId) {
-      return NextResponse.json(
-        { error: 'No tienes permisos para editar este tour' },
-        { status: 403 }
-      );
-    }
+    // Permitir edición a cualquier rol autenticado
 
     const formData = await request.formData();
 
@@ -272,18 +261,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Tour no encontrado' }, { status: 404 });
     }
 
-    // Verificar permisos para eliminación - solo USER puede eliminar tours que creó
-    const user = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      select: { role: true }
-    });
-
-    if (user?.role === 'USER' && existingTour.createdBy !== userId) {
-      return NextResponse.json(
-        { error: 'No tienes permisos para eliminar este tour' },
-        { status: 403 }
-      );
-    }
+    // Permitir eliminación (soft delete) a cualquier rol autenticado
 
     // Eliminación lógica (marcar como inactivo)
     await prisma.tourAereo.update({

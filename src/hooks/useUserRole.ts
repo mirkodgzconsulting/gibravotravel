@@ -72,6 +72,15 @@ export function useUserRole() {
       
       try {
         console.log('🔍 Fetching user role for clerkId:', clerkUser.id);
+        
+        // Crear un timeout de 5 segundos
+        const timeoutId = setTimeout(() => {
+          console.error('⏱️ Request timeout after 5 seconds');
+          if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+          }
+        }, 5000);
+        
         const response = await fetch(`/api/user/role?clerkId=${clerkUser.id}`, {
           method: 'GET',
           headers: {
@@ -80,6 +89,8 @@ export function useUserRole() {
           signal,
           cache: 'no-store'
         });
+        
+        clearTimeout(timeoutId);
         
         console.log('📡 Response status:', response.status);
         
@@ -120,6 +131,12 @@ export function useUserRole() {
         console.error('Network error fetching user role:', error);
         if (!signal.aborted) {
           setUserRole(null);
+          // Si hay un rol en localStorage, usarlo como fallback
+          const storedRole = typeof window !== 'undefined' ? localStorage.getItem('userRole') : null;
+          if (storedRole) {
+            console.log('🔄 Using stored role from localStorage as fallback:', storedRole);
+            setUserRole(storedRole as UserRole);
+          }
         }
       } finally {
         if (!signal.aborted) {

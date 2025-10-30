@@ -72,13 +72,14 @@ export default function UserProfilePage() {
       const response = await fetch('/api/user/profile');
       if (response.ok) {
         const data = await response.json();
-        setUserProfile(data.user);
+        const userData = data.user ?? data;
+        setUserProfile(userData);
         
         // Pre-llenar formulario
         setFormData({
-          firstName: data.user.firstName || "",
-          lastName: data.user.lastName || "",
-          phoneNumber: data.user.phoneNumber || "",
+          firstName: userData.firstName || "",
+          lastName: userData.lastName || "",
+          phoneNumber: userData.phoneNumber || "",
           photo: null,
         });
       } else {

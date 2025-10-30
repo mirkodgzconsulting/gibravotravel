@@ -82,21 +82,10 @@ export default function DashboardViajesPage() {
 
   // Obtener el ID del usuario actual para filtrado
   useEffect(() => {
-    const fetchCurrentUserId = async () => {
-      if (clerkUser && isUser) {
-        try {
-          const response = await fetch(`/api/user/role?clerkId=${clerkUser.id}`);
-          if (response.ok) {
-            const data = await response.json();
-            setCurrentUserId(data.userId);
-          }
-        } catch (error) {
-          console.error('Error fetching user ID:', error);
-        }
-      }
-    };
-
-    fetchCurrentUserId();
+    // Para USER, podemos usar directamente el clerkId como identificador del usuario actual
+    if (clerkUser && isUser) {
+      setCurrentUserId(clerkUser.id);
+    }
   }, [clerkUser, isUser]);
 
   // Memoized year options
@@ -332,14 +321,7 @@ export default function DashboardViajesPage() {
     );
   }
 
-  // Para usuarios USER, esperar a que se cargue el ID
-  if (isUser && !currentUserId && !roleLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-500"></div>
-      </div>
-    );
-  }
+  // Para usuarios USER, no bloquear la UI si el ID aún no está listo; seguimos renderizando
 
   // Loading state
   if (loading) {

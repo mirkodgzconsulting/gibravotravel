@@ -2010,13 +2010,13 @@ export default function BiglietteriaPage() {
       
       {/* Modal del formulario */}
       {isMounted && isModalOpen && createPortal(
-        <Modal isOpen={isModalOpen} onClose={handleCancelEdit}>
+        <Modal isOpen={isModalOpen} onClose={handleCancelEdit} className="p-6 md:p-8">
           <div className="mb-4">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
               {isEditMode ? "Editar Registro" : "Nuevo Registro"}
             </h2>
           </div>
-          <form onSubmit={handleSubmit} className="space-y-6 max-h-[80vh] overflow-y-auto px-2">
+          <form onSubmit={handleSubmit} className="space-y-6 max-h-[80vh] overflow-y-auto">
             
             {/* Sección: Información del Cliente */}
             <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">

@@ -1,0 +1,30 @@
+name: Monitor Database Connections
+
+on:
+  schedule:
+    # Corre cada hora
+    - cron: '0 * * * *'
+  workflow_dispatch: # Permite ejecución manual
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Database Health
+        run: |
+          response=$(curl -s https://tu-dominio.com/api/health/database)
+          echo "$response" | jq '.'
+          
+          # Extraer métricas
+          total=$(echo "$response" | jq -r '.metrics.total_connections')
+          active=$(echo "$response" | jq -r '.metrics.active_connections')
+          
+          # Mostrar resultados
+          echo "📊 Total connections: $total"
+          echo "⚡ Active connections: $active"
+          
+          # Alerta si hay muchas conexiones
+          if [ "$total" -gt 4 ]; then
+            echo "⚠️ WARNING: Database connections are high ($total/5)"
+          fi
+

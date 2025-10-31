@@ -8,6 +8,11 @@ export async function POST() {
     
     const prisma = await reconnectPrisma();
     
+    // Verificar que se creó la conexión correctamente
+    if (!prisma) {
+      throw new Error('Failed to create new Prisma instance');
+    }
+    
     // Verificar que la conexión funcione
     await prisma.$queryRaw`SELECT 1`;
     

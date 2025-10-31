@@ -12,11 +12,16 @@ const createPrismaClient = () => {
   
   console.log('🔍 Using database URL from:', process.env.PRISMA_DATABASE_URL ? 'PRISMA_DATABASE_URL' : 'DATABASE_URL');
   
+  // Agregar parámetros de conexión para prevenir "too many connections"
+  const urlWithParams = databaseUrl?.includes('?') 
+    ? `${databaseUrl}&connection_limit=5&pool_timeout=10`
+    : `${databaseUrl}?connection_limit=5&pool_timeout=10`;
+  
   return new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
     datasources: {
       db: {
-        url: databaseUrl,
+        url: urlWithParams,
       },
     },
   })

@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { auth } from '@clerk/nextjs/server';
 import { v2 as cloudinary } from 'cloudinary';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 // Configurar Cloudinary
 cloudinary.config({

@@ -63,22 +63,35 @@ export async function reconnectPrisma() {
   console.log(`🔄 [Prisma] Attempting to reconnect (attempt ${globalForPrisma.reconnectAttempts}/3)...`)
   
   try {
-    // Desconectar conexión actual
-    if (globalForPrisma.prisma) {
-      await globalForPrisma.prisma.$disconnect()
+    // Guardar referencia a la instancia anterior
+    const oldPrisma = globalForPrisma.prisma
+    
+    // Crear nueva instancia SIN desconectar la anterior
+    // Esto permite que queries en curso terminen normalmente
+    const newPrisma = createPrismaClient()
+    
+    // Verificar que la nueva conexión funcione
+    await newPrisma.$queryRaw`SELECT 1`
+    
+    // Actualizar la referencia global
+    globalForPrisma.prisma = newPrisma
+    
+    console.log('✅ [Prisma] Successfully reconnected to database (new instance created)')
+    
+    // Desconectar la instancia anterior después de un breve delay
+    // Esto permite que queries en curso terminen
+    if (oldPrisma) {
+      setTimeout(async () => {
+        try {
+          await oldPrisma.$disconnect()
+          console.log('✅ [Prisma] Old instance disconnected cleanly')
+        } catch (error) {
+          console.error('⚠️ [Prisma] Error disconnecting old instance:', error)
+        }
+      }, 2000) // Esperar 2 segundos para que queries terminen
     }
     
-    // Esperar un momento antes de reconectar
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    // Crear nueva instancia
-    globalForPrisma.prisma = createPrismaClient()
-    
-    // Verificar que la conexión funcione
-    await globalForPrisma.prisma.$queryRaw`SELECT 1`
-    
-    console.log('✅ [Prisma] Successfully reconnected to database')
-    return globalForPrisma.prisma
+    return newPrisma
   } catch (error) {
     console.error('❌ [Prisma] Failed to reconnect:', error)
     throw error

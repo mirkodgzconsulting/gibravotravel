@@ -45,6 +45,7 @@
     "db:push": "prisma db push",
     "db:pull": "prisma db pull",
     "db:studio": "prisma studio",
+    "db:check-indices": "node scripts/verificar-indices-prod.js",
     "db:optimize": "node scripts/add-performance-indexes.js",
     "optimize": "node scripts/optimize-for-production.js",
     "deploy": "node scripts/deploy-to-production.js"

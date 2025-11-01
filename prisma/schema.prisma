@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native"]
 }
 
 datasource db {
@@ -201,6 +202,8 @@ model Biglietteria {
   @@index([cliente], map: "idx_biglietteria_cliente")
   @@index([createdAt], map: "idx_biglietteria_created_at")
   @@index([data], map: "idx_biglietteria_data")
+  @@index([creadoPor], map: "idx_biglietteria_created_by")
+  @@index([isActive, data], map: "idx_biglietteria_active_data")
   @@map("biglietteria")
 }
 
@@ -235,6 +238,7 @@ model PasajeroBiglietteria {
   biglietteria         Biglietteria @relation(fields: [biglietteriaId], references: [id], onDelete: Cascade)
 
   @@index([estado], map: "idx_pasajeros_biglietteria_estado")
+  @@index([biglietteriaId], map: "idx_pasajeros_biglietteria_id")
   @@map("pasajeros_biglietteria")
 }
 
@@ -291,6 +295,9 @@ model TourBus {
   ventas           VentaAsiento[]
   ventasTourBus    VentaTourBus[]
 
+  @@index([fechaViaje], map: "idx_tour_bus_fecha_viaje")
+  @@index([createdBy], map: "idx_tour_bus_created_by")
+  @@index([isActive, fechaViaje], map: "idx_tour_bus_active_fecha")
   @@map("tour_bus")
 }
 
@@ -321,6 +328,9 @@ model TourAereo {
   creator          User             @relation(fields: [createdBy], references: [clerkId])
   ventas           VentaTourAereo[]
 
+  @@index([fechaViaje], map: "idx_tour_aereo_fecha_viaje")
+  @@index([createdBy], map: "idx_tour_aereo_created_by")
+  @@index([isActive, fechaViaje], map: "idx_tour_aereo_active_fecha")
   @@map("tour_aereo")
 }
 
@@ -345,6 +355,8 @@ model AsientoBus {
 
   @@unique([tourBusId, numeroAsiento])
   @@index([stato], map: "idx_asientos_bus_estado")
+  @@index([tourBusId], map: "idx_asientos_bus_tour")
+  @@index([isVendido], map: "idx_asientos_bus_vendido")
   @@map("asientos_bus")
 }
 
@@ -399,6 +411,9 @@ model VentaTourBus {
   tourBus            TourBus              @relation(fields: [tourBusId], references: [id], onDelete: Cascade)
 
   @@index([createdAt], map: "idx_ventas_tour_bus_created_at")
+  @@index([tourBusId], map: "idx_ventas_tour_bus_tour")
+  @@index([createdBy], map: "idx_ventas_tour_bus_created_by")
+  @@index([clienteNombre], map: "idx_ventas_tour_bus_cliente")
   @@map("ventas_tour_bus")
 }
 
@@ -484,6 +499,8 @@ model VentaTourAereo {
   tourAereo        TourAereo             @relation(fields: [tourAereoId], references: [id], onDelete: Cascade)
 
   @@index([createdAt], map: "idx_ventas_tour_aereo_created_at")
+  @@index([tourAereoId], map: "idx_ventas_tour_aereo_tour")
+  @@index([createdBy], map: "idx_ventas_tour_aereo_created_by")
   @@map("ventas_tour_aereo")
 }
 

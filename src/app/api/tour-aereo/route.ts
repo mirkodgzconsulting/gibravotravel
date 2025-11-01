@@ -47,7 +47,6 @@ export async function GET(request: NextRequest) {
         gte: new Date(fechaDesde),
         lte: new Date(fechaHasta)
       };
-      console.log('🔍 TOUR AEREO - Filtros de fecha aplicados (fechaViaje):', whereCondition.fechaViaje);
     }
 
     // Si es USER, solo mostrar sus propios tours
@@ -134,10 +133,6 @@ export async function POST(request: NextRequest) {
     const fechaFin = formData.get('fechaFin') as string;
     const meta = parseInt(formData.get('meta') as string) || 0;
     
-    // Debug logs
-    console.log('🔍 TOUR AEREO - Datos recibidos:');
-    console.log('fechaViaje:', fechaViaje);
-    console.log('fechaFin:', fechaFin);
     const acc = formData.get('acc') as string;
     const guidaLocale = parseFloat(formData.get('guidaLocale') as string) || 0;
     const coordinatore = parseFloat(formData.get('coordinatore') as string) || 0;

@@ -264,11 +264,6 @@ export default function BiglietteriaPage() {
   const [isLoadingCuotas, setIsLoadingCuotas] = useState(false);
   const cuotasInicializadas = useRef(false);
   
-  // Debug: Log cuando cambien las cuotas
-  useEffect(() => {
-    console.log('🔍 Estado cuotas cambió:', cuotas);
-    console.log('🔍 Cuotas.length:', cuotas.length);
-  }, [cuotas]);
 
   // Manejar cambio de número de cuotas - REPLICANDO LÓGICA DE TOUR GRUPPO
   useEffect(() => {
@@ -301,14 +296,6 @@ export default function BiglietteriaPage() {
   // Constantes - ahora se obtienen de la base de datos
   const serviciosDisponibles = servizi.map(s => s.servizio);
   
-  // Debug: Log para verificar datos (solo en desarrollo)
-  if (process.env.NODE_ENV === 'development') {
-    console.log('🔍 Debug - clients:', clients?.length, 'filteredClients:', filteredClients?.length, 'showClientDropdown:', showClientDropdown);
-    console.log('🔍 Debug - pagamentos:', pagamentos?.length, 'filteredPagamentos:', filteredPagamentos?.length, 'showPagamentoDropdown:', showPagamentoDropdown);
-    console.log('🔍 Debug - iata:', iataList?.length, 'filteredIata:', filteredIata?.length, 'showIataDropdown:', showIataDropdown);
-    console.log('🔍 Debug - metodoPagamento:', metodoPagamentoList?.length, 'filteredMetodoPagamento:', filteredMetodoPagamento?.length, 'showMetodoPagamentoDropdown:', showMetodoPagamentoDropdown);
-    console.log('🔍 Debug - servizi:', servizi?.length, 'serviciosDisponibles:', serviciosDisponibles?.length);
-  }
   const additionalCostServices = ['EXPRESS', 'POLIZZA', 'LETTERA D\'INVITO', 'HOTEL'];
   
   // ==================== FUNCIONES AUXILIARES ====================
@@ -510,9 +497,7 @@ export default function BiglietteriaPage() {
         
         // Cargar servicios
         try {
-          console.log('🔍 Cargando servicios...');
           const serviziData = await cachedFetch<any[]>('/api/servizi', { ttlMs: 15000 });
-          console.log('🔍 Datos servizi recibidos:', serviziData?.length);
           setServizi(Array.isArray(serviziData) ? serviziData : []);
         } catch (error) {
           console.error('Error fetching servizi:', error);
@@ -525,7 +510,6 @@ export default function BiglietteriaPage() {
         
         // Cargar pagamentos
         try {
-          console.log('🔍 Cargando pagamentos...');
           const pagamentosData = await cachedFetch<any[]>('/api/pagamento', { ttlMs: 15000 });
           const pagamentosArray = Array.isArray(pagamentosData) ? pagamentosData : [];
           const pagamentosNombres = pagamentosArray.map((p: any) => p.pagamento);
@@ -537,7 +521,6 @@ export default function BiglietteriaPage() {
         
         // Cargar IATA
         try {
-          console.log('🔍 Cargando IATA...');
           const iataData = await cachedFetch<any[]>('/api/iata', { ttlMs: 15000 });
           const iataArray = Array.isArray(iataData) ? iataData : [];
           const iataNombres = iataArray.map((i: any) => i.iata);
@@ -549,7 +532,6 @@ export default function BiglietteriaPage() {
         
         // Cargar MetodoPagamento
         try {
-          console.log('🔍 Cargando MetodoPagamento...');
           const metodoData = await cachedFetch<{ metodosPagamento: any[] }>('/api/metodo-pagamento', { ttlMs: 15000 });
           const metodoPagamentoArray = metodoData.metodosPagamento || [];
           const metodoPagamentoNombres = metodoPagamentoArray.map((m: any) => m.metodoPagamento);
@@ -758,18 +740,12 @@ export default function BiglietteriaPage() {
       setSelectedClient(client);
       setIsClientModalOpen(true);
     } else {
-      console.log('Cliente no encontrado:', clienteName);
     }
   };
 
   
   // Handler para ver archivos (igual que TOUR GRUPPO)
   const handleViewFiles = (record: BiglietteriaRecord) => {
-    console.log('🔍 handleViewFiles - Record:', record);
-    console.log('🔍 handleViewFiles - attachedFile:', record.attachedFile);
-    console.log('🔍 handleViewFiles - attachedFileName:', record.attachedFileName);
-    console.log('🔍 handleViewFiles - cuotas:', record.cuotas);
-    console.log('🔍 handleViewFiles - pasajeros:', record.pasajeros);
     setViewingFiles(record);
     setIsFileViewerOpen(true);
   };
@@ -783,19 +759,13 @@ export default function BiglietteriaPage() {
   // Función para descargar archivos (igual que TOUR GRUPPO)
   const handleDownload = async (url: string, filename: string) => {
     try {
-      console.log('🔍 Intentando descargar:', { url, filename });
-      
       const response = await fetch(url);
-      console.log('🔍 Response status:', response.status);
-      console.log('🔍 Response headers:', Object.fromEntries(response.headers.entries()));
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const blob = await response.blob();
-      console.log('🔍 Blob size:', blob.size, 'bytes');
-      console.log('🔍 Blob type:', blob.type);
       
       // Crear URL temporal para el blob
       const blobUrl = URL.createObjectURL(blob);
@@ -811,7 +781,6 @@ export default function BiglietteriaPage() {
       document.body.removeChild(link);
       URL.revokeObjectURL(blobUrl);
       
-      console.log('✅ Descarga iniciada correctamente');
     } catch (error) {
       console.error('❌ Error al descargar archivo:', error);
       // Fallback: abrir en nueva ventana
@@ -847,9 +816,6 @@ export default function BiglietteriaPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('❌ [FRONTEND] Error response:', errorData);
-        console.error('❌ [FRONTEND] Response status:', response.status);
-        console.error('❌ [FRONTEND] Response headers:', Object.fromEntries(response.headers.entries()));
         throw new Error(errorData.error || `Error al generar ricevuta (${response.status})`);
       }
 
@@ -876,8 +842,7 @@ export default function BiglietteriaPage() {
         text: 'Ricevuta generata con successo!'
       });
     } catch (error) {
-      console.error('❌ [FRONTEND] Error generating ricevuta:', error);
-      console.error('❌ [FRONTEND] Error stack:', error instanceof Error ? error.stack : 'No stack');
+      console.error('Error generating ricevuta:', error);
       setMessage({
         type: 'error',
         text: error instanceof Error ? error.message : 'Errore durante la generazione della ricevuta'
@@ -1129,18 +1094,6 @@ export default function BiglietteriaPage() {
   
   // Handler para editar registro
   const handleEditRecord = (record: BiglietteriaRecord) => {
-    console.log('🔍 Editando registro completo:', record);
-    console.log('🔍 Pasajeros del registro:', record.pasajeros);
-    console.log('🔍 Cuotas del registro:', record.cuotas);
-    console.log('🔍 Tipo de cuotas:', typeof record.cuotas, Array.isArray(record.cuotas));
-    if (record.cuotas && record.cuotas.length > 0) {
-      console.log('🔍 Primera cuota:', record.cuotas[0]);
-      console.log('🔍 Campos de la primera cuota:', Object.keys(record.cuotas[0]));
-    }
-    if (record.pasajeros && record.pasajeros.length > 0) {
-      console.log('🔍 Primer pasajero:', record.pasajeros[0]);
-      console.log('🔍 Campos del primer pasajero:', Object.keys(record.pasajeros[0]));
-    }
     setEditingRecord(record);
     setIsEditMode(true);
     
@@ -1177,15 +1130,6 @@ export default function BiglietteriaPage() {
         servicios = servizioString.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0);
       }
       
-      console.log('🔍 Mapeando pasajero:', {
-        nombre: p.nombrePasajero,
-        servizioString,
-        servicios,
-        tieneExpress: (p as any).tieneExpress,
-        tienePolizza: (p as any).tienePolizza,
-        tieneLetteraInvito: (p as any).tieneLetteraInvito,
-        tieneHotel: (p as any).tieneHotel
-      });
       
       return {
         id: p.id,
@@ -1211,11 +1155,6 @@ export default function BiglietteriaPage() {
       };
     }) || [crearPasajeroVacio()];
     
-    console.log('🔍 Pasajeros mapeados finales:', pasajerosMapeados);
-    if (pasajerosMapeados.length > 0) {
-      console.log('🔍 Primer pasajero mapeado:', pasajerosMapeados[0]);
-      console.log('🔍 Servicios del primer pasajero:', pasajerosMapeados[0].servicios);
-    }
     
     // Cargar datos del formulario
     setFormData({
@@ -1242,21 +1181,7 @@ export default function BiglietteriaPage() {
     setShowServiziDropdowns(Array(pasajerosMapeados.length).fill(false));
     
     // Cargar datos de cuotas si existen - REPLICANDO LÓGICA DE TOUR GRUPPO
-    console.log('🔍 Cuotas del registro:', record.cuotas);
-    console.log('🔍 NumeroCuotas del registro:', record.numeroCuotas);
-    console.log('🔍 Tipo de numeroCuotas:', typeof record.numeroCuotas);
-    console.log('🔍 NumeroCuotas es null:', record.numeroCuotas === null);
-    console.log('🔍 NumeroCuotas es undefined:', record.numeroCuotas === undefined);
-    console.log('🔍 Cuotas.length:', record.cuotas?.length);
-    console.log('🔍 Record completo para debug cuotas:', {
-      id: record.id,
-      numeroCuotas: record.numeroCuotas,
-      cuotas: record.cuotas,
-      cuotasLength: record.cuotas?.length
-    });
-    
     if (record.numeroCuotas && record.numeroCuotas > 0) {
-      console.log('🔍 ENTRANDO en la condición de cuotas - numeroCuotas > 0');
       // IMPORTANTE: Activar flag ANTES de cambiar numeroCuotas
       setIsLoadingCuotas(true);
       cuotasInicializadas.current = false; // Reset para permitir carga desde edición
@@ -1285,7 +1210,6 @@ export default function BiglietteriaPage() {
         setTimeout(() => setIsLoadingCuotas(false), 50);
       }, 0);
     } else {
-      console.log('🔍 ENTRANDO en el else - NO hay numeroCuotas o es 0');
       setNumeroCuotas(0);
       setCuotas([]);
       cuotasInicializadas.current = false;
@@ -1305,12 +1229,6 @@ export default function BiglietteriaPage() {
   
   // Handler para ver detalles completos
   const handleViewDetails = (record: BiglietteriaRecord) => {
-    console.log('🔍 Modal de detalles - Registro completo:', record);
-    console.log('🔍 Modal de detalles - Pasajeros:', record.pasajeros);
-    if (record.pasajeros && record.pasajeros.length > 0) {
-      console.log('🔍 Modal de detalles - Primer pasajero:', record.pasajeros[0]);
-      console.log('🔍 Modal de detalles - Campos del primer pasajero:', Object.keys(record.pasajeros[0]));
-    }
     setViewingDetails(record);
     setIsDetailsModalOpen(true);
   };
@@ -2271,11 +2189,6 @@ export default function BiglietteriaPage() {
                 {formData.pasajeros.map((pasajero, index) => {
                   const fieldsToShow = shouldShowFieldsForPasajero(pasajero);
                   
-                  // Debug: Log del estado del dropdown para este pasajero
-                  if (process.env.NODE_ENV === 'development') {
-                    console.log(`🔍 Pasajero ${index + 1} - showServiziDropdowns[${index}]:`, showServiziDropdowns[index], 'serviciosDisponibles:', serviciosDisponibles.length);
-                  }
-                  
                   return (
                     <div key={index} className="border border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
                       <h4 className="font-semibold text-gray-900 dark:text-white mb-3">
@@ -2961,14 +2874,6 @@ export default function BiglietteriaPage() {
             {(() => {
               const daPagareValue = parseFloat(formData.daPagare) || 0;
               const shouldShow = daPagareValue > 0 || numeroCuotas > 0;
-              console.log('🔍 Condición de cuotas:', {
-                daPagare: formData.daPagare,
-                daPagareParsed: daPagareValue,
-                numeroCuotas: numeroCuotas,
-                cuotasLength: cuotas.length,
-                shouldShow: shouldShow,
-                isEditMode: isEditMode
-              });
               return shouldShow;
             })() && (
               <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
@@ -2994,11 +2899,7 @@ export default function BiglietteriaPage() {
                 
                 <div className="space-y-4">
                   {(() => {
-                    console.log('🔍 Renderizando cuotas:', cuotas);
-                    console.log('🔍 Cuotas.length:', cuotas.length);
-                    console.log('🔍 Cuotas es array:', Array.isArray(cuotas));
                     if (cuotas.length === 0) {
-                      console.log('🔍 No hay cuotas para renderizar');
                       return <div className="text-gray-500 text-center py-4">No hay cuotas registradas</div>;
                     }
                     return cuotas.map((cuota, index) => (

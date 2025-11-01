@@ -126,8 +126,6 @@ export async function POST(request: NextRequest) {
     // Obtener pasajeros
     const pasajerosJson = formData.get('pasajeros') as string;
     const pasajeros = pasajerosJson ? JSON.parse(pasajerosJson) : [];
-    
-    console.log('📊 Número de pasajeros:', pasajeros.length);
 
     // Calcular totales
     let netoPrincipal = 0;
@@ -160,8 +158,6 @@ export async function POST(request: NextRequest) {
     const accontoValue = acconto ? parseFloat(acconto) : 0;
     const daPagare = vendutoTotal - accontoValue;
     const feeAgv = vendutoTotal - netoPrincipal;
-    
-    console.log('💰 Totales calculados:', { netoPrincipal, vendutoTotal, accontoValue, daPagare, feeAgv });
 
     // Procesar fecha
     let fechaProcesada;
@@ -203,7 +199,6 @@ export async function POST(request: NextRequest) {
         
         attachedFileUrl = result.secure_url;
         attachedFileName = file.name;
-        console.log('📎 Archivo principal subido:', attachedFileName);
       } catch (error) {
         console.error('Error uploading main file:', error);
       }
@@ -245,7 +240,6 @@ export async function POST(request: NextRequest) {
             
             cuotaFileUrl = result.secure_url;
             cuotaFileName = cuotaFile.name;
-            console.log(`📎 Archivo cuota ${i + 1} subido:`, cuotaFileName);
           } catch (error) {
             console.error(`Error uploading cuota file ${i}:`, error);
           }
@@ -355,7 +349,6 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    console.log('✅ Biglietteria record created successfully:', record.id);
     
     return NextResponse.json(record, { status: 201 });
 

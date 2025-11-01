@@ -12,8 +12,6 @@ cloudinary.config({
 
 export async function GET() {
   try {
-    console.log('🔍 [ROUTE API] GET request received - Fetching route templates...');
-    
     // Consulta optimizada sin include para evitar problemas de JOIN
     const templates = await prisma.route.findMany({
       where: {
@@ -35,9 +33,6 @@ export async function GET() {
         createdAt: 'desc',
       },
     });
-
-    console.log(`✅ [ROUTE API] Found ${templates.length} route templates`);
-    console.log('📊 [ROUTE API] Templates data:', templates);
 
     // Si no hay templates, devolver array vacío
     if (templates.length === 0) {
@@ -72,9 +67,7 @@ export async function GET() {
 
     return NextResponse.json({ templates: templatesWithCreators });
   } catch (error) {
-    console.error('❌ [ROUTE API] Error fetching route templates:', error);
-    console.error('❌ [ROUTE API] Error message:', error instanceof Error ? error.message : 'Unknown error');
-    console.error('❌ [ROUTE API] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    console.error('Error fetching route templates:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }
@@ -84,12 +77,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('🚀 [ROUTE API] POST request received');
     const { userId } = await auth();
-    console.log('👤 [ROUTE API] User ID:', userId);
     
     if (!userId) {
-      console.log('❌ [ROUTE API] No user ID, returning 401');
       return NextResponse.json(
         { error: 'No autorizado' },
         { status: 401 }
@@ -102,12 +92,6 @@ export async function POST(request: NextRequest) {
     const coverImage = formData.get('coverImage') as File;
     const pdfFile = formData.get('pdfFile') as File;
     
-    console.log('📝 [ROUTE API] Form data received:');
-    console.log('   - title:', title);
-    console.log('   - textContent length:', textContent?.length || 0);
-    console.log('   - coverImage:', coverImage?.name || 'none');
-    console.log('   - pdfFile:', pdfFile?.name || 'none');
-
     // Validación mejorada
     const missingFields = [];
     if (!title || title.trim() === '') missingFields.push('title');
@@ -246,8 +230,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Crear template con información del creador en una sola query
-    console.log('💾 [ROUTE API] Creating route template...');
-    console.log('   - createdBy:', userId);
     
     const template = await prisma.route.create({
       data: {
@@ -270,7 +252,6 @@ export async function POST(request: NextRequest) {
       },
     });
     
-    console.log('✅ [ROUTE API] Route template created successfully:', template.id);
 
     // Asegurar que el creator existe o usar valores por defecto
     const templateWithCreator = {
@@ -284,9 +265,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ template: templateWithCreator }, { status: 201 });
   } catch (error) {
-    console.error('❌ [ROUTE API] Error in POST:', error);
-    console.error('❌ [ROUTE API] Error message:', error instanceof Error ? error.message : 'Unknown error');
-    console.error('❌ [ROUTE API] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    console.error('Error creating route template:', error);
     
     const errorMessage = error instanceof Error ? error.message : 'Error interno del servidor';
     return NextResponse.json(

@@ -8,10 +8,7 @@ export async function GET() {
   try {
     const { userId } = await auth();
     
-    console.log('🔍 GET /api/user/profile - userId:', userId);
-    
     if (!userId) {
-      console.log('❌ No autorizado - userId missing');
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
@@ -32,14 +29,10 @@ export async function GET() {
       }
     });
 
-    console.log('👤 User found:', user ? { id: user.id, email: user.email, role: user.role } : 'null');
-
     if (!user) {
-      console.log('❌ Usuario no encontrado en BD para clerkId:', userId);
       return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
     }
 
-    console.log('✅ Devolviendo usuario con role:', user.role);
     // Devolver directamente el objeto usuario (no envuelto en { user })
     return NextResponse.json(user);
   } catch (error) {

@@ -77,14 +77,31 @@ export async function GET(request: NextRequest) {
         gte: new Date(fechaDesde),
         lte: new Date(fechaHasta)
       };
-      console.log('🔍 TOURS BUS - Filtros de fecha aplicados (fechaViaje):', whereCondition.fechaViaje);
     }
 
     // Los usuarios USER pueden ver todos los tours para realizar ventas
 
     const tours = await prisma.tourBus.findMany({
       where: whereCondition,
-      include: {
+      select: {
+        id: true,
+        titulo: true,
+        precioAdulto: true,
+        precioNino: true,
+        cantidadAsientos: true,
+        fechaViaje: true,
+        bus: true,
+        pasti: true,
+        parking: true,
+        coordinatore1: true,
+        coordinatore2: true,
+        ztl: true,
+        hotel: true,
+        polizza: true,
+        tkt: true,
+        feeAgv: true,
+        coverImage: true,
+        createdAt: true,
         creator: {
           select: {
             firstName: true,
@@ -92,13 +109,20 @@ export async function GET(request: NextRequest) {
             email: true
           }
         },
-        asientos: true,
+        asientos: {
+          select: {
+            id: true,
+            isVendido: true,
+            precioVenta: true
+          }
+        },
         ventasTourBus: {
           where: userIdParam ? { createdBy: userIdParam } : undefined,
           select: {
             id: true,
             acconto: true,
             createdAt: true,
+            createdBy: true,
             creator: {
               select: {
                 id: true,
@@ -111,7 +135,7 @@ export async function GET(request: NextRequest) {
         },
         _count: {
           select: {
-            ventas: true
+            ventasTourBus: true
           }
         }
       },
@@ -156,10 +180,6 @@ export async function POST(request: NextRequest) {
     const fechaFin = formData.get('fechaFin') as string;
     const acc = formData.get('acc') as string;
     
-    // Debug logs
-    console.log('🔍 TOUR BUS - Datos recibidos:');
-    console.log('fechaViaje:', fechaViaje);
-    console.log('fechaFin:', fechaFin);
     // Campos de costos
     const bus = formData.get('bus') as string;
     const pasti = formData.get('pasti') as string;
@@ -308,9 +328,6 @@ export async function POST(request: NextRequest) {
     const cantidadAsientos = 53;
 
     // Debug: mostrar datos antes de crear
-    console.log('🔍 TOUR BUS - Creando tour con:');
-    console.log('fechaViaje:', fechaViaje ? new Date(fechaViaje) : null);
-    console.log('fechaFin:', fechaFin ? new Date(fechaFin) : null);
     
     // Crear el tour de bus
     const tourBus = await prisma.tourBus.create({

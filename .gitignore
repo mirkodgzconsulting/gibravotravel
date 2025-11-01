@@ -29,6 +29,15 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+*.log
+
+# database installers
+postgresql-installer.exe
+
+# backup files
+*.backup
+*.bak
+*.tmp
 
 # env files (can opt-in for committing if needed)
 .env*

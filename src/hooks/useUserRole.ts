@@ -71,11 +71,8 @@ export function useUserRole() {
       setIsLoading(true);
       
       try {
-        console.log('🔍 Fetching user role for clerkId:', clerkUser.id);
-        
         // Crear un timeout de 5 segundos
         const timeoutId = setTimeout(() => {
-          console.error('⏱️ Request timeout after 5 seconds');
           if (abortControllerRef.current) {
             abortControllerRef.current.abort();
           }
@@ -92,13 +89,10 @@ export function useUserRole() {
         
         clearTimeout(timeoutId);
         
-        console.log('📡 Response status:', response.status);
-        
         if (signal.aborted) return;
         
         if (response.ok) {
           const data = await response.json();
-          console.log('✅ User role data:', data);
           if (!signal.aborted) {
             // Guardar en localStorage
             if (typeof window !== 'undefined' && clerkUser) {
@@ -108,7 +102,6 @@ export function useUserRole() {
             setUserRole(data.role);
           }
         } else if (response.status === 404) {
-          console.log('❌ User not found in database');
           if (!signal.aborted) {
             // Limpiar localStorage si el usuario no existe
             if (typeof window !== 'undefined') {
@@ -125,7 +118,6 @@ export function useUserRole() {
         }
       } catch (error: any) {
         if (error.name === 'AbortError') {
-          console.log('⚠️ Request aborted');
           return;
         }
         console.error('Network error fetching user role:', error);
@@ -134,7 +126,6 @@ export function useUserRole() {
           // Si hay un rol en localStorage, usarlo como fallback
           const storedRole = typeof window !== 'undefined' ? localStorage.getItem('userRole') : null;
           if (storedRole) {
-            console.log('🔄 Using stored role from localStorage as fallback:', storedRole);
             setUserRole(storedRole as UserRole);
           }
         }

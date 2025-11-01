@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
 
 export default function VerificarIndicesPage() {
   const [loading, setLoading] = useState(true);
@@ -44,7 +43,7 @@ export default function VerificarIndicesPage() {
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
-        <Card className="p-6 max-w-md">
+        <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] p-6 max-w-md w-full">
           <div className="text-center">
             <div className="bg-red-100 dark:bg-red-900/20 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
               <span className="text-3xl">❌</span>
@@ -52,7 +51,7 @@ export default function VerificarIndicesPage() {
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Error</h2>
             <p className="text-gray-600 dark:text-gray-400">{error}</p>
           </div>
-        </Card>
+        </div>
       </div>
     );
   }
@@ -74,7 +73,7 @@ export default function VerificarIndicesPage() {
         </div>
 
         {/* Resumen */}
-        <Card className="p-6 mb-6">
+        <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] p-6 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center">
               <div className="text-4xl font-bold text-blue-600 dark:text-blue-400">
@@ -101,10 +100,10 @@ export default function VerificarIndicesPage() {
               </div>
             </div>
           </div>
-        </Card>
+        </div>
 
         {/* Test de Performance */}
-        <Card className="p-6 mb-6">
+        <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] p-6 mb-6">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
             ⚡ Test de Performance
           </h2>
@@ -130,10 +129,10 @@ export default function VerificarIndicesPage() {
               )}
             </div>
           </div>
-        </Card>
+        </div>
 
         {/* Índices Críticos */}
-        <Card className="p-6 mb-6">
+        <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] p-6 mb-6">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
             🎯 Índices Críticos
           </h2>
@@ -155,10 +154,10 @@ export default function VerificarIndicesPage() {
               </div>
             ))}
           </div>
-        </Card>
+        </div>
 
         {/* Índices por Tabla */}
-        <Card className="p-6">
+        <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] p-6">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
             📊 Índices por Tabla
           </h2>
@@ -176,10 +175,10 @@ export default function VerificarIndicesPage() {
               </div>
             ))}
           </div>
-        </Card>
+        </div>
 
         {/* Estado General */}
-        <Card className="p-6 mt-6">
+        <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] p-6 mt-6">
           <div className="text-center">
             {testPerformance < 50 && (data?.totalIndices || 0) >= 25 ? (
               <div>
@@ -203,7 +202,7 @@ export default function VerificarIndicesPage() {
               </div>
             )}
           </div>
-        </Card>
+        </div>
       </div>
     </div>
   );

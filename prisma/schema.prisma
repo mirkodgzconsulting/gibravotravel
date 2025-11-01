@@ -127,6 +127,9 @@ model Client {
   updatedAt     DateTime @updatedAt
   creator       User     @relation(fields: [createdBy], references: [clerkId])
 
+  @@index([createdBy], map: "idx_clients_created_by")
+  @@index([isActive], map: "idx_clients_is_active")
+  @@index([firstName, lastName], map: "idx_clients_nombre")
   @@map("clients")
 }
 
@@ -256,6 +259,7 @@ model Cuota {
   updatedAt        DateTime     @updatedAt
   biglietteria     Biglietteria @relation(fields: [biglietteriaId], references: [id], onDelete: Cascade)
 
+  @@index([biglietteriaId], map: "idx_cuotas_biglietteria_id")
   @@index([isPagato], map: "idx_cuotas_is_pagato")
   @@map("cuotas")
 }
@@ -296,7 +300,9 @@ model TourBus {
   ventasTourBus    VentaTourBus[]
 
   @@index([fechaViaje], map: "idx_tour_bus_fecha_viaje")
+  @@index([fechaFin], map: "idx_tour_bus_fecha_fin")
   @@index([createdBy], map: "idx_tour_bus_created_by")
+  @@index([isActive], map: "idx_tour_bus_is_active")
   @@index([isActive, fechaViaje], map: "idx_tour_bus_active_fecha")
   @@map("tour_bus")
 }
@@ -329,6 +335,7 @@ model TourAereo {
   ventas           VentaTourAereo[]
 
   @@index([fechaViaje], map: "idx_tour_aereo_fecha_viaje")
+  @@index([fechaFin], map: "idx_tour_aereo_fecha_fin")
   @@index([createdBy], map: "idx_tour_aereo_created_by")
   @@index([isActive, fechaViaje], map: "idx_tour_aereo_active_fecha")
   @@map("tour_aereo")
@@ -357,6 +364,7 @@ model AsientoBus {
   @@index([stato], map: "idx_asientos_bus_estado")
   @@index([tourBusId], map: "idx_asientos_bus_tour")
   @@index([isVendido], map: "idx_asientos_bus_vendido")
+  @@index([numeroAsiento], map: "idx_asientos_bus_numero")
   @@map("asientos_bus")
 }
 
@@ -414,6 +422,7 @@ model VentaTourBus {
   @@index([tourBusId], map: "idx_ventas_tour_bus_tour")
   @@index([createdBy], map: "idx_ventas_tour_bus_created_by")
   @@index([clienteNombre], map: "idx_ventas_tour_bus_cliente")
+  @@index([estadoPago], map: "idx_ventas_tour_bus_estado_pago")
   @@map("ventas_tour_bus")
 }
 
@@ -538,7 +547,9 @@ model AgendaPersonal {
   recordatorio   RecordatorioAgenda?
 
   @@index([fecha], map: "idx_agendas_personales_fecha")
+  @@index([createdBy], map: "idx_agendas_personales_created_by")
   @@index([tipo], map: "idx_agendas_personales_tipo")
+  @@index([isActive], map: "idx_agendas_personales_is_active")
   @@map("agendas_personales")
 }
 
@@ -567,6 +578,10 @@ model Notificacion {
   user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([createdAt], map: "idx_notificaciones_created_at")
+  @@index([userId], map: "idx_notificaciones_user_id")
+  @@index([isLeida], map: "idx_notificaciones_is_leida")
+  @@index([tipo], map: "idx_notificaciones_tipo")
+  @@index([userId, isLeida], map: "idx_notificaciones_user_leida")
   @@map("notificaciones")
 }
 

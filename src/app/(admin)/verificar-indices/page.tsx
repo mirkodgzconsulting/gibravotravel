@@ -180,7 +180,7 @@ export default function VerificarIndicesPage() {
         {/* Estado General */}
         <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] p-6 mt-6">
           <div className="text-center">
-            {testPerformance < 50 && (data?.totalIndices || 0) >= 25 ? (
+            {testPerformance < 200 && (data?.totalIndices || 0) >= 35 ? (
               <div>
                 <div className="text-6xl mb-4">🎉</div>
                 <h3 className="text-2xl font-bold text-green-600 dark:text-green-400 mb-2">

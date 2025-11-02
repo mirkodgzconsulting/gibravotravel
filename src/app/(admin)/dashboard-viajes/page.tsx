@@ -339,28 +339,7 @@ export default function DashboardViajesPage() {
   }
 
   // Para usuarios USER, no bloquear la UI si el ID aún no está listo; seguimos renderizando
-
-  // Loading state
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-500"></div>
-      </div>
-    );
-  }
-
-  // Error state
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-red-500 text-xl mb-4">⚠️</div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Error</h2>
-          <p className="text-gray-600 dark:text-gray-400">{error}</p>
-        </div>
-      </div>
-    );
-  }
+  // Carga progresiva: Cada componente muestra su propio skeleton, no bloqueamos toda la UI
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">

@@ -233,10 +233,10 @@ export default function AgentSalesPercentageChart({ dateRange, userId }: AgentSa
   if (loading) {
     return (
       <div className="rounded-2xl border border-gray-200 bg-white px-6 py-6 dark:border-gray-800 dark:bg-white/[0.03]">
-        <div className="animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-1/3 mb-4"></div>
-          <div className="h-64 bg-gray-200 rounded"></div>
-        </div>
+        {/* Title skeleton */}
+        <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-48 mx-auto mb-6 animate-pulse"></div>
+        {/* Chart skeleton */}
+        <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
       </div>
     );
   }

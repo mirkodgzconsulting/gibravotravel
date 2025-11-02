@@ -370,9 +370,17 @@ export default function AgentRankingChart({ selectedYear, userId }: AgentRanking
   if (loading) {
     return (
       <div className="rounded-2xl border border-gray-200 bg-white px-5 pt-5 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6 sm:pt-6">
-        <div className="animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-1/3 mb-4"></div>
-          <div className="h-80 bg-gray-200 rounded"></div>
+        {/* Title skeleton */}
+        <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-40 mb-6 animate-pulse"></div>
+        {/* Bars skeleton */}
+        <div className="space-y-4">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="flex items-center gap-4 animate-pulse">
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-8"></div>
+              <div className="flex-1 h-12 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
+            </div>
+          ))}
         </div>
       </div>
     );

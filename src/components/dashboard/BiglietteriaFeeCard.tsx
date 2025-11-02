@@ -121,9 +121,27 @@ export default function BiglietteriaFeeCard({ dateRange, userId }: BiglietteriaF
   if (loading) {
     return (
       <div className="rounded-2xl border border-gray-200 bg-white px-6 py-6 dark:border-gray-800 dark:bg-white/[0.03]">
-        <div className="animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-1/3 mb-4"></div>
-          <div className="h-32 bg-gray-200 rounded"></div>
+        {/* Header skeleton */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-28 animate-pulse"></div>
+          <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
+        </div>
+        
+        {/* Agents skeleton */}
+        <div className="space-y-2 mb-4">
+          {[1, 2].map((i) => (
+            <div key={i} className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+          ))}
+        </div>
+        
+        {/* Chart skeleton */}
+        <div className="flex items-center justify-center mb-4">
+          <div className="w-32 h-32 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
+        </div>
+        
+        {/* Total skeleton */}
+        <div className="flex items-center justify-center">
+          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>
         </div>
       </div>
     );

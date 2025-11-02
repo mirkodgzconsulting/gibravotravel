@@ -402,7 +402,7 @@ export default function TourAereoPage() {
 
       <ComponentCard title="">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTours.map((tour) => {
+          {filteredTours.map((tour) => {
               const progressPercentage = getProgressPercentage(tour);
               const vendidos = tour._count?.ventas || 0;
               const disponibles = tour.meta - vendidos;
@@ -525,7 +525,6 @@ export default function TourAereoPage() {
               );
             })}
           </div>
-        )}
 
         {filteredTours.length === 0 && !loading && (
           <div className="text-center py-12">

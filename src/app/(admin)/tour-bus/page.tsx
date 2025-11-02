@@ -399,6 +399,39 @@ export default function TourBusPage() {
       </div>
     );
   }
+  
+  // Carga progresiva: Mostrar skeleton mientras cargan los datos
+  if (loading && tours.length === 0) {
+    return (
+      <div>
+        <PageBreadcrumb pageTitle="Tours Bus" />
+        <ComponentCard title="Tours de Bus Disponibles">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, idx) => (
+              <div key={idx} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 animate-pulse">
+                {/* Imagen skeleton */}
+                <div className="w-full h-48 bg-gray-200 dark:bg-gray-700 rounded-lg mb-4"></div>
+                {/* Título skeleton */}
+                <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-3"></div>
+                {/* Info skeleton */}
+                <div className="space-y-2 mb-4">
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                </div>
+                {/* Botones skeleton */}
+                <div className="flex gap-2 mt-4">
+                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded flex-1"></div>
+                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded flex-1"></div>
+                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-8"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </ComponentCard>
+      </div>
+    );
+  }
 
   if (!userRole || !['ADMIN', 'TI', 'USER'].includes(userRole)) {
     return (
@@ -780,11 +813,7 @@ export default function TourBusPage() {
       </Modal>
 
       <ComponentCard title="Tours de Bus Disponibles">
-        {loading ? (
-          <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500"></div>
-          </div>
-        ) : filteredTours.length === 0 ? (
+        {filteredTours.length === 0 && !loading ? (
           <div className="text-center py-12">
             <BusIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">

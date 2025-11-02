@@ -1286,10 +1286,65 @@ export default function BiglietteriaPage() {
   
   // ==================== RENDER ====================
   
-  if (roleLoading || loading) {
+  if (roleLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500"></div>
+      </div>
+    );
+  }
+  
+  // Carga progresiva: Mostrar skeleton de tabla mientras cargan los datos
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        {/* Header skeleton */}
+        <div className="mb-6">
+          <div className="h-9 bg-gray-200 dark:bg-gray-700 rounded w-48 animate-pulse"></div>
+        </div>
+        
+        {/* Container skeleton */}
+        <div className="overflow-hidden bg-white dark:bg-white/[0.03] rounded-xl max-w-none">
+          {/* Header con filtros skeleton */}
+          <div className="flex flex-col gap-4 px-4 py-4 border border-b-0 border-gray-100 dark:border-white/[0.05] rounded-t-xl">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-24 animate-pulse"></div>
+              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-20 animate-pulse"></div>
+              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-16 animate-pulse"></div>
+              <div className="h-9 bg-gray-200 dark:bg-gray-700 rounded w-28 animate-pulse"></div>
+              <div className="h-9 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>
+            </div>
+            {/* Buscador skeleton */}
+            <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-full max-w-md animate-pulse"></div>
+          </div>
+          
+          {/* Tabla skeleton */}
+          <div className="border border-gray-100 dark:border-white/[0.05] rounded-b-xl overflow-hidden">
+            {/* Header de tabla */}
+            <div className="bg-gray-50 dark:bg-gray-800/50 grid grid-cols-12 gap-4 px-4 py-3 border-b border-gray-100 dark:border-white/[0.05]">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" style={{ gridColumn: i === 0 ? 'span 2' : i === 11 ? 'span 2' : 'span 1' }}></div>
+              ))}
+            </div>
+            {/* Filas skeleton */}
+            {Array.from({ length: 8 }).map((_, rowIdx) => (
+              <div key={rowIdx} className="grid grid-cols-12 gap-4 px-4 py-4 border-b border-gray-100 dark:border-white/[0.05] last:border-b-0">
+                {Array.from({ length: 12 }).map((_, colIdx) => (
+                  <div key={colIdx} className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" style={{ gridColumn: colIdx === 0 ? 'span 2' : colIdx === 11 ? 'span 2' : 'span 1', animationDelay: `${rowIdx * 50}ms` }}></div>
+                ))}
+              </div>
+            ))}
+          </div>
+          
+          {/* Paginación skeleton */}
+          <div className="flex items-center justify-between px-4 py-4 border-t border-gray-100 dark:border-white/[0.05]">
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>
+            <div className="flex gap-2">
+              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-20 animate-pulse"></div>
+              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-20 animate-pulse"></div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

@@ -339,6 +339,39 @@ export default function TourAereoPage() {
       </div>
     );
   }
+  
+  // Carga progresiva: Mostrar skeleton mientras cargan los datos
+  if (loading && tours.length === 0) {
+    return (
+      <div>
+        <PageBreadcrumb pageTitle="Tours Aereo" />
+        <ComponentCard title="">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, idx) => (
+              <div key={idx} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 animate-pulse">
+                {/* Imagen skeleton */}
+                <div className="w-full h-48 bg-gray-200 dark:bg-gray-700 rounded-lg mb-4"></div>
+                {/* Título skeleton */}
+                <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-3"></div>
+                {/* Info skeleton */}
+                <div className="space-y-2 mb-4">
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                </div>
+                {/* Botones skeleton */}
+                <div className="flex gap-2 mt-4">
+                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded flex-1"></div>
+                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded flex-1"></div>
+                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-8"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </ComponentCard>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -368,13 +401,7 @@ export default function TourAereoPage() {
       </div>
 
       <ComponentCard title="">
-
-        {loading ? (
-          <div className="flex justify-center items-center h-32">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredTours.map((tour) => {
               const progressPercentage = getProgressPercentage(tour);
               const vendidos = tour._count?.ventas || 0;

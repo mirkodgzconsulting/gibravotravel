@@ -555,6 +555,44 @@ export default function ClientiPage() {
       </div>
     );
   }
+  
+  // Carga progresiva: Mostrar skeleton de tabla mientras cargan los datos
+  if (loading && clienti.length === 0) {
+    return (
+      <div>
+        {/* Header skeleton */}
+        <div className="mb-6">
+          <div className="h-9 bg-gray-200 dark:bg-gray-700 rounded w-48 animate-pulse"></div>
+        </div>
+        
+        {/* Tabla skeleton */}
+        <div className="bg-white dark:bg-white/[0.03] rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+          {/* Header de tabla */}
+          <div className="bg-gray-50 dark:bg-gray-800/50 grid grid-cols-8 gap-4 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+            ))}
+          </div>
+          {/* Filas skeleton */}
+          {Array.from({ length: 10 }).map((_, rowIdx) => (
+            <div key={rowIdx} className="grid grid-cols-8 gap-4 px-4 py-4 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
+              {Array.from({ length: 8 }).map((_, colIdx) => (
+                <div key={colIdx} className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" style={{ animationDelay: `${rowIdx * 50}ms` }}></div>
+              ))}
+            </div>
+          ))}
+          {/* Paginación skeleton */}
+          <div className="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>
+            <div className="flex gap-2">
+              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-20 animate-pulse"></div>
+              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-20 animate-pulse"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!canAccessGestione) {
     return (

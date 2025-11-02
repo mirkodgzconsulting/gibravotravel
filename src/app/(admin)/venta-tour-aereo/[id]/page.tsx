@@ -878,12 +878,49 @@ export default function VentaTourAereoPage() {
   const porcentajeVendido = meta > 0 ? Math.round((ventasRealizadas / meta) * 100) : 0;
   const ingresos = ventas.reduce((sum, venta) => sum + venta.venduto, 0);
 
-  if (roleLoading || loading) {
+  if (roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-500 mx-auto"></div>
           <p className="mt-4 text-gray-600">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Carga progresiva: Mostrar skeleton mientras cargan los datos
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+        {/* Header skeleton */}
+        <div className="mb-6">
+          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-64 animate-pulse mb-4"></div>
+          <div className="flex gap-4">
+            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>
+            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>
+          </div>
+        </div>
+        
+        {/* Info del tour skeleton */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 mb-6">
+          <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-48 mb-4 animate-pulse"></div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full animate-pulse"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full animate-pulse"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3 animate-pulse"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3 animate-pulse"></div>
+          </div>
+        </div>
+        
+        {/* Lista de ventas skeleton */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-6">
+          <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-48 mb-4 animate-pulse"></div>
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="h-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" style={{ animationDelay: `${i * 100}ms` }}></div>
+            ))}
+          </div>
         </div>
       </div>
     );

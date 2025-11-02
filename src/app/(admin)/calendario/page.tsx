@@ -257,10 +257,52 @@ export default function CalendarioPage() {
   }, [currentDate]);
   const weekDays = useMemo(() => ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'], []);
 
-  if (loading || roleLoading) {
+  if (roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-500"></div>
+      </div>
+    );
+  }
+  
+  // Carga progresiva: Mostrar skeleton del calendario mientras cargan los eventos
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="max-w-7xl mx-auto p-6">
+          {/* Header skeleton */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-4">
+            <div className="flex items-center justify-between">
+              <div className="h-8 w-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-48 animate-pulse"></div>
+              <div className="h-8 w-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+            </div>
+          </div>
+          
+          {/* Calendario skeleton */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
+            {/* Días de la semana */}
+            <div className="grid grid-cols-7 border-b border-gray-200 dark:border-gray-700">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <div key={i} className="p-3 text-center border-r border-gray-200 dark:border-gray-700 last:border-r-0">
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-12 mx-auto animate-pulse"></div>
+                </div>
+              ))}
+            </div>
+            {/* Días del mes */}
+            <div className="grid grid-cols-7">
+              {Array.from({ length: 42 }).map((_, i) => (
+                <div key={i} className="min-h-[120px] p-2 border-r border-b border-gray-200 dark:border-gray-700">
+                  <div className="h-5 w-5 bg-gray-200 dark:bg-gray-700 rounded-full mb-2 animate-pulse"></div>
+                  <div className="space-y-1">
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full animate-pulse"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 animate-pulse"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

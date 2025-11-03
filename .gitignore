@@ -38,6 +38,7 @@ postgresql-installer.exe
 *.backup
 *.bak
 *.tmp
+scripts/backups/
 
 # env files (can opt-in for committing if needed)
 .env*

@@ -15,7 +15,8 @@ import {
   XIcon,
   SearchIcon,
   DownloadIcon,
-  FilterIcon
+  FilterIcon,
+  TrashIcon
 } from "lucide-react";
 
 interface TourBus {
@@ -393,6 +394,37 @@ export default function AsientosTourBusPage() {
       console.error('Error updating venta:', error);
       setError(error instanceof Error ? error.message : 'Error al actualizar la venta');
       alert(error instanceof Error ? error.message : 'Error al actualizar la venta');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteVenta = async (ventaId: string) => {
+    if (!confirm('¿Estás seguro de eliminar esta venta? Esta acción no se puede deshacer.')) {
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      
+      const response = await fetch(`/api/tour-bus/venta/${ventaId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al eliminar la venta');
+      }
+
+      // Recargar los datos del tour
+      await fetchTour();
+      
+      setShowNotification(true);
+      setTimeout(() => setShowNotification(false), 3000);
+      
+    } catch (error) {
+      console.error('Error deleting venta:', error);
+      alert(error instanceof Error ? error.message : 'Error al eliminar la venta');
     } finally {
       setIsSubmitting(false);
     }
@@ -2155,6 +2187,13 @@ export default function AsientosTourBusPage() {
                                 title="Editar"
                               >
                                 ✏️
+                              </button>
+                              <button
+                                onClick={() => handleDeleteVenta(venta.id)}
+                                className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded transition-colors text-xs"
+                                title="Eliminar"
+                              >
+                                🗑️
                               </button>
                             </div>
                           </td>

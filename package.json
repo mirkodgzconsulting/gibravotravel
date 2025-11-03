@@ -50,7 +50,9 @@
     "optimize": "node scripts/optimize-for-production.js",
     "deploy": "node scripts/deploy-to-production.js",
     "import:clientes": "node scripts/import-clientes-excel.js",
-    "import:clientes:dry-run": "node scripts/import-clientes-excel.js --dry-run"
+    "import:clientes:dry-run": "node scripts/import-clientes-excel.js --dry-run",
+    "clean:duplicados": "node scripts/eliminar-clientes-duplicados.js",
+    "clean:duplicados:dry-run": "node scripts/eliminar-clientes-duplicados.js --dry-run"
   },
   "dependencies": {
     "@clerk/backend": "^2.17.0",

@@ -181,7 +181,25 @@ async function importClientes(options = {}) {
   const clientesParaCrear = []; // Array para batch insert
   const BATCH_SIZE = 100; // Insertar en lotes de 100
   
-  // Primero, generar todos los emails únicos y preparar datos
+  // Primero, verificar clientes existentes para evitar duplicados
+  console.log('🔍 Verificando clientes existentes para evitar duplicados...\n');
+  
+  const clientesExistentes = await prisma.client.findMany({
+    select: {
+      firstName: true,
+      lastName: true,
+      email: true
+    }
+  });
+  
+  // Crear un Set de claves nombre|apellido para búsqueda rápida
+  const clientesExistentesSet = new Set(
+    clientesExistentes.map(c => 
+      `${c.firstName.trim().toLowerCase()}|${(c.lastName || '').trim().toLowerCase()}`
+    )
+  );
+  
+  console.log(`📊 Clientes existentes en BD: ${clientesExistentes.length}`);
   console.log('📋 Preparando datos para importación...\n');
   
   for (let i = 0; i < data.length; i++) {
@@ -201,6 +219,17 @@ async function importClientes(options = {}) {
     }
     
     try {
+      // Verificar si ya existe un cliente con el mismo nombre y apellido
+      const clave = `${nome.trim().toLowerCase()}|${(cognome || '').trim().toLowerCase()}`;
+      
+      if (clientesExistentesSet.has(clave)) {
+        resultados.duplicados++;
+        if (resultados.duplicados <= 10) { // Mostrar solo los primeros 10
+          console.log(`🔄 Fila ${i + 2}: Duplicado encontrado - ${nome} ${cognome || ''}`);
+        }
+        continue; // Saltar este cliente
+      }
+      
       // Generar email único usando sinemail@gmail.com con número incremental
       const email = await generateUniqueEmail();
       
@@ -221,6 +250,9 @@ async function importClientes(options = {}) {
       clientesParaCrear.push(clienteData);
       resultados.procesados++;
       
+      // Agregar a Set para evitar duplicados dentro del mismo Excel
+      clientesExistentesSet.add(clave);
+      
       // Mostrar progreso cada 500 filas
       if ((i + 1) % 500 === 0) {
         console.log(`📊 Procesadas ${i + 1}/${data.length} filas...`);
@@ -234,6 +266,10 @@ async function importClientes(options = {}) {
         error: error.message
       });
     }
+  }
+  
+  if (resultados.duplicados > 10) {
+    console.log(`   ... y ${resultados.duplicados - 10} duplicados más\n`);
   }
   
   console.log(`\n✅ Preparación completada: ${clientesParaCrear.length} clientes listos para importar\n`);

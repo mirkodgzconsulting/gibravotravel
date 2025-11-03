@@ -66,34 +66,78 @@ export async function POST(request: NextRequest) {
     }
 
     // Leer el archivo Excel
-    // En Vercel, intentar múltiples rutas posibles
-    const possiblePaths = [
-      join(process.cwd(), 'public', 'dataClientes.xlsx'),
-      join(process.cwd(), 'dataClientes.xlsx'),
-      '/tmp/dataClientes.xlsx', // Vercel temporal directory
-    ];
-
+    // En Vercel, los archivos en /public se sirven como estáticos
+    // Necesitamos leerlo desde la URL pública o del sistema de archivos
+    
     let workbook;
     let fileBuffer;
-    let lastError;
+    
+    // Método 1: Intentar leer desde el sistema de archivos (local y algunas configuraciones de Vercel)
+    const possiblePaths = [
+      join(process.cwd(), 'public', 'dataClientes.xlsx'),
+      join(process.cwd(), '.next', 'static', 'dataClientes.xlsx'),
+      join(process.cwd(), 'dataClientes.xlsx'),
+    ];
 
+    let found = false;
     for (const excelPath of possiblePaths) {
       try {
         fileBuffer = await readFile(excelPath);
         workbook = XLSX.read(fileBuffer, { type: 'buffer' });
-        console.log(`✅ Archivo encontrado en: ${excelPath}`);
+        console.log(`✅ Archivo encontrado en sistema de archivos: ${excelPath}`);
+        found = true;
         break;
       } catch (error) {
-        lastError = error;
+        // Continuar intentando otras rutas
         continue;
       }
     }
 
-    if (!workbook) {
-      console.error('❌ No se pudo encontrar el archivo en ninguna ruta:', possiblePaths);
+    // Método 2: Si no se encuentra en el sistema de archivos, descargar desde URL pública
+    if (!found) {
+      try {
+        // Obtener la URL base desde el request
+        const protocol = request.headers.get('x-forwarded-proto') || 'https';
+        const host = request.headers.get('host') || 
+                     process.env.VERCEL_URL || 
+                     'localhost:3000';
+        const baseUrl = `${protocol === 'http' ? 'http' : 'https'}://${host}`;
+        
+        const fileUrl = `${baseUrl}/dataClientes.xlsx`;
+        console.log(`📥 Intentando descargar desde URL: ${fileUrl}`);
+        
+        const response = await fetch(fileUrl, {
+          // En Vercel, necesitamos hacer la petición como si fuera externa
+          headers: {
+            'User-Agent': 'GiBravo-Import-Service'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const arrayBuffer = await response.arrayBuffer();
+        fileBuffer = Buffer.from(arrayBuffer);
+        workbook = XLSX.read(fileBuffer, { type: 'buffer' });
+        console.log(`✅ Archivo descargado desde URL pública`);
+        found = true;
+      } catch (error) {
+        console.error('❌ Error descargando desde URL:', error);
+        // Log adicional para debugging
+        console.error('Headers disponibles:', {
+          host: request.headers.get('host'),
+          protocol: request.headers.get('x-forwarded-proto'),
+          vercelUrl: process.env.VERCEL_URL
+        });
+      }
+    }
+
+    if (!found || !workbook) {
       return NextResponse.json({ 
-        error: 'No se encuentra el archivo dataClientes.xlsx. Asegúrate de que esté en /public/dataClientes.xlsx',
-        details: lastError instanceof Error ? lastError.message : 'Error desconocido'
+        error: 'No se encuentra el archivo dataClientes.xlsx',
+        details: 'El archivo debe estar en /public/dataClientes.xlsx y ser accesible públicamente',
+        suggestion: 'Verifica que el archivo esté en el repositorio en /public/dataClientes.xlsx'
       }, { status: 404 });
     }
 

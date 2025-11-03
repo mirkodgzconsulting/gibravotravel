@@ -415,6 +415,52 @@ export default function ClientiPage() {
     }
   };
 
+  const handleImportClientes = async () => {
+    if (!canAccessGestione) {
+      setMessage({
+        type: 'error',
+        text: 'Solo gli amministratori possono importare clienti'
+      });
+      return;
+    }
+
+    if (!confirm('Sei sicuro di voler importare i clienti da dataClientes.xlsx? Questa operazione potrebbe richiedere alcuni minuti.')) {
+      return;
+    }
+
+    setSubmitting(true);
+    setMessage(null);
+
+    try {
+      const response = await fetch('/api/admin/import-clientes', {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Errore durante l\'importazione');
+      }
+
+      setMessage({
+        type: 'success',
+        text: `Importazione completata: ${data.resultados.creados} clienti creati, ${data.resultados.omitidos} omessi, ${data.resultados.errores} errori`
+      });
+
+      // Recargar los clientes
+      fetchClienti();
+
+    } catch (error) {
+      console.error('❌ Import error:', error);
+      setMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Errore durante l\'importazione dei clienti'
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -916,6 +962,19 @@ export default function ClientiPage() {
                 <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
                   Record: {clienti.length.toLocaleString()}
                 </span>
+                {canAccessGestione && (
+                  <button
+                    onClick={handleImportClientes}
+                    disabled={submitting}
+                    className="flex items-center gap-1 px-3 py-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 hover:text-blue-800 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-400 dark:hover:text-blue-300 rounded transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Importa clienti da dataClientes.xlsx"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    {submitting ? 'Importando...' : 'Importar'}
+                  </button>
+                )}
                 <button
                   onClick={handleExportToExcel}
                   className="flex items-center gap-1 px-3 py-1 text-xs bg-green-100 hover:bg-green-200 text-green-700 hover:text-green-800 dark:bg-green-900/20 dark:hover:bg-green-900/30 dark:text-green-400 dark:hover:text-green-300 rounded transition-colors duration-200"

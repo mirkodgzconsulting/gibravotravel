@@ -20,50 +20,23 @@ export async function GET(request: NextRequest) {
     }
 
     // Obtener todas las notificaciones del usuario ordenadas por fecha (más recientes primero)
-    // Usar try-catch separado para manejar errores de relación
-    let notificaciones: any[] = [];
-    let noLeidas = 0;
-    
-    try {
-      // Primero intentar con la relación de agenda
-      try {
-        notificaciones = await prisma.notificacion.findMany({
-          where: { userId: user.id },
-          include: {
-            agenda: {
-              select: {
-                titulo: true,
-                fecha: true
-              }
-            }
-          },
-          orderBy: {
-            createdAt: 'desc'
+    const notificaciones = await prisma.notificacion.findMany({
+      where: { userId: user.id },
+      include: {
+        agenda: {
+          select: {
+            titulo: true,
+            fecha: true
           }
-        });
-      } catch (includeError) {
-        // Si falla el include, intentar sin relación
-        console.warn('Error con include de agenda, intentando sin relación:', includeError);
-        notificaciones = await prisma.notificacion.findMany({
-          where: { userId: user.id },
-          orderBy: {
-            createdAt: 'desc'
-          }
-        });
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
       }
+    });
 
-      // Contar las no leídas
-      noLeidas = notificaciones.filter((n: any) => !n.isLeida).length;
-    } catch (dbError: any) {
-      console.error('Error fetching notifications from database:', dbError);
-      // Retornar respuesta vacía pero exitosa
-      return NextResponse.json({
-        success: true,
-        notificaciones: [],
-        noLeidas: 0,
-        warning: 'No se pudieron cargar las notificaciones'
-      });
-    }
+    // Contar las no leídas
+    const noLeidas = notificaciones.filter(n => !n.isLeida).length;
 
     return NextResponse.json({
       success: true,

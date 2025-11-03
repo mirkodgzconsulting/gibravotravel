@@ -178,6 +178,11 @@ async function importClientes(options = {}) {
   };
   
   const errores = [];
+  const clientesParaCrear = []; // Array para batch insert
+  const BATCH_SIZE = 100; // Insertar en lotes de 100
+  
+  // Primero, generar todos los emails únicos y preparar datos
+  console.log('📋 Preparando datos para importación...\n');
   
   for (let i = 0; i < data.length; i++) {
     const row = data[i];
@@ -192,7 +197,6 @@ async function importClientes(options = {}) {
     // Validar que al menos tenga Nome
     if (!nome) {
       resultados.omitidos++;
-      console.log(`⏭️  Fila ${i + 2}: Omitida (sin Nome)`);
       continue;
     }
     
@@ -200,55 +204,83 @@ async function importClientes(options = {}) {
       // Generar email único usando sinemail@gmail.com con número incremental
       const email = await generateUniqueEmail();
       
-      // Verificar si ya existe por email
-      const existing = await prisma.client.findUnique({
-        where: { email }
-      });
-      
-      if (existing) {
-        resultados.duplicados++;
-        console.log(`🔄 Fila ${i + 2}: Duplicado (${nome} ${cognome || ''}) - Email: ${email}`);
-        continue;
-      }
-      
       // Preparar datos
-      // Campos vacíos se guardan como strings vacíos, no con valores por defecto
       const clienteData = {
         firstName: nome,
-        lastName: cognome || '', // Si no hay apellido, string vacío
-        fiscalCode: codiceFiscale || '', // Si no hay código fiscal, string vacío
-        address: DEFAULTS.address, // String vacío
-        phoneNumber: telefono || '', // Si no hay teléfono, string vacío
-        email: email, // Este sí se genera automáticamente porque es único y requerido
-        birthPlace: DEFAULTS.birthPlace, // String vacío
-        birthDate: DEFAULTS.birthDate, // Fecha muy antigua para indicar que no está disponible
+        lastName: cognome || '',
+        fiscalCode: codiceFiscale || '',
+        address: DEFAULTS.address,
+        phoneNumber: telefono || '',
+        email: email,
+        birthPlace: DEFAULTS.birthPlace,
+        birthDate: DEFAULTS.birthDate,
         isActive: true,
         createdBy: createdBy
       };
       
-      if (!dryRun) {
-        // Crear cliente en la base de datos
-        await prisma.client.create({
-          data: clienteData
-        });
-        resultados.creados++;
-        console.log(`✅ Fila ${i + 2}: Creado - ${nome} ${cognome || ''} (${email})`);
-      } else {
-        resultados.creados++;
-        console.log(`🔍 Fila ${i + 2}: [DRY RUN] Se crearía - ${nome} ${cognome || ''} (${email})`);
-      }
-      
+      clientesParaCrear.push(clienteData);
       resultados.procesados++;
+      
+      // Mostrar progreso cada 500 filas
+      if ((i + 1) % 500 === 0) {
+        console.log(`📊 Procesadas ${i + 1}/${data.length} filas...`);
+      }
       
     } catch (error) {
       resultados.errores++;
-      const errorMsg = `❌ Fila ${i + 2}: Error - ${error.message}`;
       errores.push({
         fila: i + 2,
         nombre: nome,
         error: error.message
       });
-      console.log(errorMsg);
+    }
+  }
+  
+  console.log(`\n✅ Preparación completada: ${clientesParaCrear.length} clientes listos para importar\n`);
+  
+  // Si es dry-run, solo mostrar
+  if (dryRun) {
+    resultados.creados = clientesParaCrear.length;
+    console.log(`🔍 [DRY RUN] Se crearían ${clientesParaCrear.length} clientes`);
+  } else {
+    // Insertar en lotes para mejor rendimiento y evitar timeouts
+    console.log(`💾 Insertando ${clientesParaCrear.length} clientes en lotes de ${BATCH_SIZE}...\n`);
+    
+    for (let i = 0; i < clientesParaCrear.length; i += BATCH_SIZE) {
+      const batch = clientesParaCrear.slice(i, i + BATCH_SIZE);
+      const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+      const totalBatches = Math.ceil(clientesParaCrear.length / BATCH_SIZE);
+      
+      try {
+        // Usar createMany para insertar en lote (más eficiente)
+        await prisma.client.createMany({
+          data: batch,
+          skipDuplicates: true // Saltar duplicados sin error
+        });
+        
+        resultados.creados += batch.length;
+        console.log(`✅ Lote ${batchNum}/${totalBatches}: ${batch.length} clientes insertados (Total: ${resultados.creados})`);
+        
+      } catch (error) {
+        // Si falla el batch, intentar insertar uno por uno
+        console.log(`⚠️  Error en lote ${batchNum}, intentando insertar individualmente...`);
+        
+        for (const clienteData of batch) {
+          try {
+            await prisma.client.create({
+              data: clienteData
+            });
+            resultados.creados++;
+          } catch (individualError) {
+            resultados.errores++;
+            errores.push({
+              fila: i + batch.indexOf(clienteData) + 2,
+              nombre: clienteData.firstName,
+              error: individualError.message
+            });
+          }
+        }
+      }
     }
   }
   

@@ -8,6 +8,7 @@ console.log('📦 Post-install detectado...\n');
 async function checkIfClientesImported() {
   try {
     // Verificar si ya hay clientes importados (con email sinemail)
+    // Consideramos que está completo si hay más de 4000 clientes (esperamos ~4121)
     const clientesCount = await prisma.client.count({
       where: {
         email: {
@@ -16,7 +17,10 @@ async function checkIfClientesImported() {
       }
     });
     
-    return clientesCount > 0;
+    console.log(`📊 Clientes sinemail encontrados: ${clientesCount}`);
+    
+    // Si hay más de 4000, consideramos que la importación está completa
+    return clientesCount >= 4000;
   } catch (error) {
     console.log('⚠️  Error verificando clientes:', error.message);
     return false;
@@ -30,11 +34,12 @@ async function importClientes() {
     const alreadyImported = await checkIfClientesImported();
     
     if (alreadyImported) {
-      console.log('✅ Clientes ya importados, saltando importación automática');
+      console.log('✅ Clientes ya importados (más de 4000 encontrados), saltando importación automática');
       return;
     }
 
     console.log('📥 Iniciando importación automática de clientes...');
+    console.log('⏱️  Esta operación puede tardar varios minutos (4,121 clientes)...\n');
     
     // Ejecutar importación sin dry-run
     // Durante postinstall, el archivo debería estar disponible en el sistema de archivos
@@ -45,13 +50,26 @@ async function importClientes() {
           ...process.env,
           NODE_ENV: process.env.NODE_ENV || 'production'
         },
-        timeout: 300000 // 5 minutos timeout para la importación
+        timeout: 600000 // 10 minutos timeout para la importación (batch insert es más rápido)
       });
       
-      console.log('✅ Importación de clientes completada');
+      // Verificar el resultado
+      const finalCount = await prisma.client.count({
+        where: {
+          email: {
+            startsWith: 'sinemail'
+          }
+        }
+      });
+      
+      console.log(`\n✅ Importación de clientes completada: ${finalCount} clientes importados`);
+      
+      if (finalCount < 4000) {
+        console.log('⚠️  Parece que la importación fue parcial. Puedes ejecutarla nuevamente desde la interfaz.');
+      }
     } catch (execError) {
       // Si falla durante postinstall, no es crítico - se puede hacer manualmente
-      console.log('⚠️  No se pudo importar automáticamente durante el deploy');
+      console.log('\n⚠️  No se pudo importar automáticamente durante el deploy');
       console.log('💡 La importación se puede hacer manualmente desde /clienti → Botón "Importar"');
       console.log('   O ejecutando: node scripts/import-clientes-excel.js');
       // No lanzar error para no fallar el build

@@ -19,12 +19,29 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
     }
 
-    // Por ahora, retornar un array vacío de notificaciones
-    // En el futuro se puede implementar un sistema completo de notificaciones
+    // Obtener todas las notificaciones del usuario ordenadas por fecha (más recientes primero)
+    const notificaciones = await prisma.notificacion.findMany({
+      where: { userId: user.id },
+      include: {
+        agenda: {
+          select: {
+            titulo: true,
+            fecha: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    // Contar las no leídas
+    const noLeidas = notificaciones.filter(n => !n.isLeida).length;
+
     return NextResponse.json({
       success: true,
-      notificaciones: [],
-      noLeidas: 0
+      notificaciones,
+      noLeidas
     });
 
   } catch (error) {

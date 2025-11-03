@@ -461,6 +461,52 @@ export default function ClientiPage() {
     }
   };
 
+  const handleEliminarDuplicados = async () => {
+    if (!canAccessGestione) {
+      setMessage({
+        type: 'error',
+        text: 'Solo gli amministratori possono eliminare duplicati'
+      });
+      return;
+    }
+
+    if (!confirm('⚠️ ATTENZIONE: Questa operazione eliminerà i clienti duplicati mantenendo solo il più antico.\n\nSei sicuro di voler procedere?')) {
+      return;
+    }
+
+    setSubmitting(true);
+    setMessage(null);
+
+    try {
+      const response = await fetch('/api/admin/eliminar-duplicados', {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Errore durante la pulizia dei duplicati');
+      }
+
+      setMessage({
+        type: 'success',
+        text: `✅ Pulizia completata: ${data.resultados.eliminados} duplicati eliminati, ${data.resultados.restantes} clienti rimanenti`
+      });
+
+      // Recargar los clientes
+      fetchClienti();
+
+    } catch (error) {
+      console.error('❌ Cleanup error:', error);
+      setMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Errore durante la pulizia dei duplicati'
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -963,17 +1009,30 @@ export default function ClientiPage() {
                   Record: {clienti.length.toLocaleString()}
                 </span>
                 {canAccessGestione && (
-                  <button
-                    onClick={handleImportClientes}
-                    disabled={submitting}
-                    className="flex items-center gap-1 px-3 py-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 hover:text-blue-800 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-400 dark:hover:text-blue-300 rounded transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Importa clienti da dataClientes.xlsx"
-                  >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                    </svg>
-                    {submitting ? 'Importando...' : 'Importar'}
-                  </button>
+                  <>
+                    <button
+                      onClick={handleEliminarDuplicados}
+                      disabled={submitting}
+                      className="flex items-center gap-1 px-3 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-700 hover:text-red-800 dark:bg-red-900/20 dark:hover:bg-red-900/30 dark:text-red-400 dark:hover:text-red-300 rounded transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Elimina clienti duplicati (mantiene il più antico)"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      {submitting ? 'Pulendo...' : 'Elimina Duplicati'}
+                    </button>
+                    <button
+                      onClick={handleImportClientes}
+                      disabled={submitting}
+                      className="flex items-center gap-1 px-3 py-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 hover:text-blue-800 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-400 dark:hover:text-blue-300 rounded transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Importa clienti da dataClientes.xlsx"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                      {submitting ? 'Importando...' : 'Importar'}
+                    </button>
+                  </>
                 )}
                 <button
                   onClick={handleExportToExcel}

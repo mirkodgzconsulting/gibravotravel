@@ -34,6 +34,7 @@ export default function IataPage() {
   const [editingIata, setEditingIata] = useState<Iata | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [addingIatas, setAddingIatas] = useState(false);
   
   const [formData, setFormData] = useState({
     iata: ""
@@ -49,7 +50,8 @@ export default function IataPage() {
       const response = await fetch('/api/iata');
       if (response.ok) {
         const data = await response.json();
-        setIatas(data.iatas || []);
+        // El endpoint devuelve directamente el array, no dentro de un objeto
+        setIatas(Array.isArray(data) ? data : (data.iatas || []));
       }
     } catch (error) {
       console.error('Error fetching iatas:', error);
@@ -151,6 +153,43 @@ export default function IataPage() {
     setFormData({ iata: "" });
   };
 
+  const handleAgregarIatas = async () => {
+    if (!confirm('¿Estás seguro de que quieres agregar los IATAs predefinidos?\n\nEsto agregará: Shop online, Safer, Dhl, Tbo, Jump Travel, GetYourGuide, Civitatis, Dinamico kkm, Booking hotel')) {
+      return;
+    }
+
+    setAddingIatas(true);
+    setMessage(null);
+
+    try {
+      const response = await fetch('/api/admin/agregar-iatas', {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage({
+          type: 'success',
+          text: `✅ ${data.agregados} IATAs agregados, ${data.yaExistentes} ya existían. Total: ${data.totalIatas} IATAs activos`
+        });
+        fetchIatas();
+      } else {
+        setMessage({
+          type: 'error',
+          text: data.error || 'Error al agregar IATAs'
+        });
+      }
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: 'Error al procesar la solicitud'
+      });
+    } finally {
+      setAddingIatas(false);
+    }
+  };
+
   if (roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -184,13 +223,20 @@ export default function IataPage() {
         </div>
       )}
 
-      {/* Botón principal centrado */}
-      <div className="text-center mb-8">
+      {/* Botones principales centrados */}
+      <div className="text-center mb-8 flex gap-4 justify-center">
         <button
           onClick={modal.openModal}
           className="px-8 py-4 text-lg font-medium text-white rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600 transition-colors"
         >
           Aggiungi IATA
+        </button>
+        <button
+          onClick={handleAgregarIatas}
+          disabled={addingIatas}
+          className="px-8 py-4 text-lg font-medium text-white rounded-lg bg-purple-500 shadow-theme-xs hover:bg-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {addingIatas ? 'Agregando...' : 'Agregar IATAs Predefinidos'}
         </button>
       </div>
 

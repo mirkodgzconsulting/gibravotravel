@@ -49,7 +49,8 @@
     "db:optimize": "node scripts/add-performance-indexes.js",
     "optimize": "node scripts/optimize-for-production.js",
     "deploy": "node scripts/deploy-to-production.js",
-    "agregar-servicios": "node scripts/agregar-servicios.js"
+    "agregar-servicios": "node scripts/agregar-servicios.js",
+    "agregar-iatas": "node scripts/agregar-iatas.js"
   },
   "dependencies": {
     "@clerk/backend": "^2.17.0",

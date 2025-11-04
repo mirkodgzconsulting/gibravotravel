@@ -90,8 +90,21 @@ export async function PUT(
     const data = formData.get('data') as string;
     const pnr = formData.get('pnr') as string;
     const itinerario = formData.get('itinerario') as string;
-    const metodoPagamento = formData.get('metodoPagamento') as string;
+    const metodoPagamentoJson = formData.get('metodoPagamento') as string;
+    const notaDiVendita = formData.get('notaDiVendita') as string;
     const acconto = formData.get('acconto') as string;
+    
+    // Parsear metodoPagamento desde JSON array
+    let metodoPagamento: string;
+    try {
+      const metodoPagamentoArray = JSON.parse(metodoPagamentoJson || '[]');
+      metodoPagamento = Array.isArray(metodoPagamentoArray) && metodoPagamentoArray.length > 0
+        ? JSON.stringify(metodoPagamentoArray)
+        : '';
+    } catch {
+      // Si no es JSON válido, usar como string simple (compatibilidad)
+      metodoPagamento = metodoPagamentoJson || '';
+    }
     const numeroPasajeros = parseInt(formData.get('numeroPasajeros') as string) || 1;
     const numeroCuotas = parseInt(formData.get('numeroCuotas') as string) || 0;
     const cuotasJson = formData.get('cuotas') as string;
@@ -358,6 +371,7 @@ export async function PUT(
           acconto: accontoValue,
           daPagare: daPagare,
           metodoPagamento,
+          notaDiVendita: notaDiVendita || null,
           feeAgv: feeAgv,
           attachedFile: attachedFileUrl,
           attachedFileName: attachedFileName,

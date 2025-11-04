@@ -59,7 +59,8 @@ interface BiglietteriaRecord {
   data: string;
   pnr: string | null;
   itinerario: string;
-  metodoPagamento: string;
+  metodoPagamento: string[]; // Array de métodos de pago
+  notaDiVendita: string | null;
   netoPrincipal: number;
   vendutoTotal: number;
   acconto: number;
@@ -117,7 +118,8 @@ interface BiglietteriaFormData {
   data: string;
   pnr: string;
   itinerario: string;
-  metodoPagamento: string;
+  metodoPagamento: string[]; // Array de métodos de pago
+  notaDiVendita: string;
   numeroPasajeros: number;
   pasajeros: PasajeroData[];
   netoPrincipal: string;
@@ -371,7 +373,8 @@ export default function BiglietteriaPage() {
     data: new Date().toISOString().split('T')[0],
     pnr: '',
     itinerario: '',
-    metodoPagamento: '',
+    metodoPagamento: [], // Array de métodos de pago
+    notaDiVendita: '',
     numeroPasajeros: 1,
     pasajeros: [crearPasajeroVacio()],
     netoPrincipal: '',
@@ -718,13 +721,26 @@ export default function BiglietteriaPage() {
     ) : [];
   };
   
-  // Handler para seleccionar MetodoPagamento (igual que cliente)
-  const handleMetodoPagamentoSelect = (metodo: string) => {
-    setFormData(prev => ({
-      ...prev,
-      metodoPagamento: metodo
-    }));
-    setShowMetodoPagamentoDropdown(false);
+  // Handler para toggle de MetodoPagamento (igual que servicios)
+  const handleMetodoPagamentoToggle = (metodo: string) => {
+    setFormData(prev => {
+      const currentMetodos = prev.metodoPagamento || [];
+      const isSelected = currentMetodos.includes(metodo);
+      
+      if (isSelected) {
+        // Remover si ya está seleccionado
+        return {
+          ...prev,
+          metodoPagamento: currentMetodos.filter(m => m !== metodo)
+        };
+      } else {
+        // Agregar si no está seleccionado
+        return {
+          ...prev,
+          metodoPagamento: [...currentMetodos, metodo]
+        };
+      }
+    });
     setMetodoPagamentoSearchTerm('');
   };
   
@@ -867,7 +883,16 @@ export default function BiglietteriaPage() {
       'Venduto': record.vendutoTotal,
       'Acconto': record.acconto,
       'Da Pagare': record.daPagare,
-      'Metodo Pagamento': record.metodoPagamento,
+      'Metodo Pagamento': (() => {
+        try {
+          const parsed = typeof record.metodoPagamento === 'string' 
+            ? JSON.parse(record.metodoPagamento) 
+            : record.metodoPagamento;
+          return Array.isArray(parsed) ? parsed.join(', ') : record.metodoPagamento;
+        } catch {
+          return record.metodoPagamento;
+        }
+      })(),
       'Fee AGV': record.feeAgv,
       'Agente': record.creator?.firstName 
         ? `${record.creator.firstName}${record.creator.lastName ? ` ${record.creator.lastName}` : ''}`.trim()
@@ -896,7 +921,16 @@ export default function BiglietteriaPage() {
         record.pagamento,
         record.pnr,
         record.itinerario,
-        record.metodoPagamento,
+        (() => {
+          try {
+            const parsed = typeof record.metodoPagamento === 'string' 
+              ? JSON.parse(record.metodoPagamento) 
+              : record.metodoPagamento;
+            return Array.isArray(parsed) ? parsed.join(', ') : record.metodoPagamento;
+          } catch {
+            return record.metodoPagamento;
+          }
+        })(),
         record.creator?.firstName 
           ? `${record.creator.firstName}${record.creator.lastName ? ` ${record.creator.lastName}` : ''}`.trim()
           : record.creator?.email || 'N/A'
@@ -968,6 +1002,11 @@ export default function BiglietteriaPage() {
         throw new Error('Debe agregar al menos un pasajero');
       }
       
+      // Validar metodoPagamento
+      if (!formData.metodoPagamento || formData.metodoPagamento.length === 0) {
+        throw new Error('Debe seleccionar al menos un método de pago');
+      }
+      
       // Validar que cada pasajero tenga nombre y al menos un servicio
       for (let i = 0; i < formData.pasajeros.length; i++) {
         const p = formData.pasajeros[i];
@@ -985,7 +1024,13 @@ export default function BiglietteriaPage() {
       // Datos básicos
       Object.keys(formData).forEach(key => {
         if (key !== 'pasajeros' && key !== 'netoPrincipal' && key !== 'vendutoTotal' && key !== 'daPagare' && key !== 'feeAgv') {
-          dataToSend.append(key, (formData as any)[key]);
+          const value = (formData as any)[key];
+          // Convertir metodoPagamento array a JSON
+          if (key === 'metodoPagamento' && Array.isArray(value)) {
+            dataToSend.append(key, JSON.stringify(value));
+          } else {
+            dataToSend.append(key, value);
+          }
         }
       });
       
@@ -1073,7 +1118,8 @@ export default function BiglietteriaPage() {
       data: new Date().toISOString().split('T')[0],
       pnr: '',
       itinerario: '',
-      metodoPagamento: '',
+      metodoPagamento: [],
+      notaDiVendita: '',
       numeroPasajeros: 1,
       pasajeros: [crearPasajeroVacio()],
       netoPrincipal: '',
@@ -1156,6 +1202,21 @@ export default function BiglietteriaPage() {
     }) || [crearPasajeroVacio()];
     
     
+    // Parsear metodoPagamento desde JSON o string
+    let metodoPagamentoArray: string[] = [];
+    if (Array.isArray(record.metodoPagamento)) {
+      metodoPagamentoArray = record.metodoPagamento;
+    } else if (typeof record.metodoPagamento === 'string') {
+      try {
+        // Intentar parsear como JSON
+        const parsed = JSON.parse(record.metodoPagamento);
+        metodoPagamentoArray = Array.isArray(parsed) ? parsed : [record.metodoPagamento];
+      } catch {
+        // Si no es JSON, usar como string simple (compatibilidad con registros antiguos)
+        metodoPagamentoArray = record.metodoPagamento ? [record.metodoPagamento] : [];
+      }
+    }
+    
     // Cargar datos del formulario
     setFormData({
       cliente: record.cliente,
@@ -1167,7 +1228,8 @@ export default function BiglietteriaPage() {
       data: new Date(record.data).toISOString().split('T')[0],
       pnr: record.pnr || '',
       itinerario: record.itinerario,
-      metodoPagamento: record.metodoPagamento,
+      metodoPagamento: metodoPagamentoArray,
+      notaDiVendita: record.notaDiVendita || '',
       numeroPasajeros: record.numeroPasajeros,
       pasajeros: pasajerosMapeados,
       netoPrincipal: record.netoPrincipal.toString(),
@@ -1801,7 +1863,16 @@ export default function BiglietteriaPage() {
                     €{record.daPagare.toFixed(2)}
                   </td>
                   <td className="w-[100px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 truncate">
-                    {record.metodoPagamento}
+                    {(() => {
+                      try {
+                        const parsed = typeof record.metodoPagamento === 'string' 
+                          ? JSON.parse(record.metodoPagamento) 
+                          : record.metodoPagamento;
+                        return Array.isArray(parsed) ? parsed.join(', ') : record.metodoPagamento;
+                      } catch {
+                        return record.metodoPagamento;
+                      }
+                    })()}
                   </td>
                   <td className="w-[80px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono truncate">
                     €{record.feeAgv.toFixed(2)}
@@ -2846,25 +2917,60 @@ export default function BiglietteriaPage() {
                   />
                 </div>
                 
-                {/* MetodoPagamento Dropdown (igual que Cliente) */}
+                {/* MetodoPagamento Dropdown (selección múltiple como Servizi) */}
                 <div className="relative metodo-pagamento-dropdown-container">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Metodo Pagamento *
+                    Metodo Pagamento * (seleccionar uno o más)
                   </label>
                   <div className="relative">
-                    <input
-                      type="text"
-                      value={metodoPagamentoSearchTerm || formData.metodoPagamento}
-                      onChange={(e) => {
-                        setMetodoPagamentoSearchTerm(e.target.value);
-                        setShowMetodoPagamentoDropdown(true);
-                        setFormData(prev => ({ ...prev, metodoPagamento: e.target.value }));
-                      }}
-                      onFocus={() => setShowMetodoPagamentoDropdown(true)}
-                      placeholder="Seleziona un metodo di pagamento o cerca per nome..."
-                      className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                      required
-                    />
+                    <div className="min-h-[40px] px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 flex flex-wrap gap-1 items-center cursor-text"
+                         onClick={() => setShowMetodoPagamentoDropdown(true)}>
+                      {/* Chips de métodos seleccionados */}
+                      {formData.metodoPagamento.map(metodo => (
+                        <div
+                          key={metodo}
+                          className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
+                        >
+                          <span className="mr-1">{metodo}</span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMetodoPagamentoToggle(metodo);
+                            }}
+                            className="text-blue-600 hover:text-blue-800 focus:outline-none ml-1"
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                      
+                      {/* Input de búsqueda cuando hay métodos seleccionados */}
+                      {formData.metodoPagamento.length > 0 && (
+                        <input
+                          type="text"
+                          value={metodoPagamentoSearchTerm}
+                          onChange={(e) => {
+                            setMetodoPagamentoSearchTerm(e.target.value);
+                            setShowMetodoPagamentoDropdown(true);
+                          }}
+                          onFocus={() => setShowMetodoPagamentoDropdown(true)}
+                          placeholder="Cerca altro metodo..."
+                          className="flex-1 min-w-[120px] px-1 py-0.5 border-0 bg-transparent text-gray-900 dark:text-white focus:outline-none text-sm"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      )}
+                      
+                      {/* Placeholder cuando no hay métodos */}
+                      {formData.metodoPagamento.length === 0 && (
+                        <span className="text-gray-500 dark:text-gray-400 text-sm">
+                          Seleziona metodi di pagamento...
+                        </span>
+                      )}
+                    </div>
+                    
                     {/* Ícono de búsqueda */}
                     <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                       <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2875,34 +2981,48 @@ export default function BiglietteriaPage() {
                   
                   {showMetodoPagamentoDropdown && (
                     <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      {filteredMetodoPagamento.length > 0 ? (
-                        filteredMetodoPagamento.map(metodo => (
+                      {filteredMetodoPagamento
+                        .filter(metodo => !formData.metodoPagamento.includes(metodo))
+                        .map(metodo => (
                           <div
                             key={metodo}
-                            onClick={() => handleMetodoPagamentoSelect(metodo)}
+                            onClick={() => {
+                              handleMetodoPagamentoToggle(metodo);
+                              setShowMetodoPagamentoDropdown(false);
+                            }}
                             className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
                           >
                             <div className="font-medium text-gray-900 dark:text-white">
                               {metodo}
                             </div>
                           </div>
-                        ))
-                      ) : (
+                        ))}
+                      {filteredMetodoPagamento.filter(metodo => !formData.metodoPagamento.includes(metodo)).length === 0 && (
                         <div className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">
-                          {metodoPagamentoList && metodoPagamentoList.length > 0 ? 'No se encontraron métodos de pago' : 'Cargando métodos de pago...'}
+                          Nessun metodo disponibile
                         </div>
                       )}
                     </div>
                   )}
                   
-                  {/* Mensaje cuando no hay resultados */}
-                  {showMetodoPagamentoDropdown && metodoPagamentoSearchTerm && filteredMetodoPagamento.length === 0 && (
-                    <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg">
-                      <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
-                        Nessun metodo di pagamento trovato
-                      </div>
-                    </div>
+                  {/* Mensaje de error */}
+                  {formData.metodoPagamento.length === 0 && (
+                    <p className="text-xs text-red-500 mt-1">Debe seleccionar al menos un método de pago</p>
                   )}
+                </div>
+                
+                {/* Campo Nota di vendita */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Nota di vendita
+                  </label>
+                  <textarea
+                    value={formData.notaDiVendita}
+                    onChange={(e) => setFormData(prev => ({ ...prev, notaDiVendita: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    rows={3}
+                    placeholder="Nota interna della vendita..."
+                  />
                 </div>
               </div>
             </div>

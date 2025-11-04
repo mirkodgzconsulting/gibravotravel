@@ -117,8 +117,21 @@ export async function POST(request: NextRequest) {
     const data = formData.get('data') as string;
     const pnr = formData.get('pnr') as string;
     const itinerario = formData.get('itinerario') as string;
-    const metodoPagamento = formData.get('metodoPagamento') as string;
+    const metodoPagamentoJson = formData.get('metodoPagamento') as string;
+    const notaDiVendita = formData.get('notaDiVendita') as string;
     const numeroPasajeros = parseInt(formData.get('numeroPasajeros') as string) || 1;
+    
+    // Parsear metodoPagamento desde JSON array
+    let metodoPagamento: string;
+    try {
+      const metodoPagamentoArray = JSON.parse(metodoPagamentoJson || '[]');
+      metodoPagamento = Array.isArray(metodoPagamentoArray) && metodoPagamentoArray.length > 0
+        ? JSON.stringify(metodoPagamentoArray)
+        : '';
+    } catch {
+      // Si no es JSON válido, usar como string simple (compatibilidad)
+      metodoPagamento = metodoPagamentoJson || '';
+    }
     const acconto = formData.get('acconto') as string;
     const numeroCuotas = parseInt(formData.get('numeroCuotas') as string) || 0;
     const cuotasJson = formData.get('cuotas') as string;
@@ -325,6 +338,7 @@ export async function POST(request: NextRequest) {
         pnr: pnr || null,
         itinerario,
         metodoPagamento,
+        notaDiVendita: notaDiVendita || null,
         numeroPasajeros,
         netoPrincipal,
         vendutoTotal,

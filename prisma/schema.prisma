@@ -179,7 +179,8 @@ model Biglietteria {
   data             DateTime
   pnr              String?
   itinerario       String
-  metodoPagamento  String
+  metodoPagamento  String                // JSON array de métodos de pago
+  notaDiVendita     String?
   cliente          String
   codiceFiscale    String
   indirizzo        String

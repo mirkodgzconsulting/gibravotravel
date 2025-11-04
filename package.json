@@ -48,7 +48,8 @@
     "db:check-indices": "node scripts/verificar-indices-prod.js",
     "db:optimize": "node scripts/add-performance-indexes.js",
     "optimize": "node scripts/optimize-for-production.js",
-    "deploy": "node scripts/deploy-to-production.js"
+    "deploy": "node scripts/deploy-to-production.js",
+    "agregar-servicios": "node scripts/agregar-servicios.js"
   },
   "dependencies": {
     "@clerk/backend": "^2.17.0",

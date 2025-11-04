@@ -34,6 +34,7 @@ export default function ServizioPage() {
   const [editingServizio, setEditingServizio] = useState<Servizio | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [addingServices, setAddingServices] = useState(false);
   
   const [formData, setFormData] = useState({
     servizio: ""
@@ -151,6 +152,43 @@ export default function ServizioPage() {
     setFormData({ servizio: "" });
   };
 
+  const handleAgregarServicios = async () => {
+    if (!confirm('¿Estás seguro de que quieres agregar los servicios predefinidos?\n\nEsto agregará: Volo, Corriere, Fideiussione, Etias, Esta, Eta, Caf, Transfer, Bus, Tkt')) {
+      return;
+    }
+
+    setAddingServices(true);
+    setMessage(null);
+
+    try {
+      const response = await fetch('/api/admin/agregar-servicios', {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage({
+          type: 'success',
+          text: `✅ ${data.agregados} servicios agregados, ${data.yaExistentes} ya existían. Total: ${data.totalServicios} servicios activos`
+        });
+        fetchServizios();
+      } else {
+        setMessage({
+          type: 'error',
+          text: data.error || 'Error al agregar servicios'
+        });
+      }
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: 'Error al procesar la solicitud'
+      });
+    } finally {
+      setAddingServices(false);
+    }
+  };
+
   if (roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -184,13 +222,20 @@ export default function ServizioPage() {
         </div>
       )}
 
-      {/* Botón principal centrado */}
-      <div className="text-center mb-8">
+      {/* Botones principales centrados */}
+      <div className="text-center mb-8 flex gap-4 justify-center">
         <button
           onClick={modal.openModal}
           className="px-8 py-4 text-lg font-medium text-white rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600 transition-colors"
         >
           Aggiungi Servizio
+        </button>
+        <button
+          onClick={handleAgregarServicios}
+          disabled={addingServices}
+          className="px-8 py-4 text-lg font-medium text-white rounded-lg bg-purple-500 shadow-theme-xs hover:bg-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {addingServices ? 'Agregando...' : 'Agregar Servicios Predefinidos'}
         </button>
       </div>
 

@@ -303,7 +303,22 @@ export async function POST(request: NextRequest) {
         servizio: Array.isArray(pasajero.servicios) ? pasajero.servicios.join(', ') : pasajero.servizio || '',
         andata: andataProcesada,
         ritorno: ritornoProcesada,
-        iata: pasajero.iata || null, // Campo IATA dinámico
+        iata: (() => {
+          // Crear objeto JSON con todos los IATA específicos
+          const iataObject: any = {};
+          if (pasajero.iataBiglietteria) iataObject.biglietteria = pasajero.iataBiglietteria;
+          if (pasajero.iataExpress) iataObject.express = pasajero.iataExpress;
+          if (pasajero.iataPolizza) iataObject.polizza = pasajero.iataPolizza;
+          if (pasajero.iataLetteraInvito) iataObject.letteraInvito = pasajero.iataLetteraInvito;
+          if (pasajero.iataHotel) iataObject.hotel = pasajero.iataHotel;
+          
+          // Si hay IATA específicos, guardar como JSON; si no, usar el campo iata legacy para compatibilidad
+          if (Object.keys(iataObject).length > 0) {
+            return JSON.stringify(iataObject);
+          }
+          // Compatibilidad con registros antiguos
+          return pasajero.iata || null;
+        })(),
         netoBiglietteria: pasajero.netoBiglietteria ? parseFloat(pasajero.netoBiglietteria) : null,
         vendutoBiglietteria: pasajero.vendutoBiglietteria ? parseFloat(pasajero.vendutoBiglietteria) : null,
         tieneExpress: pasajero.tieneExpress || false,

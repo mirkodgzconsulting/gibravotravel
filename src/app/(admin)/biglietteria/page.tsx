@@ -36,7 +36,12 @@ interface PasajeroData {
   servicios: string[]; // Array de servicios seleccionados
   andata: string;
   ritorno: string;
-  iata: string; // Campo IATA dinámico por pasajero
+  iata: string; // IATA para Biglietteria (compatibilidad)
+  iataBiglietteria: string; // IATA específico para Biglietteria
+  iataExpress: string; // IATA específico para Express
+  iataPolizza: string; // IATA específico para Polizza
+  iataLetteraInvito: string; // IATA específico para Lettera di Invito
+  iataHotel: string; // IATA específico para Hotel
   netoBiglietteria: string;
   vendutoBiglietteria: string;
   tieneExpress: boolean;
@@ -308,7 +313,12 @@ export default function BiglietteriaPage() {
     servicios: [],
     andata: '',
     ritorno: '',
-    iata: '',
+    iata: '', // Mantener para compatibilidad
+    iataBiglietteria: '',
+    iataExpress: '',
+    iataPolizza: '',
+    iataLetteraInvito: '',
+    iataHotel: '',
     netoBiglietteria: '',
     vendutoBiglietteria: '',
     tieneExpress: false,
@@ -708,7 +718,15 @@ export default function BiglietteriaPage() {
   };
 
   const handleIndividualIataSelect = (pasajeroIndex: number, servicio: string, iata: string) => {
-    handlePasajeroChange(pasajeroIndex, 'iata', iata);
+    // Mapear servicio a campo IATA específico
+    const campoIata = servicio === 'EXPRESS' ? 'iataExpress' :
+                      servicio === 'POLIZZA' ? 'iataPolizza' :
+                      servicio === 'HOTEL' ? 'iataHotel' :
+                      servicio === 'LETTERA' || servicio === 'LETTERA D\'INVITO' ? 'iataLetteraInvito' :
+                      servicio === 'Biglietteria' || servicio === 'BIGLIETTERIA' ? 'iataBiglietteria' :
+                      'iata'; // Fallback para compatibilidad
+    
+    handlePasajeroChange(pasajeroIndex, campoIata as keyof PasajeroData, iata);
     setIndividualIataDropdown(pasajeroIndex, servicio, false);
     setIndividualIataSearchTerm(pasajeroIndex, servicio, '');
   };
@@ -1183,7 +1201,56 @@ export default function BiglietteriaPage() {
         servicios: servicios,
         andata: p.andata ? new Date(p.andata).toISOString().split('T')[0] : '',
         ritorno: p.ritorno ? new Date(p.ritorno).toISOString().split('T')[0] : '',
-        iata: (p as any).iata || '', // Campo IATA dinámico
+        // Parsear IATA desde JSON o string
+        ...(() => {
+          const iataValue = (p as any).iata;
+          if (!iataValue) {
+            return {
+              iata: '',
+              iataBiglietteria: '',
+              iataExpress: '',
+              iataPolizza: '',
+              iataLetteraInvito: '',
+              iataHotel: ''
+            };
+          }
+          
+          // Intentar parsear como JSON
+          try {
+            const iataParsed = JSON.parse(iataValue);
+            if (typeof iataParsed === 'object' && iataParsed !== null) {
+              // Es un objeto JSON con IATA específicos
+              return {
+                iata: iataParsed.biglietteria || '',
+                iataBiglietteria: iataParsed.biglietteria || '',
+                iataExpress: iataParsed.express || '',
+                iataPolizza: iataParsed.polizza || '',
+                iataLetteraInvito: iataParsed.letteraInvito || '',
+                iataHotel: iataParsed.hotel || ''
+              };
+            }
+          } catch {
+            // No es JSON, es string simple (compatibilidad con registros antiguos)
+            return {
+              iata: iataValue,
+              iataBiglietteria: iataValue,
+              iataExpress: '',
+              iataPolizza: '',
+              iataLetteraInvito: '',
+              iataHotel: ''
+            };
+          }
+          
+          // Fallback
+          return {
+            iata: iataValue,
+            iataBiglietteria: iataValue,
+            iataExpress: '',
+            iataPolizza: '',
+            iataLetteraInvito: '',
+            iataHotel: ''
+          };
+        })(),
         netoBiglietteria: p.netoBiglietteria?.toString() || '',
         vendutoBiglietteria: p.vendutoBiglietteria?.toString() || '',
         tieneExpress: p.tieneExpress || false,
@@ -2451,28 +2518,25 @@ export default function BiglietteriaPage() {
                               <div className="relative iata-dropdown-container">
                                 <input
                                   type="text"
-                                  value={pasajero.iata}
+                                  value={pasajero.iataBiglietteria}
                                   onChange={(e) => {
-                                    handlePasajeroChange(index, 'iata', e.target.value);
-                                    // Mostrar dropdown al escribir
-                                    setShowIataDropdown(true);
+                                    handlePasajeroChange(index, 'iataBiglietteria', e.target.value);
+                                    setIndividualIataSearchTerm(index, 'Biglietteria', e.target.value);
+                                    setIndividualIataDropdown(index, 'Biglietteria', true);
                                   }}
-                                  onFocus={() => setShowIataDropdown(true)}
+                                  onFocus={() => setIndividualIataDropdown(index, 'Biglietteria', true)}
                                   placeholder="Buscar IATA"
                                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                                   required
                                 />
                                 
                                 {/* Dropdown de IATA */}
-                                {showIataDropdown && filteredIata.length > 0 && (
+                                {isIndividualIataDropdownOpen(index, 'Biglietteria') && getFilteredIndividualIata(index, 'Biglietteria').length > 0 && (
                                   <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                                    {filteredIata.map((iata, idx) => (
+                                    {getFilteredIndividualIata(index, 'Biglietteria').map((iata, idx) => (
                                       <div
-                                        key={`pasajero-${index}-iata-${idx}`}
-                                        onClick={() => {
-                                          handlePasajeroChange(index, 'iata', iata);
-                                          setShowIataDropdown(false);
-                                        }}
+                                        key={`pasajero-${index}-iata-biglietteria-${idx}`}
+                                        onClick={() => handleIndividualIataSelect(index, 'Biglietteria', iata)}
                                         className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
                                       >
                                         <div className="font-medium text-gray-900 dark:text-white">
@@ -2484,7 +2548,7 @@ export default function BiglietteriaPage() {
                                 )}
                                 
                                 {/* Mensaje cuando no hay resultados */}
-                                {showIataDropdown && pasajero.iata && filteredIata.length === 0 && (
+                                {isIndividualIataDropdownOpen(index, 'Biglietteria') && getFilteredIndividualIata(index, 'Biglietteria').length === 0 && (
                                   <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg">
                                     <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
                                       Nessun IATA trovato
@@ -2544,9 +2608,9 @@ export default function BiglietteriaPage() {
                                   <div className="relative iata-dropdown-container">
                                     <input
                                       type="text"
-                                      value={pasajero.iata}
+                                      value={pasajero.iataExpress}
                                       onChange={(e) => {
-                                        handlePasajeroChange(index, 'iata', e.target.value);
+                                        handlePasajeroChange(index, 'iataExpress', e.target.value);
                                         setIndividualIataSearchTerm(index, 'EXPRESS', e.target.value);
                                         setIndividualIataDropdown(index, 'EXPRESS', true);
                                       }}
@@ -2622,9 +2686,9 @@ export default function BiglietteriaPage() {
                                   <div className="relative iata-dropdown-container">
                                     <input
                                       type="text"
-                                      value={pasajero.iata}
+                                      value={pasajero.iataPolizza}
                                       onChange={(e) => {
-                                        handlePasajeroChange(index, 'iata', e.target.value);
+                                        handlePasajeroChange(index, 'iataPolizza', e.target.value);
                                         setIndividualIataSearchTerm(index, 'POLIZZA', e.target.value);
                                         setIndividualIataDropdown(index, 'POLIZZA', true);
                                       }}
@@ -2700,9 +2764,9 @@ export default function BiglietteriaPage() {
                                   <div className="relative iata-dropdown-container">
                                     <input
                                       type="text"
-                                      value={pasajero.iata}
+                                      value={pasajero.iataLetteraInvito}
                                       onChange={(e) => {
-                                        handlePasajeroChange(index, 'iata', e.target.value);
+                                        handlePasajeroChange(index, 'iataLetteraInvito', e.target.value);
                                         setIndividualIataSearchTerm(index, 'LETTERA', e.target.value);
                                         setIndividualIataDropdown(index, 'LETTERA', true);
                                       }}
@@ -2778,9 +2842,9 @@ export default function BiglietteriaPage() {
                                   <div className="relative iata-dropdown-container">
                                     <input
                                       type="text"
-                                      value={pasajero.iata}
+                                      value={pasajero.iataHotel}
                                       onChange={(e) => {
-                                        handlePasajeroChange(index, 'iata', e.target.value);
+                                        handlePasajeroChange(index, 'iataHotel', e.target.value);
                                         setIndividualIataSearchTerm(index, 'HOTEL', e.target.value);
                                         setIndividualIataDropdown(index, 'HOTEL', true);
                                       }}

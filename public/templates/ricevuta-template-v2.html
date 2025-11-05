@@ -361,7 +361,21 @@
             </tr>
             <tr>
                 <td class="label">Passeggeri:</td>
-                <td class="value">{{passeggero}}</td>
+                <td class="value">
+                    {{#tienePasajeros}}
+                    <div style="margin-bottom: 8px;">
+                        {{#pasajeros}}
+                        <div style="margin-bottom: 6px;">
+                            <strong>{{nombre}}</strong>
+                            <div style="margin-left: 10px; font-size: 11px; color: #666;">
+                                Servizi: {{servizio}}
+                            </div>
+                        </div>
+                        {{/pasajeros}}
+                    </div>
+                    {{/tienePasajeros}}
+                    <span id="passeggero-fallback">{{passeggero}}</span>
+                </td>
             </tr>
             <tr>
                 <td class="label">Agente:</td>

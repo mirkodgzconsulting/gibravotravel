@@ -56,8 +56,9 @@ export async function POST(request: NextRequest) {
       ? `${record.creator.firstName || ''} ${record.creator.lastName || ''}`.trim() || record.creator.email
       : 'Usuario';
 
-    // Obtener datos del primer pasajero (como en el frontend)
-    const primerPasajero = record.pasajeros?.[0];
+    // Obtener todos los pasajeros
+    const todosPasajeros = record.pasajeros || [];
+    const primerPasajero = todosPasajeros[0];
     
     // Generar fecha actual
     const fechaActual = new Date().toLocaleDateString('it-IT', {
@@ -66,19 +67,64 @@ export async function POST(request: NextRequest) {
       day: 'numeric'
     });
 
+    // Preparar array de pasajeros para el template
+    const pasajerosData = todosPasajeros.map(pasajero => ({
+      nombre: pasajero.nombrePasajero || '',
+      servizio: pasajero.servizio || ''
+    }));
+
+    // Combinar todos los servicios únicos de todos los pasajeros
+    // Extraer todos los servicios de todos los pasajeros
+    const serviciosExtraidos = todosPasajeros
+      .map(p => p.servizio || '')
+      .filter(s => s && s.trim() !== '')
+      .flatMap(s => {
+        // Dividir por comas y limpiar cada servicio
+        return s.split(',')
+          .map(serv => serv.trim())
+          .filter(serv => serv && serv.length > 0);
+      });
+    
+    // Eliminar duplicados manteniendo el orden (case-insensitive pero preservando el formato original)
+    const serviciosUnicos = [];
+    const serviciosVistos = new Set<string>();
+    
+    serviciosExtraidos.forEach(servicio => {
+      // Normalizar para comparación (sin espacios extras, lowercase)
+      const servicioNormalizado = servicio.toLowerCase().trim();
+      
+      // Si no lo hemos visto antes, agregarlo
+      if (!serviciosVistos.has(servicioNormalizado)) {
+        serviciosUnicos.push(servicio); // Mantener formato original
+        serviciosVistos.add(servicioNormalizado);
+      }
+    });
+    
+    const servizioCombinado = serviciosUnicos.join(', ');
+
+    // Combinar todos los nombres de pasajeros
+    const nombresPasajeros = todosPasajeros
+      .map(p => p.nombrePasajero)
+      .filter(n => n && n.trim() !== '')
+      .join(', ');
+
     const data = {
       // Datos del cliente
       cliente: record.cliente || '',
-      passeggero: primerPasajero?.nombrePasajero || '',
+      passeggero: nombresPasajeros || primerPasajero?.nombrePasajero || '',
       pnr: record.pnr || '',
       itinerario: record.itinerario || '',
-      servizio: primerPasajero?.servizio || '',
+      servizio: servizioCombinado || primerPasajero?.servizio || '',
       metodoPagamento: record.metodoPagamento || '',
       agente: agenteName,
       
+      // Array de pasajeros para iterar en el template
+      pasajeros: pasajerosData,
+      tienePasajeros: pasajerosData.length > 0,
+      
       // Datos financieros
       neto: primerPasajero?.netoBiglietteria?.toString() || '0',
-      venduto: (primerPasajero?.vendutoBiglietteria || record.vendutoTotal || 0).toString(),
+      venduto: record.vendutoTotal?.toString() || '0',
       acconto: record.acconto?.toString() || '0',
       daPagare: record.daPagare?.toString() || '0',
       dapagare: record.daPagare?.toString() || '0', // Para compatibilidad con plantilla
@@ -148,6 +194,27 @@ export async function POST(request: NextRequest) {
             return itemHtml;
           }).join('');
         });
+      } else if (key === 'pasajeros' && Array.isArray(value)) {
+        // Manejar arrays de pasajeros con loop de Handlebars-like
+        html = html.replace(/\{\{#pasajeros\}\}([\s\S]*?)\{\{\/pasajeros\}\}/g, (match, content) => {
+          if (value.length === 0) return '';
+          return value.map(pasajero => {
+            let itemHtml = content;
+            Object.entries(pasajero).forEach(([pKey, pValue]) => {
+              itemHtml = itemHtml.replace(new RegExp(`\\{\\{${pKey}\\}\\}`, 'g'), String(pValue));
+            });
+            return itemHtml;
+          }).join('');
+        });
+      } else if (key === 'tienePasajeros' && value) {
+        // Manejar condicional {{#tienePasajeros}} - dejar el contenido visible y ocultar fallback
+        html = html.replace(/\{\{#tienePasajeros\}\}/g, '');
+        html = html.replace(/\{\{\/tienePasajeros\}\}/g, '');
+        // Ocultar el fallback si hay pasajeros
+        html = html.replace(/<span id="passeggero-fallback">[\s\S]*?<\/span>/g, '');
+      } else if (key === 'tienePasajeros' && !value) {
+        // Remover contenido si no hay pasajeros - el fallback se mostrará
+        html = html.replace(/\{\{#tienePasajeros\}\}[\s\S]*?\{\{\/tienePasajeros\}\}/g, '');
       } else if (key === 'tieneCuotas' && value) {
         // Manejar condicional {{#tieneCuotas}}
         html = html.replace(/\{\{#tieneCuotas\}\}/g, '');

@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
     let vendutoTotal = 0;
     
     pasajeros.forEach((pasajero: any) => {
-      // Sumar Biglietteria
+      // Sumar Biglietteria (Volo)
       if (pasajero.netoBiglietteria) netoPrincipal += parseFloat(pasajero.netoBiglietteria) || 0;
       if (pasajero.vendutoBiglietteria) vendutoTotal += parseFloat(pasajero.vendutoBiglietteria) || 0;
       
@@ -165,6 +165,16 @@ export async function POST(request: NextRequest) {
       if (pasajero.tieneHotel) {
         if (pasajero.netoHotel) netoPrincipal += parseFloat(pasajero.netoHotel) || 0;
         if (pasajero.vendutoHotel) vendutoTotal += parseFloat(pasajero.vendutoHotel) || 0;
+      }
+      
+      // Sumar servicios dinámicos (servicios que no son conocidos)
+      if (pasajero.serviciosData && typeof pasajero.serviciosData === 'object') {
+        Object.values(pasajero.serviciosData).forEach((servicioData: any) => {
+          if (servicioData && typeof servicioData === 'object') {
+            if (servicioData.neto) netoPrincipal += parseFloat(servicioData.neto) || 0;
+            if (servicioData.venduto) vendutoTotal += parseFloat(servicioData.venduto) || 0;
+          }
+        });
       }
     });
     

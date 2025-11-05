@@ -311,7 +311,7 @@ export default function BiglietteriaPage() {
   // ==================== FUNCIONES AUXILIARES ====================
   
   // Servicios conocidos que tienen campos específicos en la interfaz
-  const serviciosConocidos = ['BIGLIETTERIA', 'EXPRESS', 'POLIZZA', 'LETTERA D\'INVITO', 'HOTEL'];
+  const serviciosConocidos = ['VOLO', 'EXPRESS', 'POLIZZA', 'LETTERA D\'INVITO', 'HOTEL'];
   
   // Función para normalizar el nombre del servicio (para comparaciones)
   const normalizarServicio = (servicio: string): string => {
@@ -377,29 +377,29 @@ export default function BiglietteriaPage() {
     serviciosData: {}
   });
   
-  // Función para verificar si tiene Biglietteria
+  // Función para verificar si tiene Volo (anteriormente Biglietteria)
   const tieneBiglietteria = (servicios: string[]) => {
-    return servicios.some(s => s.toLowerCase().includes('biglietteria'));
+    return servicios.some(s => s.toLowerCase().includes('volo'));
   };
   
-  // Función para verificar si tiene servicios adicionales (cualquier servicio excepto Biglietteria)
+  // Función para verificar si tiene servicios adicionales (cualquier servicio excepto Volo)
   const tieneServiciosAdicionales = (servicios: string[]) => {
     return servicios.some(s => !tieneBiglietteria([s]));
   };
   
   // Función para verificar si tiene servicios que NO son adicionales
   const tieneServiciosNoAdicionales = (servicios: string[]) => {
-    const hasBiglietteria = tieneBiglietteria(servicios);
+    const hasBiglietteria = tieneBiglietteria(servicios); // hasBiglietteria ahora verifica "volo"
     const hasAdicionales = tieneServiciosAdicionales(servicios);
     
     if (hasBiglietteria && hasAdicionales) {
-      // Si tiene Biglietteria + servicios adicionales
+      // Si tiene Volo + servicios adicionales
       return { showDateFields: true, showBiglietteriaFields: true, showAdditionalServiceFields: true };
     } else if (hasBiglietteria && !hasAdicionales) {
-      // Si solo tiene Biglietteria + otros servicios (no adicionales)
+      // Si solo tiene Volo + otros servicios (no adicionales)
       return { showDateFields: true, showBiglietteriaFields: true, showAdditionalServiceFields: false };
     } else if (!hasBiglietteria && hasAdicionales) {
-      // Si solo tiene servicios adicionales (sin Biglietteria)
+      // Si solo tiene servicios adicionales (sin Volo)
       return { showDateFields: false, showBiglietteriaFields: false, showAdditionalServiceFields: true };
     } else {
       // Si no tiene servicios
@@ -782,7 +782,7 @@ export default function BiglietteriaPage() {
                       servicio === 'POLIZZA' ? 'iataPolizza' :
                       servicio === 'HOTEL' ? 'iataHotel' :
                       servicio === 'LETTERA' || servicio === 'LETTERA D\'INVITO' ? 'iataLetteraInvito' :
-                      servicio === 'Biglietteria' || servicio === 'BIGLIETTERIA' ? 'iataBiglietteria' :
+                      servicio === 'Volo' || servicio === 'VOLO' || servicio === 'Biglietteria' || servicio === 'BIGLIETTERIA' ? 'iataBiglietteria' :
                       'iata'; // Fallback para compatibilidad
     
     handlePasajeroChange(pasajeroIndex, campoIata as keyof PasajeroData, iata);
@@ -954,7 +954,26 @@ export default function BiglietteriaPage() {
       'Pagamento': record.pagamento,
       'Data': new Date(record.data).toLocaleDateString('it-IT'),
       'PNR': record.pnr,
-      'Passeggeri': record.numeroPasajeros,
+      'Servizi': (() => {
+        // Extraer todos los servicios únicos de todos los pasajeros
+        const serviciosSet = new Set<string>();
+        if (record.pasajeros && Array.isArray(record.pasajeros)) {
+          record.pasajeros.forEach((pasajero: any) => {
+            if (pasajero.servicios && Array.isArray(pasajero.servicios)) {
+              pasajero.servicios.forEach((servicio: string) => {
+                serviciosSet.add(servicio.trim());
+              });
+            } else if (pasajero.servizio) {
+              // Compatibilidad con formato antiguo
+              const servicios = pasajero.servizio.split(',').map((s: string) => s.trim());
+              servicios.forEach((servicio: string) => {
+                serviciosSet.add(servicio);
+              });
+            }
+          });
+        }
+        return Array.from(serviciosSet).join(', ') || '-';
+      })(),
       'Itinerario': record.itinerario,
       'Neto': record.netoPrincipal,
       'Venduto': record.vendutoTotal,
@@ -1918,7 +1937,7 @@ export default function BiglietteriaPage() {
                 PNR
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                Passeggeri
+                SERVIZI
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                 Itinerario
@@ -2046,8 +2065,42 @@ export default function BiglietteriaPage() {
                   <td className="w-[100px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono truncate">
                     {record.pnr || '-'}
                   </td>
-                  <td className="w-[80px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 truncate">
-                    {record.numeroPasajeros}
+                  <td className="w-[150px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300">
+                    {(() => {
+                      // Extraer todos los servicios únicos de todos los pasajeros
+                      const serviciosSet = new Set<string>();
+                      if (record.pasajeros && Array.isArray(record.pasajeros)) {
+                        record.pasajeros.forEach((pasajero: any) => {
+                          if (pasajero.servicios && Array.isArray(pasajero.servicios)) {
+                            pasajero.servicios.forEach((servicio: string) => {
+                              serviciosSet.add(servicio.trim());
+                            });
+                          } else if (pasajero.servizio) {
+                            // Compatibilidad con formato antiguo (servicio como string separado por comas)
+                            const servicios = pasajero.servizio.split(',').map((s: string) => s.trim());
+                            servicios.forEach((servicio: string) => {
+                              serviciosSet.add(servicio);
+                            });
+                          }
+                        });
+                      }
+                      const serviciosArray = Array.from(serviciosSet);
+                      return serviciosArray.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {serviciosArray.map((servicio, idx) => (
+                            <span
+                              key={idx}
+                              className="inline-block px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded text-xs"
+                              title={servicio}
+                            >
+                              {servicio.length > 15 ? `${servicio.substring(0, 15)}...` : servicio}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      );
+                    })()}
                   </td>
                   <td className="w-[120px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 truncate">
                     {record.itinerario}
@@ -2610,7 +2663,7 @@ export default function BiglietteriaPage() {
                         </div>
                       </div>
                       
-                      {/* Fechas (solo si tiene Biglietteria) */}
+                      {/* Fechas (solo si tiene Volo) */}
                       {fieldsToShow.showDateFields && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                           <div>
@@ -2639,11 +2692,11 @@ export default function BiglietteriaPage() {
                         </div>
                       )}
                       
-                      {/* Campos de Biglietteria */}
+                      {/* Campos de Volo */}
                       {fieldsToShow.showBiglietteriaFields && (
                         <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg mb-4">
                           <h5 className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-3">
-                            Costos Biglietteria
+                            Costos Volo
                           </h5>
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
@@ -2656,22 +2709,22 @@ export default function BiglietteriaPage() {
                                   value={pasajero.iataBiglietteria}
                                   onChange={(e) => {
                                     handlePasajeroChange(index, 'iataBiglietteria', e.target.value);
-                                    setIndividualIataSearchTerm(index, 'Biglietteria', e.target.value);
-                                    setIndividualIataDropdown(index, 'Biglietteria', true);
+                                    setIndividualIataSearchTerm(index, 'Volo', e.target.value);
+                                    setIndividualIataDropdown(index, 'Volo', true);
                                   }}
-                                  onFocus={() => setIndividualIataDropdown(index, 'Biglietteria', true)}
+                                  onFocus={() => setIndividualIataDropdown(index, 'Volo', true)}
                                   placeholder="Buscar IATA"
                                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                                   required
                                 />
                                 
                                 {/* Dropdown de IATA */}
-                                {isIndividualIataDropdownOpen(index, 'Biglietteria') && getFilteredIndividualIata(index, 'Biglietteria').length > 0 && (
+                                {isIndividualIataDropdownOpen(index, 'Volo') && getFilteredIndividualIata(index, 'Volo').length > 0 && (
                                   <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                                    {getFilteredIndividualIata(index, 'Biglietteria').map((iata, idx) => (
+                                    {getFilteredIndividualIata(index, 'Volo').map((iata, idx) => (
                                       <div
-                                        key={`pasajero-${index}-iata-biglietteria-${idx}`}
-                                        onClick={() => handleIndividualIataSelect(index, 'Biglietteria', iata)}
+                                        key={`pasajero-${index}-iata-volo-${idx}`}
+                                        onClick={() => handleIndividualIataSelect(index, 'Volo', iata)}
                                         className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
                                       >
                                         <div className="font-medium text-gray-900 dark:text-white">
@@ -2683,7 +2736,7 @@ export default function BiglietteriaPage() {
                                 )}
                                 
                                 {/* Mensaje cuando no hay resultados */}
-                                {isIndividualIataDropdownOpen(index, 'Biglietteria') && getFilteredIndividualIata(index, 'Biglietteria').length === 0 && (
+                                {isIndividualIataDropdownOpen(index, 'Volo') && getFilteredIndividualIata(index, 'Volo').length === 0 && (
                                   <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg">
                                     <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
                                       Nessun IATA trovato
@@ -3672,7 +3725,7 @@ export default function BiglietteriaPage() {
                           {(() => {
                             const servicios = [
                               {
-                                nombre: 'BIGLIETTERIA',
+                                nombre: 'VOLO',
                                 neto: pasajero.netoBiglietteria,
                                 venduto: pasajero.vendutoBiglietteria,
                                 mostrar: !!pasajero.netoBiglietteria

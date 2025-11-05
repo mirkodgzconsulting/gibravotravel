@@ -108,6 +108,27 @@ export async function POST(request: NextRequest) {
       .filter(n => n && n.trim() !== '')
       .join(', ');
 
+    // Formatear método de pago correctamente
+    let metodoPagamentoFormateado = '';
+    if (record.metodoPagamento) {
+      try {
+        // Intentar parsear si es JSON string
+        const metodoParsed = typeof record.metodoPagamento === 'string' 
+          ? JSON.parse(record.metodoPagamento) 
+          : record.metodoPagamento;
+        
+        // Si es un array, unir con comas
+        if (Array.isArray(metodoParsed)) {
+          metodoPagamentoFormateado = metodoParsed.join(', ');
+        } else {
+          metodoPagamentoFormateado = String(metodoParsed);
+        }
+      } catch {
+        // Si no es JSON, usar como string
+        metodoPagamentoFormateado = String(record.metodoPagamento);
+      }
+    }
+
     const data = {
       // Datos del cliente
       cliente: record.cliente || '',
@@ -115,7 +136,7 @@ export async function POST(request: NextRequest) {
       pnr: record.pnr || '',
       itinerario: record.itinerario || '',
       servizio: servizioCombinado || primerPasajero?.servizio || '',
-      metodoPagamento: record.metodoPagamento || '',
+      metodoPagamento: metodoPagamentoFormateado,
       agente: agenteName,
       
       // Array de pasajeros para iterar en el template

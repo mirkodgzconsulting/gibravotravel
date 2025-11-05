@@ -270,6 +270,7 @@ export default function BiglietteriaPage() {
     data: string; 
     prezzo: string; 
     note: string; 
+    isPagato: boolean;
     file: File | null;
     attachedFile?: string | null;
     attachedFileName?: string | null;
@@ -298,6 +299,7 @@ export default function BiglietteriaPage() {
         data: '',
         prezzo: '',
         note: '',
+        isPagato: false,
         file: null
       }));
       setCuotas(nuevasCuotas);
@@ -530,6 +532,21 @@ export default function BiglietteriaPage() {
     };
   }, [formData.numeroPasajeros]);
   
+  // Calcular Acconto automáticamente sumando las cuotas pagadas
+  useEffect(() => {
+    const accontoCuotas = cuotas.reduce((total, cuota) => {
+      if (cuota.isPagato && cuota.prezzo) {
+        return total + parseFloat(cuota.prezzo.toString()) || 0;
+      }
+      return total;
+    }, 0);
+    
+    setFormData(prev => ({
+      ...prev,
+      acconto: accontoCuotas.toFixed(2)
+    }));
+  }, [cuotas]);
+
   // Calcular totales automáticamente cuando cambien los pasajeros o acconto
   useEffect(() => {
     const totales = calcularTotales();
@@ -1164,6 +1181,7 @@ export default function BiglietteriaPage() {
           data: c.data,
           prezzo: c.prezzo,
           note: c.note,
+          isPagato: c.isPagato || false, // Incluir estado de pago
           // Mantener archivo existente si no se subió uno nuevo
           attachedFile: c.file ? null : (c.attachedFile || null),
           attachedFileName: c.file ? null : (c.attachedFileName || null)
@@ -1487,6 +1505,7 @@ export default function BiglietteriaPage() {
             data: cuota.data ? new Date(cuota.data).toISOString().split('T')[0] : '',
             prezzo: cuota.prezzo.toString(),
             note: cuota.note || '',
+            isPagato: Boolean(cuota.isPagato), // Asegurar conversión booleana explícita
             file: null, // Para archivos nuevos
             attachedFile: cuota.attachedFile || null, // Mantener archivo existente
             attachedFileName: cuota.attachedFileName || null // Mantener nombre del archivo
@@ -3576,7 +3595,7 @@ export default function BiglietteriaPage() {
                         
                         <div>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Note (interna)
+                            Note (Externa)
                           </label>
                           <input
                             type="text"
@@ -3589,6 +3608,24 @@ export default function BiglietteriaPage() {
                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                           />
                         </div>
+                      </div>
+                      
+                      <div className="mt-3">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={!!cuota.isPagato}
+                            onChange={(e) => {
+                              const newCuotas = [...cuotas];
+                              newCuotas[index].isPagato = e.target.checked;
+                              setCuotas(newCuotas);
+                            }}
+                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
+                          />
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Pagado
+                          </span>
+                        </label>
                       </div>
                       
                       <div className="mt-3">

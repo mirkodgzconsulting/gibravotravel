@@ -266,7 +266,7 @@ export async function PUT(
           data: cuota.data ? new Date(cuota.data) : null,
           prezzo: parseFloat(cuota.prezzo),
           note: cuota.note || null,
-          isPagato: false,
+          isPagato: cuota.isPagato || false,
           attachedFile: cuotaFileUrl,
           attachedFileName: cuotaFileName
         });

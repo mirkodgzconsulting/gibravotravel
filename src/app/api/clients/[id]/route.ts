@@ -93,7 +93,7 @@ export async function PUT(
     const document4 = formData.get('document4') as File | null;
 
     // Validaciones - Solo firstName, lastName y phoneNumber son obligatorios
-    // fiscalCode, address y email ahora son opcionales
+    // fiscalCode, address, email y birthDate ahora son opcionales
     if (!firstName || !lastName || !phoneNumber) {
       return NextResponse.json({ error: 'Faltan campos obligatorios (Nombre, Apellido y Teléfono son requeridos)' }, { status: 400 });
     }
@@ -232,7 +232,26 @@ export async function PUT(
     }
 
     // Actualizar el cliente
-    // Nota: fiscalCode, address y email ahora son opcionales, usar strings vacíos si no se proporcionan
+    // Nota: fiscalCode, address, email y birthDate ahora son opcionales
+    // Para email vacío, verificar si el cliente actual tiene un email temporal y mantenerlo, o generar uno nuevo
+    let emailValue = email?.trim() || '';
+    
+    // Si el email está vacío, verificar si el cliente actual tiene un email temporal
+    if (!emailValue) {
+      const currentClient = await prisma.client.findUnique({
+        where: { id },
+        select: { email: true }
+      });
+      
+      // Si el cliente actual tiene un email temporal (empieza con "temp-email-"), mantenerlo
+      // Si no, generar uno nuevo
+      if (currentClient?.email && currentClient.email.startsWith('temp-email-')) {
+        emailValue = currentClient.email;
+      } else {
+        emailValue = `temp-email-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+      }
+    }
+    
     const updatedClient = await prisma.client.update({
       where: { id },
       data: {
@@ -240,10 +259,10 @@ export async function PUT(
         lastName,
         fiscalCode: fiscalCode?.trim() || '',
         address: address?.trim() || '',
-        email: email?.trim() || '',
+        email: emailValue,
         phoneNumber,
         birthPlace: birthPlace || '',
-        birthDate: birthDate ? new Date(birthDate) : new Date(),
+        birthDate: birthDate && birthDate.trim() !== '' ? new Date(birthDate) : new Date('1900-01-01'), // Usar fecha por defecto si no se proporciona
         ...documentData
       }
     });

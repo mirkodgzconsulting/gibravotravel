@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
     const document4 = formData.get('document4') as File | null;
 
     // Validaciones - Solo firstName, lastName y phoneNumber son obligatorios
-    // fiscalCode, address y email ahora son opcionales
+    // fiscalCode, address, email y birthDate ahora son opcionales
     if (!firstName || !lastName || !phoneNumber) {
       return NextResponse.json({ error: 'Faltan campos obligatorios (Nombre, Apellido y Teléfono son requeridos)' }, { status: 400 });
     }
@@ -246,17 +246,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Crear el cliente
-    // Nota: fiscalCode, address y email ahora son opcionales, usar strings vacíos si no se proporcionan
+    // Nota: fiscalCode, address y email ahora son opcionales
+    // Para email vacío, usar un valor único temporal para evitar conflictos con @unique
+    const emailValue = email?.trim() || `temp-email-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+    
     const newClient = await prisma.client.create({
       data: {
         firstName,
         lastName,
         fiscalCode: fiscalCode?.trim() || '',
         address: address?.trim() || '',
-        email: email?.trim() || '',
+        email: emailValue,
         phoneNumber,
         birthPlace: birthPlace || '',
-        birthDate: birthDate ? new Date(birthDate) : new Date(),
+        birthDate: birthDate && birthDate.trim() !== '' ? new Date(birthDate) : new Date('1900-01-01'), // Usar fecha por defecto si no se proporciona
         ...documentData,
         createdBy: userId
       }

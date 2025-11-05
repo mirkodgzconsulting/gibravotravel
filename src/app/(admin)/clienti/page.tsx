@@ -248,9 +248,11 @@ export default function ClientiPage() {
       fiscalCode: cliente.fiscalCode,
       address: cliente.address,
       phoneNumber: cliente.phoneNumber,
-      email: cliente.email,
+      email: cliente.email && !cliente.email.startsWith('temp-email-') ? cliente.email : '',
       birthPlace: cliente.birthPlace,
-      birthDate: cliente.birthDate.split('T')[0], // Convertir a formato YYYY-MM-DD
+      birthDate: cliente.birthDate && new Date(cliente.birthDate).getFullYear() > 1900 
+        ? cliente.birthDate.split('T')[0] 
+        : '', // Convertir a formato YYYY-MM-DD solo si no es fecha por defecto
       document1: null,
       document2: null,
       document3: null,
@@ -369,7 +371,7 @@ export default function ClientiPage() {
         'Codice Fiscale': cliente.fiscalCode,
         'Indirizzo': cliente.address,
         'Telefono': cliente.phoneNumber,
-        'E-mail': cliente.email,
+        'E-mail': cliente.email && !cliente.email.startsWith('temp-email-') ? cliente.email : '',
         'Nato a': cliente.birthPlace,
         'Data di nascita': cliente.birthDate ? new Date(cliente.birthDate).toLocaleDateString('it-IT') : '',
         'Registrato da': cliente.creator ? `${cliente.creator.firstName} ${cliente.creator.lastName}` : '',
@@ -505,7 +507,7 @@ export default function ClientiPage() {
       cliente.firstName.toLowerCase().includes(searchLower) ||
       cliente.lastName.toLowerCase().includes(searchLower) ||
       cliente.fiscalCode.toLowerCase().includes(searchLower) ||
-      cliente.email.toLowerCase().includes(searchLower) ||
+      (cliente.email && !cliente.email.startsWith('temp-email-') && cliente.email.toLowerCase().includes(searchLower)) ||
       cliente.phoneNumber.toLowerCase().includes(searchLower) ||
       cliente.address.toLowerCase().includes(searchLower) ||
       cliente.birthPlace.toLowerCase().includes(searchLower) ||
@@ -757,7 +759,7 @@ export default function ClientiPage() {
 
               <div>
                 <label htmlFor="birthDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Data di nascita *
+                  Data di nascita
                 </label>
                 <input
                   type="date"
@@ -765,7 +767,6 @@ export default function ClientiPage() {
                   name="birthDate"
                   value={formData.birthDate}
                   onChange={handleInputChange}
-                  required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
                 />
               </div>
@@ -1079,7 +1080,9 @@ export default function ClientiPage() {
                         </TableCell>
                         <TableCell className="px-3 py-2 text-start w-[200px]">
                           <span className="text-gray-600 dark:text-gray-300 text-xs">
-                            {cliente.email}
+                            {cliente.email && !cliente.email.startsWith('temp-email-') 
+                              ? cliente.email 
+                              : '-'}
                           </span>
                         </TableCell>
                         <TableCell className="px-3 py-2 text-start w-[180px]">
@@ -1098,7 +1101,9 @@ export default function ClientiPage() {
                         </TableCell>
                         <TableCell className="px-3 py-2 text-start w-[120px]">
                           <span className="text-gray-600 dark:text-gray-300 text-xs">
-                            {new Date(cliente.birthDate).toLocaleDateString('it-IT')}
+                            {cliente.birthDate && new Date(cliente.birthDate).getFullYear() > 1900 
+                              ? new Date(cliente.birthDate).toLocaleDateString('it-IT') 
+                              : '-'}
                           </span>
                         </TableCell>
                         <TableCell className="px-3 py-2 text-start w-[140px]">

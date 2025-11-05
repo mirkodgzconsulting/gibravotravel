@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
       });
     
     // Eliminar duplicados manteniendo el orden (case-insensitive pero preservando el formato original)
-    const serviciosUnicos = [];
+    const serviciosUnicos: string[] = [];
     const serviciosVistos = new Set<string>();
     
     serviciosExtraidos.forEach(servicio => {

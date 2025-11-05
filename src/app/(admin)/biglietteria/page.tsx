@@ -219,6 +219,9 @@ export default function BiglietteriaPage() {
   const [showMetodoPagamentoDropdown, setShowMetodoPagamentoDropdown] = useState(false);
   const [metodoPagamentoSearchTerm, setMetodoPagamentoSearchTerm] = useState('');
   
+  // Estado para controlar qué filas tienen expandidos los servicios
+  const [expandedServiciosRows, setExpandedServiciosRows] = useState<Set<string>>(new Set());
+  
   // Estados para servicios dropdown
   const [showServiziDropdowns, setShowServiziDropdowns] = useState<boolean[]>([]);
   const [showServiziDropdown, setShowServiziDropdown] = useState<number | null>(null);
@@ -2075,7 +2078,7 @@ export default function BiglietteriaPage() {
                   <td className="w-[100px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono truncate">
                     {record.pnr || '-'}
                   </td>
-                  <td className="w-[150px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300">
+                  <td className="w-[150px] px-3 py-2 text-gray-600 text-start text-[10px] dark:text-gray-300">
                     {(() => {
                       // Extraer todos los servicios únicos de todos los pasajeros
                       const serviciosSet = new Set<string>();
@@ -2095,20 +2098,76 @@ export default function BiglietteriaPage() {
                         });
                       }
                       const serviciosArray = Array.from(serviciosSet);
-                      return serviciosArray.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {serviciosArray.map((servicio, idx) => (
-                            <span
-                              key={idx}
-                              className="inline-block px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded text-xs"
-                              title={servicio}
-                            >
-                              {servicio.length > 15 ? `${servicio.substring(0, 15)}...` : servicio}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-gray-400">-</span>
+                      const isExpanded = expandedServiciosRows.has(record.id);
+                      
+                      const toggleExpand = () => {
+                        setExpandedServiciosRows(prev => {
+                          const newSet = new Set(prev);
+                          if (newSet.has(record.id)) {
+                            newSet.delete(record.id);
+                          } else {
+                            newSet.add(record.id);
+                          }
+                          return newSet;
+                        });
+                      };
+
+                      if (serviciosArray.length === 0) {
+                        return <span className="text-gray-400">-</span>;
+                      }
+
+                      // Si hay un solo servicio, mostrarlo directamente sin colapsar
+                      if (serviciosArray.length === 1) {
+                        return (
+                          <span className="inline-block px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded text-[10px]">
+                            {serviciosArray[0].length > 20 ? `${serviciosArray[0].substring(0, 20)}...` : serviciosArray[0]}
+                          </span>
+                        );
+                      }
+
+                      // Si hay múltiples servicios, mostrar colapsable
+                      return (
+                        <span className="inline-flex items-center gap-1.5 flex-nowrap">
+                          {isExpanded ? (
+                            <>
+                              {serviciosArray.map((servicio, idx) => (
+                                <span
+                                  key={idx}
+                                  className="inline-block px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded text-[10px] whitespace-nowrap"
+                                  title={servicio}
+                                >
+                                  {servicio.length > 10 ? `${servicio.substring(0, 10)}...` : servicio}
+                                </span>
+                              ))}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleExpand();
+                                }}
+                                className="text-blue-600 dark:text-blue-400 hover:underline text-[10px] whitespace-nowrap"
+                              >
+                                Menos
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <span className="inline-block px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded text-[10px] whitespace-nowrap">
+                                {serviciosArray[0].length > 10 ? `${serviciosArray[0].substring(0, 10)}...` : serviciosArray[0]}
+                                {serviciosArray.length > 1 && ` +${serviciosArray.length - 1}`}
+                              </span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleExpand();
+                                }}
+                                className="text-blue-600 dark:text-blue-400 hover:underline text-[10px] whitespace-nowrap"
+                                title={`Mostrar todos los ${serviciosArray.length} servicios`}
+                              >
+                                Ver más
+                              </button>
+                            </>
+                          )}
+                        </span>
                       );
                     })()}
                   </td>

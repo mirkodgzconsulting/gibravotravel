@@ -306,12 +306,12 @@ export default function BiglietteriaPage() {
   // Constantes - ahora se obtienen de la base de datos
   const serviciosDisponibles = servizi.map(s => s.servizio);
   
-  const additionalCostServices = ['EXPRESS', 'POLIZZA', 'LETTERA D\'INVITO', 'HOTEL'];
+  const additionalCostServices = ['EXPRESS', 'POLIZZA', 'L.INVITO', 'HOTEL'];
   
   // ==================== FUNCIONES AUXILIARES ====================
   
   // Servicios conocidos que tienen campos específicos en la interfaz
-  const serviciosConocidos = ['VOLO', 'EXPRESS', 'POLIZZA', 'LETTERA D\'INVITO', 'HOTEL'];
+  const serviciosConocidos = ['VOLO', 'EXPRESS', 'POLIZZA', 'L.INVITO', 'HOTEL'];
   
   // Función para normalizar el nombre del servicio (para comparaciones)
   const normalizarServicio = (servicio: string): string => {
@@ -656,7 +656,7 @@ export default function BiglietteriaPage() {
         const hasBiglietteria = tieneBiglietteria(servicios);
         const tieneExpress = servicios.some(s => s.toLowerCase().includes('express'));
         const tienePolizza = servicios.some(s => s.toLowerCase().includes('polizza'));
-        const tieneLetteraInvito = servicios.some(s => s.toLowerCase().includes('lettera'));
+        const tieneLetteraInvito = servicios.some(s => s.toLowerCase().includes('l.invito') || s.toLowerCase().includes('lettera'));
         const tieneHotel = servicios.some(s => s.toLowerCase().includes('hotel'));
         
         // Manejar serviciosData dinámicos
@@ -781,7 +781,7 @@ export default function BiglietteriaPage() {
     const campoIata = servicio === 'EXPRESS' ? 'iataExpress' :
                       servicio === 'POLIZZA' ? 'iataPolizza' :
                       servicio === 'HOTEL' ? 'iataHotel' :
-                      servicio === 'LETTERA' || servicio === 'LETTERA D\'INVITO' ? 'iataLetteraInvito' :
+                      servicio === 'L.INVITO' || servicio === 'LETTERA' || servicio === 'LETTERA D\'INVITO' ? 'iataLetteraInvito' :
                       servicio === 'Volo' || servicio === 'VOLO' || servicio === 'Biglietteria' || servicio === 'BIGLIETTERIA' ? 'iataBiglietteria' :
                       'iata'; // Fallback para compatibilidad
     
@@ -1194,14 +1194,19 @@ export default function BiglietteriaPage() {
         // OPTIMIZACIÓN: Procesar registro antes de actualizar estado
         setRecords(prev => prev.map(r => r.id === updatedRecord.id ? processRecord(updatedRecord) : r));
         setMessage({ type: 'success', text: 'Registro actualizado correctamente' });
+        
+        // Cerrar modal automáticamente después de actualizar
+        setTimeout(() => {
+          handleCancelEdit();
+        }, 500); // Pequeño delay para mostrar el mensaje de éxito
       } else {
         // OPTIMIZACIÓN: Procesar registro antes de agregar al estado
         setRecords(prev => [processRecord(result), ...prev]);
         setMessage({ type: 'success', text: 'Registro creado correctamente' });
+        
+        // Limpiar formulario y cerrar modal
+        handleCancelEdit();
       }
-      
-      // Limpiar formulario
-      handleCancelEdit();
       
     } catch (error: any) {
       console.error('Error al guardar:', error);
@@ -2938,11 +2943,11 @@ export default function BiglietteriaPage() {
                             </div>
                           )}
                           
-                          {/* Lettera di Invito */}
+                          {/* L.invito */}
                           {pasajero.tieneLetteraInvito && (
                             <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg">
                               <h6 className="text-sm font-semibold text-purple-900 dark:text-purple-300 mb-2">
-                                Lettera di Invito
+                                L.invito
                               </h6>
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                 <div>
@@ -2955,23 +2960,23 @@ export default function BiglietteriaPage() {
                                       value={pasajero.iataLetteraInvito}
                                       onChange={(e) => {
                                         handlePasajeroChange(index, 'iataLetteraInvito', e.target.value);
-                                        setIndividualIataSearchTerm(index, 'LETTERA', e.target.value);
-                                        setIndividualIataDropdown(index, 'LETTERA', true);
+                                        setIndividualIataSearchTerm(index, 'L.INVITO', e.target.value);
+                                        setIndividualIataDropdown(index, 'L.INVITO', true);
                                       }}
-                                      onFocus={() => setIndividualIataDropdown(index, 'LETTERA', true)}
+                                      onFocus={() => setIndividualIataDropdown(index, 'L.INVITO', true)}
                                       placeholder="Buscar IATA"
                                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                                       required
                                     />
                                     
                                     {/* Dropdown de IATA */}
-                                    {isIndividualIataDropdownOpen(index, 'LETTERA') && getFilteredIndividualIata(index, 'LETTERA').length > 0 && (
+                                    {isIndividualIataDropdownOpen(index, 'L.INVITO') && getFilteredIndividualIata(index, 'L.INVITO').length > 0 && (
                                       <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                                        {getFilteredIndividualIata(index, 'LETTERA').map((iata, idx) => (
+                                        {getFilteredIndividualIata(index, 'L.INVITO').map((iata, idx) => (
                                           <div
                                             key={idx}
                                             className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-sm text-gray-900 dark:text-white"
-                                            onClick={() => handleIndividualIataSelect(index, 'LETTERA', iata)}
+                                            onClick={() => handleIndividualIataSelect(index, 'L.INVITO', iata)}
                                           >
                                             {iata}
                                           </div>
@@ -2979,7 +2984,7 @@ export default function BiglietteriaPage() {
                                       </div>
                                     )}
                                     
-                                    {isIndividualIataDropdownOpen(index, 'LETTERA') && getFilteredIndividualIata(index, 'LETTERA').length === 0 && (
+                                    {isIndividualIataDropdownOpen(index, 'L.INVITO') && getFilteredIndividualIata(index, 'L.INVITO').length === 0 && (
                                       <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg">
                                         <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
                                           Nessun IATA trovato
@@ -3743,7 +3748,7 @@ export default function BiglietteriaPage() {
                                 mostrar: pasajero.tienePolizza
                               },
                               {
-                                nombre: 'LETTERA D\'INVITO',
+                                nombre: 'L.INVITO',
                                 neto: pasajero.netoLetteraInvito,
                                 venduto: pasajero.vendutoLetteraInvito,
                                 mostrar: pasajero.tieneLetteraInvito

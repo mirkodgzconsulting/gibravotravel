@@ -40,19 +40,6 @@ export async function GET(
       return NextResponse.json({ error: 'Registro no encontrado' }, { status: 404 });
     }
 
-    // Verificar si el usuario tiene rol USER y si puede acceder a este registro
-    const user = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      select: { role: true, firstName: true, lastName: true }
-    });
-
-    if (user?.role === 'USER') {
-      const createdBy = `${user.firstName || ''} ${user.lastName || ''}`.trim();
-      if (record.creadoPor !== createdBy) {
-        return NextResponse.json({ error: 'No tienes permisos para acceder a este registro' }, { status: 403 });
-      }
-    }
-
     return NextResponse.json({ record });
   } catch (error) {
     console.error('Error fetching biglietteria record:', error);
@@ -179,19 +166,6 @@ export async function PUT(
 
     if (!existingRecord) {
       return NextResponse.json({ error: 'Registro no encontrado' }, { status: 404 });
-    }
-
-    // Verificar permisos para usuarios USER
-    const user = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      select: { role: true, firstName: true, lastName: true }
-    });
-
-    if (user?.role === 'USER') {
-      const createdBy = `${user.firstName || ''} ${user.lastName || ''}`.trim();
-      if (existingRecord.creadoPor !== createdBy) {
-        return NextResponse.json({ error: 'No tienes permisos para editar este registro' }, { status: 403 });
-      }
     }
 
     // Subir nuevo archivo principal si existe, sino mantener el existente
@@ -519,19 +493,6 @@ export async function PATCH(
       return NextResponse.json({ error: 'Registro no encontrado' }, { status: 404 });
     }
 
-    // Verificar permisos para usuarios USER
-    const user = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      select: { role: true, firstName: true, lastName: true }
-    });
-
-    if (user?.role === 'USER') {
-      const createdBy = `${user.firstName || ''} ${user.lastName || ''}`.trim();
-      if (existingRecord.creadoPor !== createdBy) {
-        return NextResponse.json({ error: 'No tienes permisos para editar este registro' }, { status: 403 });
-      }
-    }
-
     // Actualizar solo los campos proporcionados
     const record = await prisma.biglietteria.update({
       where: { id },
@@ -584,19 +545,6 @@ export async function DELETE(
 
     if (!existingRecord) {
       return NextResponse.json({ error: 'Registro no encontrado' }, { status: 404 });
-    }
-
-    // Verificar permisos para usuarios USER
-    const user = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      select: { role: true, firstName: true, lastName: true }
-    });
-
-    if (user?.role === 'USER') {
-      const createdBy = `${user.firstName || ''} ${user.lastName || ''}`.trim();
-      if (existingRecord.creadoPor !== createdBy) {
-        return NextResponse.json({ error: 'No tienes permisos para eliminar este registro' }, { status: 403 });
-      }
     }
 
     // Eliminar el registro de la base de datos

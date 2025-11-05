@@ -67,6 +67,7 @@ interface BiglietteriaRecord {
   pnr: string | null;
   itinerario: string;
   metodoPagamento: string[]; // Array de métodos de pago
+  metodoPagamentoParsed?: string[]; // OPTIMIZACIÓN: Pre-parseado para evitar JSON.parse en filtro
   notaDiVendita: string | null;
   netoPrincipal: number;
   vendutoTotal: number;
@@ -330,6 +331,23 @@ export default function BiglietteriaPage() {
     return servicios.filter(s => !esServicioConocido(s));
   };
   
+  // OPTIMIZACIÓN: Helper para pre-parsear metodoPagamento en registros
+  const processRecord = useCallback((record: any): BiglietteriaRecord => {
+    return {
+      ...record,
+      metodoPagamentoParsed: (() => {
+        try {
+          const parsed = typeof record.metodoPagamento === 'string' 
+            ? JSON.parse(record.metodoPagamento) 
+            : record.metodoPagamento;
+          return Array.isArray(parsed) ? parsed : [record.metodoPagamento];
+        } catch {
+          return [record.metodoPagamento];
+        }
+      })()
+    };
+  }, []);
+
   // Función para crear un pasajero vacío
   const crearPasajeroVacio = (): PasajeroData => ({
     nombrePasajero: '',
@@ -518,78 +536,66 @@ export default function BiglietteriaPage() {
     }));
   }, [formData.pasajeros, formData.acconto, calcularTotales]);
   
-  // Cargar datos iniciales
+  // Cargar datos iniciales - OPTIMIZADO: Llamadas paralelas con Promise.all
   const fetchData = useCallback(async () => {
     if (roleLoading) return;
       try {
         setLoading(true);
         
-        // Cargar registros: para USER solo sus propios registros; para ADMIN/TI todos
-        const recordsData = await cachedFetch<{ records: any[] }>(`/api/biglietteria${isUser ? '?userOnly=true' : ''}`, { ttlMs: 15000 });
-        setRecords(recordsData.records || []);
+        // OPTIMIZACIÓN: Cargar todas las APIs en paralelo
+        const [
+          recordsData,
+          clientsData,
+          serviziData,
+          usersData,
+          pagamentosData,
+          iataData,
+          metodoData
+        ] = await Promise.all([
+          cachedFetch<{ records: any[] }>(`/api/biglietteria${isUser ? '?userOnly=true' : ''}`, { ttlMs: 15000 }),
+          cachedFetch<any>(`/api/clients`, { ttlMs: 15000 }).catch(() => ({ clients: [] })),
+          cachedFetch<any[]>('/api/servizi', { ttlMs: 15000 }).catch(() => []),
+          cachedFetch<any[]>('/api/users', { ttlMs: 15000 }).catch(() => []),
+          cachedFetch<any[]>('/api/pagamento', { ttlMs: 15000 }).catch(() => []),
+          cachedFetch<any[]>('/api/iata', { ttlMs: 15000 }).catch(() => []),
+          cachedFetch<{ metodosPagamento: any[] }>('/api/metodo-pagamento', { ttlMs: 15000 }).catch(() => ({ metodosPagamento: [] }))
+        ]);
         
-        // Cargar clientes
-        try {
-          const clientsData = await cachedFetch<any>(`/api/clients`, { ttlMs: 15000 });
-          const clientsArray = clientsData.clients || clientsData;
-          setClients(Array.isArray(clientsArray) ? clientsArray : []);
-        } catch (error) {
-          console.error('Error fetching clients:', error);
-          setClients([]);
-        }
+        // Procesar registros y pre-parsear metodoPagamento para evitar JSON.parse en filtro
+        const processedRecords = (recordsData.records || []).map(processRecord);
+        setRecords(processedRecords);
         
-        // Cargar servicios
-        try {
-          const serviziData = await cachedFetch<any[]>('/api/servizi', { ttlMs: 15000 });
-          setServizi(Array.isArray(serviziData) ? serviziData : []);
-        } catch (error) {
-          console.error('Error fetching servizi:', error);
-          setServizi([]);
-        }
+        // Procesar clientes
+        const clientsArray = clientsData.clients || clientsData;
+        setClients(Array.isArray(clientsArray) ? clientsArray : []);
         
-        // Cargar usuarios para filtro
-        const usersData = await cachedFetch<any[]>('/api/users', { ttlMs: 15000 });
+        // Procesar servicios
+        setServizi(Array.isArray(serviziData) ? serviziData : []);
+        
+        // Procesar usuarios
         setUsuarios(Array.isArray(usersData) ? usersData : []);
         
-        // Cargar pagamentos
-        try {
-          const pagamentosData = await cachedFetch<any[]>('/api/pagamento', { ttlMs: 15000 });
-          const pagamentosArray = Array.isArray(pagamentosData) ? pagamentosData : [];
-          const pagamentosNombres = pagamentosArray.map((p: any) => p.pagamento);
-          setPagamentos(pagamentosNombres);
-        } catch (error) {
-          console.error('Error fetching pagamentos:', error);
-          setPagamentos([]);
-        }
+        // Procesar pagamentos
+        const pagamentosArray = Array.isArray(pagamentosData) ? pagamentosData : [];
+        const pagamentosNombres = pagamentosArray.map((p: any) => p.pagamento);
+        setPagamentos(pagamentosNombres);
         
-        // Cargar IATA
-        try {
-          const iataData = await cachedFetch<any[]>('/api/iata', { ttlMs: 15000 });
-          const iataArray = Array.isArray(iataData) ? iataData : [];
-          const iataNombres = iataArray.map((i: any) => i.iata);
-          setIataList(iataNombres);
-        } catch (error) {
-          console.error('Error fetching IATA:', error);
-          setIataList([]);
-        }
+        // Procesar IATA
+        const iataArray = Array.isArray(iataData) ? iataData : [];
+        const iataNombres = iataArray.map((i: any) => i.iata);
+        setIataList(iataNombres);
         
-        // Cargar MetodoPagamento
-        try {
-          const metodoData = await cachedFetch<{ metodosPagamento: any[] }>('/api/metodo-pagamento', { ttlMs: 15000 });
-          const metodoPagamentoArray = metodoData.metodosPagamento || [];
-          const metodoPagamentoNombres = metodoPagamentoArray.map((m: any) => m.metodoPagamento);
-          setMetodoPagamentoList(metodoPagamentoNombres);
-        } catch (error) {
-          console.error('Error fetching MetodoPagamento:', error);
-          setMetodoPagamentoList([]);
-        }
+        // Procesar MetodoPagamento
+        const metodoPagamentoArray = metodoData.metodosPagamento || [];
+        const metodoPagamentoNombres = metodoPagamentoArray.map((m: any) => m.metodoPagamento);
+        setMetodoPagamentoList(metodoPagamentoNombres);
         
       } catch (error) {
         console.error('Error cargando datos:', error);
       } finally {
         setLoading(false);
       }
-    }, [roleLoading, isUser]);
+    }, [roleLoading, isUser, processRecord]);
 
   useEffect(() => {
     fetchData();
@@ -978,65 +984,74 @@ export default function BiglietteriaPage() {
     XLSX.writeFile(wb, fileName);
   };
   
-  // Filtrado y paginación (igual que TOUR GRUPPO)
-  const filteredRecords = (records || []).filter(record => {
-    // Filtro por búsqueda de texto
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
-      const searchFields = [
-        record.cliente,
-        record.codiceFiscale,
-        record.indirizzo,
-        record.email,
-        record.numeroTelefono,
-        record.pagamento,
-        record.pnr,
-        record.itinerario,
-        (() => {
-          try {
-            const parsed = typeof record.metodoPagamento === 'string' 
-              ? JSON.parse(record.metodoPagamento) 
-              : record.metodoPagamento;
-            return Array.isArray(parsed) ? parsed.join(', ') : record.metodoPagamento;
-          } catch {
-            return record.metodoPagamento;
-          }
-        })(),
-        record.creator?.firstName 
-          ? `${record.creator.firstName}${record.creator.lastName ? ` ${record.creator.lastName}` : ''}`.trim()
-          : record.creator?.email || 'N/A'
-      ];
+  // OPTIMIZACIÓN: Memoizar el cálculo del nombre del creator para evitar re-calcularlo
+  const getCreatorName = useCallback((creator: any): string => {
+    if (creator?.firstName) {
+      return `${creator.firstName}${creator.lastName ? ` ${creator.lastName}` : ''}`.trim();
+    }
+    return creator?.email || 'N/A';
+  }, []);
+
+  // OPTIMIZACIÓN: Memoizar fechas parseadas para evitar crear nuevos Date en cada render
+  const fechaDesdeDate = useMemo(() => fechaDesde ? new Date(fechaDesde) : null, [fechaDesde]);
+  const fechaHastaDate = useMemo(() => fechaHasta ? new Date(fechaHasta) : null, [fechaHasta]);
+
+  // Filtrado y paginación - OPTIMIZADO: useMemo y uso de datos pre-parseados
+  const filteredRecords = useMemo(() => {
+    if (!records || records.length === 0) return [];
+    
+    const searchLower = searchTerm ? searchTerm.toLowerCase() : '';
+    
+    return records.filter(record => {
+      // Filtro por búsqueda de texto - OPTIMIZADO: usar metodoPagamentoParsed pre-parseado
+      if (searchTerm) {
+        // Usar metodoPagamentoParsed en lugar de hacer JSON.parse aquí
+        const metodoPagamentoText = record.metodoPagamentoParsed 
+          ? record.metodoPagamentoParsed.join(', ')
+          : record.metodoPagamento || '';
+        
+        const creatorName = getCreatorName(record.creator);
+        
+        const searchFields = [
+          record.cliente,
+          record.codiceFiscale,
+          record.indirizzo,
+          record.email,
+          record.numeroTelefono,
+          record.pagamento,
+          record.pnr,
+          record.itinerario,
+          metodoPagamentoText,
+          creatorName
+        ];
+        
+        const matchesSearch = searchFields.some(field => 
+          field && field.toString().toLowerCase().includes(searchLower)
+        );
+        
+        if (!matchesSearch) return false;
+      }
       
-      const matchesSearch = searchFields.some(field => 
-        field && field.toString().toLowerCase().includes(searchLower)
-      );
+      // Filtro por fechas - OPTIMIZADO: usar fechas memoizadas
+      if (fechaDesdeDate) {
+        const recordDate = new Date(record.data);
+        if (recordDate < fechaDesdeDate) return false;
+      }
       
-      if (!matchesSearch) return false;
-    }
-    
-    // Filtro por fechas
-    if (fechaDesde) {
-      const recordDate = new Date(record.data);
-      const desdeDate = new Date(fechaDesde);
-      if (recordDate < desdeDate) return false;
-    }
-    
-    if (fechaHasta) {
-      const recordDate = new Date(record.data);
-      const hastaDate = new Date(fechaHasta);
-      if (recordDate > hastaDate) return false;
-    }
-    
-    // Filtro por creador
-    if (filtroCreador) {
-      const nombreCompleto = record.creator?.firstName 
-        ? `${record.creator.firstName}${record.creator.lastName ? ` ${record.creator.lastName}` : ''}`.trim()
-        : record.creator?.email || 'N/A';
-      if (nombreCompleto !== filtroCreador) return false;
-    }
-    
-    return true;
-  });
+      if (fechaHastaDate) {
+        const recordDate = new Date(record.data);
+        if (recordDate > fechaHastaDate) return false;
+      }
+      
+      // Filtro por creador - OPTIMIZADO: usar función memoizada
+      if (filtroCreador) {
+        const nombreCompleto = getCreatorName(record.creator);
+        if (nombreCompleto !== filtroCreador) return false;
+      }
+      
+      return true;
+    });
+  }, [records, searchTerm, fechaDesdeDate, fechaHastaDate, filtroCreador, getCreatorName]);
 
   const totalItems = filteredRecords.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -1157,10 +1172,12 @@ export default function BiglietteriaPage() {
       if (isEditMode) {
         // El API devuelve { record, message }
         const updatedRecord = result.record || result;
-        setRecords(prev => prev.map(r => r.id === updatedRecord.id ? updatedRecord : r));
+        // OPTIMIZACIÓN: Procesar registro antes de actualizar estado
+        setRecords(prev => prev.map(r => r.id === updatedRecord.id ? processRecord(updatedRecord) : r));
         setMessage({ type: 'success', text: 'Registro actualizado correctamente' });
       } else {
-        setRecords(prev => [result, ...prev]);
+        // OPTIMIZACIÓN: Procesar registro antes de agregar al estado
+        setRecords(prev => [processRecord(result), ...prev]);
         setMessage({ type: 'success', text: 'Registro creado correctamente' });
       }
       
@@ -1979,8 +1996,9 @@ export default function BiglietteriaPage() {
                             });
 
                             if (response.ok) {
+                              // OPTIMIZACIÓN: Procesar registro actualizado
                               setRecords(prev => prev.map(r => 
-                                r.id === record.id ? { ...r, pagamento: newValue } : r
+                                r.id === record.id ? processRecord({ ...r, pagamento: newValue }) : r
                               ));
                               setMessage({
                                 type: 'success',

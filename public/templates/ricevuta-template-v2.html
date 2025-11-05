@@ -169,6 +169,24 @@
             border-bottom: none;
         }
         
+        /* Sección Note di ricevuta */
+        .note-ricevuta-section {
+            margin-top: 5px;
+            page-break-inside: avoid;
+        }
+        
+        .note-ricevuta-content {
+            background-color: #f9fafb;
+            border: 1px solid #1e40af;
+            padding: 8px;
+            border-radius: 2px;
+            font-size: 12px;
+            line-height: 1.6;
+            color: #333;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
         .cuota-number {
             font-weight: bold;
             color: #1e40af;
@@ -359,7 +377,7 @@
                 <td class="value"><strong>{{venduto}} €</strong></td>
             </tr>
             <tr>
-                <td class="label">Acconto:</td>
+                <td class="label">Pagato/Acconto:</td>
                 <td class="value"><strong>{{acconto}} €</strong></td>
             </tr>
             <tr>
@@ -392,6 +410,16 @@
             </div>
         </div>
         {{/tieneCuotas}}
+        
+        <!-- Sección Note di ricevuta -->
+        {{#tieneNotaRicevuta}}
+        <div class="note-ricevuta-section">
+            <div class="section-title">Note di ricevuta</div>
+            <div class="note-ricevuta-content">
+                {{notaDiRicevuta}}
+            </div>
+        </div>
+        {{/tieneNotaRicevuta}}
         
         <!-- Footer -->
         <div class="footer">

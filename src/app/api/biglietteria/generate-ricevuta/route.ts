@@ -115,7 +115,11 @@ export async function POST(request: NextRequest) {
           statusClass: cuota.isPagato ? 'status-paid' : 'status-pending'
         };
       }),
-      tieneCuotas: (record.cuotas?.length || 0) > 0
+      tieneCuotas: (record.cuotas?.length || 0) > 0,
+      
+      // Note di ricevuta
+      notaDiRicevuta: record.notaDiRicevuta || '',
+      tieneNotaRicevuta: !!(record.notaDiRicevuta && record.notaDiRicevuta.trim() !== '')
     };
 
     // Leer la plantilla HTML
@@ -151,6 +155,13 @@ export async function POST(request: NextRequest) {
       } else if (key === 'tieneCuotas' && !value) {
         // Remover contenido si no hay cuotas
         html = html.replace(/\{\{#tieneCuotas\}\}[\s\S]*?\{\{\/tieneCuotas\}\}/g, '');
+      } else if (key === 'tieneNotaRicevuta' && value) {
+        // Manejar condicional {{#tieneNotaRicevuta}}
+        html = html.replace(/\{\{#tieneNotaRicevuta\}\}/g, '');
+        html = html.replace(/\{\{\/tieneNotaRicevuta\}\}/g, '');
+      } else if (key === 'tieneNotaRicevuta' && !value) {
+        // Remover contenido si no hay nota di ricevuta
+        html = html.replace(/\{\{#tieneNotaRicevuta\}\}[\s\S]*?\{\{\/tieneNotaRicevuta\}\}/g, '');
       } else {
         html = html.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), String(value || ''));
       }

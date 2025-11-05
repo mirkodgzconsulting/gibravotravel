@@ -281,33 +281,54 @@ export default function BiglietteriaPage() {
   const cuotasInicializadas = useRef(false);
   
 
-  // Manejar cambio de número de cuotas - REPLICANDO LÓGICA DE TOUR GRUPPO
+  // Resetear cuotas cuando se abre el modal en modo nuevo registro
+  useEffect(() => {
+    if (isModalOpen && !isEditMode && !isLoadingCuotas) {
+      // Si el modal está abierto y no estamos en modo edición, resetear cuotas
+      setNumeroCuotas(0);
+      setCuotas([]);
+      cuotasInicializadas.current = false;
+    }
+  }, [isModalOpen, isEditMode, isLoadingCuotas]);
+
+  // Manejar cambio de número de cuotas - Actualizado para ser más dinámico
   useEffect(() => {
     // No sobrescribir cuotas si estamos cargando desde edición
     if (isLoadingCuotas) {
       return;
     }
     
-    // Si ya fueron inicializadas, no volver a crear cuotas vacías
-    if (cuotasInicializadas.current && numeroCuotas > 0) {
-      return;
-    }
-    
+    // Siempre actualizar dinámicamente cuando cambia el número de cuotas
     if (numeroCuotas > 0) {
-      const nuevasCuotas = Array.from({ length: numeroCuotas }, (_, i) => ({
-        numeroCuota: i + 1,
-        data: '',
-        prezzo: '',
-        note: '',
-        isPagato: false,
-        file: null
-      }));
+      // Recrear las cuotas con el nuevo número
+      const nuevasCuotas = Array.from({ length: numeroCuotas }, (_, i) => {
+        // Buscar cuota existente por número de cuota (solo si ya existe una con ese número)
+        const cuotaExistente = cuotas.find(c => c.numeroCuota === i + 1);
+        if (cuotaExistente && cuotaExistente.numeroCuota === i + 1) {
+          // Preservar datos de cuota existente
+          return {
+            ...cuotaExistente,
+            numeroCuota: i + 1
+          };
+        }
+        // Crear nueva cuota vacía
+        return {
+          numeroCuota: i + 1,
+          data: '',
+          prezzo: '',
+          note: '',
+          isPagato: false,
+          file: null
+        };
+      });
       setCuotas(nuevasCuotas);
       cuotasInicializadas.current = true;
     } else {
+      // Si se selecciona 0 cuotas, limpiar el array
       setCuotas([]);
       cuotasInicializadas.current = false;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [numeroCuotas, isLoadingCuotas]);
   
   // Constantes - ahora se obtienen de la base de datos
@@ -533,18 +554,56 @@ export default function BiglietteriaPage() {
   }, [formData.numeroPasajeros]);
   
   // Calcular Acconto automáticamente sumando las cuotas pagadas
+  // Solo actualiza cuando cambia el estado isPagato de las cuotas, no cuando se seleccionan cuotas
+  const estadoIsPagatoRef = useRef<Map<string, { isPagato: boolean; monto: number }>>(new Map());
+  
   useEffect(() => {
-    const accontoCuotas = cuotas.reduce((total, cuota) => {
-      if (cuota.isPagato && cuota.prezzo) {
-        return total + parseFloat(cuota.prezzo.toString()) || 0;
-      }
-      return total;
-    }, 0);
+    // Crear un mapa de estado isPagato actual por cuota
+    const estadoIsPagatoActual = new Map<string, { isPagato: boolean; monto: number }>();
+    cuotas.forEach(cuota => {
+      const key = cuota.id || `${cuota.numeroCuota}-${cuota.prezzo}`;
+      const monto = parseFloat(cuota.prezzo.toString()) || 0;
+      estadoIsPagatoActual.set(key, { 
+        isPagato: cuota.isPagato || false, 
+        monto 
+      });
+    });
     
-    setFormData(prev => ({
-      ...prev,
-      acconto: accontoCuotas.toFixed(2)
-    }));
+    // Detectar cambios en isPagato (no solo agregar/remover cuotas)
+    let cambioDetectado = false;
+    let diferencia = 0;
+    
+    // Comparar con estado anterior - detectar cambios en isPagato
+    estadoIsPagatoActual.forEach((estado, key) => {
+      const estadoAnterior = estadoIsPagatoRef.current.get(key);
+      if (estadoAnterior && estadoAnterior.isPagato !== estado.isPagato) {
+        // Hubo cambio en el estado de pagado
+        cambioDetectado = true;
+        diferencia += estado.isPagato ? estado.monto : -estado.monto;
+      }
+    });
+    
+    // Verificar si se eliminó una cuota que estaba pagada
+    estadoIsPagatoRef.current.forEach((estadoAnterior, key) => {
+      if (!estadoIsPagatoActual.has(key) && estadoAnterior.isPagato) {
+        cambioDetectado = true;
+        diferencia -= estadoAnterior.monto;
+      }
+    });
+    
+    // Solo actualizar si hubo cambio en isPagato
+    if (cambioDetectado) {
+      const accontoActual = parseFloat(formData.acconto) || 0;
+      const nuevoAcconto = Math.max(0, accontoActual + diferencia);
+      
+      setFormData(prev => ({
+        ...prev,
+        acconto: nuevoAcconto.toFixed(2)
+      }));
+    }
+    
+    // Actualizar referencia
+    estadoIsPagatoRef.current = new Map(estadoIsPagatoActual);
   }, [cuotas]);
 
   // Calcular totales automáticamente cuando cambien los pasajeros o acconto
@@ -1266,7 +1325,9 @@ export default function BiglietteriaPage() {
       feeAgv: ''
     });
     setSelectedFile(null);
+    setNumeroCuotas(0); // Resetear número de cuotas
     setCuotas([]);
+    cuotasInicializadas.current = false; // Resetear flag de inicialización
     setSelectedClientId('');
     
     // Resetear arrays de dropdowns

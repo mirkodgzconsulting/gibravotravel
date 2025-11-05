@@ -905,7 +905,19 @@ export default function TourBusPage() {
                           {tour.fechaViaje && (
                             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                               <CalendarIcon className="w-4 h-4" />
-                              <span>{new Date(tour.fechaViaje).toLocaleDateString()}</span>
+                              <span>
+                                <span className="font-medium">Data Inizio:</span>{' '}
+                                {new Date(tour.fechaViaje).toLocaleDateString('it-IT')}
+                              </span>
+                            </div>
+                          )}
+                          {tour.fechaFin && (
+                            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                              <CalendarIcon className="w-4 h-4" />
+                              <span>
+                                <span className="font-medium">Data Fine:</span>{' '}
+                                {new Date(tour.fechaFin).toLocaleDateString('it-IT')}
+                              </span>
                             </div>
                           )}
                         </div>

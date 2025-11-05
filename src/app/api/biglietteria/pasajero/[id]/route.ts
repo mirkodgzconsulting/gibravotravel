@@ -35,7 +35,7 @@ export async function PATCH(
     
     console.log('✅ Pasajero encontrado:', existingPasajero.nombrePasajero);
 
-    // Verificar permisos del usuario (solo TI y ADMIN)
+    // Verificar permisos del usuario (TI, ADMIN y USER pueden editar)
     const user = await prisma.user.findUnique({
       where: { clerkId: userId },
       select: { role: true, firstName: true, lastName: true }
@@ -43,10 +43,10 @@ export async function PATCH(
     
     console.log('👤 Usuario role:', user?.role);
 
-    if (!user || (user.role !== 'TI' && user.role !== 'ADMIN')) {
+    if (!user || (user.role !== 'TI' && user.role !== 'ADMIN' && user.role !== 'USER')) {
       console.log('❌ Permisos insuficientes - Role:', user?.role);
       return NextResponse.json({ 
-        error: 'No tienes permisos para editar este campo. Solo usuarios TI y ADMIN pueden editar.' 
+        error: 'No tienes permisos para editar este campo. Solo usuarios TI, ADMIN y USER pueden editar.' 
       }, { status: 403 });
     }
 

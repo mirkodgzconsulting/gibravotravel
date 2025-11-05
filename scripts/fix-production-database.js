@@ -105,6 +105,17 @@ async function fixProductionDatabase() {
         { id: 'ref_stato_2', stato: 'Ocupado', isActive: true },
         { id: 'ref_stato_3', stato: 'Reservado', isActive: true },
         { id: 'ref_stato_4', stato: 'Mantenimiento', isActive: true }
+      ],
+      acquisto: [
+        { id: 'ref_acquisto_1', acquisto: 'Paypal', isActive: true },
+        { id: 'ref_acquisto_2', acquisto: '0571', isActive: true },
+        { id: 'ref_acquisto_3', acquisto: '3016', isActive: true },
+        { id: 'ref_acquisto_4', acquisto: 'bonifico', isActive: true },
+        { id: 'ref_acquisto_5', acquisto: 'Revolut Anthony', isActive: true },
+        { id: 'ref_acquisto_6', acquisto: 'Revolut Katia', isActive: true },
+        { id: 'ref_acquisto_7', acquisto: 'Revolut Dante', isActive: true },
+        { id: 'ref_acquisto_8', acquisto: 'Revolut Rocio', isActive: true },
+        { id: 'ref_acquisto_9', acquisto: 'Revolut GB', isActive: true }
       ]
     };
 

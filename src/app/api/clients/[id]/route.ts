@@ -92,9 +92,10 @@ export async function PUT(
     const document3 = formData.get('document3') as File | null;
     const document4 = formData.get('document4') as File | null;
 
-    // Validaciones
-    if (!firstName || !lastName || !fiscalCode || !email || !phoneNumber) {
-      return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 });
+    // Validaciones - Solo firstName, lastName y phoneNumber son obligatorios
+    // fiscalCode, address y email ahora son opcionales
+    if (!firstName || !lastName || !phoneNumber) {
+      return NextResponse.json({ error: 'Faltan campos obligatorios (Nombre, Apellido y Teléfono son requeridos)' }, { status: 400 });
     }
 
     // Verificar si el cliente existe
@@ -106,16 +107,32 @@ export async function PUT(
       return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 404 });
     }
 
-    // Verificar si ya existe otro cliente con el mismo código fiscal
-    const duplicateClient = await prisma.client.findFirst({
-      where: { 
-        fiscalCode,
-        id: { not: id }
-      }
-    });
+    // Verificar si ya existe otro cliente con el mismo código fiscal (solo si se proporciona)
+    if (fiscalCode && fiscalCode.trim() !== '') {
+      const duplicateClientByFiscal = await prisma.client.findFirst({
+        where: { 
+          fiscalCode: fiscalCode.trim(),
+          id: { not: id }
+        }
+      });
 
-    if (duplicateClient) {
-      return NextResponse.json({ error: 'Ya existe otro cliente con este código fiscal' }, { status: 400 });
+      if (duplicateClientByFiscal) {
+        return NextResponse.json({ error: 'Ya existe otro cliente con este código fiscal' }, { status: 400 });
+      }
+    }
+
+    // Verificar si ya existe otro cliente con el mismo email (solo si se proporciona)
+    if (email && email.trim() !== '') {
+      const duplicateClientByEmail = await prisma.client.findFirst({
+        where: { 
+          email: email.trim(),
+          id: { not: id }
+        }
+      });
+
+      if (duplicateClientByEmail) {
+        return NextResponse.json({ error: 'Ya existe otro cliente con este email' }, { status: 400 });
+      }
     }
 
     // Validar tamaños de archivos
@@ -215,14 +232,15 @@ export async function PUT(
     }
 
     // Actualizar el cliente
+    // Nota: fiscalCode, address y email ahora son opcionales, usar strings vacíos si no se proporcionan
     const updatedClient = await prisma.client.update({
       where: { id },
       data: {
         firstName,
         lastName,
-        fiscalCode,
-        address: address || '',
-        email,
+        fiscalCode: fiscalCode?.trim() || '',
+        address: address?.trim() || '',
+        email: email?.trim() || '',
         phoneNumber,
         birthPlace: birthPlace || '',
         birthDate: birthDate ? new Date(birthDate) : new Date(),

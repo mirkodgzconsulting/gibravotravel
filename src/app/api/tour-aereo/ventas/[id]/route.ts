@@ -63,7 +63,8 @@ export async function PATCH(
 
     // Verificar permisos: ADMIN y TI pueden editar cualquier venta,
     // USER solo puede editar sus propias ventas
-    if (user.role === 'USER' && venta.createdBy !== userId) {
+    // Nota: createdBy almacena el id del usuario, no el clerkId
+    if (user.role === 'USER' && venta.createdBy !== user.id) {
       return NextResponse.json({ error: 'No autorizado para editar esta venta' }, { status: 403 });
     }
 
@@ -129,7 +130,8 @@ export async function PUT(
 
     // Verificar permisos: ADMIN y TI pueden editar cualquier venta,
     // USER solo puede editar sus propias ventas
-    if (user.role === 'USER' && venta.createdBy !== userId) {
+    // Nota: createdBy almacena el id del usuario, no el clerkId
+    if (user.role === 'USER' && venta.createdBy !== user.id) {
       return NextResponse.json({ error: 'No autorizado para editar esta venta' }, { status: 403 });
     }
 
@@ -370,7 +372,8 @@ export async function DELETE(
 
     // Verificar permisos: ADMIN y TI pueden eliminar cualquier venta,
     // USER solo puede eliminar sus propias ventas
-    if (user.role === 'USER' && venta.createdBy !== userId) {
+    // Nota: createdBy almacena el id del usuario, no el clerkId
+    if (user.role === 'USER' && venta.createdBy !== user.id) {
       return NextResponse.json({ error: 'No autorizado para eliminar esta venta' }, { status: 403 });
     }
 

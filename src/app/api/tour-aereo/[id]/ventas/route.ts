@@ -211,8 +211,9 @@ export async function POST(
       }
     }
 
-    if (!pasajero || !codiceFiscale || !indirizzo || !email || !numeroTelefono || 
-        !paisOrigen || !iata || !venduto || !metodoPagamento || !stato) {
+    // Validar solo campos realmente requeridos
+    // Nota: codiceFiscale, indirizzo, email, numeroTelefono, paisOrigen ahora son opcionales (se autocompletan)
+    if (!pasajero || !iata || !venduto || !metodoPagamento || !stato) {
       return NextResponse.json({ error: 'Faltan campos requeridos' }, { status: 400 });
     }
 
@@ -279,11 +280,11 @@ export async function POST(
         tourAereoId: tourId,
         clienteId: clienteId || null,
         pasajero,
-        codiceFiscale,
-        indirizzo,
-        email,
-        numeroTelefono,
-        paisOrigen,
+        codiceFiscale: codiceFiscale || '',
+        indirizzo: indirizzo || '',
+        email: email || '',
+        numeroTelefono: numeroTelefono || '',
+        paisOrigen: paisOrigen || '',
         iata,
         pnr: pnr || null,
         hotel: hotel ? parseFloat(hotel) : null,
@@ -315,9 +316,11 @@ export async function POST(
 
 
     // Obtener información del creador
+    // Nota: createdBy almacena el id del usuario, no el clerkId
     const creator = await prisma.user.findUnique({
-      where: { clerkId: venta.createdBy },
+      where: { id: venta.createdBy },
       select: {
+        id: true,
         firstName: true,
         lastName: true,
         email: true,
@@ -341,6 +344,12 @@ export async function POST(
 
   } catch (error) {
     console.error('Error creating venta:', error);
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+    const errorStack = error instanceof Error ? error.stack : '';
+    console.error('Error details:', { errorMessage, errorStack });
+    return NextResponse.json({ 
+      error: 'Error interno del servidor',
+      details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+    }, { status: 500 });
   }
 }

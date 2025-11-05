@@ -466,10 +466,21 @@ export default function TourAereoPage() {
                       <span className="font-medium">Meta:</span> {tour.meta} inscripciones
                     </div>
 
-                    {/* Fecha de viaje */}
-                    {tour.fechaViaje && (
+                    {/* Fechas de viaje */}
+                    {(tour.fechaViaje || tour.fechaFin) && (
                       <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                        <span className="font-medium">Fecha:</span> {new Date(tour.fechaViaje).toLocaleDateString('it-IT')}
+                        {tour.fechaViaje && (
+                          <div>
+                            <span className="font-medium">Data Inizio:</span>{' '}
+                            <span>{new Date(tour.fechaViaje).toLocaleDateString('it-IT')}</span>
+                          </div>
+                        )}
+                        {tour.fechaFin && (
+                          <div>
+                            <span className="font-medium">Data Fine:</span>{' '}
+                            <span>{new Date(tour.fechaFin).toLocaleDateString('it-IT')}</span>
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -607,14 +618,13 @@ export default function TourAereoPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Precio Niño (€) *
+                  Precio Niño (€)
                 </label>
                 <input
                   type="number"
                   step="0.01"
                   value={formData.precioNino}
                   onChange={(e) => setFormData(prev => ({ ...prev, precioNino: e.target.value }))}
-                  required
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 />
               </div>
@@ -633,7 +643,7 @@ export default function TourAereoPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  ACC
+                  Coordinatore
                 </label>
                 <input
                   type="text"
@@ -645,7 +655,7 @@ export default function TourAereoPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Guida Locale
+                  Guida Locale (€)
                 </label>
                 <input
                   type="number"
@@ -653,13 +663,14 @@ export default function TourAereoPage() {
                   min="0"
                   value={formData.guidaLocale}
                   onChange={(e) => setFormData(prev => ({ ...prev, guidaLocale: e.target.value }))}
+                  placeholder="0.00"
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Coordinatore
+                  Coordinatore (€)
                 </label>
                 <input
                   type="number"
@@ -667,13 +678,14 @@ export default function TourAereoPage() {
                   min="0"
                   value={formData.coordinatore}
                   onChange={(e) => setFormData(prev => ({ ...prev, coordinatore: e.target.value }))}
+                  placeholder="0.00"
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Transporte
+                  Transfer (€)
                 </label>
                 <input
                   type="number"
@@ -681,6 +693,7 @@ export default function TourAereoPage() {
                   min="0"
                   value={formData.transporte}
                   onChange={(e) => setFormData(prev => ({ ...prev, transporte: e.target.value }))}
+                  placeholder="0.00"
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 />
               </div>

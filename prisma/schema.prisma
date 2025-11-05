@@ -173,14 +173,24 @@ model MetodoPagamento {
   @@map("metodo_pagamento")
 }
 
+model Acquisto {
+  id        String   @id @default(cuid())
+  acquisto  String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("acquisto")
+}
+
 model Biglietteria {
   id               String                 @id @default(cuid())
   pagamento        String
   data             DateTime
   pnr              String?
   itinerario       String
-  metodoPagamento  String                // JSON array de métodos de pago
-  notaDiVendita     String?
+  metodoPagamento  String // JSON array de métodos de pago
+  notaDiVendita    String?
   cliente          String
   codiceFiscale    String
   indirizzo        String

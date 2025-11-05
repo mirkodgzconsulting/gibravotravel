@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import * as XLSX from 'xlsx';
 import {
@@ -10,6 +10,46 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+
+// Funciones helper optimizadas (fuera del componente)
+const parseIataByService = (iataString: string | null, servicio: string): string | null => {
+  if (!iataString) return null;
+  try {
+    const iataParsed = JSON.parse(iataString);
+    if (typeof iataParsed === 'object' && iataParsed !== null && !Array.isArray(iataParsed)) {
+      const servicioLower = servicio.toLowerCase();
+      const iataKey = servicioLower === 'biglietteria' ? 'biglietteria' :
+                     servicioLower === 'express' ? 'express' :
+                     servicioLower === 'polizza' ? 'polizza' :
+                     servicioLower === 'lettera' || servicioLower === 'lettera invito' ? 'letteraInvito' :
+                     servicioLower === 'hotel' ? 'hotel' : null;
+      return iataKey ? iataParsed[iataKey] || null : null;
+    }
+    return iataString;
+  } catch {
+    return iataString;
+  }
+};
+
+const parseMetodoPagamento = (metodoString: string | null): string | null => {
+  if (!metodoString) return null;
+  try {
+    const metodoParsed = JSON.parse(metodoString);
+    if (Array.isArray(metodoParsed)) {
+      return metodoParsed.join(', ');
+    }
+    return metodoString;
+  } catch {
+    return metodoString;
+  }
+};
+
+const getCreatorName = (creator: any, creadoPor: string): string => {
+  if (creator?.firstName) {
+    return `${creator.firstName}${creator.lastName ? ` ${creator.lastName}` : ''}`.trim();
+  }
+  return creator?.email || creadoPor || 'N/A';
+};
 
 // Interfaces
 interface PasajeroDetalle {
@@ -54,7 +94,6 @@ const SERVICE_MAPPING = {
 };
 
 const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ records, isOpen, onClose, onUpdateRecords }) => {
-  // Estados principales
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [searchTerm, setSearchTerm] = useState('');
@@ -62,82 +101,21 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ records, 
   const [filtroPnr, setFiltroPnr] = useState('');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
+  const [fechaIdaDesde, setFechaIdaDesde] = useState('');
+  const [fechaIdaHasta, setFechaIdaHasta] = useState('');
+  const [fechaVueltaDesde, setFechaVueltaDesde] = useState('');
+  const [fechaVueltaHasta, setFechaVueltaHasta] = useState('');
+  const [fechaActivacionDesde, setFechaActivacionDesde] = useState('');
+  const [fechaActivacionHasta, setFechaActivacionHasta] = useState('');
   
-  // Estados de edición
   const [editingEstadoId, setEditingEstadoId] = useState<string | null>(null);
   const [editingFechaPagoId, setEditingFechaPagoId] = useState<string | null>(null);
   const [editingFechaActivacionId, setEditingFechaActivacionId] = useState<string | null>(null);
   const [editingNotasId, setEditingNotasId] = useState<string | null>(null);
   
-  // Estados para valores temporales de fechas
   const [tempFechaPago, setTempFechaPago] = useState<string>('');
   const [tempFechaActivacion, setTempFechaActivacion] = useState<string>('');
   const [tempNotas, setTempNotas] = useState<string>('');
-
-  // Funciones para manejar fechas de manera más robusta
-  const startEditingFecha = (rowId: string, type: 'pago' | 'activacion', currentValue: string | null) => {
-    if (type === 'pago') {
-      setEditingFechaPagoId(rowId);
-      setTempFechaPago(currentValue ? new Date(currentValue).toISOString().split('T')[0] : '');
-    } else {
-      setEditingFechaActivacionId(rowId);
-      setTempFechaActivacion(currentValue ? new Date(currentValue).toISOString().split('T')[0] : '');
-    }
-  };
-
-  const saveFecha = async (rowId: string, type: 'pago' | 'activacion') => {
-    const tempValue = type === 'pago' ? tempFechaPago : tempFechaActivacion;
-    const originalValue = type === 'pago' 
-      ? (processedData.find(item => item.rowId === rowId)?.fechaPago ? new Date(processedData.find(item => item.rowId === rowId)!.fechaPago!).toISOString().split('T')[0] : '')
-      : (processedData.find(item => item.rowId === rowId)?.fechaActivacion ? new Date(processedData.find(item => item.rowId === rowId)!.fechaActivacion!).toISOString().split('T')[0] : '');
-
-    if (tempValue !== originalValue) {
-      await handleFechaChange(rowId, tempValue, type);
-    }
-
-    // Limpiar estados
-    if (type === 'pago') {
-      setEditingFechaPagoId(null);
-      setTempFechaPago('');
-    } else {
-      setEditingFechaActivacionId(null);
-      setTempFechaActivacion('');
-    }
-  };
-
-  const cancelEditingFecha = (type: 'pago' | 'activacion') => {
-    if (type === 'pago') {
-      setEditingFechaPagoId(null);
-      setTempFechaPago('');
-    } else {
-      setEditingFechaActivacionId(null);
-      setTempFechaActivacion('');
-    }
-  };
-
-  // Funciones para manejar notas
-  const startEditingNotas = (rowId: string, currentValue: string | null) => {
-    setEditingNotasId(rowId);
-    setTempNotas(currentValue || '');
-  };
-
-  const saveNotas = async (rowId: string) => {
-    const tempValue = tempNotas;
-    const originalValue = processedData.find(item => item.rowId === rowId)?.notas || '';
-
-    if (tempValue !== originalValue) {
-      await handleNotasChange(rowId, tempValue);
-    }
-
-    // Limpiar estados
-    setEditingNotasId(null);
-    setTempNotas('');
-  };
-
-  const cancelEditingNotas = () => {
-    setEditingNotasId(null);
-    setTempNotas('');
-  };
 
   // Función para procesar datos
   const processRecords = (records: any[]): PasajeroDetalle[] => {
@@ -162,13 +140,15 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ records, 
                 venduto = pasajero[vendutoField] || null;
               }
 
+              const iataEspecifico = parseIataByService(pasajero.iata, servicio);
+
               processedData.push({
                 id: `${record.id}-${pasajero.id}`,
                 pasajeroId: pasajero.id,
                 rowId: `${record.id}-${pasajero.id}-${servicio}`,
                 nombrePasajero: pasajero.nombrePasajero || '-',
                 servicio: servicio.toUpperCase(),
-                iata: pasajero.iata || null,
+                iata: iataEspecifico,
                 andata: pasajero.andata || null,
                 ritorno: pasajero.ritorno || null,
                 neto,
@@ -177,15 +157,13 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ records, 
                 pnr: record.pnr || null,
                 itinerario: record.itinerario || '-',
                 dataRegistro: record.createdAt,
-                creadoPor: record.creator?.firstName 
-                  ? `${record.creator.firstName}${record.creator.lastName ? ` ${record.creator.lastName}` : ''}`.trim()
-                  : record.creator?.email || record.creadoPor || 'N/A',
+                creadoPor: getCreatorName(record.creator, record.creadoPor),
                 estado: pasajero.estado || 'Pendiente',
                 fechaPago: pasajero.fechaPago || null,
                 fechaActivacion: pasajero.fechaActivacion || null,
                 notas: pasajero.notas || null,
                 pagamento: record.pagamento || null,
-                metodoPag: record.metodoPagamento || null,
+                metodoPag: parseMetodoPagamento(record.metodoPagamento),
               });
             });
           }
@@ -196,48 +174,14 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ records, 
     return processedData;
   };
 
-  // Datos procesados y filtrados
   const processedData = useMemo(() => processRecords(records), [records]);
-  
-  const filteredData = useMemo(() => {
-    return processedData.filter(item => {
-      const matchesSearch = !searchTerm || 
-        item.nombrePasajero.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.servicio.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (item.pnr && item.pnr.toLowerCase().includes(searchTerm.toLowerCase()));
 
-      const matchesIata = !filtroIata || (item.iata && item.iata.toLowerCase().includes(filtroIata.toLowerCase()));
-      const matchesPnr = !filtroPnr || (item.pnr && item.pnr.toLowerCase().includes(filtroPnr.toLowerCase()));
-      
-      const matchesFecha = (!fechaDesde || (item.andata && new Date(item.andata) >= new Date(fechaDesde))) &&
-                          (!fechaHasta || (item.andata && new Date(item.andata) <= new Date(fechaHasta)));
-
-      return matchesSearch && matchesIata && matchesPnr && matchesFecha;
-    });
-  }, [processedData, searchTerm, filtroIata, filtroPnr, fechaDesde, fechaHasta]);
-
-  // Paginación
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentData = filteredData.slice(startIndex, startIndex + itemsPerPage);
-
-  // Totales
-  const totalNeto = filteredData.reduce((sum, item) => sum + (item.neto || 0), 0);
-  const totalVenduto = filteredData.reduce((sum, item) => sum + (item.venduto || 0), 0);
-
-  // Función para extraer pasajeroId del rowId
   const extractPasajeroId = (rowId: string): string => {
-    // rowId formato: "recordId-pasajeroId-servicio"
     const parts = rowId.split('-');
-    // Tomar todo excepto la última parte (servicio) para obtener "recordId-pasajeroId"
-    // Luego extraer solo el pasajeroId
     const recordAndPasajero = parts.slice(0, -1).join('-');
-    const pasajeroIdPart = recordAndPasajero.split('-').slice(-1)[0];
-    return pasajeroIdPart;
+    return recordAndPasajero.split('-').slice(-1)[0];
   };
 
-  // Función para actualizar pasajero en la API
   const updatePasajero = async (pasajeroId: string, updateData: any) => {
     try {
       const response = await fetch(`/api/biglietteria/pasajero/${pasajeroId}`, {
@@ -251,9 +195,6 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ records, 
       if (response.ok) {
         const updatedPasajero = await response.json();
         console.log('✅ Pasajero actualizado:', updatedPasajero);
-        
-        // Actualizar los datos locales para reflejar el cambio inmediatamente
-        // Esto evita tener que recargar toda la tabla
         return updatedPasajero;
       } else {
         const errorData = await response.json();
@@ -267,14 +208,12 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ records, 
     return null;
   };
 
-  // Funciones de edición
   const handleEstadoChange = async (rowId: string, newEstado: string) => {
     const pasajeroId = extractPasajeroId(rowId);
     setEditingEstadoId(null);
     
     const updateData: any = { estado: newEstado };
     
-    // Si cambia a "Pagado", auto-llenar fecha de pago si no existe
     if (newEstado === 'Pagado') {
       updateData.fechaPago = new Date().toISOString().split('T')[0];
     }
@@ -282,7 +221,6 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ records, 
     const updatedPasajero = await updatePasajero(pasajeroId, updateData);
     
     if (updatedPasajero && onUpdateRecords) {
-      // Actualizar el estado local para reflejar el cambio
       const updatedRecords = records.map(record => ({
         ...record,
         pasajeros: record.pasajeros.map((pasajero: any) => 
@@ -298,7 +236,7 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ records, 
     }
   };
 
-  const handleFechaChange = async (rowId: string, newFecha: string, type: 'pago' | 'activacion') => {
+  const handleFechaChange = useCallback(async (rowId: string, newFecha: string, type: 'pago' | 'activacion') => {
     const pasajeroId = extractPasajeroId(rowId);
     
     if (type === 'pago') setEditingFechaPagoId(null);
@@ -311,7 +249,6 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ records, 
     const updatedPasajero = await updatePasajero(pasajeroId, updateData);
     
     if (updatedPasajero && onUpdateRecords) {
-      // Actualizar el estado local
       const updatedRecords = records.map(record => ({
         ...record,
         pasajeros: record.pasajeros.map((pasajero: any) => 
@@ -325,9 +262,9 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ records, 
     } else if (updatedPasajero) {
       alert(`Fecha de ${type} actualizada: ${newFecha || 'Eliminada'}`);
     }
-  };
+  }, [records, onUpdateRecords]);
 
-  const handleNotasChange = async (rowId: string, newNotas: string) => {
+  const handleNotasChange = useCallback(async (rowId: string, newNotas: string) => {
     const pasajeroId = extractPasajeroId(rowId);
     setEditingNotasId(null);
     
@@ -338,7 +275,6 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ records, 
     const updatedPasajero = await updatePasajero(pasajeroId, updateData);
     
     if (updatedPasajero && onUpdateRecords) {
-      // Actualizar el estado local
       const updatedRecords = records.map(record => ({
         ...record,
         pasajeros: record.pasajeros.map((pasajero: any) => 
@@ -352,7 +288,117 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ records, 
     } else if (updatedPasajero) {
       alert(`Notas actualizadas: ${newNotas || 'Eliminadas'}`);
     }
+  }, [records, onUpdateRecords]);
+
+  const startEditingFecha = (rowId: string, type: 'pago' | 'activacion', currentValue: string | null) => {
+    if (type === 'pago') {
+      setEditingFechaPagoId(rowId);
+      setTempFechaPago(currentValue ? new Date(currentValue).toISOString().split('T')[0] : '');
+    } else {
+      setEditingFechaActivacionId(rowId);
+      setTempFechaActivacion(currentValue ? new Date(currentValue).toISOString().split('T')[0] : '');
+    }
   };
+
+  const saveFecha = useCallback(async (rowId: string, type: 'pago' | 'activacion') => {
+    const tempValue = type === 'pago' ? tempFechaPago : tempFechaActivacion;
+    const item = processedData.find(item => item.rowId === rowId);
+    if (!item) return;
+    
+    const originalValue = type === 'pago' 
+      ? (item.fechaPago ? new Date(item.fechaPago).toISOString().split('T')[0] : '')
+      : (item.fechaActivacion ? new Date(item.fechaActivacion).toISOString().split('T')[0] : '');
+
+    if (tempValue !== originalValue) {
+      await handleFechaChange(rowId, tempValue, type);
+    }
+
+    if (type === 'pago') {
+      setEditingFechaPagoId(null);
+      setTempFechaPago('');
+    } else {
+      setEditingFechaActivacionId(null);
+      setTempFechaActivacion('');
+    }
+  }, [tempFechaPago, tempFechaActivacion, processedData, handleFechaChange]);
+
+  const cancelEditingFecha = (type: 'pago' | 'activacion') => {
+    if (type === 'pago') {
+      setEditingFechaPagoId(null);
+      setTempFechaPago('');
+    } else {
+      setEditingFechaActivacionId(null);
+      setTempFechaActivacion('');
+    }
+  };
+
+  const startEditingNotas = (rowId: string, currentValue: string | null) => {
+    setEditingNotasId(rowId);
+    setTempNotas(currentValue || '');
+  };
+
+  const saveNotas = useCallback(async (rowId: string) => {
+    const tempValue = tempNotas;
+    const item = processedData.find(item => item.rowId === rowId);
+    const originalValue = item?.notas || '';
+
+    if (tempValue !== originalValue) {
+      await handleNotasChange(rowId, tempValue);
+    }
+
+    setEditingNotasId(null);
+    setTempNotas('');
+  }, [tempNotas, processedData, handleNotasChange]);
+
+  const cancelEditingNotas = () => {
+    setEditingNotasId(null);
+    setTempNotas('');
+  };
+  
+  const filteredData = useMemo(() => {
+    const searchLower = searchTerm.toLowerCase();
+    const filtroIataLower = filtroIata.toLowerCase();
+    const filtroPnrLower = filtroPnr.toLowerCase();
+    const fechaDesdeDate = fechaDesde ? new Date(fechaDesde) : null;
+    const fechaHastaDate = fechaHasta ? new Date(fechaHasta) : null;
+    const fechaIdaDesdeDate = fechaIdaDesde ? new Date(fechaIdaDesde) : null;
+    const fechaIdaHastaDate = fechaIdaHasta ? new Date(fechaIdaHasta) : null;
+    const fechaVueltaDesdeDate = fechaVueltaDesde ? new Date(fechaVueltaDesde) : null;
+    const fechaVueltaHastaDate = fechaVueltaHasta ? new Date(fechaVueltaHasta) : null;
+    const fechaActivacionDesdeDate = fechaActivacionDesde ? new Date(fechaActivacionDesde) : null;
+    const fechaActivacionHastaDate = fechaActivacionHasta ? new Date(fechaActivacionHasta) : null;
+
+    return processedData.filter(item => {
+      if (searchTerm) {
+        const matchesSearch = item.nombrePasajero.toLowerCase().includes(searchLower) ||
+          item.cliente.toLowerCase().includes(searchLower) ||
+          item.servicio.toLowerCase().includes(searchLower) ||
+          (item.pnr && item.pnr.toLowerCase().includes(searchLower));
+        if (!matchesSearch) return false;
+      }
+
+      if (filtroIata && (!item.iata || !item.iata.toLowerCase().includes(filtroIataLower))) return false;
+      if (filtroPnr && (!item.pnr || !item.pnr.toLowerCase().includes(filtroPnrLower))) return false;
+      
+      if (fechaDesdeDate && item.dataRegistro && new Date(item.dataRegistro) < fechaDesdeDate) return false;
+      if (fechaHastaDate && item.dataRegistro && new Date(item.dataRegistro) > fechaHastaDate) return false;
+      if (fechaIdaDesdeDate && item.andata && new Date(item.andata) < fechaIdaDesdeDate) return false;
+      if (fechaIdaHastaDate && item.andata && new Date(item.andata) > fechaIdaHastaDate) return false;
+      if (fechaVueltaDesdeDate && item.ritorno && new Date(item.ritorno) < fechaVueltaDesdeDate) return false;
+      if (fechaVueltaHastaDate && item.ritorno && new Date(item.ritorno) > fechaVueltaHastaDate) return false;
+      if (fechaActivacionDesdeDate && item.fechaActivacion && new Date(item.fechaActivacion) < fechaActivacionDesdeDate) return false;
+      if (fechaActivacionHastaDate && item.fechaActivacion && new Date(item.fechaActivacion) > fechaActivacionHastaDate) return false;
+
+      return true;
+    });
+  }, [processedData, searchTerm, filtroIata, filtroPnr, fechaDesde, fechaHasta, fechaIdaDesde, fechaIdaHasta, fechaVueltaDesde, fechaVueltaHasta, fechaActivacionDesde, fechaActivacionHasta]);
+
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentData = filteredData.slice(startIndex, startIndex + itemsPerPage);
+
+  const totalNeto = filteredData.reduce((sum, item) => sum + (item.neto || 0), 0);
+  const totalVenduto = filteredData.reduce((sum, item) => sum + (item.venduto || 0), 0);
 
   // Exportar a Excel
   const handleExportToExcel = () => {
@@ -381,10 +427,9 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ records, 
     XLSX.writeFile(wb, 'detalles_pasajeros.xlsx');
   };
 
-  // Resetear página cuando cambien los filtros
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filtroIata, filtroPnr, fechaDesde, fechaHasta]);
+  }, [searchTerm, filtroIata, filtroPnr, fechaDesde, fechaHasta, fechaIdaDesde, fechaIdaHasta, fechaVueltaDesde, fechaVueltaHasta, fechaActivacionDesde, fechaActivacionHasta]);
 
   if (!isOpen) return null;
 
@@ -450,7 +495,7 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ records, 
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha Desde</label>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha Registro Desde</label>
                 <input
                   type="date"
                   value={fechaDesde}
@@ -459,12 +504,72 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ records, 
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha Hasta</label>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha Registro Hasta</label>
                 <input
                   type="date"
                   value={fechaHasta}
                   onChange={(e) => setFechaHasta(e.target.value)}
                   className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
+              {/* Fecha Ida - Fondo Azul */}
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded-lg">
+                <label className="block text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">Fecha Ida Desde</label>
+                <input
+                  type="date"
+                  value={fechaIdaDesde}
+                  onChange={(e) => setFechaIdaDesde(e.target.value)}
+                  className="w-full px-2 py-1.5 border border-blue-300 dark:border-blue-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded-lg">
+                <label className="block text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">Fecha Ida Hasta</label>
+                <input
+                  type="date"
+                  value={fechaIdaHasta}
+                  onChange={(e) => setFechaIdaHasta(e.target.value)}
+                  className="w-full px-2 py-1.5 border border-blue-300 dark:border-blue-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              {/* Fecha Vuelta - Fondo Verde */}
+              <div className="bg-green-50 dark:bg-green-900/20 p-2 rounded-lg">
+                <label className="block text-xs font-medium text-green-700 dark:text-green-300 mb-1">Fecha Vuelta Desde</label>
+                <input
+                  type="date"
+                  value={fechaVueltaDesde}
+                  onChange={(e) => setFechaVueltaDesde(e.target.value)}
+                  className="w-full px-2 py-1.5 border border-green-300 dark:border-green-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+              </div>
+              <div className="bg-green-50 dark:bg-green-900/20 p-2 rounded-lg">
+                <label className="block text-xs font-medium text-green-700 dark:text-green-300 mb-1">Fecha Vuelta Hasta</label>
+                <input
+                  type="date"
+                  value={fechaVueltaHasta}
+                  onChange={(e) => setFechaVueltaHasta(e.target.value)}
+                  className="w-full px-2 py-1.5 border border-green-300 dark:border-green-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+              </div>
+              {/* Fecha Activación - Fondo Amarillo */}
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 p-2 rounded-lg">
+                <label className="block text-xs font-medium text-yellow-700 dark:text-yellow-300 mb-1">Fecha Activación Desde</label>
+                <input
+                  type="date"
+                  value={fechaActivacionDesde}
+                  onChange={(e) => setFechaActivacionDesde(e.target.value)}
+                  className="w-full px-2 py-1.5 border border-yellow-300 dark:border-yellow-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                />
+              </div>
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 p-2 rounded-lg">
+                <label className="block text-xs font-medium text-yellow-700 dark:text-yellow-300 mb-1">Fecha Activación Hasta</label>
+                <input
+                  type="date"
+                  value={fechaActivacionHasta}
+                  onChange={(e) => setFechaActivacionHasta(e.target.value)}
+                  className="w-full px-2 py-1.5 border border-yellow-300 dark:border-yellow-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
                 />
               </div>
             </div>

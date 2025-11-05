@@ -330,6 +330,16 @@ export async function PUT(
           if (pasajero.iataLetteraInvito) iataObject.letteraInvito = pasajero.iataLetteraInvito;
           if (pasajero.iataHotel) iataObject.hotel = pasajero.iataHotel;
           
+          // Agregar IATA de servicios dinámicos
+          if (pasajero.serviciosData) {
+            Object.entries(pasajero.serviciosData).forEach(([servicioKey, servicioData]: [string, any]) => {
+              if (servicioData.iata) {
+                const servicioKeyLower = servicioKey.toLowerCase();
+                iataObject[servicioKeyLower] = servicioData.iata;
+              }
+            });
+          }
+          
           // Si hay IATA específicos, guardar como JSON; si no, usar el campo iata legacy para compatibilidad
           if (Object.keys(iataObject).length > 0) {
             return JSON.stringify(iataObject);
@@ -354,7 +364,28 @@ export async function PUT(
         vendutoLetteraInvito: pasajero.vendutoLetteraInvito ? parseFloat(pasajero.vendutoLetteraInvito) : null,
         tieneHotel: pasajero.tieneHotel || false,
         netoHotel: pasajero.netoHotel ? parseFloat(pasajero.netoHotel) : null,
-        vendutoHotel: pasajero.vendutoHotel ? parseFloat(pasajero.vendutoHotel) : null
+        vendutoHotel: pasajero.vendutoHotel ? parseFloat(pasajero.vendutoHotel) : null,
+        // Guardar datos de servicios dinámicos junto con notas existentes
+        notas: (() => {
+          const notasUsuario = pasajero.notas || '';
+          const serviciosDinamicos = pasajero.serviciosData && Object.keys(pasajero.serviciosData).length > 0
+            ? Object.entries(pasajero.serviciosData).reduce((acc, [key, data]: [string, any]) => {
+                acc[key] = {
+                  neto: data.neto ? parseFloat(data.neto) : null,
+                  venduto: data.venduto ? parseFloat(data.venduto) : null
+                };
+                return acc;
+              }, {} as any)
+            : null;
+          
+          if (serviciosDinamicos && Object.keys(serviciosDinamicos).length > 0) {
+            return JSON.stringify({
+              notasUsuario: notasUsuario,
+              serviciosDinamicos: serviciosDinamicos
+            });
+          }
+          return notasUsuario || null;
+        })()
       };
     });
 

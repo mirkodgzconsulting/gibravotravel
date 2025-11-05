@@ -130,20 +130,34 @@ export async function POST(request: NextRequest) {
     const document3 = formData.get('document3') as File | null;
     const document4 = formData.get('document4') as File | null;
 
-    // Validaciones
-    if (!firstName || !lastName || !fiscalCode || !email || !phoneNumber) {
-      return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 });
+    // Validaciones - Solo firstName, lastName y phoneNumber son obligatorios
+    // fiscalCode, address y email ahora son opcionales
+    if (!firstName || !lastName || !phoneNumber) {
+      return NextResponse.json({ error: 'Faltan campos obligatorios (Nombre, Apellido y Teléfono son requeridos)' }, { status: 400 });
     }
 
     // document1 es opcional (como los demás documentos)
 
-    // Verificar si ya existe un cliente con el mismo código fiscal
-    const existingClient = await prisma.client.findFirst({
-      where: { fiscalCode }
-    });
+    // Verificar si ya existe un cliente con el mismo código fiscal (solo si se proporciona)
+    if (fiscalCode && fiscalCode.trim() !== '') {
+      const existingClientByFiscal = await prisma.client.findFirst({
+        where: { fiscalCode: fiscalCode.trim() }
+      });
 
-    if (existingClient) {
-      return NextResponse.json({ error: 'Ya existe un cliente con este código fiscal' }, { status: 400 });
+      if (existingClientByFiscal) {
+        return NextResponse.json({ error: 'Ya existe un cliente con este código fiscal' }, { status: 400 });
+      }
+    }
+
+    // Verificar si ya existe un cliente con el mismo email (solo si se proporciona)
+    if (email && email.trim() !== '') {
+      const existingClientByEmail = await prisma.client.findFirst({
+        where: { email: email.trim() }
+      });
+
+      if (existingClientByEmail) {
+        return NextResponse.json({ error: 'Ya existe un cliente con este email' }, { status: 400 });
+      }
     }
 
     // Validar tamaños de archivos (10MB máximo por archivo)
@@ -232,13 +246,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Crear el cliente
+    // Nota: fiscalCode, address y email ahora son opcionales, usar strings vacíos si no se proporcionan
     const newClient = await prisma.client.create({
       data: {
         firstName,
         lastName,
-        fiscalCode,
-        address: address || '',
-        email,
+        fiscalCode: fiscalCode?.trim() || '',
+        address: address?.trim() || '',
+        email: email?.trim() || '',
         phoneNumber,
         birthPlace: birthPlace || '',
         birthDate: birthDate ? new Date(birthDate) : new Date(),

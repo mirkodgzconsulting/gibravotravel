@@ -102,9 +102,9 @@ export async function PUT(
     const pdfFile = formData.get('pdfFile') as File | null;
 
     // Validar campos requeridos
-    if (!titulo || !precioAdulto || !precioNino) {
+    if (!titulo || !precioAdulto) {
       return NextResponse.json(
-        { error: 'Título, precio adulto y precio niño son requeridos' },
+        { error: 'Título y precio adulto son requeridos' },
         { status: 400 }
       );
     }

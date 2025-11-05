@@ -56,6 +56,8 @@ interface PasajeroData {
   tieneHotel: boolean;
   netoHotel: string;
   vendutoHotel: string;
+  // Campos dinámicos para servicios adicionales (no incluidos en los anteriores)
+  serviciosData?: Record<string, { iata: string; neto: string; venduto: string }>;
 }
 
 interface BiglietteriaRecord {
@@ -307,6 +309,27 @@ export default function BiglietteriaPage() {
   
   // ==================== FUNCIONES AUXILIARES ====================
   
+  // Servicios conocidos que tienen campos específicos en la interfaz
+  const serviciosConocidos = ['BIGLIETTERIA', 'EXPRESS', 'POLIZZA', 'LETTERA D\'INVITO', 'HOTEL'];
+  
+  // Función para normalizar el nombre del servicio (para comparaciones)
+  const normalizarServicio = (servicio: string): string => {
+    return servicio.toUpperCase().trim();
+  };
+  
+  // Función para verificar si un servicio es conocido
+  const esServicioConocido = (servicio: string): boolean => {
+    const normalizado = normalizarServicio(servicio);
+    return serviciosConocidos.some(conocido => 
+      normalizado.includes(conocido) || conocido.includes(normalizado)
+    );
+  };
+  
+  // Función para obtener servicios que requieren campos dinámicos
+  const obtenerServiciosDinamicos = (servicios: string[]): string[] => {
+    return servicios.filter(s => !esServicioConocido(s));
+  };
+  
   // Función para crear un pasajero vacío
   const crearPasajeroVacio = (): PasajeroData => ({
     nombrePasajero: '',
@@ -332,7 +355,8 @@ export default function BiglietteriaPage() {
     vendutoLetteraInvito: '',
     tieneHotel: false,
     netoHotel: '',
-    vendutoHotel: ''
+    vendutoHotel: '',
+    serviciosData: {}
   });
   
   // Función para verificar si tiene Biglietteria
@@ -340,11 +364,9 @@ export default function BiglietteriaPage() {
     return servicios.some(s => s.toLowerCase().includes('biglietteria'));
   };
   
-  // Función para verificar si tiene servicios adicionales (con costo extra)
+  // Función para verificar si tiene servicios adicionales (cualquier servicio excepto Biglietteria)
   const tieneServiciosAdicionales = (servicios: string[]) => {
-    return servicios.some(s => 
-      additionalCostServices.some(adicional => s.toLowerCase().includes(adicional.toLowerCase()))
-    );
+    return servicios.some(s => !tieneBiglietteria([s]));
   };
   
   // Función para verificar si tiene servicios que NO son adicionales
@@ -420,6 +442,14 @@ export default function BiglietteriaPage() {
       if (pasajero.tieneHotel) {
         if (pasajero.netoHotel) netoPrincipal += parseFloat(pasajero.netoHotel) || 0;
         if (pasajero.vendutoHotel) vendutoTotal += parseFloat(pasajero.vendutoHotel) || 0;
+      }
+      
+      // Sumar servicios dinámicos
+      if (pasajero.serviciosData) {
+        Object.values(pasajero.serviciosData).forEach((servicioData) => {
+          if (servicioData.neto) netoPrincipal += parseFloat(servicioData.neto) || 0;
+          if (servicioData.venduto) vendutoTotal += parseFloat(servicioData.venduto) || 0;
+        });
       }
     });
     
@@ -623,6 +653,28 @@ export default function BiglietteriaPage() {
         const tieneLetteraInvito = servicios.some(s => s.toLowerCase().includes('lettera'));
         const tieneHotel = servicios.some(s => s.toLowerCase().includes('hotel'));
         
+        // Manejar serviciosData dinámicos
+        let serviciosData = { ...(p.serviciosData || {}) };
+        
+        // Obtener servicios dinámicos actuales
+        const serviciosDinamicosActuales = obtenerServiciosDinamicos(servicios);
+        const serviciosDinamicosKeys = serviciosDinamicosActuales.map(s => normalizarServicio(s));
+        
+        // Limpiar serviciosData que ya no están seleccionados
+        Object.keys(serviciosData).forEach(key => {
+          if (!serviciosDinamicosKeys.includes(key)) {
+            delete serviciosData[key];
+          }
+        });
+        
+        // Inicializar serviciosData para nuevos servicios dinámicos
+        serviciosDinamicosActuales.forEach(servicio => {
+          const servicioKey = normalizarServicio(servicio);
+          if (!serviciosData[servicioKey]) {
+            serviciosData[servicioKey] = { iata: '', neto: '', venduto: '' };
+          }
+        });
+        
         return {
           ...p,
           servicios,
@@ -630,6 +682,7 @@ export default function BiglietteriaPage() {
           tienePolizza,
           tieneLetteraInvito,
           tieneHotel,
+          serviciosData,
           // Limpiar campos si no aplican
           andata: hasBiglietteria ? p.andata : '',
           ritorno: hasBiglietteria ? p.ritorno : '',
@@ -1251,6 +1304,64 @@ export default function BiglietteriaPage() {
             iataHotel: ''
           };
         })(),
+        // Cargar servicios dinámicos desde notas y iata
+        serviciosData: (() => {
+          const serviciosData: Record<string, { iata: string; neto: string; venduto: string }> = {};
+          const pAny = p as any; // Cast temporal para acceder a campos de la BD
+          
+          // Parsear notas para obtener servicios dinámicos
+          if (pAny.notas) {
+            try {
+              const notasParsed = JSON.parse(pAny.notas);
+              if (notasParsed && typeof notasParsed === 'object' && notasParsed.serviciosDinamicos) {
+                // Hay servicios dinámicos en notas
+                Object.entries(notasParsed.serviciosDinamicos).forEach(([key, data]: [string, any]) => {
+                  serviciosData[key.toUpperCase()] = {
+                    iata: '',
+                    neto: data.neto ? data.neto.toString() : '',
+                    venduto: data.venduto ? data.venduto.toString() : ''
+                  };
+                });
+              }
+            } catch {
+              // No es JSON, es string simple (solo notas de usuario)
+            }
+          }
+          
+          // Parsear IATA para obtener IATA de servicios dinámicos
+          if (pAny.iata) {
+            try {
+              const iataParsed = JSON.parse(pAny.iata);
+              if (typeof iataParsed === 'object' && iataParsed !== null) {
+                // Obtener servicios dinámicos de los servicios seleccionados
+                const servizioString = pAny.servizio || '';
+                const servicios = servizioString ? servizioString.split(',').map((s: string) => s.trim()) : [];
+                const serviciosDinamicos = obtenerServiciosDinamicos(servicios);
+                
+                serviciosDinamicos.forEach(servicio => {
+                  const servicioKey = normalizarServicio(servicio);
+                  const servicioKeyLower = servicioKey.toLowerCase();
+                  
+                  // Si hay IATA para este servicio en el JSON, agregarlo
+                  if (iataParsed[servicioKeyLower] && !serviciosData[servicioKey]) {
+                    serviciosData[servicioKey] = {
+                      iata: iataParsed[servicioKeyLower],
+                      neto: '',
+                      venduto: ''
+                    };
+                  } else if (iataParsed[servicioKeyLower] && serviciosData[servicioKey]) {
+                    // Actualizar IATA si ya existe el servicio
+                    serviciosData[servicioKey].iata = iataParsed[servicioKeyLower];
+                  }
+                });
+              }
+            } catch {
+              // No es JSON, es string simple
+            }
+          }
+          
+          return Object.keys(serviciosData).length > 0 ? serviciosData : {};
+        })(),
         netoBiglietteria: p.netoBiglietteria?.toString() || '',
         vendutoBiglietteria: p.vendutoBiglietteria?.toString() || '',
         tieneExpress: p.tieneExpress || false,
@@ -1504,26 +1615,32 @@ export default function BiglietteriaPage() {
             <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
               Record: {records.length.toLocaleString()}
             </span>
-            <button
-              onClick={handleOpenPassengerDetails}
-              className="flex items-center gap-1 px-3 py-1 text-xs bg-purple-100 hover:bg-purple-200 text-purple-700 hover:text-purple-800 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 dark:text-purple-400 dark:hover:text-purple-300 rounded transition-colors duration-200"
-              title="Ver detalles por pasajero y servicio"
-            >
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-              Pagos/Express
-            </button>
-            <button
-              onClick={() => setIsPassengerDetailsSimpleOpen(true)}
-              className="flex items-center gap-1 px-3 py-1 text-xs bg-indigo-100 hover:bg-indigo-200 text-indigo-700 hover:text-indigo-800 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/30 dark:text-indigo-400 dark:hover:text-indigo-300 rounded transition-colors duration-200"
-              title="Ver detalles simplificados de pasajeros"
-            >
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-              </svg>
-              Express
-            </button>
+            {/* Botón Pagos/Express - Solo visible para TI y ADMIN */}
+            {(userRole === 'TI' || userRole === 'ADMIN') && (
+              <button
+                onClick={handleOpenPassengerDetails}
+                className="flex items-center gap-1 px-3 py-1 text-xs bg-purple-100 hover:bg-purple-200 text-purple-700 hover:text-purple-800 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 dark:text-purple-400 dark:hover:text-purple-300 rounded transition-colors duration-200"
+                title="Ver detalles por pasajero y servicio"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                Pagos/Express
+              </button>
+            )}
+            {/* Botón Express - Solo visible para USER */}
+            {userRole === 'USER' && (
+              <button
+                onClick={() => setIsPassengerDetailsSimpleOpen(true)}
+                className="flex items-center gap-1 px-3 py-1 text-xs bg-indigo-100 hover:bg-indigo-200 text-indigo-700 hover:text-indigo-800 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/30 dark:text-indigo-400 dark:hover:text-indigo-300 rounded transition-colors duration-200"
+                title="Ver detalles simplificados de pasajeros"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+                Express
+              </button>
+            )}
             <button
               onClick={handleExportToExcel}
               className="flex items-center gap-1 px-3 py-1 text-xs bg-green-100 hover:bg-green-200 text-green-700 hover:text-green-800 dark:bg-green-900/20 dark:hover:bg-green-900/30 dark:text-green-400 dark:hover:text-green-300 rounded transition-colors duration-200"
@@ -2905,6 +3022,116 @@ export default function BiglietteriaPage() {
                               </div>
                             </div>
                           )}
+                          
+                          {/* Servicios Dinámicos - Para todos los servicios que no están en la lista de conocidos */}
+                          {obtenerServiciosDinamicos(pasajero.servicios).map((servicio) => {
+                            // Normalizar el nombre del servicio para usar como clave
+                            const servicioKey = normalizarServicio(servicio);
+                            const servicioData = pasajero.serviciosData?.[servicioKey] || { iata: '', neto: '', venduto: '' };
+                            
+                            // Colores diferentes para cada servicio (usando hash simple)
+                            const colores = [
+                              { bg: 'bg-cyan-50', dark: 'dark:bg-cyan-900/20', text: 'text-cyan-900', darkText: 'dark:text-cyan-300' },
+                              { bg: 'bg-pink-50', dark: 'dark:bg-pink-900/20', text: 'text-pink-900', darkText: 'dark:text-pink-300' },
+                              { bg: 'bg-orange-50', dark: 'dark:bg-orange-900/20', text: 'text-orange-900', darkText: 'dark:text-orange-300' },
+                              { bg: 'bg-teal-50', dark: 'dark:bg-teal-900/20', text: 'text-teal-900', darkText: 'dark:text-teal-300' },
+                              { bg: 'bg-amber-50', dark: 'dark:bg-amber-900/20', text: 'text-amber-900', darkText: 'dark:text-amber-300' }
+                            ];
+                            const colorIndex = servicioKey.length % colores.length;
+                            const color = colores[colorIndex];
+                            
+                            return (
+                              <div key={servicioKey} className={`${color.bg} ${color.dark} p-3 rounded-lg`}>
+                                <h6 className={`text-sm font-semibold ${color.text} ${color.darkText} mb-2`}>
+                                  {servicio}
+                                </h6>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                      IATA *
+                                    </label>
+                                    <div className="relative iata-dropdown-container">
+                                      <input
+                                        type="text"
+                                        value={servicioData.iata}
+                                        onChange={(e) => {
+                                          const newData = { ...servicioData, iata: e.target.value };
+                                          const updatedData = { ...(pasajero.serviciosData || {}), [servicioKey]: newData };
+                                          handlePasajeroChange(index, 'serviciosData', updatedData);
+                                          setIndividualIataSearchTerm(index, servicioKey, e.target.value);
+                                          setIndividualIataDropdown(index, servicioKey, true);
+                                        }}
+                                        onFocus={() => setIndividualIataDropdown(index, servicioKey, true)}
+                                        placeholder="Buscar IATA"
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                                        required
+                                      />
+                                      
+                                      {/* Dropdown de IATA */}
+                                      {isIndividualIataDropdownOpen(index, servicioKey) && getFilteredIndividualIata(index, servicioKey).length > 0 && (
+                                        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                                          {getFilteredIndividualIata(index, servicioKey).map((iata, idx) => (
+                                            <div
+                                              key={idx}
+                                              className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-sm text-gray-900 dark:text-white"
+                                              onClick={() => {
+                                                const newData = { ...servicioData, iata: iata };
+                                                const updatedData = { ...(pasajero.serviciosData || {}), [servicioKey]: newData };
+                                                handlePasajeroChange(index, 'serviciosData', updatedData);
+                                                handleIndividualIataSelect(index, servicioKey, iata);
+                                              }}
+                                            >
+                                              {iata}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                      
+                                      {isIndividualIataDropdownOpen(index, servicioKey) && getFilteredIndividualIata(index, servicioKey).length === 0 && (
+                                        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg">
+                                          <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                                            Nessun IATA trovato
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                      Neto
+                                    </label>
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      value={servicioData.neto}
+                                      onChange={(e) => {
+                                        const newData = { ...servicioData, neto: e.target.value };
+                                        const updatedData = { ...(pasajero.serviciosData || {}), [servicioKey]: newData };
+                                        handlePasajeroChange(index, 'serviciosData', updatedData);
+                                      }}
+                                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                      Venduto
+                                    </label>
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      value={servicioData.venduto}
+                                      onChange={(e) => {
+                                        const newData = { ...servicioData, venduto: e.target.value };
+                                        const updatedData = { ...(pasajero.serviciosData || {}), [servicioKey]: newData };
+                                        handlePasajeroChange(index, 'serviciosData', updatedData);
+                                      }}
+                                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>

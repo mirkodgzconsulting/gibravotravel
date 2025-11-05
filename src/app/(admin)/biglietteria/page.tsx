@@ -1160,15 +1160,19 @@ export default function BiglietteriaPage() {
   const endIndex = startIndex + itemsPerPage;
   const currentData = filteredRecords.slice(startIndex, endIndex);
 
-  // Calcular totales de las columnas NETO, VENDUTO y FEE/AGV
+  // Calcular totales de las columnas NETO, VENDUTO, PAGATO/ACCONTO, DAPAGARE y FEE/AGV
   const totales = useMemo(() => {
     const totalNeto = filteredRecords.reduce((sum, record) => sum + (record.netoPrincipal || 0), 0);
     const totalVenduto = filteredRecords.reduce((sum, record) => sum + (record.vendutoTotal || 0), 0);
+    const totalAcconto = filteredRecords.reduce((sum, record) => sum + (record.acconto || 0), 0);
+    const totalDaPagare = filteredRecords.reduce((sum, record) => sum + (record.daPagare || 0), 0);
     const totalFeeAgv = filteredRecords.reduce((sum, record) => sum + (record.feeAgv || 0), 0);
     
     return {
       totalNeto,
       totalVenduto,
+      totalAcconto,
+      totalDaPagare,
       totalFeeAgv
     };
   }, [filteredRecords]);
@@ -2374,11 +2378,11 @@ export default function BiglietteriaPage() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-800 dark:text-blue-200">
                   €{totales.totalVenduto.toFixed(2)}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                  -
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-800 dark:text-blue-200">
+                  €{totales.totalAcconto.toFixed(2)}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                  -
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-800 dark:text-blue-200">
+                  €{totales.totalDaPagare.toFixed(2)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
                   -
@@ -3391,7 +3395,7 @@ export default function BiglietteriaPage() {
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Acconto (opcional)
+                    Pagato/Acconto (calculado)
                   </label>
                   <input
                     type="number"

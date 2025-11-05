@@ -69,6 +69,7 @@ interface BiglietteriaRecord {
   metodoPagamento: string[]; // Array de métodos de pago
   metodoPagamentoParsed?: string[]; // OPTIMIZACIÓN: Pre-parseado para evitar JSON.parse en filtro
   notaDiVendita: string | null;
+  notaDiRicevuta: string | null;
   netoPrincipal: number;
   vendutoTotal: number;
   acconto: number;
@@ -128,6 +129,7 @@ interface BiglietteriaFormData {
   itinerario: string;
   metodoPagamento: string[]; // Array de métodos de pago
   notaDiVendita: string;
+  notaDiRicevuta: string;
   numeroPasajeros: number;
   pasajeros: PasajeroData[];
   netoPrincipal: string;
@@ -423,9 +425,10 @@ export default function BiglietteriaPage() {
     data: new Date().toISOString().split('T')[0],
     pnr: '',
     itinerario: '',
-    metodoPagamento: [], // Array de métodos de pago
-    notaDiVendita: '',
-    numeroPasajeros: 1,
+      metodoPagamento: [], // Array de métodos de pago
+      notaDiVendita: '',
+      notaDiRicevuta: '',
+      numeroPasajeros: 1,
     pasajeros: [crearPasajeroVacio()],
     netoPrincipal: '',
     vendutoTotal: '',
@@ -977,7 +980,7 @@ export default function BiglietteriaPage() {
       'Itinerario': record.itinerario,
       'Neto': record.netoPrincipal,
       'Venduto': record.vendutoTotal,
-      'Acconto': record.acconto,
+      'Pagato/Acconto': record.acconto,
       'Da Pagare': record.daPagare,
       'Metodo Pagamento': (() => {
         try {
@@ -1232,6 +1235,7 @@ export default function BiglietteriaPage() {
       itinerario: '',
       metodoPagamento: [],
       notaDiVendita: '',
+      notaDiRicevuta: '',
       numeroPasajeros: 1,
       pasajeros: [crearPasajeroVacio()],
       netoPrincipal: '',
@@ -1449,6 +1453,7 @@ export default function BiglietteriaPage() {
       itinerario: record.itinerario,
       metodoPagamento: metodoPagamentoArray,
       notaDiVendita: record.notaDiVendita || '',
+      notaDiRicevuta: record.notaDiRicevuta || '',
       numeroPasajeros: record.numeroPasajeros,
       pasajeros: pasajerosMapeados,
       netoPrincipal: record.netoPrincipal.toString(),
@@ -1954,7 +1959,7 @@ export default function BiglietteriaPage() {
                 Venduto
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                Acconto
+                Pagato/Acconto
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                 DaPagare
@@ -3378,18 +3383,35 @@ export default function BiglietteriaPage() {
                   )}
                 </div>
                 
-                {/* Campo Nota di vendita */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    nota interna di vendita
-                  </label>
-                  <textarea
-                    value={formData.notaDiVendita}
-                    onChange={(e) => setFormData(prev => ({ ...prev, notaDiVendita: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                    rows={3}
-                    placeholder="Nota interna della vendita..."
-                  />
+                {/* Campos de Notas - lado a lado */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Campo Nota di vendita */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      nota interna di vendita
+                    </label>
+                    <textarea
+                      value={formData.notaDiVendita}
+                      onChange={(e) => setFormData(prev => ({ ...prev, notaDiVendita: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      rows={3}
+                      placeholder="Nota interna della vendita..."
+                    />
+                  </div>
+                  
+                  {/* Campo Note di ricevuta */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Note di ricevuta
+                    </label>
+                    <textarea
+                      value={formData.notaDiRicevuta}
+                      onChange={(e) => setFormData(prev => ({ ...prev, notaDiRicevuta: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      rows={3}
+                      placeholder="Note di ricevuta..."
+                    />
+                  </div>
                 </div>
               </div>
             </div>

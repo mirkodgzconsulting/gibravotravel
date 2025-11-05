@@ -79,6 +79,7 @@ export async function PUT(
     const itinerario = formData.get('itinerario') as string;
     const metodoPagamentoJson = formData.get('metodoPagamento') as string;
     const notaDiVendita = formData.get('notaDiVendita') as string;
+    const notaDiRicevuta = formData.get('notaDiRicevuta') as string;
     const acconto = formData.get('acconto') as string;
     
     // Parsear metodoPagamento desde JSON array
@@ -402,6 +403,7 @@ export async function PUT(
           daPagare: daPagare,
           metodoPagamento,
           notaDiVendita: notaDiVendita || null,
+          notaDiRicevuta: notaDiRicevuta || null,
           feeAgv: feeAgv,
           attachedFile: attachedFileUrl,
           attachedFileName: attachedFileName,

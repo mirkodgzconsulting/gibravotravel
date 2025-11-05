@@ -425,7 +425,7 @@ export default function VentaTourAereoPage() {
       const clientsData = await cachedFetch<{ clients?: Cliente[] }>('/api/clients', { ttlMs: 15000 });
       const clientsArray = clientsData.clients || clientsData;
       setClientes(Array.isArray(clientsArray) ? clientsArray : []);
-      setClientesLoaded(true);
+        setClientesLoaded(true);
     } catch (error) {
       console.error('Error fetching clientes:', error);
       setClientes([]);
@@ -495,10 +495,10 @@ export default function VentaTourAereoPage() {
       fetchTourData();
       // NO cargar clientes automáticamente - se cargarán cuando se abra el modal (lazy loading)
       fetchIatas();
-              fetchMetodosPagamento();
-        fetchPagamentos();
-      }
-    }, [roleLoading, tourId]);
+      fetchMetodosPagamento();
+      fetchPagamentos();
+    }
+  }, [roleLoading, tourId]);
 
   const fetchTourData = async () => {
     try {
@@ -556,8 +556,8 @@ export default function VentaTourAereoPage() {
     } catch (error) {
       console.error('Error fetching pagamentos:', error);
       setPagamentos([]);
-          }
-    };
+    }
+  };
 
   const handleClienteChange = useCallback((clienteId: string) => {
     // Resetear el tipo de pasajero cuando se cambia el cliente
@@ -762,13 +762,13 @@ export default function VentaTourAereoPage() {
         closeModal();
         setShowCopyNotification(true);
         setTimeout(() => setShowCopyNotification(false), 3000);
-              } else {
-          const errorData = await response.json();
+      } else {
+        const errorData = await response.json();
           const errorMessage = errorData.error || 'Error al crear venta';
           setMessage({ type: 'error', text: errorMessage });
           setTimeout(() => setMessage(null), 5000);
-        }
-      } catch (error) {
+      }
+    } catch (error) {
         console.error('Error al crear venta:', error);
         setMessage({ type: 'error', text: 'Error de conexión al crear la venta' });
         setTimeout(() => setMessage(null), 5000);
@@ -1737,8 +1737,8 @@ export default function VentaTourAereoPage() {
                         }
                       }}
                       placeholder={loadingClientes ? 'Cargando clientes...' : 'Buscar cliente...'}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                      required
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                    required
                     />
                     
                     {/* Dropdown de clientes */}
@@ -1934,10 +1934,10 @@ export default function VentaTourAereoPage() {
                   />
                 </div>
 
-                                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                      Venduto (€)
-                    </label>
+                  </label>
                   <input
                     type="number"
                     step="0.01"
@@ -2265,37 +2265,37 @@ export default function VentaTourAereoPage() {
             <div className="relative flex-1 max-w-md">
               <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="text"
+                              </svg>
+                              <input
+                                type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Buscar por Pasajero, Stato, Metodo di Acquisto..."
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-          
+                              />
+                            </div>
+                          </div>
+
           <div className="flex items-center gap-2">
             {/* Botón Exportar a Excel */}
-            <button
+                          <button
               onClick={handleExportToExcel}
               className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg whitespace-nowrap"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
+                      </svg>
               Exportar a Excel
-            </button>
+                </button>
             
-            {/* Botón para generar venta */}
-            <button
-              onClick={handleOpenCreateModal}
+        {/* Botón para generar venta */}
+          <button
+            onClick={handleOpenCreateModal}
               className="flex items-center gap-2 px-6 py-3 bg-brand-500 hover:bg-brand-600 text-white rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg whitespace-nowrap"
-            >
-              <PlusIcon className="w-5 h-5" />
-              Generar Venta
-            </button>
+          >
+            <PlusIcon className="w-5 h-5" />
+            Generar Venta
+          </button>
           </div>
         </div>
 
@@ -2309,12 +2309,12 @@ export default function VentaTourAereoPage() {
               {searchTerm.trim() ? 'Intenta con otros términos de búsqueda' : 'Genera tu primera venta para comenzar'}
             </p>
             {!searchTerm.trim() && (
-              <Button
-                onClick={handleOpenCreateModal}
-                className="bg-brand-500 hover:bg-brand-600 text-white px-6 py-3 rounded-lg"
-              >
-                Generar Venta
-              </Button>
+            <Button
+              onClick={handleOpenCreateModal}
+              className="bg-brand-500 hover:bg-brand-600 text-white px-6 py-3 rounded-lg"
+            >
+              Generar Venta
+            </Button>
             )}
           </div>
         ) : (

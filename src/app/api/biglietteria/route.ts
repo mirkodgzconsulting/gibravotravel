@@ -119,6 +119,7 @@ export async function POST(request: NextRequest) {
     const itinerario = formData.get('itinerario') as string;
     const metodoPagamentoJson = formData.get('metodoPagamento') as string;
     const notaDiVendita = formData.get('notaDiVendita') as string;
+    const notaDiRicevuta = formData.get('notaDiRicevuta') as string;
     const numeroPasajeros = parseInt(formData.get('numeroPasajeros') as string) || 1;
     
     // Parsear metodoPagamento desde JSON array
@@ -399,6 +400,7 @@ export async function POST(request: NextRequest) {
         itinerario,
         metodoPagamento,
         notaDiVendita: notaDiVendita || null,
+        notaDiRicevuta: notaDiRicevuta || null,
         numeroPasajeros,
         netoPrincipal,
         vendutoTotal,

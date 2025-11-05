@@ -191,6 +191,7 @@ model Biglietteria {
   itinerario       String
   metodoPagamento  String // JSON array de métodos de pago
   notaDiVendita    String?
+  notaDiRicevuta   String?
   cliente          String
   codiceFiscale    String
   indirizzo        String

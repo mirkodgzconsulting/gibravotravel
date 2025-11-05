@@ -3305,7 +3305,7 @@ export default function BiglietteriaPage() {
                 {/* Campo Nota di vendita */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Nota di vendita
+                    nota interna di vendita
                   </label>
                   <textarea
                     value={formData.notaDiVendita}

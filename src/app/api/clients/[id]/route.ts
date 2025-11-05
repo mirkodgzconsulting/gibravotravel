@@ -255,9 +255,40 @@ export async function PUT(
 
   } catch (error: any) {
     console.error('Error updating client:', error);
+    
+    // Detectar errores de Prisma relacionados con constraints únicos
+    if (error.code === 'P2002') {
+      // Error de unique constraint en Prisma
+      const target = error.meta?.target;
+      
+      if (Array.isArray(target)) {
+        const field = target[0];
+        
+        // Mapear nombres de campos a mensajes más amigables
+        const fieldMessages: Record<string, string> = {
+          'email': 'Ya existe otro cliente con este email. Por favor, verifica el email ingresado.',
+          'fiscalCode': 'Ya existe otro cliente con este código fiscal. Por favor, verifica el código fiscal ingresado.',
+          'phoneNumber': 'Ya existe otro cliente con este número de teléfono. Por favor, verifica el teléfono ingresado.',
+        };
+        
+        const message = fieldMessages[field] || `Ya existe otro cliente con este ${field}. Por favor, verifica el campo ${field}.`;
+        
+        return NextResponse.json({ 
+          error: message,
+          field: field,
+          details: `El campo '${field}' ya está registrado en otro cliente`
+        }, { status: 400 });
+      }
+      
+      return NextResponse.json({ 
+        error: 'Ya existe otro cliente con estos datos. Por favor, verifica la información ingresada.',
+        details: 'Los datos ingresados ya están registrados en otro cliente'
+      }, { status: 400 });
+    }
+    
     return NextResponse.json({ 
       error: 'Error interno del servidor',
-      details: error.message
+      details: error.message || 'Error desconocido al actualizar el cliente'
     }, { status: 500 });
   }
 }

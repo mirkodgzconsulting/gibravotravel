@@ -119,26 +119,166 @@ async function fixProductionDatabase() {
       ]
     };
 
-    for (const [tableName, data] of Object.entries(referenceData)) {
+    // Insertar datos de referencia usando Prisma Client directamente
+    // Pagamento
+    if (referenceData.pagamento) {
       try {
-        // Verificar si ya existen datos
-        const existing = await prisma.$queryRaw`SELECT COUNT(*) as count FROM ${tableName}`;
-        
-        if (existing[0].count === 0) {
-          // Insertar datos
-          for (const item of data) {
-            await prisma.$queryRaw`
-              INSERT INTO ${tableName} (id, ${Object.keys(item).filter(k => k !== 'id').join(', ')}, "createdAt", "updatedAt")
-              VALUES (${item.id}, ${Object.values(item).filter((_, i) => i !== 0).map(v => typeof v === 'string' ? `'${v}'` : v).join(', ')}, NOW(), NOW())
-              ON CONFLICT (id) DO NOTHING
-            `;
+        const existing = await prisma.pagamento.count();
+        if (existing === 0) {
+          for (const item of referenceData.pagamento) {
+            await prisma.pagamento.upsert({
+              where: { id: item.id },
+              update: { isActive: item.isActive },
+              create: item
+            });
           }
-          console.log(`   ✅ ${tableName}: ${data.length} registros creados`);
+          console.log(`   ✅ pagamento: ${referenceData.pagamento.length} registros creados`);
         } else {
-          console.log(`   ⚠️  ${tableName}: Ya tiene ${existing[0].count} registros`);
+          console.log(`   ⚠️  pagamento: Ya tiene ${existing} registros`);
         }
       } catch (error) {
-        console.log(`   ❌ Error en ${tableName}: ${error.message}`);
+        console.log(`   ❌ Error en pagamento: ${error.message}`);
+      }
+    }
+
+    // MetodoPagamento
+    if (referenceData.metodo_pagamento) {
+      try {
+        const existing = await prisma.metodoPagamento.count();
+        if (existing === 0) {
+          for (const item of referenceData.metodo_pagamento) {
+            await prisma.metodoPagamento.upsert({
+              where: { id: item.id },
+              update: { isActive: item.isActive },
+              create: item
+            });
+          }
+          console.log(`   ✅ metodo_pagamento: ${referenceData.metodo_pagamento.length} registros creados`);
+        } else {
+          console.log(`   ⚠️  metodo_pagamento: Ya tiene ${existing} registros`);
+        }
+      } catch (error) {
+        console.log(`   ❌ Error en metodo_pagamento: ${error.message}`);
+      }
+    }
+
+    // Servizio
+    if (referenceData.servizio) {
+      try {
+        const existing = await prisma.servizio.count();
+        if (existing === 0) {
+          for (const item of referenceData.servizio) {
+            await prisma.servizio.upsert({
+              where: { id: item.id },
+              update: { isActive: item.isActive },
+              create: item
+            });
+          }
+          console.log(`   ✅ servizio: ${referenceData.servizio.length} registros creados`);
+        } else {
+          console.log(`   ⚠️  servizio: Ya tiene ${existing} registros`);
+        }
+      } catch (error) {
+        console.log(`   ❌ Error en servizio: ${error.message}`);
+      }
+    }
+
+    // Iata
+    if (referenceData.iata) {
+      try {
+        const existing = await prisma.iata.count();
+        if (existing === 0) {
+          for (const item of referenceData.iata) {
+            await prisma.iata.upsert({
+              where: { id: item.id },
+              update: { isActive: item.isActive },
+              create: item
+            });
+          }
+          console.log(`   ✅ iata: ${referenceData.iata.length} registros creados`);
+        } else {
+          console.log(`   ⚠️  iata: Ya tiene ${existing} registros`);
+        }
+      } catch (error) {
+        console.log(`   ❌ Error en iata: ${error.message}`);
+      }
+    }
+
+    // FermataBus
+    if (referenceData.fermata_bus) {
+      try {
+        const existing = await prisma.fermataBus.count();
+        if (existing === 0) {
+          for (const item of referenceData.fermata_bus) {
+            await prisma.fermataBus.upsert({
+              where: { id: item.id },
+              update: { isActive: item.isActive },
+              create: item
+            });
+          }
+          console.log(`   ✅ fermata_bus: ${referenceData.fermata_bus.length} registros creados`);
+        } else {
+          console.log(`   ⚠️  fermata_bus: Ya tiene ${existing} registros`);
+        }
+      } catch (error) {
+        console.log(`   ❌ Error en fermata_bus: ${error.message}`);
+      }
+    }
+
+    // StatoBus
+    if (referenceData.stato_bus) {
+      try {
+        const existing = await prisma.statoBus.count();
+        if (existing === 0) {
+          for (const item of referenceData.stato_bus) {
+            await prisma.statoBus.upsert({
+              where: { id: item.id },
+              update: { isActive: item.isActive },
+              create: item
+            });
+          }
+          console.log(`   ✅ stato_bus: ${referenceData.stato_bus.length} registros creados`);
+        } else {
+          console.log(`   ⚠️  stato_bus: Ya tiene ${existing} registros`);
+        }
+      } catch (error) {
+        console.log(`   ❌ Error en stato_bus: ${error.message}`);
+      }
+    }
+
+    // Acquisto (NUEVO - usando Prisma Client directamente)
+    if (referenceData.acquisto) {
+      try {
+        const existing = await prisma.acquisto.count();
+        if (existing === 0) {
+          for (const item of referenceData.acquisto) {
+            await prisma.acquisto.upsert({
+              where: { acquisto: item.acquisto },
+              update: { isActive: item.isActive },
+              create: {
+                acquisto: item.acquisto,
+                isActive: item.isActive
+              }
+            });
+          }
+          console.log(`   ✅ acquisto: ${referenceData.acquisto.length} registros creados`);
+        } else {
+          // Si ya hay registros, solo asegurar que los datos estén presentes
+          for (const item of referenceData.acquisto) {
+            await prisma.acquisto.upsert({
+              where: { acquisto: item.acquisto },
+              update: { isActive: item.isActive },
+              create: {
+                acquisto: item.acquisto,
+                isActive: item.isActive
+              }
+            });
+          }
+          console.log(`   ✅ acquisto: ${existing} registros existentes, verificados y actualizados`);
+        }
+      } catch (error) {
+        console.log(`   ❌ Error en acquisto: ${error.message}`);
+        console.log(`   Detalles del error:`, error);
       }
     }
 

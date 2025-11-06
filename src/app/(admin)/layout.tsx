@@ -66,9 +66,23 @@ export default function AdminLayout({
     );
   }
 
-  // Si el usuario no está autenticado, no mostrar nada (se redirigirá)
-  if (!isSignedIn) {
-    return null;
+  // Redirigir inmediatamente si el usuario no está autenticado
+  useEffect(() => {
+    if (isLoaded && !isSignedIn && pathname !== '/signin') {
+      router.replace("/signin");
+    }
+  }, [isLoaded, isSignedIn, pathname, router]);
+
+  // Si el usuario no está autenticado, mostrar loading mientras se redirige (nunca retornar null)
+  if (isLoaded && !isSignedIn) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-500 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Redirigiendo al inicio de sesión...</p>
+        </div>
+      </div>
+    );
   }
 
   // Route-specific styles for the main content container

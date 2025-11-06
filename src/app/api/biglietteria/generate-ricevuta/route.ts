@@ -188,24 +188,28 @@ export async function POST(request: NextRequest) {
       notaDiRicevuta: (() => {
         let nota = record.notaDiRicevuta || '';
         if (nota) {
-          // Remover llaves de apertura y cierre al inicio y final del contenido
-          // Esto puede ocurrir si el editor guarda texto con formato que incluye llaves
+          // Remover todas las llaves { } del contenido, tanto al inicio/final como en el medio
+          // Primero remover llaves que estén al inicio y final del contenido completo
           nota = nota.trim();
           
-          // Remover llave de apertura al inicio (puede estar dentro o fuera de tags)
-          if (nota.startsWith('{')) {
+          // Remover llave de apertura al inicio
+          while (nota.startsWith('{')) {
             nota = nota.substring(1).trim();
           }
           
-          // Remover llave de cierre al final (puede estar dentro o fuera de tags)
-          if (nota.endsWith('}')) {
+          // Remover llave de cierre al final
+          while (nota.endsWith('}')) {
             nota = nota.substring(0, nota.length - 1).trim();
           }
           
-          // También remover llaves que puedan estar inmediatamente después de tags de apertura
+          // Remover llaves que puedan estar dentro del HTML (después de tags de apertura)
           nota = nota.replace(/(<[^>]+>)\s*\{/g, '$1');
           // O antes de tags de cierre
           nota = nota.replace(/\}\s*(<\/[^>]+>)/g, '$1');
+          
+          // Remover cualquier llave que quede en el texto (sin estar dentro de tags HTML)
+          // Esto maneja casos donde las llaves están en el texto plano
+          nota = nota.replace(/\{/g, '').replace(/\}/g, '');
         }
         return nota;
       })(),
@@ -239,16 +243,12 @@ export async function POST(request: NextRequest) {
           }).join('');
         });
       } else if (key === 'pasajeros' && Array.isArray(value)) {
-        // Manejar arrays de pasajeros con loop de Handlebars-like
+        // Manejar arrays de pasajeros - unir nombres con comas para ahorrar espacio
         html = html.replace(/\{\{#pasajeros\}\}([\s\S]*?)\{\{\/pasajeros\}\}/g, (match, content) => {
           if (value.length === 0) return '';
-          return value.map(pasajero => {
-            let itemHtml = content;
-            Object.entries(pasajero).forEach(([pKey, pValue]) => {
-              itemHtml = itemHtml.replace(new RegExp(`\\{\\{${pKey}\\}\\}`, 'g'), String(pValue));
-            });
-            return itemHtml;
-          }).join('');
+          // Unir todos los nombres de pasajeros con comas
+          const nombresPasajeros = value.map(p => p.nombre || '').filter(n => n.trim() !== '').join(', ');
+          return nombresPasajeros;
         });
       } else if (key === 'tienePasajeros' && value) {
         // Manejar condicional {{#tienePasajeros}} - dejar el contenido visible y ocultar fallback

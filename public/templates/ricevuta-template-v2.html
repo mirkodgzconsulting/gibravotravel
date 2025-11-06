@@ -364,15 +364,11 @@
                 <td class="label">Passeggeri:</td>
                 <td class="value">
                     {{#tienePasajeros}}
-                    <div style="margin-bottom: 8px;">
-                        {{#pasajeros}}
-                        <div style="margin-bottom: 6px;">
-                            <strong>{{nombre}}</strong>
-                        </div>
-                        {{/pasajeros}}
+                    <div style="font-size: 11px; color: #333;">
+                        {{#pasajeros}}{{nombre}}{{/pasajeros}}
                     </div>
                     {{/tienePasajeros}}
-                    <span id="passeggero-fallback">{{passeggero}}</span>
+                    <span id="passeggero-fallback" style="font-size: 11px;">{{passeggero}}</span>
                 </td>
             </tr>
             <tr>

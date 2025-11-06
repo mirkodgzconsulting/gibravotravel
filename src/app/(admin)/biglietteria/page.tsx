@@ -7,6 +7,7 @@ import { useModal } from "@/hooks/useModal";
 import { Modal } from "@/components/ui/modal";
 import PassengerDetailsTable from "@/components/PassengerDetailsTable";
 import PassengerDetailsTableSimple from "@/components/PassengerDetailsTableSimple";
+import SimpleRichTextEditor from "@/components/form/SimpleRichTextEditor";
 import * as XLSX from 'xlsx';
 import { cachedFetch } from "@/utils/cachedFetch";
 import {
@@ -3547,12 +3548,12 @@ export default function BiglietteriaPage() {
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Note di ricevuta
                     </label>
-                    <textarea
-                      value={formData.notaDiRicevuta}
-                      onChange={(e) => setFormData(prev => ({ ...prev, notaDiRicevuta: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                      rows={3}
+                    <SimpleRichTextEditor
+                      value={formData.notaDiRicevuta || ''}
+                      onChange={(value) => setFormData(prev => ({ ...prev, notaDiRicevuta: value }))}
                       placeholder="Note di ricevuta..."
+                      rows={3}
+                      className="w-full"
                     />
                   </div>
                 </div>

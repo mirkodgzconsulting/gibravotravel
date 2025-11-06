@@ -184,8 +184,31 @@ export async function POST(request: NextRequest) {
       }),
       tieneCuotas: (record.cuotas?.length || 0) > 0,
       
-      // Note di ricevuta
-      notaDiRicevuta: record.notaDiRicevuta || '',
+      // Note di ricevuta - limpiar llaves HTML si están presentes
+      notaDiRicevuta: (() => {
+        let nota = record.notaDiRicevuta || '';
+        if (nota) {
+          // Remover llaves de apertura y cierre al inicio y final del contenido
+          // Esto puede ocurrir si el editor guarda texto con formato que incluye llaves
+          nota = nota.trim();
+          
+          // Remover llave de apertura al inicio (puede estar dentro o fuera de tags)
+          if (nota.startsWith('{')) {
+            nota = nota.substring(1).trim();
+          }
+          
+          // Remover llave de cierre al final (puede estar dentro o fuera de tags)
+          if (nota.endsWith('}')) {
+            nota = nota.substring(0, nota.length - 1).trim();
+          }
+          
+          // También remover llaves que puedan estar inmediatamente después de tags de apertura
+          nota = nota.replace(/(<[^>]+>)\s*\{/g, '$1');
+          // O antes de tags de cierre
+          nota = nota.replace(/\}\s*(<\/[^>]+>)/g, '$1');
+        }
+        return nota;
+      })(),
       tieneNotaRicevuta: !!(record.notaDiRicevuta && record.notaDiRicevuta.trim() !== '')
     };
 

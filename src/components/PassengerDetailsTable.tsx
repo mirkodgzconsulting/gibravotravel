@@ -26,10 +26,18 @@ const parseIataByService = (iataString: string | null, servicio: string): string
         'polizza': 'polizza',
         'lettera': 'letteraInvito',
         'lettera invito': 'letteraInvito',
+        'l.invito': 'letteraInvito', // L.invito es Lettera di Invito
         'hotel': 'hotel',
         'volo': 'biglietteria', // Volo es Biglietteria
         'bus': 'bus',
       };
+      
+      // Normalizar variaciones comunes de L.invito (verificar antes de las claves predefinidas)
+      if (servicioLower.includes('invito') || servicioLower === 'l.invito') {
+        if (iataParsed['letteraInvito']) {
+          return iataParsed['letteraInvito'];
+        }
+      }
       
       // Buscar en claves predefinidas
       if (predefinedKeys[servicioLower]) {

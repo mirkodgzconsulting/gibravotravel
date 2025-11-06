@@ -199,22 +199,43 @@ export async function POST(request: NextRequest) {
       notaDiRicevuta: (() => {
         let nota = record.notaDiRicevuta || '';
         if (nota) {
-          // Método simple y efectivo: eliminar todas las llaves { } del contenido
-          // Primero remover llaves al inicio y final
+          // Método robusto: eliminar todas las llaves { } del contenido
+          // Primero decodificar entidades HTML si existen
+          nota = nota.replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+          
+          // Remover llaves al inicio y final
           nota = nota.trim();
           
-          // Remover llaves consecutivas al inicio
-          while (nota.startsWith('{')) {
-            nota = nota.substring(1).trim();
+          // Remover llaves consecutivas al inicio (puede estar en texto o HTML)
+          while (nota.startsWith('{') || nota.match(/^<[^>]*>\s*\{/)) {
+            if (nota.startsWith('{')) {
+              nota = nota.substring(1).trim();
+            } else {
+              const match = nota.match(/^(<[^>]*>)\s*\{/);
+              if (match) {
+                nota = nota.substring(match[0].length).trim();
+              } else {
+                break;
+              }
+            }
           }
           
           // Remover llaves consecutivas al final
-          while (nota.endsWith('}')) {
-            nota = nota.substring(0, nota.length - 1).trim();
+          while (nota.endsWith('}') || nota.match(/\}\s*<\/[^>]*>$/)) {
+            if (nota.endsWith('}')) {
+              nota = nota.substring(0, nota.length - 1).trim();
+            } else {
+              const match = nota.match(/\}\s*(<\/[^>]*>)$/);
+              if (match) {
+                nota = nota.substring(0, nota.length - match[0].length).trim();
+              } else {
+                break;
+              }
+            }
           }
           
           // Eliminar TODAS las llaves restantes en cualquier parte del contenido
-          // Esto es más agresivo pero garantiza que no queden llaves
+          // Esto garantiza que no queden llaves en ningún lugar
           nota = nota.replace(/\{/g, '').replace(/\}/g, '');
         }
         return nota;
@@ -249,16 +270,27 @@ export async function POST(request: NextRequest) {
           }).join('');
         });
       } else if (key === 'pasajeros' && Array.isArray(value)) {
-        // Manejar arrays de pasajeros - unir nombres con comas para ahorrar espacio
+        // Manejar arrays de pasajeros - unir nombres únicos con comas para ahorrar espacio
         html = html.replace(/\{\{#pasajeros\}\}([\s\S]*?)\{\{\/pasajeros\}\}/g, (match, content) => {
           if (value.length === 0) return '';
           // Verificar que es un array de pasajeros (tiene propiedad 'nombre')
           const pasajerosArray = value.filter((p: any): p is { nombre: string; servizio: string } => 
             typeof p === 'object' && p !== null && 'nombre' in p
           );
-          // Unir todos los nombres de pasajeros con comas
-          const nombresPasajeros = pasajerosArray.map(p => p.nombre || '').filter(n => n.trim() !== '').join(', ');
-          return nombresPasajeros;
+          // Eliminar duplicados por nombre (case-insensitive) en el procesamiento del template
+          const nombresUnicosSet = new Set<string>();
+          const nombresUnicos = pasajerosArray
+            .map(p => p.nombre || '')
+            .filter(n => {
+              const nombreLower = n.trim().toLowerCase();
+              if (nombreLower && !nombresUnicosSet.has(nombreLower)) {
+                nombresUnicosSet.add(nombreLower);
+                return true;
+              }
+              return false;
+            });
+          // Unir todos los nombres únicos de pasajeros con comas
+          return nombresUnicos.join(', ');
         });
       } else if (key === 'tienePasajeros' && value) {
         // Manejar condicional {{#tienePasajeros}} - dejar el contenido visible y ocultar fallback

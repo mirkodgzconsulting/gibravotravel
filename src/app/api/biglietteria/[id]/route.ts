@@ -483,6 +483,16 @@ export async function PATCH(
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
+    // Obtener el rol del usuario
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+      select: { role: true }
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
+    }
+
     const { id } = await params;
     const body = await request.json();
 
@@ -493,6 +503,19 @@ export async function PATCH(
 
     if (!existingRecord) {
       return NextResponse.json({ error: 'Registro no encontrado' }, { status: 404 });
+    }
+
+    // Validar restricciones de rol para el campo pagamento
+    if (body.pagamento !== undefined) {
+      // Si el usuario es USER, solo puede usar Acconto o Ricevuto
+      if (user.role === 'USER') {
+        if (body.pagamento !== 'Acconto' && body.pagamento !== 'Ricevuto') {
+          return NextResponse.json({ 
+            error: 'No tienes permisos para usar este valor de pagamento. Solo puedes usar "Acconto" o "Ricevuto".' 
+          }, { status: 403 });
+        }
+      }
+      // ADMIN y TI pueden usar cualquier valor
     }
 
     // Actualizar solo los campos proporcionados

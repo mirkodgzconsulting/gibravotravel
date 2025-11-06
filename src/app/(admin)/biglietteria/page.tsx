@@ -237,10 +237,25 @@ export default function BiglietteriaPage() {
     client.email.toLowerCase().includes(clientSearchTerm.toLowerCase())
   ) : [];
   
+  // Función para obtener pagamentos disponibles según el rol del usuario
+  const getAvailablePagamentos = useMemo(() => {
+    if (!pagamentos || !Array.isArray(pagamentos)) return [];
+    
+    // Si es USER, solo mostrar Acconto y Ricevuto
+    if (isUser) {
+      return pagamentos.filter(pag => 
+        pag === 'Acconto' || pag === 'Ricevuto'
+      );
+    }
+    
+    // ADMIN y TI pueden ver todas las opciones
+    return pagamentos;
+  }, [pagamentos, isUser]);
+
   // Función para filtrar pagamentos basado en la búsqueda (igual que clientes)
-  const filteredPagamentos = pagamentos && Array.isArray(pagamentos) ? pagamentos.filter(pagamento => 
+  const filteredPagamentos = getAvailablePagamentos.filter(pagamento => 
     pagamento.toLowerCase().includes(pagamentoSearchTerm.toLowerCase())
-  ) : [];
+  );
   
   // Función para filtrar IATA basado en la búsqueda (igual que clientes)
   const filteredIata = iataList && Array.isArray(iataList) ? iataList.filter(iata => 
@@ -2135,7 +2150,7 @@ export default function BiglietteriaPage() {
                         }}
                         className="w-full px-2 py-1 text-xs border border-brand-500 rounded focus:ring-2 focus:ring-brand-500 focus:outline-none dark:bg-gray-800 dark:border-brand-400 dark:text-white"
                       >
-                        {pagamentos.map((pag) => (
+                        {getAvailablePagamentos.map((pag) => (
                           <option key={pag} value={pag}>
                             {pag}
                           </option>
@@ -2143,15 +2158,35 @@ export default function BiglietteriaPage() {
                       </select>
                     ) : (
                       <div
-                        onClick={() => setEditingPagamentoId(record.id)}
-                        className={`text-xs truncate cursor-pointer px-2 py-1 rounded text-center font-medium ${
+                        onClick={() => {
+                          // Si es USER y el valor actual no es Acconto ni Ricevuto, no permitir edición
+                          if (isUser && record.pagamento !== 'Acconto' && record.pagamento !== 'Ricevuto') {
+                            setMessage({
+                              type: 'error',
+                              text: 'No tienes permisos para editar este valor de pagamento'
+                            });
+                            setTimeout(() => setMessage(null), 3000);
+                            return;
+                          }
+                          setEditingPagamentoId(record.id);
+                        }}
+                        className={`text-xs truncate px-2 py-1 rounded text-center font-medium ${
                           record.pagamento === 'Acconto' ? 'bg-gray-500 text-white' :
                           record.pagamento === 'Acconto V' ? 'bg-purple-400 text-white' :
                           record.pagamento === 'Ricevuto' ? 'bg-green-500 text-white' :
                           record.pagamento === 'Verificato' ? 'bg-purple-600 text-white' :
                           'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                        } ${
+                          // Si es USER y el valor no es editable, mostrar cursor no permitido
+                          isUser && record.pagamento !== 'Acconto' && record.pagamento !== 'Ricevuto'
+                            ? 'cursor-not-allowed opacity-75'
+                            : 'cursor-pointer'
                         }`}
-                        title="Clic para editar"
+                        title={
+                          isUser && record.pagamento !== 'Acconto' && record.pagamento !== 'Ricevuto'
+                            ? 'No tienes permisos para editar este valor'
+                            : 'Clic para editar'
+                        }
                       >
                         {record.pagamento}
                       </div>

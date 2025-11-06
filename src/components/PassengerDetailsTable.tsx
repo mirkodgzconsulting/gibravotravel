@@ -17,13 +17,46 @@ const parseIataByService = (iataString: string | null, servicio: string): string
   try {
     const iataParsed = JSON.parse(iataString);
     if (typeof iataParsed === 'object' && iataParsed !== null && !Array.isArray(iataParsed)) {
-      const servicioLower = servicio.toLowerCase();
-      const iataKey = servicioLower === 'biglietteria' ? 'biglietteria' :
-                     servicioLower === 'express' ? 'express' :
-                     servicioLower === 'polizza' ? 'polizza' :
-                     servicioLower === 'lettera' || servicioLower === 'lettera invito' ? 'letteraInvito' :
-                     servicioLower === 'hotel' ? 'hotel' : null;
-      return iataKey ? iataParsed[iataKey] || null : null;
+      const servicioLower = servicio.toLowerCase().trim();
+      
+      // Primero intentar con claves predefinidas (para compatibilidad)
+      const predefinedKeys: Record<string, string> = {
+        'biglietteria': 'biglietteria',
+        'express': 'express',
+        'polizza': 'polizza',
+        'lettera': 'letteraInvito',
+        'lettera invito': 'letteraInvito',
+        'hotel': 'hotel',
+        'volo': 'biglietteria', // Volo es Biglietteria
+        'bus': 'bus',
+      };
+      
+      // Buscar en claves predefinidas
+      if (predefinedKeys[servicioLower]) {
+        const predefinedKey = predefinedKeys[servicioLower];
+        if (iataParsed[predefinedKey]) {
+          return iataParsed[predefinedKey];
+        }
+      }
+      
+      // Si no se encuentra en predefinidas, buscar directamente por el nombre del servicio en minúsculas
+      // Esto maneja servicios dinámicos que se guardan con su nombre normalizado
+      if (iataParsed[servicioLower]) {
+        return iataParsed[servicioLower];
+      }
+      
+      // Buscar por coincidencia parcial (para manejar variaciones)
+      const matchingKey = Object.keys(iataParsed).find(key => 
+        key.toLowerCase() === servicioLower || 
+        servicioLower.includes(key.toLowerCase()) ||
+        key.toLowerCase().includes(servicioLower)
+      );
+      
+      if (matchingKey && iataParsed[matchingKey]) {
+        return iataParsed[matchingKey];
+      }
+      
+      return null;
     }
     return iataString;
   } catch {

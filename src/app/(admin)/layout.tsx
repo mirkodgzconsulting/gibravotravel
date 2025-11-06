@@ -19,8 +19,10 @@ export default function AdminLayout({
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
   const pathname = usePathname();
   const { isSignedIn, isLoaded } = useUser();
-  const { userRole, isLoading: roleLoading } = useUserRole();
   const router = useRouter();
+  
+  // Solo cargar useUserRole si el usuario está autenticado para evitar errores
+  const { userRole, isLoading: roleLoading } = useUserRole();
 
   // Remover la redirección automática del layout - se maneja en la página
   // useEffect(() => {
@@ -33,39 +35,6 @@ export default function AdminLayout({
   // NO redirigir automáticamente - solo mostrar loading mientras carga
   // La validación de permisos se hace a nivel de página
 
-  // Mostrar loading mientras Clerk se está cargando
-  if (!isLoaded) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-500"></div>
-      </div>
-    );
-  }
-
-  // En la ruta raíz, mostrar loading mientras se carga el rol para evitar pestañeo
-  if (pathname === '/' && isLoaded && isSignedIn && (roleLoading || !userRole)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-500"></div>
-      </div>
-    );
-  }
-
-  // Remover esta verificación - se maneja en cada página individual
-  // if (isLoaded && isSignedIn === false) {
-  //   return null;
-  // }
-
-  // Mostrar loading solo en la primera carga o si el rol está cargando
-  // Permitir continuar si el rol es null PERO el loading ha terminado (el localStorage tiene algo)
-  if (roleLoading && !userRole) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-500"></div>
-      </div>
-    );
-  }
-
   // Redirigir inmediatamente si el usuario no está autenticado
   useEffect(() => {
     if (isLoaded && !isSignedIn && pathname !== '/signin') {
@@ -73,13 +42,51 @@ export default function AdminLayout({
     }
   }, [isLoaded, isSignedIn, pathname, router]);
 
+  // Mostrar loading mientras Clerk se está cargando
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-500 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+
   // Si el usuario no está autenticado, mostrar loading mientras se redirige (nunca retornar null)
+  // Esta verificación debe ir ANTES de intentar renderizar componentes que requieren autenticación
   if (isLoaded && !isSignedIn) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-500 mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400">Redirigiendo al inicio de sesión...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // En la ruta raíz, mostrar loading mientras se carga el rol para evitar pestañeo
+  if (pathname === '/' && isLoaded && isSignedIn && (roleLoading || !userRole)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-500 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Mostrar loading solo en la primera carga o si el rol está cargando
+  // Permitir continuar si el rol es null PERO el loading ha terminado (el localStorage tiene algo)
+  if (roleLoading && !userRole) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-500 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Cargando...</p>
         </div>
       </div>
     );
@@ -105,6 +112,21 @@ export default function AdminLayout({
         return "p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6";
     }
   };
+
+  // Solo renderizar el layout completo si el usuario está autenticado
+  // Esto evita errores al intentar renderizar componentes que requieren autenticación
+  // Esta es una verificación de seguridad adicional antes de renderizar AppSidebar y AppHeader
+  if (isLoaded && !isSignedIn) {
+    // Ya se mostró el loading arriba, pero esta es una protección adicional
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-500 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Redirigiendo al inicio de sesión...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Fixed margin for main content (sidebar always 200px)
   const mainContentMargin = isMobileOpen

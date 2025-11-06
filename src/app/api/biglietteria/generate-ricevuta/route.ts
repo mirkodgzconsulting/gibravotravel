@@ -256,6 +256,50 @@ export async function POST(request: NextRequest) {
     let html = fs.readFileSync(templatePath, 'utf-8');
 
     // Reemplazar placeholders con datos
+    // IMPORTANTE: Procesar en orden específico para evitar conflictos
+    // 1. Primero procesar arrays (cuotas, pasajeros)
+    // 2. Luego procesar condicionales
+    // 3. Finalmente procesar campos simples
+    
+    // Procesar pasajeros PRIMERO para evitar duplicados
+    if (data.pasajeros && Array.isArray(data.pasajeros) && data.pasajeros.length > 0) {
+      const pasajerosArray = data.pasajeros.filter((p: any): p is { nombre: string; servizio: string } => 
+        typeof p === 'object' && p !== null && 'nombre' in p
+      );
+      const nombresUnicosSet = new Set<string>();
+      const nombresUnicos = pasajerosArray
+        .map(p => p.nombre || '')
+        .filter(n => {
+          const nombreLower = n.trim().toLowerCase();
+          if (nombreLower && !nombresUnicosSet.has(nombreLower)) {
+            nombresUnicosSet.add(nombreLower);
+            return true;
+          }
+          return false;
+        });
+      const nombresUnidos = nombresUnicos.join(', ');
+      
+      // Reemplazar el bloque {{#pasajeros}}...{{/pasajeros}} con los nombres unidos
+      html = html.replace(/\{\{#pasajeros\}\}([\s\S]*?)\{\{\/pasajeros\}\}/g, nombresUnidos);
+      
+      // Ocultar el fallback {{passeggero}} si hay pasajeros
+      if (data.tienePasajeros) {
+        html = html.replace(/<span id="passeggero-fallback">[\s\S]*?<\/span>/g, '');
+        // También reemplazar directamente el placeholder {{passeggero}} si existe
+        html = html.replace(/\{\{passeggero\}\}/g, '');
+      }
+    }
+    
+    // Procesar notaDiRicevuta con limpieza de llaves ANTES del loop
+    if (data.notaDiRicevuta) {
+      let notaValue = String(data.notaDiRicevuta || '');
+      // Limpieza agresiva de llaves - eliminar TODAS las llaves
+      notaValue = notaValue.replace(/\{/g, '').replace(/\}/g, '');
+      // Reemplazar tanto triple {{{notaDiRicevuta}}} como doble {{notaDiRicevuta}}
+      html = html.replace(/\{\{\{notaDiRicevuta\}\}\}/g, notaValue);
+      html = html.replace(/\{\{notaDiRicevuta\}\}/g, notaValue);
+    }
+    
     Object.entries(data).forEach(([key, value]) => {
       if (key === 'cuotas' && Array.isArray(value)) {
         // Manejar arrays de cuotas con loop de Handlebars-like
@@ -269,29 +313,9 @@ export async function POST(request: NextRequest) {
             return itemHtml;
           }).join('');
         });
-      } else if (key === 'pasajeros' && Array.isArray(value)) {
-        // Manejar arrays de pasajeros - unir nombres únicos con comas para ahorrar espacio
-        html = html.replace(/\{\{#pasajeros\}\}([\s\S]*?)\{\{\/pasajeros\}\}/g, (match, content) => {
-          if (value.length === 0) return '';
-          // Verificar que es un array de pasajeros (tiene propiedad 'nombre')
-          const pasajerosArray = value.filter((p: any): p is { nombre: string; servizio: string } => 
-            typeof p === 'object' && p !== null && 'nombre' in p
-          );
-          // Eliminar duplicados por nombre (case-insensitive) en el procesamiento del template
-          const nombresUnicosSet = new Set<string>();
-          const nombresUnicos = pasajerosArray
-            .map(p => p.nombre || '')
-            .filter(n => {
-              const nombreLower = n.trim().toLowerCase();
-              if (nombreLower && !nombresUnicosSet.has(nombreLower)) {
-                nombresUnicosSet.add(nombreLower);
-                return true;
-              }
-              return false;
-            });
-          // Unir todos los nombres únicos de pasajeros con comas
-          return nombresUnicos.join(', ');
-        });
+      } else if (key === 'pasajeros') {
+        // Ya procesado arriba, saltar
+        return;
       } else if (key === 'tienePasajeros' && value) {
         // Manejar condicional {{#tienePasajeros}} - dejar el contenido visible y ocultar fallback
         html = html.replace(/\{\{#tienePasajeros\}\}/g, '');
@@ -315,6 +339,9 @@ export async function POST(request: NextRequest) {
       } else if (key === 'tieneNotaRicevuta' && !value) {
         // Remover contenido si no hay nota di ricevuta
         html = html.replace(/\{\{#tieneNotaRicevuta\}\}[\s\S]*?\{\{\/tieneNotaRicevuta\}\}/g, '');
+      } else if (key === 'notaDiRicevuta') {
+        // Ya procesado arriba, saltar
+        return;
       } else {
         html = html.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), String(value || ''));
       }

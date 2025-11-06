@@ -3625,7 +3625,7 @@ export default function BiglietteriaPage() {
                         </button>
                       </div>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Data
@@ -3658,40 +3658,40 @@ export default function BiglietteriaPage() {
                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                           />
                         </div>
-                      </div>
-                      
-                      <div className="mt-3">
-                        <label className="flex items-center gap-2 cursor-pointer">
+                        
+                        <div className="flex flex-col justify-end">
+                          <label className="flex items-center gap-2 cursor-pointer mb-2">
+                            <input
+                              type="checkbox"
+                              checked={!!cuota.isPagato}
+                              onChange={(e) => {
+                                const newCuotas = [...cuotas];
+                                newCuotas[index].isPagato = e.target.checked;
+                                setCuotas(newCuotas);
+                              }}
+                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
+                            />
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                              Pagado
+                            </span>
+                          </label>
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Archivo de la cuota (opcional)
+                          </label>
                           <input
-                            type="checkbox"
-                            checked={!!cuota.isPagato}
+                            type="file"
                             onChange={(e) => {
                               const newCuotas = [...cuotas];
-                              newCuotas[index].isPagato = e.target.checked;
+                              newCuotas[index].file = e.target.files?.[0] || null;
                               setCuotas(newCuotas);
                             }}
-                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
                           />
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Pagado
-                          </span>
-                        </label>
-                      </div>
-                      
-                      <div className="mt-3">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Archivo de la cuota (opcional)
-                        </label>
-                        <input
-                          type="file"
-                          onChange={(e) => {
-                            const newCuotas = [...cuotas];
-                            newCuotas[index].file = e.target.files?.[0] || null;
-                            setCuotas(newCuotas);
-                          }}
-                          accept=".pdf,.jpg,.jpeg,.png"
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                        />
+                        </div>
                       </div>
                     </div>
                   ));

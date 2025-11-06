@@ -246,8 +246,12 @@ export async function POST(request: NextRequest) {
         // Manejar arrays de pasajeros - unir nombres con comas para ahorrar espacio
         html = html.replace(/\{\{#pasajeros\}\}([\s\S]*?)\{\{\/pasajeros\}\}/g, (match, content) => {
           if (value.length === 0) return '';
+          // Verificar que es un array de pasajeros (tiene propiedad 'nombre')
+          const pasajerosArray = value.filter((p: any): p is { nombre: string; servizio: string } => 
+            typeof p === 'object' && p !== null && 'nombre' in p
+          );
           // Unir todos los nombres de pasajeros con comas
-          const nombresPasajeros = value.map(p => p.nombre || '').filter(n => n.trim() !== '').join(', ');
+          const nombresPasajeros = pasajerosArray.map(p => p.nombre || '').filter(n => n.trim() !== '').join(', ');
           return nombresPasajeros;
         });
       } else if (key === 'tienePasajeros' && value) {

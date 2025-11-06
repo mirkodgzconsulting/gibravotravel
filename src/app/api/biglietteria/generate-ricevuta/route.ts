@@ -67,11 +67,22 @@ export async function POST(request: NextRequest) {
       day: 'numeric'
     });
 
-    // Preparar array de pasajeros para el template
-    const pasajerosData = todosPasajeros.map(pasajero => ({
-      nombre: pasajero.nombrePasajero || '',
-      servizio: pasajero.servizio || ''
-    }));
+    // Preparar array de pasajeros para el template - eliminar duplicados
+    const nombresUnicos = new Set<string>();
+    const pasajerosData = todosPasajeros
+      .map(pasajero => ({
+        nombre: pasajero.nombrePasajero || '',
+        servizio: pasajero.servizio || ''
+      }))
+      .filter(p => {
+        // Filtrar duplicados por nombre (case-insensitive)
+        const nombreLower = p.nombre.toLowerCase().trim();
+        if (nombresUnicos.has(nombreLower)) {
+          return false;
+        }
+        nombresUnicos.add(nombreLower);
+        return true;
+      });
 
     // Combinar todos los servicios únicos de todos los pasajeros
     // Extraer todos los servicios de todos los pasajeros
@@ -188,27 +199,22 @@ export async function POST(request: NextRequest) {
       notaDiRicevuta: (() => {
         let nota = record.notaDiRicevuta || '';
         if (nota) {
-          // Remover todas las llaves { } del contenido, tanto al inicio/final como en el medio
-          // Primero remover llaves que estén al inicio y final del contenido completo
+          // Método simple y efectivo: eliminar todas las llaves { } del contenido
+          // Primero remover llaves al inicio y final
           nota = nota.trim();
           
-          // Remover llave de apertura al inicio
+          // Remover llaves consecutivas al inicio
           while (nota.startsWith('{')) {
             nota = nota.substring(1).trim();
           }
           
-          // Remover llave de cierre al final
+          // Remover llaves consecutivas al final
           while (nota.endsWith('}')) {
             nota = nota.substring(0, nota.length - 1).trim();
           }
           
-          // Remover llaves que puedan estar dentro del HTML (después de tags de apertura)
-          nota = nota.replace(/(<[^>]+>)\s*\{/g, '$1');
-          // O antes de tags de cierre
-          nota = nota.replace(/\}\s*(<\/[^>]+>)/g, '$1');
-          
-          // Remover cualquier llave que quede en el texto (sin estar dentro de tags HTML)
-          // Esto maneja casos donde las llaves están en el texto plano
+          // Eliminar TODAS las llaves restantes en cualquier parte del contenido
+          // Esto es más agresivo pero garantiza que no queden llaves
           nota = nota.replace(/\{/g, '').replace(/\}/g, '');
         }
         return nota;

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useUserRole } from "@/hooks/useUserRole";
 import { CopyNotification } from "@/components/ui/notification/CopyNotification";
@@ -434,48 +434,181 @@ export default function AsientosTourBusPage() {
     ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  const getAllPassengers = () => {
+  const passengers = useMemo(() => {
     if (!tour) return [];
-    
-    const passengers: Array<{
+
+    const passengersAccum: Array<{
       nome: string;
       cognome: string;
       codiceFiscale: string | null;
     }> = [];
 
-    tour.ventasTourBus.forEach(venta => {
-      // Cliente principal
+    const ventas = tour.ventasTourBus || [];
+
+    ventas.forEach((venta) => {
       const fullName = venta.clienteNombre.split(' ');
       const nome = fullName[0] || '';
       const cognome = fullName.slice(1).join(' ') || '';
-      
-      passengers.push({
+
+      passengersAccum.push({
         nome,
         cognome,
-        codiceFiscale: venta.codiceFiscale
+        codiceFiscale: venta.codiceFiscale,
       });
 
-      // Acompañantes
-      venta.acompanantes.forEach(acomp => {
+      venta.acompanantes.forEach((acomp) => {
         const acompFullName = acomp.nombreCompleto.split(' ');
         const acompNome = acompFullName[0] || '';
         const acompCognome = acompFullName.slice(1).join(' ') || '';
-        
-        passengers.push({
+
+        passengersAccum.push({
           nome: acompNome,
           cognome: acompCognome,
-          codiceFiscale: acomp.codiceFiscale
+          codiceFiscale: acomp.codiceFiscale,
         });
       });
     });
 
-    return passengers;
-  };
+    return passengersAccum;
+  }, [tour]);
+
+  const {
+    asientosVendidos,
+    asientosDisponibles,
+    totalCostos,
+    totalIngresos,
+    feeTotal,
+    totalGeneral,
+    totalPagos,
+    totalSaldo,
+    totalPets,
+    totalInfantes,
+    totalAdultos,
+    totalNinos,
+    fermateStats,
+    agentesTexto,
+  } = useMemo(() => {
+    if (!tour) {
+      return {
+        asientosVendidos: 0,
+        asientosDisponibles: 0,
+        totalCostos: 0,
+        totalIngresos: 0,
+        feeTotal: 0,
+        totalGeneral: 0,
+        totalPagos: 0,
+        totalSaldo: 0,
+        totalPets: 0,
+        totalInfantes: 0,
+        totalAdultos: 0,
+        totalNinos: 0,
+        fermateStats: {} as Record<string, number>,
+        agentesTexto: 'Sin ventas',
+        agentesLista: [] as string[],
+      };
+    }
+
+    const ventas = tour.ventasTourBus || [];
+    const asientos = tour.asientos || [];
+
+    const asientosVendidos = asientos.filter((a) => a.isVendido).length;
+    const asientosDisponibles = tour.cantidadAsientos - asientosVendidos;
+
+    let totalGeneral = 0;
+    let totalPagos = 0;
+    let totalSaldo = 0;
+    let totalPets = 0;
+    let totalInfantes = 0;
+    let totalAdultos = 0;
+    let totalNinos = 0;
+    const fermateStats: Record<string, number> = {};
+    const agentesSet = new Set<string>();
+
+    ventas.forEach((venta) => {
+      totalGeneral += venta.totalAPagar;
+      totalPagos += venta.acconto;
+      totalSaldo += venta.daPagare;
+      totalPets += venta.numeroMascotas || 0;
+      totalInfantes += venta.numeroInfantes || 0;
+
+      const adultosVenta = 1 + venta.acompanantes.filter((a) => a.esAdulto).length;
+      const ninosVenta = venta.acompanantes.filter((a) => !a.esAdulto).length;
+
+      totalAdultos += adultosVenta;
+      totalNinos += ninosVenta;
+
+      fermateStats[venta.fermata] = (fermateStats[venta.fermata] || 0) + 1;
+      venta.acompanantes.forEach((acomp) => {
+        fermateStats[acomp.fermata] = (fermateStats[acomp.fermata] || 0) + 1;
+      });
+
+      const agenteNombre = venta.creator?.firstName
+        ? `${venta.creator.firstName}${venta.creator.lastName ? ` ${venta.creator.lastName}` : ''}`.trim()
+        : venta.creator?.email || 'Usuario';
+
+      if (agenteNombre) {
+        agentesSet.add(agenteNombre);
+      }
+    });
+
+    const totalCostos =
+      (tour.bus || 0) +
+      (tour.pasti || 0) +
+      (tour.parking || 0) +
+      (tour.coordinatore1 || 0) +
+      (tour.coordinatore2 || 0) +
+      (tour.ztl || 0) +
+      (tour.hotel || 0) +
+      (tour.polizza || 0) +
+      (tour.tkt || 0);
+
+    const totalIngresos = totalPagos;
+    const feeTotal = totalIngresos - totalCostos;
+    const agentesLista = Array.from(agentesSet);
+    const agentesTexto = agentesLista.length > 0 ? agentesLista.join(', ') : 'Sin ventas';
+
+    return {
+      asientosVendidos,
+      asientosDisponibles,
+      totalCostos,
+      totalIngresos,
+      feeTotal,
+      totalGeneral,
+      totalPagos,
+      totalSaldo,
+      totalPets,
+      totalInfantes,
+      totalAdultos,
+      totalNinos,
+      fermateStats,
+      agentesTexto,
+      agentesLista,
+    };
+  }, [tour]);
+
+  const processedVentas = useMemo(() => {
+    if (!tour) return [];
+
+    const ventas = tour.ventasTourBus || [];
+
+    return ventas.map((venta) => {
+      const totalAdultos = 1 + venta.acompanantes.filter((a) => a.esAdulto).length;
+      const totalNinos = venta.acompanantes.filter((a) => !a.esAdulto).length;
+      const agenteNombre = venta.creator?.firstName
+        ? `${venta.creator.firstName}${venta.creator.lastName ? ` ${venta.creator.lastName}` : ''}`.trim()
+        : venta.creator?.email || 'Usuario';
+
+      return {
+        venta,
+        totalAdultos,
+        totalNinos,
+        agenteNombre,
+      };
+    });
+  }, [tour]);
 
   const handleExportPassengers = async () => {
     try {
-      const passengers = getAllPassengers();
-      
       if (passengers.length === 0) {
         alert('No hay pasajeros para exportar');
         return;
@@ -524,39 +657,10 @@ export default function AsientosTourBusPage() {
         'HOTEL': tour.hotel || 0,
         'POLIZZA': tour.polizza || 0,
         'TKT': tour.tkt || 0,
-        'SPESA TOTALE': (
-          (tour.bus || 0) + 
-          (tour.pasti || 0) + 
-          (tour.parking || 0) + 
-          (tour.coordinatore1 || 0) + 
-          (tour.coordinatore2 || 0) + 
-          (tour.ztl || 0) + 
-          (tour.hotel || 0) + 
-          (tour.polizza || 0) + 
-          (tour.tkt || 0)
-        ),
-        'RICAVO TOTALE': tour.ventasTourBus.reduce((sum, v) => sum + v.acconto, 0),
-        'FEE TOTALE': (
-          tour.ventasTourBus.reduce((sum, v) => sum + v.acconto, 0) - 
-          (
-            (tour.bus || 0) + 
-            (tour.pasti || 0) + 
-            (tour.parking || 0) + 
-            (tour.coordinatore1 || 0) + 
-            (tour.coordinatore2 || 0) + 
-            (tour.ztl || 0) + 
-            (tour.hotel || 0) + 
-            (tour.polizza || 0) + 
-            (tour.tkt || 0)
-          )
-        ),
-        'AGENTE': tour.ventasTourBus.length > 0 
-          ? tour.ventasTourBus.map(venta => 
-              venta.creator?.firstName 
-                ? `${venta.creator.firstName}${venta.creator.lastName ? ` ${venta.creator.lastName}` : ''}`.trim()
-                : venta.creator?.email || 'N/A'
-            ).join(', ')
-          : 'Sin ventas'
+        'SPESA TOTALE': totalCostos,
+        'RICAVO TOTALE': totalIngresos,
+        'FEE TOTALE': feeTotal,
+        'AGENTE': agentesTexto
       }
     ];
 
@@ -583,24 +687,7 @@ export default function AsientosTourBusPage() {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    const totalAdultos = tour?.ventasTourBus.reduce((sum, v) => sum + 1 + v.acompanantes.filter(a => a.esAdulto).length, 0) || 0;
-    const totalNinos = tour?.ventasTourBus.reduce((sum, v) => sum + v.acompanantes.filter(a => !a.esAdulto).length, 0) || 0;
-    const totalPets = tour?.ventasTourBus.reduce((sum, v) => sum + (v.numeroMascotas || 0), 0) || 0;
-    const totalInfantes = tour?.ventasTourBus.reduce((sum, v) => sum + (v.numeroInfantes || 0), 0) || 0;
-    
-    // Calcular totales monetarios
-    const totalGeneral = tour?.ventasTourBus.reduce((sum, v) => sum + v.totalAPagar, 0) || 0;
-    const totalPagos = tour?.ventasTourBus.reduce((sum, v) => sum + v.acconto, 0) || 0;
-    const totalSaldo = tour?.ventasTourBus.reduce((sum, v) => sum + v.daPagare, 0) || 0;
-
-    // Calcular estadísticas de fermate
-    const fermateStats = tour?.ventasTourBus.reduce((acc, venta) => {
-      acc[venta.fermata] = (acc[venta.fermata] || 0) + 1;
-      venta.acompanantes.forEach(acomp => {
-        acc[acomp.fermata] = (acc[acomp.fermata] || 0) + 1;
-      });
-      return acc;
-    }, {} as Record<string, number>) || {};
+    const fermateStatsEntries = Object.entries(fermateStats);
 
     const html = `
       <!DOCTYPE html>
@@ -1316,10 +1403,6 @@ export default function AsientosTourBusPage() {
     
     return '';
   };
-
-  const asientosVendidos = tour?.asientos.filter(a => a.isVendido).length || 0;
-  const asientosDisponibles = tour ? tour.cantidadAsientos - asientosVendidos : 0;
-
   if (roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
@@ -1994,41 +2077,13 @@ export default function AsientosTourBusPage() {
                     ).toFixed(2)}
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">
-                    €{tour.ventasTourBus.reduce((sum, v) => sum + v.acconto, 0).toFixed(2)}
+                    €{totalIngresos.toFixed(2)}
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">
-                    €{(
-                      tour.ventasTourBus.reduce((sum, v) => sum + v.acconto, 0) - 
-                      (
-                        (tour.bus || 0) + 
-                        (tour.pasti || 0) + 
-                        (tour.parking || 0) + 
-                        (tour.coordinatore1 || 0) + 
-                        (tour.coordinatore2 || 0) + 
-                        (tour.ztl || 0) + 
-                        (tour.hotel || 0) + 
-                        (tour.polizza || 0) + 
-                        (tour.tkt || 0)
-                      )
-                    ).toFixed(2)}
+                    €{feeTotal.toFixed(2)}
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    {tour.ventasTourBus.length > 0 ? (
-                      (() => {
-                        // Obtener agentes únicos
-                        const agentesUnicos = [...new Set(
-                          tour.ventasTourBus
-                            .map(venta => 
-                              venta.creator?.firstName 
-                                ? `${venta.creator.firstName}${venta.creator.lastName ? ` ${venta.creator.lastName}` : ''}`.trim()
-                                : venta.creator?.email || 'N/A'
-                            )
-                        )];
-                        return agentesUnicos.join(', ');
-                      })()
-                    ) : (
-                      'Sin ventas'
-                    )}
+                    {agentesTexto}
                   </td>
                 </tr>
               </tbody>
@@ -2056,19 +2111,7 @@ export default function AsientosTourBusPage() {
                   </div>
                   
                   <div className="space-y-1">
-                    {Object.entries(
-                      tour.ventasTourBus.reduce((acc, venta) => {
-                        // Contar fermata del cliente principal
-                        acc[venta.fermata] = (acc[venta.fermata] || 0) + 1;
-                        
-                        // Contar fermate de acompañantes
-                        venta.acompanantes.forEach(acomp => {
-                          acc[acomp.fermata] = (acc[acomp.fermata] || 0) + 1;
-                        });
-                        
-                        return acc;
-                      }, {} as Record<string, number>)
-                    ).map(([fermata, count]) => (
+                    {Object.entries(fermateStats).map(([fermata, count]) => (
                       <div key={fermata} className="text-sm font-medium text-gray-900 dark:text-white">
                         {fermata}: {count}
                       </div>
@@ -2077,16 +2120,16 @@ export default function AsientosTourBusPage() {
                   
                   <div className="space-y-1">
                     <div className="text-sm font-medium text-gray-900 dark:text-white">
-                      Total Pets: {tour.ventasTourBus.reduce((sum, v) => sum + (v.numeroMascotas || 0), 0)}
+                      Total Pets: {totalPets}
                     </div>
                     <div className="text-sm font-medium text-gray-900 dark:text-white">
-                      Total Infantes: {tour.ventasTourBus.reduce((sum, v) => sum + (v.numeroInfantes || 0), 0)}
+                      Total Infantes: {totalInfantes}
                     </div>
                     <div className="text-sm font-medium text-gray-900 dark:text-white">
-                      Totale Adulti: {tour.ventasTourBus.reduce((sum, v) => sum + 1 + v.acompanantes.filter(a => a.esAdulto).length, 0)}
+                      Totale Adulti: {totalAdultos}
                     </div>
                     <div className="text-sm font-medium text-gray-900 dark:text-white">
-                      Totale Bambini: {tour.ventasTourBus.reduce((sum, v) => sum + v.acompanantes.filter(a => !a.esAdulto).length, 0)}
+                      Totale Bambini: {totalNinos}
                     </div>
                   </div>
                 </div>
@@ -2120,13 +2163,8 @@ export default function AsientosTourBusPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {tour.ventasTourBus.map((venta, index) => {
-                    // Calcular adultos y niños en el grupo
-                    const totalAdultos = 1 + venta.acompanantes.filter(a => a.esAdulto).length;
-                    const totalNinos = venta.acompanantes.filter(a => !a.esAdulto).length;
-
-                    return (
-                      <React.Fragment key={venta.id}>
+                  {processedVentas.map(({ venta, totalAdultos, totalNinos, agenteNombre }) => (
+                    <React.Fragment key={venta.id}>
                         {/* Cliente Principal (Capo Gruppo) */}
                         <tr className="bg-blue-100 dark:bg-blue-800/40">
                           <td className="px-4 py-2">
@@ -2169,9 +2207,7 @@ export default function AsientosTourBusPage() {
                           </td>
                           <td className="px-4 py-2">
                             <div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-500 px-3 py-1.5 rounded text-center font-medium text-xs">
-                              {venta.creator?.firstName 
-                                ? `${venta.creator.firstName}${venta.creator.lastName ? ` ${venta.creator.lastName}` : ''}`.trim()
-                                : venta.creator?.email || 'Usuario'}
+                              {agenteNombre}
                             </div>
                           </td>
                           <td className="px-4 py-2">
@@ -2244,9 +2280,8 @@ export default function AsientosTourBusPage() {
                             </td>
                           </tr>
                         ))}
-                      </React.Fragment>
-                    );
-                  })}
+                    </React.Fragment>
+                  ))}
                   
                   {/* Fila de Totales */}
                   <tr className="bg-gray-100 dark:bg-gray-600 border-t-2 border-gray-400">
@@ -2261,26 +2296,16 @@ export default function AsientosTourBusPage() {
                     <td className="px-4 py-2">
                       <div className="flex gap-1">
                         <div className="bg-blue-500 text-white px-2 py-1 rounded text-center font-bold text-xs flex-1">
-                          Total: €{tour.ventasTourBus.reduce((sum, v) => sum + v.totalAPagar, 0).toFixed(2)}
+                          Total: €{totalGeneral.toFixed(2)}
                         </div>
                         <div className="bg-green-500 text-white px-2 py-1 rounded text-center font-bold text-xs flex-1">
-                          Pagos: €{tour.ventasTourBus.reduce((sum, v) => sum + v.acconto, 0).toFixed(2)}
+                          Pagos: €{totalPagos.toFixed(2)}
                         </div>
                         <div className="bg-orange-500 text-white px-2 py-1 rounded text-center font-bold text-xs flex-1">
-                          Saldo: €{tour.ventasTourBus.reduce((sum, v) => sum + v.daPagare, 0).toFixed(2)}
+                          Saldo: €{totalSaldo.toFixed(2)}
                         </div>
                         <div className="bg-purple-500 text-white px-2 py-1 rounded text-center font-bold text-xs flex-1">
-                          Costos: €{(
-                            (tour.bus || 0) + 
-                            (tour.pasti || 0) + 
-                            (tour.parking || 0) + 
-                            (tour.coordinatore1 || 0) + 
-                            (tour.coordinatore2 || 0) + 
-                            (tour.ztl || 0) + 
-                            (tour.hotel || 0) + 
-                            (tour.polizza || 0) + 
-                            (tour.tkt || 0)
-                          ).toFixed(2)}
+                          Costos: €{totalCostos.toFixed(2)}
                         </div>
                       </div>
                     </td>
@@ -2331,7 +2356,7 @@ export default function AsientosTourBusPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    {getAllPassengers().map((passenger, index) => (
+                    {passengers.map((passenger, index) => (
                       <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                           {passenger.nome}

@@ -64,7 +64,7 @@ export async function PUT(
     }
 
     // Validaciones
-    if (!clienteNombre || !codiceFiscale || !fermata || !numeroAsiento) {
+    if (!clienteNombre || !fermata || !numeroAsiento) {
       return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 });
     }
 
@@ -102,6 +102,14 @@ export async function PUT(
     }
 
     // Actualizar la venta con transacción
+    const sanitizedCodiceFiscale = (codiceFiscale ?? '').trim();
+    const sanitizedIndirizzo = (indirizzo ?? '').trim();
+    const sanitizedEmail = (email ?? '').trim();
+    const sanitizedTelefono = (numeroTelefono ?? '').trim();
+    const sanitizedFechaNacimiento = fechaNacimiento && fechaNacimiento.trim() !== ''
+      ? new Date(fechaNacimiento)
+      : existingVenta.fechaNacimiento;
+
     const resultado = await prisma.$transaction(async (tx) => {
       // 1. Liberar asiento principal anterior si cambió
       if (numeroAsiento !== existingVenta.numeroAsiento) {
@@ -150,11 +158,11 @@ export async function PUT(
         data: {
           clienteId: clienteId || null,
           clienteNombre,
-          codiceFiscale,
-          indirizzo,
-          email,
-          numeroTelefono,
-          fechaNacimiento: new Date(fechaNacimiento),
+          codiceFiscale: sanitizedCodiceFiscale,
+          indirizzo: sanitizedIndirizzo,
+          email: sanitizedEmail,
+          numeroTelefono: sanitizedTelefono,
+          fechaNacimiento: sanitizedFechaNacimiento,
           fermata,
           numeroAsiento,
           tieneMascotas: tieneMascotas || false,
@@ -180,8 +188,8 @@ export async function PUT(
           precioVenta: tour.precioAdulto, // Cliente principal siempre es adulto
           fechaVenta: new Date(),
           clienteNombre,
-          clienteTelefono: numeroTelefono,
-          clienteEmail: email
+          clienteTelefono: sanitizedTelefono || null,
+          clienteEmail: sanitizedEmail || null
         }
       });
 
@@ -194,13 +202,16 @@ export async function PUT(
       if (acompanantes && acompanantes.length > 0) {
         for (const acomp of acompanantes) {
           // Crear acompañante
+          const sanitizedAcompTelefono = (acomp.telefono ?? '').trim();
+          const sanitizedAcompCodice = (acomp.codiceFiscale ?? '').trim();
+
           await tx.acompananteTourBus.create({
             data: {
               ventaTourBusId: id,
               clienteId: acomp.clienteId || null,
               nombreCompleto: acomp.nombreCompleto,
-              telefono: acomp.telefono || null,
-              codiceFiscale: acomp.codiceFiscale || null,
+              telefono: sanitizedAcompTelefono || null,
+              codiceFiscale: sanitizedAcompCodice || null,
               esAdulto: acomp.esAdulto !== undefined ? acomp.esAdulto : true,
               fermata: acomp.fermata,
               numeroAsiento: acomp.numeroAsiento
@@ -219,7 +230,7 @@ export async function PUT(
                 precioVenta: precioAplicado,
                 fechaVenta: new Date(),
                 clienteNombre: acomp.nombreCompleto,
-                clienteTelefono: acomp.telefono,
+                clienteTelefono: sanitizedAcompTelefono,
                 clienteEmail: null
               }
             });

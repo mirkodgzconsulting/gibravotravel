@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useModal } from "@/hooks/useModal";
 import { useSearch } from "@/context/SearchContext";
@@ -149,7 +149,38 @@ export default function TourBusPage() {
     }
   }, [roleLoading, fetchTours]);
 
-  const filteredTours: TourBus[] = searchTerm && searchResults.length > 0 ? searchResults as TourBus[] : tours;
+  const filteredTours = useMemo<TourBus[]>(() => {
+    if (!tours || tours.length === 0) return [];
+    
+    if (searchTerm && searchResults.length > 0) {
+      return searchResults as TourBus[];
+    }
+    
+    return tours;
+  }, [tours, searchTerm, searchResults]);
+
+  const processedTours = useMemo(() => {
+    return filteredTours.map((tour) => {
+      const asientos = Array.isArray(tour.asientos) ? tour.asientos : [];
+      const asientosVendidos = asientos.filter((a) => a.isVendido).length;
+      const asientosDisponibles = tour.cantidadAsientos - asientosVendidos;
+      const porcentajeVendido =
+        tour.cantidadAsientos > 0 ? (asientosVendidos / tour.cantidadAsientos) * 100 : 0;
+      const ingresos = asientos
+        .filter((a) => a.isVendido && a.precioVenta)
+        .reduce((sum, asiento) => sum + (asiento.precioVenta || 0), 0);
+
+      return {
+        tour,
+        stats: {
+          asientosVendidos,
+          asientosDisponibles,
+          porcentaje: Math.round(porcentajeVendido),
+          ingresos,
+        },
+      };
+    });
+  }, [filteredTours]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -813,7 +844,7 @@ export default function TourBusPage() {
       </Modal>
 
       <ComponentCard title="Tours de Bus Disponibles">
-        {filteredTours.length === 0 && !loading ? (
+        {processedTours.length === 0 && !loading ? (
           <div className="text-center py-12">
             <BusIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
@@ -831,16 +862,14 @@ export default function TourBusPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTours.map((tour) => {
-              // Calcular estadísticas del tour basadas en asientos reales
-              const asientosVendidos = tour.asientos.filter(a => a.isVendido).length;
-              const asientosDisponibles = tour.cantidadAsientos - asientosVendidos;
-              const porcentajeVendido = tour.cantidadAsientos > 0 ? (asientosVendidos / tour.cantidadAsientos) * 100 : 0;
-              const porcentaje = Math.round(porcentajeVendido);
-              const ingresos = tour.asientos
-                .filter(a => a.isVendido && a.precioVenta)
-                .reduce((sum, a) => sum + (a.precioVenta || 0), 0);
-              
+            {processedTours.map(({ tour, stats }) => {
+              const {
+                asientosVendidos,
+                asientosDisponibles,
+                porcentaje,
+                ingresos,
+              } = stats;
+
               return (
                 <div
                   key={tour.id}

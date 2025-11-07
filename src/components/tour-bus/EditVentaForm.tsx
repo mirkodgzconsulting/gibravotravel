@@ -107,7 +107,7 @@ export default function EditVentaForm({
     indirizzo: venta.indirizzo,
     email: venta.email,
     numeroTelefono: venta.numeroTelefono,
-    fechaNacimiento: venta.fechaNacimiento.split('T')[0],
+    fechaNacimiento: venta.fechaNacimiento ? venta.fechaNacimiento.split('T')[0] : '',
     fermata: venta.fermata,
     numeroAsiento: venta.numeroAsiento,
     tieneMascotas: venta.tieneMascotas,
@@ -361,7 +361,16 @@ export default function EditVentaForm({
       id: venta.id,
       clienteId: selectedClientId || null,
       ...formData,
-      acompanantes,
+      codiceFiscale: formData.codiceFiscale || '',
+      indirizzo: formData.indirizzo || '',
+      email: formData.email || '',
+      numeroTelefono: formData.numeroTelefono || '',
+      fechaNacimiento: formData.fechaNacimiento || '',
+      acompanantes: acompanantes.map((acomp) => ({
+        ...acomp,
+        telefono: acomp.telefono || '',
+        codiceFiscale: acomp.codiceFiscale || '',
+      })),
       totalAPagar,
       acconto: parseFloat(acconto) || 0,
       daPagare,
@@ -444,9 +453,9 @@ export default function EditVentaForm({
                 <input
                   type="text"
                   value={formData.codiceFiscale}
-                  onChange={(e) => setFormData({ ...formData, codiceFiscale: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-                  required
+                  disabled
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 dark:bg-gray-700 dark:border-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                  placeholder={formData.codiceFiscale ? undefined : 'Dato no disponible'}
                 />
               </div>
               
@@ -455,11 +464,11 @@ export default function EditVentaForm({
                   Email *
                 </label>
                 <input
-                  type="email"
+                  type="text"
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-                  required
+                  disabled
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 dark:bg-gray-700 dark:border-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                  placeholder={formData.email ? undefined : 'Dato no disponible'}
                 />
               </div>
               
@@ -468,11 +477,11 @@ export default function EditVentaForm({
                   Telefono *
                 </label>
                 <input
-                  type="tel"
+                  type="text"
                   value={formData.numeroTelefono}
-                  onChange={(e) => setFormData({ ...formData, numeroTelefono: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-                  required
+                  disabled
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 dark:bg-gray-700 dark:border-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                  placeholder={formData.numeroTelefono ? undefined : 'Dato no disponible'}
                 />
               </div>
               
@@ -481,11 +490,11 @@ export default function EditVentaForm({
                   Data di Nascita *
                 </label>
                 <input
-                  type="date"
+                  type="text"
                   value={formData.fechaNacimiento}
-                  onChange={(e) => setFormData({ ...formData, fechaNacimiento: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-                  required
+                  disabled
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 dark:bg-gray-700 dark:border-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                  placeholder={formData.fechaNacimiento ? undefined : 'Dato no disponible'}
                 />
               </div>
               
@@ -496,9 +505,9 @@ export default function EditVentaForm({
                 <input
                   type="text"
                   value={formData.indirizzo}
-                  onChange={(e) => setFormData({ ...formData, indirizzo: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-                  required
+                  disabled
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 dark:bg-gray-700 dark:border-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                  placeholder={formData.indirizzo ? undefined : 'Dato no disponible'}
                 />
               </div>
             </div>
@@ -754,11 +763,14 @@ export default function EditVentaForm({
                       type="tel"
                       value={acomp.telefono || ''}
                       onChange={(e) => {
+                        if (acomp.clienteId) return;
                         const newAcompanantes = [...acompanantes];
                         newAcompanantes[index].telefono = e.target.value;
                         setAcompanantes(newAcompanantes);
                       }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      disabled={!!acomp.clienteId}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 dark:border-gray-600 ${acomp.clienteId ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed' : 'border-gray-300 dark:bg-gray-700 dark:text-white'}`}
+                      placeholder={acomp.clienteId && !acomp.telefono ? 'Dato no disponible' : ''}
                     />
                   </div>
                   
@@ -770,11 +782,14 @@ export default function EditVentaForm({
                       type="text"
                       value={acomp.codiceFiscale || ''}
                       onChange={(e) => {
+                        if (acomp.clienteId) return;
                         const newAcompanantes = [...acompanantes];
                         newAcompanantes[index].codiceFiscale = e.target.value;
                         setAcompanantes(newAcompanantes);
                       }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      disabled={!!acomp.clienteId}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 dark:border-gray-600 ${acomp.clienteId ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed' : 'border-gray-300 dark:bg-gray-700 dark:text-white'}`}
+                      placeholder={acomp.clienteId && !acomp.codiceFiscale ? 'Dato no disponible' : ''}
                     />
                   </div>
                   

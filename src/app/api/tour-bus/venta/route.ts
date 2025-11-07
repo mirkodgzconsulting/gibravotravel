@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Validaciones
-    if (!tourBusId || !clienteNombre || !codiceFiscale || !fermata || !numeroAsiento) {
+    if (!tourBusId || !clienteNombre || !fermata || !numeroAsiento) {
       return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 });
     }
 
@@ -136,16 +136,24 @@ export async function POST(request: NextRequest) {
     // Crear la venta con transacción
     const resultado = await prisma.$transaction(async (tx) => {
       // 1. Crear la venta principal
+      const sanitizedCodiceFiscale = (codiceFiscale ?? '').trim();
+      const sanitizedIndirizzo = (indirizzo ?? '').trim();
+      const sanitizedEmail = (email ?? '').trim();
+      const sanitizedTelefono = (numeroTelefono ?? '').trim();
+      const sanitizedFechaNacimiento = fechaNacimiento && fechaNacimiento.trim() !== ''
+        ? new Date(fechaNacimiento)
+        : new Date('1900-01-01T00:00:00.000Z');
+
       const venta = await tx.ventaTourBus.create({
         data: {
           tourBusId,
           clienteId: clienteId || null,
           clienteNombre,
-          codiceFiscale,
-          indirizzo,
-          email,
-          numeroTelefono,
-          fechaNacimiento: new Date(fechaNacimiento),
+          codiceFiscale: sanitizedCodiceFiscale,
+          indirizzo: sanitizedIndirizzo,
+          email: sanitizedEmail,
+          numeroTelefono: sanitizedTelefono,
+          fechaNacimiento: sanitizedFechaNacimiento,
           fermata,
           numeroAsiento,
           tieneMascotas: tieneMascotas || false,
@@ -172,22 +180,25 @@ export async function POST(request: NextRequest) {
           precioVenta: tour.precioAdulto, // Cliente principal siempre es adulto
           fechaVenta: new Date(),
           clienteNombre,
-          clienteTelefono: numeroTelefono,
-          clienteEmail: email
+          clienteTelefono: sanitizedTelefono || null,
+          clienteEmail: sanitizedEmail || null
         }
       });
 
       // 3. Crear registros de acompañantes y marcar sus asientos
       if (acompanantes && acompanantes.length > 0) {
         for (const acomp of acompanantes) {
+          const sanitizedAcompTelefono = (acomp.telefono ?? '').trim();
+          const sanitizedAcompCodice = (acomp.codiceFiscale ?? '').trim();
+
           // Crear acompañante
           await tx.acompananteTourBus.create({
             data: {
               ventaTourBusId: venta.id,
               clienteId: acomp.clienteId || null,
               nombreCompleto: acomp.nombreCompleto,
-              telefono: acomp.telefono || null,
-              codiceFiscale: acomp.codiceFiscale || null,
+              telefono: sanitizedAcompTelefono || null,
+              codiceFiscale: sanitizedAcompCodice || null,
               esAdulto: acomp.esAdulto !== undefined ? acomp.esAdulto : true,
               fermata: acomp.fermata,
               numeroAsiento: acomp.numeroAsiento
@@ -206,7 +217,7 @@ export async function POST(request: NextRequest) {
                 precioVenta: precioAplicado,
                 fechaVenta: new Date(),
                 clienteNombre: acomp.nombreCompleto,
-                clienteTelefono: acomp.telefono,
+                clienteTelefono: sanitizedAcompTelefono,
                 clienteEmail: null
               }
             });

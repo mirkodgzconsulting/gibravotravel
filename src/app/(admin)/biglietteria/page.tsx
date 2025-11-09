@@ -1088,12 +1088,15 @@ const getEstadoVisual = (estado?: string | null) => {
         
         // Procesar usuarios
         const validRoles = new Set(['USER', 'ADMIN', 'TI']);
-        const usuariosNormalizados = Array.isArray(usersData)
-          ? usersData.filter((usuario) => {
-              const role = typeof usuario.role === 'string' ? usuario.role.toUpperCase() : '';
-              return validRoles.has(role);
-            })
-          : [];
+        const rawUsersArray = Array.isArray(usersData)
+          ? usersData
+          : Array.isArray((usersData as { users?: ApiUser[] })?.users)
+            ? (usersData as { users: ApiUser[] }).users
+            : [];
+        const usuariosNormalizados = rawUsersArray.filter((usuario) => {
+          const role = typeof usuario.role === 'string' ? usuario.role.toUpperCase() : '';
+          return validRoles.has(role);
+        });
         setUsuarios(usuariosNormalizados);
         
         // Procesar pagamentos

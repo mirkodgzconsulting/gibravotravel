@@ -439,6 +439,19 @@ export default function BiglietteriaPage() {
   const [usuarios, setUsuarios] = useState<Array<{ clerkId: string; firstName: string; lastName: string; role: string }>>([]);
   const [showCreadorDropdown, setShowCreadorDropdown] = useState<boolean>(false);
   
+const canUseAgentFilter = useMemo(() => {
+  if (roleLoading) return false;
+  return userRole === 'ADMIN' || userRole === 'TI';
+}, [roleLoading, userRole]);
+
+useEffect(() => {
+  if (!canUseAgentFilter) {
+    setFiltroCreador('');
+    setCreadorSearchTerm('');
+    setShowCreadorDropdown(false);
+  }
+}, [canUseAgentFilter]);
+
   // Estados para filtro de pagamento
   const [pagamentos, setPagamentos] = useState<string[]>([]);
   
@@ -1074,7 +1087,14 @@ const getEstadoVisual = (estado?: string | null) => {
         setServizi(Array.isArray(serviziData) ? serviziData : []);
         
         // Procesar usuarios
-        setUsuarios(Array.isArray(usersData) ? usersData : []);
+        const validRoles = new Set(['USER', 'ADMIN', 'TI']);
+        const usuariosNormalizados = Array.isArray(usersData)
+          ? usersData.filter((usuario) => {
+              const role = typeof usuario.role === 'string' ? usuario.role.toUpperCase() : '';
+              return validRoles.has(role);
+            })
+          : [];
+        setUsuarios(usuariosNormalizados);
         
         // Procesar pagamentos
         const pagamentosNombres = (Array.isArray(pagamentosData) ? pagamentosData : []).map(option => option.pagamento);
@@ -1559,15 +1579,15 @@ const getEstadoVisual = (estado?: string | null) => {
         if (recordDate > fechaHastaDate) return false;
       }
       
-      // Filtro por creador - OPTIMIZADO: usar función memoizada
-      if (filtroCreador) {
+      // Filtro por creador - solo para TI/ADMIN
+      if (canUseAgentFilter && filtroCreador) {
         const nombreCompleto = getCreatorName(record.creator);
         if (nombreCompleto !== filtroCreador) return false;
       }
       
       return true;
     });
-  }, [records, searchTerm, fechaDesdeDate, fechaHastaDate, filtroCreador, getCreatorName]);
+  }, [records, searchTerm, fechaDesdeDate, fechaHastaDate, filtroCreador, getCreatorName, canUseAgentFilter]);
 
   const totalItems = filteredRecords.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -2414,6 +2434,7 @@ const getEstadoVisual = (estado?: string | null) => {
             </div>
             
             {/* Filtro por Creador */}
+            {canUseAgentFilter && (
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-500 dark:text-gray-400">Agente</span>
               <div className="relative creador-dropdown-container">
@@ -2507,6 +2528,7 @@ const getEstadoVisual = (estado?: string | null) => {
                 </button>
               )}
             </div>
+            )}
           </div>
 
           {/* Buscador y botón Nuovo */}

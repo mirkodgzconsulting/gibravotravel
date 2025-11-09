@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@clerk/nextjs/server';
+import { Prisma } from '@prisma/client';
 
 // PATCH - Actualizar un pasajero específico (estado, fechaPago, fechaActivacion)
 export async function PATCH(
@@ -51,12 +52,10 @@ export async function PATCH(
     }
 
     // Preparar datos para actualizar
-    const updateData: any = {
-      updatedAt: new Date()
-    };
+    const updateData: Prisma.PasajeroBiglietteriaUpdateInput = {};
 
     // Si se está cambiando el estado a "Pagado" y no hay fechaPago, asignar fecha actual
-    if (body.estado === 'Pagado' && !(existingPasajero as any).fechaPago && !body.fechaPago) {
+    if (body.estado === 'Pagado' && !existingPasajero.fechaPago && !body.fechaPago) {
       updateData.estado = 'Pagado';
       updateData.fechaPago = new Date();
     } else if (body.estado) {

@@ -251,10 +251,34 @@ model PasajeroBiglietteria {
   createdAt            DateTime     @default(now())
   updatedAt            DateTime     @updatedAt
   biglietteria         Biglietteria @relation(fields: [biglietteriaId], references: [id], onDelete: Cascade)
+  serviciosDetalle     PasajeroServicioBiglietteria[]
 
   @@index([estado], map: "idx_pasajeros_biglietteria_estado")
   @@index([biglietteriaId], map: "idx_pasajeros_biglietteria_id")
   @@map("pasajeros_biglietteria")
+}
+
+model PasajeroServicioBiglietteria {
+  id                String                @id @default(cuid())
+  pasajeroId        String
+  servicio          String
+  metodoDiAcquisto  String?
+  andata            DateTime?
+  ritorno           DateTime?
+  iata              String?
+  neto              Float?
+  venduto           Float?
+  estado            String               @default("Pendiente")
+  fechaPago         DateTime?
+  fechaActivacion   DateTime?
+  notas             String?
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+  pasajero          PasajeroBiglietteria  @relation(fields: [pasajeroId], references: [id], onDelete: Cascade)
+
+  @@index([pasajeroId], map: "idx_pasajero_servicio_biglietteria_pasajero_id")
+  @@index([servicio], map: "idx_pasajero_servicio_biglietteria_servicio")
+  @@map("pasajero_servicio_biglietteria")
 }
 
 model Cuota {

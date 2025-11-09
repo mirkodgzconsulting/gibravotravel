@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
@@ -10,14 +11,6 @@ import PassengerDetailsTableSimple from "@/components/PassengerDetailsTableSimpl
 import SimpleRichTextEditor from "@/components/form/SimpleRichTextEditor";
 import * as XLSX from 'xlsx';
 import { cachedFetch } from "@/utils/cachedFetch";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-
 // ==================== INTERFACES ====================
 
 interface Cuota {
@@ -29,6 +22,26 @@ interface Cuota {
   isPagato: boolean;
   attachedFile: string | null;
   attachedFileName: string | null;
+}
+
+interface PasajeroServicioDetalle {
+  id?: string;
+  servicio: string;
+  metodoDiAcquisto?: string | null;
+  iata?: string | null;
+  andata?: string | null;
+  ritorno?: string | null;
+  neto?: number | string | null;
+  venduto?: number | string | null;
+  estado?: string | null;
+  fechaPago?: string | null;
+  fechaActivacion?: string | null;
+  notas?: string | null;
+}
+
+interface PasajeroServicioDetalleApi extends Omit<PasajeroServicioDetalle, 'neto' | 'venduto'> {
+  neto?: number | string | null;
+  venduto?: number | string | null;
 }
 
 interface PasajeroData {
@@ -57,9 +70,49 @@ interface PasajeroData {
   tieneHotel: boolean;
   netoHotel: string;
   vendutoHotel: string;
+  serviciosDetalle?: PasajeroServicioDetalle[];
   // Campos dinámicos para servicios adicionales (no incluidos en los anteriores)
-  serviciosData?: Record<string, { iata: string; neto: string; venduto: string }>;
+  serviciosData?: Record<string, { iata: string; neto: string; venduto: string; metodoDiAcquisto?: string }>;
+  metodoAcquistoBiglietteria: string;
+  metodoAcquistoExpress: string;
+  metodoAcquistoPolizza: string;
+  metodoAcquistoLetteraInvito: string;
+  metodoAcquistoHotel: string;
 }
+
+type RecordCreator = {
+  firstName?: string | null;
+  lastName?: string | null;
+  email?: string | null;
+};
+
+type ApiUser = {
+  clerkId: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+};
+
+type PagamentoOption = { pagamento: string };
+type IataOption = { iata: string };
+type MetodoPagamentoOption = { metodoPagamento: string };
+type ServizioOption = { id: string; servizio: string; isActive: boolean };
+type AcquistoOption = { acquisto: string };
+
+type PasajeroApi = Partial<PasajeroData> & {
+  servizio?: string;
+  servicios?: string[] | string;
+  serviciosDetalle?: PasajeroServicioDetalleApi[];
+  notas?: string | null;
+  estado?: string | null;
+  fechaPago?: string | null;
+  fechaActivacion?: string | null;
+};
+
+type BiglietteriaRecordApi = Omit<BiglietteriaRecord, 'metodoPagamento' | 'pasajeros'> & {
+  metodoPagamento: string[] | string;
+  pasajeros: PasajeroApi[];
+};
 
 interface BiglietteriaRecord {
   id: string;
@@ -140,6 +193,209 @@ interface BiglietteriaFormData {
   feeAgv: string;
 }
 
+interface TotalesCalculados {
+  netoPrincipal: string;
+  vendutoTotal: string;
+  daPagare: string;
+  feeAgv: string;
+}
+
+function crearPasajeroVacio(): PasajeroData {
+  return {
+    nombrePasajero: '',
+    servicios: [],
+    andata: '',
+    ritorno: '',
+    iata: '',
+    iataBiglietteria: '',
+    iataExpress: '',
+    iataPolizza: '',
+    iataLetteraInvito: '',
+    iataHotel: '',
+    netoBiglietteria: '',
+    vendutoBiglietteria: '',
+    tieneExpress: false,
+    netoExpress: '',
+    vendutoExpress: '',
+    tienePolizza: false,
+    netoPolizza: '',
+    vendutoPolizza: '',
+    tieneLetteraInvito: false,
+    netoLetteraInvito: '',
+    vendutoLetteraInvito: '',
+    tieneHotel: false,
+    netoHotel: '',
+    vendutoHotel: '',
+    serviciosDetalle: [],
+    serviciosData: {},
+    metodoAcquistoBiglietteria: '',
+    metodoAcquistoExpress: '',
+    metodoAcquistoPolizza: '',
+    metodoAcquistoLetteraInvito: '',
+    metodoAcquistoHotel: ''
+  };
+}
+
+function normalizeServiciosDetalle(
+  detalles?: PasajeroServicioDetalleApi[]
+): PasajeroServicioDetalle[] {
+  if (!Array.isArray(detalles)) {
+    return [];
+  }
+
+  return detalles.map(detalle => ({
+    id: detalle.id,
+    servicio: detalle.servicio ?? '',
+    metodoDiAcquisto: detalle.metodoDiAcquisto ?? null,
+    iata: detalle.iata ?? null,
+    andata: detalle.andata ?? null,
+    ritorno: detalle.ritorno ?? null,
+    neto: detalle.neto ?? null,
+    venduto: detalle.venduto ?? null,
+    estado: detalle.estado ?? null,
+    fechaPago: detalle.fechaPago ?? null,
+    fechaActivacion: detalle.fechaActivacion ?? null,
+    notas: detalle.notas ?? null,
+  }));
+}
+
+function normalizePasajero(pasajero: PasajeroApi): PasajeroData {
+  const base = crearPasajeroVacio();
+
+  let servicios: string[] = base.servicios;
+  if (Array.isArray(pasajero.servicios)) {
+    servicios = pasajero.servicios
+      .map(servicio => {
+        if (typeof servicio === 'string') {
+          return servicio.trim();
+        }
+        return String(servicio);
+      })
+      .filter((servicio): servicio is string => servicio.length > 0);
+  } else {
+    const serviciosDesdeTexto = splitServicios(pasajero.servicios);
+    if (serviciosDesdeTexto.length > 0) {
+      servicios = serviciosDesdeTexto;
+    } else {
+      const serviciosDesdeServizio = splitServicios(pasajero.servizio);
+      if (serviciosDesdeServizio.length > 0) {
+        servicios = serviciosDesdeServizio;
+      }
+    }
+  }
+
+  return {
+    ...base,
+    ...pasajero,
+    nombrePasajero: pasajero.nombrePasajero ?? base.nombrePasajero,
+    servicios,
+    andata: pasajero.andata ?? base.andata,
+    ritorno: pasajero.ritorno ?? base.ritorno,
+    iata: pasajero.iata ?? base.iata,
+    iataBiglietteria: pasajero.iataBiglietteria ?? base.iataBiglietteria,
+    iataExpress: pasajero.iataExpress ?? base.iataExpress,
+    iataPolizza: pasajero.iataPolizza ?? base.iataPolizza,
+    iataLetteraInvito: pasajero.iataLetteraInvito ?? base.iataLetteraInvito,
+    iataHotel: pasajero.iataHotel ?? base.iataHotel,
+    netoBiglietteria: pasajero.netoBiglietteria ?? base.netoBiglietteria,
+    vendutoBiglietteria: pasajero.vendutoBiglietteria ?? base.vendutoBiglietteria,
+    tieneExpress: pasajero.tieneExpress ?? base.tieneExpress,
+    netoExpress: pasajero.netoExpress ?? base.netoExpress,
+    vendutoExpress: pasajero.vendutoExpress ?? base.vendutoExpress,
+    tienePolizza: pasajero.tienePolizza ?? base.tienePolizza,
+    netoPolizza: pasajero.netoPolizza ?? base.netoPolizza,
+    vendutoPolizza: pasajero.vendutoPolizza ?? base.vendutoPolizza,
+    tieneLetteraInvito: pasajero.tieneLetteraInvito ?? base.tieneLetteraInvito,
+    netoLetteraInvito: pasajero.netoLetteraInvito ?? base.netoLetteraInvito,
+    vendutoLetteraInvito: pasajero.vendutoLetteraInvito ?? base.vendutoLetteraInvito,
+    tieneHotel: pasajero.tieneHotel ?? base.tieneHotel,
+    netoHotel: pasajero.netoHotel ?? base.netoHotel,
+    vendutoHotel: pasajero.vendutoHotel ?? base.vendutoHotel,
+    serviciosDetalle:
+      pasajero.serviciosDetalle && pasajero.serviciosDetalle.length > 0
+        ? normalizeServiciosDetalle(pasajero.serviciosDetalle)
+        : base.serviciosDetalle,
+    serviciosData: pasajero.serviciosData ?? base.serviciosData,
+    metodoAcquistoBiglietteria: pasajero.metodoAcquistoBiglietteria ?? base.metodoAcquistoBiglietteria,
+    metodoAcquistoExpress: pasajero.metodoAcquistoExpress ?? base.metodoAcquistoExpress,
+    metodoAcquistoPolizza: pasajero.metodoAcquistoPolizza ?? base.metodoAcquistoPolizza,
+    metodoAcquistoLetteraInvito:
+      pasajero.metodoAcquistoLetteraInvito ?? base.metodoAcquistoLetteraInvito,
+    metodoAcquistoHotel: pasajero.metodoAcquistoHotel ?? base.metodoAcquistoHotel,
+  };
+}
+
+function processRecord(record: BiglietteriaRecordApi): BiglietteriaRecord {
+  const metodoArray = normalizeMetodoPagamentoArray(record.metodoPagamento);
+
+  const pasajerosNormalizados = Array.isArray(record.pasajeros)
+    ? record.pasajeros.map(normalizePasajero)
+    : [];
+
+  return {
+    ...record,
+    metodoPagamento: metodoArray,
+    metodoPagamentoParsed: metodoArray,
+    pasajeros: pasajerosNormalizados,
+  };
+}
+
+function splitServicios(value: unknown): string[] {
+  if (typeof value !== 'string') {
+    return [];
+  }
+
+  return value
+    .split(',')
+    .map(segmento => segmento.trim())
+    .filter((segmento): segmento is string => segmento.length > 0);
+}
+
+function sanitizeMetodoPagamento(value: string): string {
+  let sanitized = value.replace(/\\\\/g, '\\').replace(/\\"/g, '"').trim();
+  if (sanitized.startsWith('[') && sanitized.endsWith(']')) {
+    sanitized = sanitized.slice(1, -1).trim();
+  }
+  if (sanitized.startsWith('"') && sanitized.endsWith('"')) {
+    sanitized = sanitized.slice(1, -1).trim();
+  }
+  if (sanitized.startsWith("'") && sanitized.endsWith("'")) {
+    sanitized = sanitized.slice(1, -1).trim();
+  }
+  return sanitized;
+}
+
+function normalizeMetodoPagamentoArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value
+      .map(item => (typeof item === 'string' ? sanitizeMetodoPagamento(item) : String(item)))
+      .map(item => item.trim())
+      .filter(item => item.length > 0);
+  }
+
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        return parsed
+          .map(item => (typeof item === 'string' ? sanitizeMetodoPagamento(item) : String(item)))
+          .map(item => item.trim())
+          .filter(item => item.length > 0);
+      }
+    } catch {
+      // Ignore parse error and fall back
+    }
+
+    return value
+      .split(',')
+      .map(item => sanitizeMetodoPagamento(item))
+      .map(item => item.trim())
+      .filter(item => item.length > 0);
+  }
+
+  return [];
+}
+
 // ==================== COMPONENTE PRINCIPAL ====================
 
 export default function BiglietteriaPage() {
@@ -184,12 +440,12 @@ export default function BiglietteriaPage() {
   const [showCreadorDropdown, setShowCreadorDropdown] = useState<boolean>(false);
   
   // Estados para filtro de pagamento
-  const [filtroPagamento, setFiltroPagamento] = useState<string>('');
   const [pagamentos, setPagamentos] = useState<string[]>([]);
   
   // Estados para IATA y MetodoPagamento
   const [iataList, setIataList] = useState<string[]>([]);
   const [metodoPagamentoList, setMetodoPagamentoList] = useState<string[]>([]);
+  const [acquistoOptions, setAcquistoOptions] = useState<string[]>([]);
   
   // Estados para búsqueda y paginación (igual que TOUR GRUPPO)
   const [searchTerm, setSearchTerm] = useState('');
@@ -208,10 +464,6 @@ export default function BiglietteriaPage() {
   const [showPagamentoDropdown, setShowPagamentoDropdown] = useState(false);
   const [pagamentoSearchTerm, setPagamentoSearchTerm] = useState('');
   
-  // Estados para IATA dropdown (igual que cliente)
-  const [showIataDropdown, setShowIataDropdown] = useState(false);
-  const [iataSearchTerm, setIataSearchTerm] = useState('');
-  
   // Estados para dropdowns individuales de IATA por pasajero y servicio
   const [showIndividualIataDropdowns, setShowIndividualIataDropdowns] = useState<{[key: string]: boolean}>({});
   const [individualIataSearchTerms, setIndividualIataSearchTerms] = useState<{[key: string]: string}>({});
@@ -224,7 +476,6 @@ export default function BiglietteriaPage() {
   const [expandedServiciosRows, setExpandedServiciosRows] = useState<Set<string>>(new Set());
   
   // Estados para servicios dropdown
-  const [showServiziDropdowns, setShowServiziDropdowns] = useState<boolean[]>([]);
   const [showServiziDropdown, setShowServiziDropdown] = useState<number | null>(null);
   
   // Estados para servicios
@@ -258,10 +509,6 @@ export default function BiglietteriaPage() {
   );
   
   // Función para filtrar IATA basado en la búsqueda (igual que clientes)
-  const filteredIata = iataList && Array.isArray(iataList) ? iataList.filter(iata => 
-    iata.toLowerCase().includes(iataSearchTerm.toLowerCase())
-  ) : [];
-  
   // Función para filtrar MetodoPagamento basado en la búsqueda (igual que clientes)
   const filteredMetodoPagamento = metodoPagamentoList && Array.isArray(metodoPagamentoList) ? metodoPagamentoList.filter(metodo => 
     metodo.toLowerCase().includes(metodoPagamentoSearchTerm.toLowerCase())
@@ -269,14 +516,13 @@ export default function BiglietteriaPage() {
   
   // Estados para archivos
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [uploadingFile, setUploadingFile] = useState(false);
   
   // Estados para modal de detalles
   const [viewingDetails, setViewingDetails] = useState<BiglietteriaRecord | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   
   // Estados para funcionalidades de tabla
-  const [loadingClientData, setLoadingClientData] = useState(false);
+  const loadingClientData = false;
   
   // Estados para cuotas - REPLICANDO LÓGICA DE TOUR GRUPPO
   const [numeroCuotas, setNumeroCuotas] = useState<number>(0);
@@ -350,8 +596,6 @@ export default function BiglietteriaPage() {
   // Constantes - ahora se obtienen de la base de datos
   const serviciosDisponibles = servizi.map(s => s.servizio);
   
-  const additionalCostServices = ['EXPRESS', 'POLIZZA', 'L.INVITO', 'HOTEL'];
-  
   // ==================== FUNCIONES AUXILIARES ====================
   
   // Servicios conocidos que tienen campos específicos en la interfaz
@@ -375,52 +619,194 @@ export default function BiglietteriaPage() {
     return servicios.filter(s => !esServicioConocido(s));
   };
   
-  // OPTIMIZACIÓN: Helper para pre-parsear metodoPagamento en registros
-  const processRecord = useCallback((record: any): BiglietteriaRecord => {
-    return {
-      ...record,
-      metodoPagamentoParsed: (() => {
-        try {
-          const parsed = typeof record.metodoPagamento === 'string' 
-            ? JSON.parse(record.metodoPagamento) 
-            : record.metodoPagamento;
-          return Array.isArray(parsed) ? parsed : [record.metodoPagamento];
-        } catch {
-          return [record.metodoPagamento];
-        }
-      })()
-    };
-  }, []);
+const euroFormatter = new Intl.NumberFormat('it-IT', {
+  style: 'currency',
+  currency: 'EUR',
+  minimumFractionDigits: 2,
+});
 
-  // Función para crear un pasajero vacío
-  const crearPasajeroVacio = (): PasajeroData => ({
-    nombrePasajero: '',
-    servicios: [],
-    andata: '',
-    ritorno: '',
-    iata: '', // Mantener para compatibilidad
-    iataBiglietteria: '',
-    iataExpress: '',
-    iataPolizza: '',
-    iataLetteraInvito: '',
-    iataHotel: '',
-    netoBiglietteria: '',
-    vendutoBiglietteria: '',
-    tieneExpress: false,
-    netoExpress: '',
-    vendutoExpress: '',
-    tienePolizza: false,
-    netoPolizza: '',
-    vendutoPolizza: '',
-    tieneLetteraInvito: false,
-    netoLetteraInvito: '',
-    vendutoLetteraInvito: '',
-    tieneHotel: false,
-    netoHotel: '',
-    vendutoHotel: '',
-    serviciosData: {}
+const formatCurrencyDisplay = (value: number | string | null | undefined): string => {
+  if (value === null || value === undefined || value === '') {
+    return '-';
+  }
+  const numericValue = typeof value === 'string' ? Number(value) : value;
+  if (Number.isNaN(numericValue)) {
+    return '-';
+  }
+  return euroFormatter.format(numericValue);
+};
+
+const formatDateDisplay = (value: string | Date | null | undefined): string => {
+  if (!value) return '-';
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return '-';
+  return date.toLocaleDateString('it-IT');
+};
+
+const getReadableNotes = (value: string | null | undefined): string => {
+  if (!value) return '';
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  if (trimmed.startsWith('{')) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (parsed && typeof parsed === 'object') {
+        if (typeof parsed.notasUsuario === 'string' && parsed.notasUsuario.trim()) {
+          return parsed.notasUsuario;
+        }
+        if (typeof parsed.descripcion === 'string' && parsed.descripcion.trim()) {
+          return parsed.descripcion;
+        }
+      }
+    } catch {
+      // ignorar errores de parseo
+    }
+  }
+  return value;
+};
+
+const toISODateString = (value: string | Date | null | undefined): string | null => {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString();
+};
+
+const extractIataValue = (raw: unknown, servicio?: string): string => {
+  if (!raw) return '';
+
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    if (trimmed.startsWith('{')) {
+      try {
+        return extractIataValue(JSON.parse(trimmed), servicio);
+      } catch {
+        return trimmed;
+      }
+    }
+    return trimmed;
+  }
+
+  if (typeof raw === 'object' && raw !== null) {
+    const record = raw as Record<string, unknown>;
+
+    if (servicio) {
+      const servicioLower = servicio.toLowerCase();
+      const key = Object.keys(record).find(k => {
+        const lower = k.toLowerCase();
+        return lower === servicioLower || servicioLower.includes(lower) || lower.includes(servicioLower);
+      });
+      const value = key ? record[key] : undefined;
+      if (typeof value === 'string') {
+        return value;
+      }
+    }
+
+    const values = Object.values(record)
+      .filter((val): val is string => typeof val === 'string' && val.trim().length > 0);
+
+    return values.join(', ');
+  }
+
+  return String(raw);
+};
+
+const buildFallbackServicios = (pasajero: PasajeroData): PasajeroServicioDetalle[] => {
+  const fallback: PasajeroServicioDetalle[] = [];
+
+  const pushServicio = (servicio: string, data?: { iata?: string; neto?: string; venduto?: string; metodo?: string; andata?: string; ritorno?: string }) => {
+    if (!data) return;
+    const { iata, neto, venduto, metodo, andata, ritorno } = data;
+    if (
+      iata ||
+      (neto !== undefined && neto !== '') ||
+      (venduto !== undefined && venduto !== '') ||
+      (metodo !== undefined && metodo !== '')
+    ) {
+      fallback.push({
+        servicio,
+        iata: iata || '',
+        neto: neto ?? '',
+        venduto: venduto ?? '',
+        metodoDiAcquisto: metodo ?? '',
+        andata: andata ?? null,
+        ritorno: ritorno ?? null,
+        estado: 'Pendiente',
+      });
+    }
+  };
+
+  pushServicio('VOLO', {
+    iata: pasajero.iataBiglietteria || extractIataValue(pasajero.iata, 'volo'),
+    neto: pasajero.netoBiglietteria,
+    venduto: pasajero.vendutoBiglietteria,
+    metodo: pasajero.metodoAcquistoBiglietteria,
+    andata: pasajero.andata || undefined,
+    ritorno: pasajero.ritorno || undefined,
   });
-  
+
+  pushServicio('EXPRESS', {
+    iata: pasajero.iataExpress || extractIataValue(pasajero.iata, 'express'),
+    neto: pasajero.netoExpress,
+    venduto: pasajero.vendutoExpress,
+    metodo: pasajero.metodoAcquistoExpress,
+  });
+
+  pushServicio('POLIZZA', {
+    iata: pasajero.iataPolizza || extractIataValue(pasajero.iata, 'polizza'),
+    neto: pasajero.netoPolizza,
+    venduto: pasajero.vendutoPolizza,
+    metodo: pasajero.metodoAcquistoPolizza,
+  });
+
+  pushServicio('L.INVITO', {
+    iata: pasajero.iataLetteraInvito || extractIataValue(pasajero.iata, 'invito'),
+    neto: pasajero.netoLetteraInvito,
+    venduto: pasajero.vendutoLetteraInvito,
+    metodo: pasajero.metodoAcquistoLetteraInvito,
+  });
+
+  pushServicio('HOTEL', {
+    iata: pasajero.iataHotel || extractIataValue(pasajero.iata, 'hotel'),
+    neto: pasajero.netoHotel,
+    venduto: pasajero.vendutoHotel,
+    metodo: pasajero.metodoAcquistoHotel,
+  });
+
+  if (pasajero.serviciosData) {
+    Object.entries(pasajero.serviciosData).forEach(([servicio, data]) => {
+      pushServicio(servicio, {
+        iata: data.iata,
+        neto: data.neto,
+        venduto: data.venduto,
+        metodo: data.metodoDiAcquisto,
+      });
+    });
+  }
+
+  return fallback;
+};
+
+const getServiciosDetallados = (pasajero: PasajeroData): PasajeroServicioDetalle[] => {
+  if (pasajero.serviciosDetalle && pasajero.serviciosDetalle.length > 0) {
+    return pasajero.serviciosDetalle;
+  }
+  return buildFallbackServicios(pasajero);
+};
+
+const getEstadoVisual = (estado?: string | null) => {
+  const normalized = estado ? String(estado).trim() : '';
+  const label = normalized || 'Pendiente';
+  const lower = label.toLowerCase();
+  const isPagado = lower === 'pagado' || lower === 'pagada' || lower === 'pagata' || lower === 'pagate';
+  return {
+    label,
+    className: isPagado
+      ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-200'
+      : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-200',
+  };
+};
+
   // Función para verificar si tiene Volo (anteriormente Biglietteria)
   const tieneBiglietteria = (servicios: string[]) => {
     return servicios.some(s => s.toLowerCase().includes('volo'));
@@ -480,11 +866,11 @@ export default function BiglietteriaPage() {
   });
   
   // Función para calcular totales
-  const calcularTotales = useCallback(() => {
+  const calcularTotales = useCallback((pasajeros: PasajeroData[], accontoValue: string): TotalesCalculados => {
     let netoPrincipal = 0;
     let vendutoTotal = 0;
     
-    formData.pasajeros.forEach(pasajero => {
+    pasajeros.forEach(pasajero => {
       // Sumar Biglietteria
       if (pasajero.netoBiglietteria) netoPrincipal += parseFloat(pasajero.netoBiglietteria) || 0;
       if (pasajero.vendutoBiglietteria) vendutoTotal += parseFloat(pasajero.vendutoBiglietteria) || 0;
@@ -516,7 +902,7 @@ export default function BiglietteriaPage() {
       }
     });
     
-    const acconto = parseFloat(formData.acconto) || 0;
+    const acconto = parseFloat(accontoValue) || 0;
     const daPagare = vendutoTotal - acconto;
     const feeAgv = vendutoTotal - netoPrincipal;
     
@@ -526,7 +912,12 @@ export default function BiglietteriaPage() {
       daPagare: daPagare.toFixed(2),
       feeAgv: feeAgv.toFixed(2)
     };
-  }, [formData.pasajeros, formData.acconto]);
+  }, []);
+  
+  const totalesCalculados = useMemo(
+    () => calcularTotales(formData.pasajeros, formData.acconto),
+    [formData.pasajeros, formData.acconto, calcularTotales]
+  );
   
   // ==================== EFECTOS ====================
   
@@ -545,9 +936,6 @@ export default function BiglietteriaPage() {
       }
       if (!target.closest('.pagamento-dropdown-container')) {
         setShowPagamentoDropdown(false);
-      }
-      if (!target.closest('.iata-dropdown-container')) {
-        setShowIataDropdown(false);
       }
       if (!target.closest('.metodo-pagamento-dropdown-container')) {
         setShowMetodoPagamentoDropdown(false);
@@ -620,19 +1008,29 @@ export default function BiglietteriaPage() {
     
     // Actualizar referencia
     estadoIsPagatoRef.current = new Map(estadoIsPagatoActual);
-  }, [cuotas]);
+  }, [cuotas, formData.acconto]);
 
   // Calcular totales automáticamente cuando cambien los pasajeros o acconto
   useEffect(() => {
-    const totales = calcularTotales();
-    setFormData(prev => ({
-      ...prev,
-      netoPrincipal: totales.netoPrincipal,
-      vendutoTotal: totales.vendutoTotal,
-      daPagare: totales.daPagare,
-      feeAgv: totales.feeAgv
-    }));
-  }, [formData.pasajeros, formData.acconto, calcularTotales]);
+    setFormData(prev => {
+      if (
+        prev.netoPrincipal === totalesCalculados.netoPrincipal &&
+        prev.vendutoTotal === totalesCalculados.vendutoTotal &&
+        prev.daPagare === totalesCalculados.daPagare &&
+        prev.feeAgv === totalesCalculados.feeAgv
+      ) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        netoPrincipal: totalesCalculados.netoPrincipal,
+        vendutoTotal: totalesCalculados.vendutoTotal,
+        daPagare: totalesCalculados.daPagare,
+        feeAgv: totalesCalculados.feeAgv,
+      };
+    });
+  }, [totalesCalculados]);
   
   // Cargar datos iniciales - OPTIMIZADO: Llamadas paralelas con Promise.all
   const fetchData = useCallback(async () => {
@@ -648,24 +1046,29 @@ export default function BiglietteriaPage() {
           usersData,
           pagamentosData,
           iataData,
-          metodoData
+          metodoData,
+          acquistoData,
         ] = await Promise.all([
-          cachedFetch<{ records: any[] }>(`/api/biglietteria${isUser ? '?userOnly=true' : ''}`, { ttlMs: 15000 }),
-          cachedFetch<any>(`/api/clients`, { ttlMs: 15000 }).catch(() => ({ clients: [] })),
-          cachedFetch<any[]>('/api/servizi', { ttlMs: 15000 }).catch(() => []),
-          cachedFetch<any[]>('/api/users', { ttlMs: 15000 }).catch(() => []),
-          cachedFetch<any[]>('/api/pagamento', { ttlMs: 15000 }).catch(() => []),
-          cachedFetch<any[]>('/api/iata', { ttlMs: 15000 }).catch(() => []),
-          cachedFetch<{ metodosPagamento: any[] }>('/api/metodo-pagamento', { ttlMs: 15000 }).catch(() => ({ metodosPagamento: [] }))
+          cachedFetch<{ records: BiglietteriaRecordApi[] }>(`/api/biglietteria${isUser ? '?userOnly=true' : ''}`, {
+            ttlMs: 15000,
+          }),
+          cachedFetch<{ clients: Client[] }>(`/api/clients`, { ttlMs: 15000 }).catch(() => ({ clients: [] })),
+          cachedFetch<ServizioOption[]>('/api/servizi', { ttlMs: 15000 }).catch(() => []),
+          cachedFetch<ApiUser[]>('/api/users', { ttlMs: 15000 }).catch(() => []),
+          cachedFetch<PagamentoOption[]>('/api/pagamento', { ttlMs: 15000 }).catch(() => []),
+          cachedFetch<IataOption[]>('/api/iata', { ttlMs: 15000 }).catch(() => []),
+          cachedFetch<{ metodosPagamento: MetodoPagamentoOption[] }>('/api/metodo-pagamento', {
+            ttlMs: 15000,
+          }).catch(() => ({ metodosPagamento: [] })),
+          cachedFetch<{ acquisti: AcquistoOption[] }>('/api/acquisto', { ttlMs: 15000 }).catch(() => ({ acquisti: [] })),
         ]);
         
         // Procesar registros y pre-parsear metodoPagamento para evitar JSON.parse en filtro
-        const processedRecords = (recordsData.records || []).map(processRecord);
+        const processedRecords = (recordsData?.records ?? []).map(processRecord);
         setRecords(processedRecords);
         
         // Procesar clientes
-        const clientsArray = clientsData.clients || clientsData;
-        setClients(Array.isArray(clientsArray) ? clientsArray : []);
+        setClients(Array.isArray(clientsData?.clients) ? clientsData.clients : []);
         
         // Procesar servicios
         setServizi(Array.isArray(serviziData) ? serviziData : []);
@@ -674,26 +1077,26 @@ export default function BiglietteriaPage() {
         setUsuarios(Array.isArray(usersData) ? usersData : []);
         
         // Procesar pagamentos
-        const pagamentosArray = Array.isArray(pagamentosData) ? pagamentosData : [];
-        const pagamentosNombres = pagamentosArray.map((p: any) => p.pagamento);
+        const pagamentosNombres = (Array.isArray(pagamentosData) ? pagamentosData : []).map(option => option.pagamento);
         setPagamentos(pagamentosNombres);
         
         // Procesar IATA
-        const iataArray = Array.isArray(iataData) ? iataData : [];
-        const iataNombres = iataArray.map((i: any) => i.iata);
+        const iataNombres = (Array.isArray(iataData) ? iataData : []).map(option => option.iata);
         setIataList(iataNombres);
         
         // Procesar MetodoPagamento
-        const metodoPagamentoArray = metodoData.metodosPagamento || [];
-        const metodoPagamentoNombres = metodoPagamentoArray.map((m: any) => m.metodoPagamento);
+        const metodoPagamentoNombres = (metodoData?.metodosPagamento ?? []).map(option => option.metodoPagamento);
         setMetodoPagamentoList(metodoPagamentoNombres);
+
+        const acquistoNombres = Array.isArray(acquistoData?.acquisti) ? acquistoData.acquisti.map(item => item.acquisto) : [];
+        setAcquistoOptions(acquistoNombres);
         
       } catch (error) {
         console.error('Error cargando datos:', error);
       } finally {
         setLoading(false);
       }
-    }, [roleLoading, isUser, processRecord]);
+    }, [roleLoading, isUser]);
 
   useEffect(() => {
     fetchData();
@@ -719,7 +1122,7 @@ export default function BiglietteriaPage() {
     }
     
     // Actualizar el array de dropdowns
-    setShowServiziDropdowns(Array(nuevoNumero).fill(false));
+    setShowServiziDropdown(null);
     
     setFormData(prev => ({
       ...prev,
@@ -729,7 +1132,7 @@ export default function BiglietteriaPage() {
   };
   
   // Handler para actualizar datos de un pasajero
-  const handlePasajeroChange = (index: number, field: keyof PasajeroData, value: any) => {
+  const handlePasajeroChange = <K extends keyof PasajeroData>(index: number, field: K, value: PasajeroData[K]) => {
     setFormData(prev => ({
       ...prev,
       pasajeros: prev.pasajeros.map((p, i) => 
@@ -758,7 +1161,7 @@ export default function BiglietteriaPage() {
         const tieneHotel = servicios.some(s => s.toLowerCase().includes('hotel'));
         
         // Manejar serviciosData dinámicos
-        let serviciosData = { ...(p.serviciosData || {}) };
+        const serviciosData = { ...(p.serviciosData || {}) };
         
         // Obtener servicios dinámicos actuales
         const serviciosDinamicosActuales = obtenerServiciosDinamicos(servicios);
@@ -775,7 +1178,7 @@ export default function BiglietteriaPage() {
         serviciosDinamicosActuales.forEach(servicio => {
           const servicioKey = normalizarServicio(servicio);
           if (!serviciosData[servicioKey]) {
-            serviciosData[servicioKey] = { iata: '', neto: '', venduto: '' };
+            serviciosData[servicioKey] = { iata: '', neto: '', venduto: '', metodoDiAcquisto: '' };
           }
         });
         
@@ -792,14 +1195,19 @@ export default function BiglietteriaPage() {
           ritorno: hasBiglietteria ? p.ritorno : '',
           netoBiglietteria: hasBiglietteria ? p.netoBiglietteria : '',
           vendutoBiglietteria: hasBiglietteria ? p.vendutoBiglietteria : '',
+          metodoAcquistoBiglietteria: hasBiglietteria ? p.metodoAcquistoBiglietteria : '',
           netoExpress: tieneExpress ? p.netoExpress : '',
           vendutoExpress: tieneExpress ? p.vendutoExpress : '',
+          metodoAcquistoExpress: tieneExpress ? p.metodoAcquistoExpress : '',
           netoPolizza: tienePolizza ? p.netoPolizza : '',
           vendutoPolizza: tienePolizza ? p.vendutoPolizza : '',
+          metodoAcquistoPolizza: tienePolizza ? p.metodoAcquistoPolizza : '',
           netoLetteraInvito: tieneLetteraInvito ? p.netoLetteraInvito : '',
           vendutoLetteraInvito: tieneLetteraInvito ? p.vendutoLetteraInvito : '',
+          metodoAcquistoLetteraInvito: tieneLetteraInvito ? p.metodoAcquistoLetteraInvito : '',
           netoHotel: tieneHotel ? p.netoHotel : '',
-          vendutoHotel: tieneHotel ? p.vendutoHotel : ''
+          vendutoHotel: tieneHotel ? p.vendutoHotel : '',
+          metodoAcquistoHotel: tieneHotel ? p.metodoAcquistoHotel : ''
         };
       })
     }));
@@ -833,16 +1241,6 @@ export default function BiglietteriaPage() {
     setPagamentoSearchTerm('');
   };
   
-  // Handler para seleccionar IATA (igual que cliente)
-  const handleIataSelect = (iata: string) => {
-    setFormData(prev => ({
-      ...prev,
-      iata: iata
-    }));
-    setShowIataDropdown(false);
-    setIataSearchTerm('');
-  };
-
   // Funciones para manejar dropdowns individuales de IATA
   const getIndividualIataKey = (pasajeroIndex: number, servicio: string) => {
     return `${pasajeroIndex}-${servicio}`;
@@ -899,20 +1297,21 @@ export default function BiglietteriaPage() {
   // Handler para toggle de MetodoPagamento (igual que servicios)
   const handleMetodoPagamentoToggle = (metodo: string) => {
     setFormData(prev => {
-      const currentMetodos = prev.metodoPagamento || [];
-      const isSelected = currentMetodos.includes(metodo);
+      const sanitizedMetodo = sanitizeMetodoPagamento(metodo);
+      const currentMetodos = (prev.metodoPagamento || []).map(sanitizeMetodoPagamento);
+      const isSelected = currentMetodos.includes(sanitizedMetodo);
       
       if (isSelected) {
         // Remover si ya está seleccionado
         return {
           ...prev,
-          metodoPagamento: currentMetodos.filter(m => m !== metodo)
+          metodoPagamento: currentMetodos.filter(m => m !== sanitizedMetodo)
         };
       } else {
         // Agregar si no está seleccionado
         return {
           ...prev,
-          metodoPagamento: [...currentMetodos, metodo]
+          metodoPagamento: [...currentMetodos, sanitizedMetodo]
         };
       }
     });
@@ -1056,14 +1455,14 @@ export default function BiglietteriaPage() {
         // Extraer todos los servicios únicos de todos los pasajeros
         const serviciosSet = new Set<string>();
         if (record.pasajeros && Array.isArray(record.pasajeros)) {
-          record.pasajeros.forEach((pasajero: any) => {
+          record.pasajeros.forEach((pasajero: PasajeroApi) => {
             if (pasajero.servicios && Array.isArray(pasajero.servicios)) {
               pasajero.servicios.forEach((servicio: string) => {
                 serviciosSet.add(servicio.trim());
               });
-            } else if (pasajero.servizio) {
+            } else if (typeof pasajero.servizio === 'string') {
               // Compatibilidad con formato antiguo
-              const servicios = pasajero.servizio.split(',').map((s: string) => s.trim());
+              const servicios = pasajero.servizio.split(',').map((s) => s.trim());
               servicios.forEach((servicio: string) => {
                 serviciosSet.add(servicio);
               });
@@ -1102,7 +1501,7 @@ export default function BiglietteriaPage() {
   };
   
   // OPTIMIZACIÓN: Memoizar el cálculo del nombre del creator para evitar re-calcularlo
-  const getCreatorName = useCallback((creator: any): string => {
+  const getCreatorName = useCallback((creator?: RecordCreator | null): string => {
     if (creator?.firstName) {
       return `${creator.firstName}${creator.lastName ? ` ${creator.lastName}` : ''}`.trim();
     }
@@ -1229,15 +1628,23 @@ export default function BiglietteriaPage() {
       const dataToSend = new FormData();
       
       // Datos básicos
-      Object.keys(formData).forEach(key => {
-        if (key !== 'pasajeros' && key !== 'netoPrincipal' && key !== 'vendutoTotal' && key !== 'daPagare' && key !== 'feeAgv') {
-          const value = (formData as any)[key];
-          // Convertir metodoPagamento array a JSON
-          if (key === 'metodoPagamento' && Array.isArray(value)) {
-            dataToSend.append(key, JSON.stringify(value));
-          } else {
-            dataToSend.append(key, value);
-          }
+      Object.entries(formData).forEach(([key, value]) => {
+        if (['pasajeros', 'netoPrincipal', 'vendutoTotal', 'daPagare', 'feeAgv'].includes(key)) {
+          return;
+        }
+
+        if (key === 'metodoPagamento' && Array.isArray(value)) {
+          dataToSend.append(key, JSON.stringify(value));
+          return;
+        }
+
+        if (typeof value === 'string') {
+          dataToSend.append(key, value);
+          return;
+        }
+
+        if (typeof value === 'number' || typeof value === 'boolean') {
+          dataToSend.append(key, String(value));
         }
       });
       
@@ -1311,9 +1718,10 @@ export default function BiglietteriaPage() {
         handleCancelEdit();
       }
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error al guardar:', error);
-      setMessage({ type: 'error', text: error.message || 'Error al guardar el registro' });
+      const message = error instanceof Error ? error.message : 'Error al guardar el registro';
+      setMessage({ type: 'error', text: message });
     } finally {
       setSubmitting(false);
     }
@@ -1349,9 +1757,7 @@ export default function BiglietteriaPage() {
     setCuotas([]);
     cuotasInicializadas.current = false; // Resetear flag de inicialización
     setSelectedClientId('');
-    
-    // Resetear arrays de dropdowns
-    setShowServiziDropdowns([false]);
+    setShowServiziDropdown(null);
     
     closeModal();
   };
@@ -1370,177 +1776,287 @@ export default function BiglietteriaPage() {
     }
     
     // Mapear pasajeros desde el formato de la base de datos al formato del formulario
-    const pasajerosMapeados = record.pasajeros?.map(p => {
-      // Parsear servicios desde string a array
+    const pasajerosMapeados = record.pasajeros?.map(pasajeroRaw => {
+      const pasajero = pasajeroRaw as PasajeroApi;
+
       let servicios: string[] = [];
-      
-      // Los servicios vienen como 'servizio' (string) desde la base de datos
-      // pero también pueden venir como 'servicios' (array) desde el frontend
-      let servizioString = '';
-      if ((p as any).servizio) {
-        // Desde la base de datos
-        servizioString = (p as any).servizio;
-      } else if (p.servicios) {
-        // Desde el frontend (ya como array)
-        if (typeof p.servicios === 'string') {
-          servizioString = p.servicios;
-        } else if (Array.isArray(p.servicios)) {
-          servicios = p.servicios;
+      if (Array.isArray(pasajero.servicios)) {
+        servicios = pasajero.servicios
+          .map(servicio => (typeof servicio === 'string' ? servicio.trim() : String(servicio)))
+          .filter((servicio): servicio is string => servicio.length > 0);
+      } else {
+        servicios = splitServicios(pasajero.servicios);
+        if (servicios.length === 0) {
+          servicios = splitServicios(pasajero.servizio);
         }
       }
-      
-      // Si tenemos un string de servicios, convertirlo a array
-      if (servizioString && servicios.length === 0) {
-        servicios = servizioString.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0);
-      }
-      
-      
-      return {
-        id: p.id,
-        nombrePasajero: p.nombrePasajero || '',
-        servicios: servicios,
-        andata: p.andata ? new Date(p.andata).toISOString().split('T')[0] : '',
-        ritorno: p.ritorno ? new Date(p.ritorno).toISOString().split('T')[0] : '',
-        // Parsear IATA desde JSON o string
-        ...(() => {
-          const iataValue = (p as any).iata;
-          if (!iataValue) {
-            return {
-              iata: '',
-              iataBiglietteria: '',
-              iataExpress: '',
-              iataPolizza: '',
-              iataLetteraInvito: '',
-              iataHotel: ''
-            };
-          }
-          
-          // Intentar parsear como JSON
+
+      const mapIataFields = () => {
+        const defaults = {
+          iata: '',
+          iataBiglietteria: '',
+          iataExpress: '',
+          iataPolizza: '',
+          iataLetteraInvito: '',
+          iataHotel: '',
+        };
+
+        const hydrate = (recordValue: Record<string, unknown>) => ({
+          iata: typeof recordValue.biglietteria === 'string' ? recordValue.biglietteria : '',
+          iataBiglietteria: typeof recordValue.biglietteria === 'string' ? recordValue.biglietteria : '',
+          iataExpress: typeof recordValue.express === 'string' ? recordValue.express : '',
+          iataPolizza: typeof recordValue.polizza === 'string' ? recordValue.polizza : '',
+          iataLetteraInvito: typeof recordValue.letteraInvito === 'string' ? recordValue.letteraInvito : '',
+          iataHotel: typeof recordValue.hotel === 'string' ? recordValue.hotel : '',
+        });
+
+        const iataValue = pasajero.iata;
+        if (!iataValue) {
+          return defaults;
+        }
+
+        if (typeof iataValue === 'string') {
           try {
-            const iataParsed = JSON.parse(iataValue);
-            if (typeof iataParsed === 'object' && iataParsed !== null) {
-              // Es un objeto JSON con IATA específicos
-              return {
-                iata: iataParsed.biglietteria || '',
-                iataBiglietteria: iataParsed.biglietteria || '',
-                iataExpress: iataParsed.express || '',
-                iataPolizza: iataParsed.polizza || '',
-                iataLetteraInvito: iataParsed.letteraInvito || '',
-                iataHotel: iataParsed.hotel || ''
-              };
+            const parsed = JSON.parse(iataValue) as Record<string, unknown>;
+            if (parsed && typeof parsed === 'object') {
+              return hydrate(parsed);
             }
           } catch {
-            // No es JSON, es string simple (compatibilidad con registros antiguos)
             return {
               iata: iataValue,
               iataBiglietteria: iataValue,
               iataExpress: '',
               iataPolizza: '',
               iataLetteraInvito: '',
-              iataHotel: ''
+              iataHotel: '',
             };
           }
-          
-          // Fallback
-          return {
-            iata: iataValue,
-            iataBiglietteria: iataValue,
-            iataExpress: '',
-            iataPolizza: '',
-            iataLetteraInvito: '',
-            iataHotel: ''
-          };
-        })(),
-        // Cargar servicios dinámicos desde notas y iata
-        serviciosData: (() => {
-          const serviciosData: Record<string, { iata: string; neto: string; venduto: string }> = {};
-          const pAny = p as any; // Cast temporal para acceder a campos de la BD
-          
-          // Parsear notas para obtener servicios dinámicos
-          if (pAny.notas) {
-            try {
-              const notasParsed = JSON.parse(pAny.notas);
-              if (notasParsed && typeof notasParsed === 'object' && notasParsed.serviciosDinamicos) {
-                // Hay servicios dinámicos en notas
-                Object.entries(notasParsed.serviciosDinamicos).forEach(([key, data]: [string, any]) => {
-                  serviciosData[key.toUpperCase()] = {
-                    iata: '',
-                    neto: data.neto ? data.neto.toString() : '',
-                    venduto: data.venduto ? data.venduto.toString() : ''
-                  };
-                });
-              }
-            } catch {
-              // No es JSON, es string simple (solo notas de usuario)
-            }
-          }
-          
-          // Parsear IATA para obtener IATA de servicios dinámicos
-          if (pAny.iata) {
-            try {
-              const iataParsed = JSON.parse(pAny.iata);
-              if (typeof iataParsed === 'object' && iataParsed !== null) {
-                // Obtener servicios dinámicos de los servicios seleccionados
-                const servizioString = pAny.servizio || '';
-                const servicios = servizioString ? servizioString.split(',').map((s: string) => s.trim()) : [];
-                const serviciosDinamicos = obtenerServiciosDinamicos(servicios);
-                
-                serviciosDinamicos.forEach(servicio => {
-                  const servicioKey = normalizarServicio(servicio);
-                  const servicioKeyLower = servicioKey.toLowerCase();
-                  
-                  // Si hay IATA para este servicio en el JSON, agregarlo
-                  if (iataParsed[servicioKeyLower] && !serviciosData[servicioKey]) {
-                    serviciosData[servicioKey] = {
-                      iata: iataParsed[servicioKeyLower],
-                      neto: '',
-                      venduto: ''
-                    };
-                  } else if (iataParsed[servicioKeyLower] && serviciosData[servicioKey]) {
-                    // Actualizar IATA si ya existe el servicio
-                    serviciosData[servicioKey].iata = iataParsed[servicioKeyLower];
-                  }
-                });
-              }
-            } catch {
-              // No es JSON, es string simple
-            }
-          }
-          
-          return Object.keys(serviciosData).length > 0 ? serviciosData : {};
-        })(),
-        netoBiglietteria: p.netoBiglietteria?.toString() || '',
-        vendutoBiglietteria: p.vendutoBiglietteria?.toString() || '',
-        tieneExpress: p.tieneExpress || false,
-        netoExpress: p.netoExpress?.toString() || '',
-        vendutoExpress: p.vendutoExpress?.toString() || '',
-        tienePolizza: p.tienePolizza || false,
-        netoPolizza: p.netoPolizza?.toString() || '',
-        vendutoPolizza: p.vendutoPolizza?.toString() || '',
-        tieneLetteraInvito: p.tieneLetteraInvito || false,
-        netoLetteraInvito: p.netoLetteraInvito?.toString() || '',
-        vendutoLetteraInvito: p.vendutoLetteraInvito?.toString() || '',
-        tieneHotel: p.tieneHotel || false,
-        netoHotel: p.netoHotel?.toString() || '',
-        vendutoHotel: p.vendutoHotel?.toString() || ''
+        } else if (typeof iataValue === 'object' && iataValue !== null) {
+          return hydrate(iataValue as Record<string, unknown>);
+        }
+
+        return {
+          iata: String(iataValue),
+          iataBiglietteria: String(iataValue),
+          iataExpress: '',
+          iataPolizza: '',
+          iataLetteraInvito: '',
+          iataHotel: '',
+        };
       };
+
+      const serviciosDataFromNotas = (() => {
+        const result: Record<string, { iata: string; neto: string; venduto: string; metodoDiAcquisto?: string }> = {};
+        if (!pasajero.notas) return result;
+
+        try {
+          const parsed = JSON.parse(pasajero.notas) as {
+            serviciosDinamicos?: Record<string, { neto?: string | number; venduto?: string | number; metodoDiAcquisto?: string }>;
+          };
+          const dinamicos = parsed.serviciosDinamicos;
+          if (!dinamicos) return result;
+
+          Object.entries(dinamicos).forEach(([key, value]) => {
+            result[key.toUpperCase()] = {
+              iata: '',
+              neto: value?.neto !== undefined ? String(value.neto) : '',
+              venduto: value?.venduto !== undefined ? String(value.venduto) : '',
+              metodoDiAcquisto: value?.metodoDiAcquisto ? String(value.metodoDiAcquisto) : '',
+            };
+          });
+        } catch {
+          // Notas no está en formato JSON; ignorar
+        }
+
+        return result;
+      })();
+
+      const serviciosDataCombinados: Record<string, { iata: string; neto: string; venduto: string; metodoDiAcquisto?: string }> = {
+        ...serviciosDataFromNotas,
+      };
+
+      if (pasajero.serviciosData) {
+        Object.entries(pasajero.serviciosData).forEach(([key, data]) => {
+          const normalizedKey = normalizarServicio(key);
+          serviciosDataCombinados[normalizedKey] = {
+            iata: data.iata || '',
+            neto: data.neto || '',
+            venduto: data.venduto || '',
+            metodoDiAcquisto: data.metodoDiAcquisto || '',
+          };
+        });
+      }
+
+      const serviciosDetalleNormalizados: PasajeroServicioDetalle[] = (
+        Array.isArray(pasajero.serviciosDetalle) ? pasajero.serviciosDetalle : []
+      ).map((detalle: PasajeroServicioDetalleApi) => ({
+        id: detalle.id,
+        servicio: typeof detalle.servicio === 'string' ? detalle.servicio : '',
+        metodoDiAcquisto: detalle.metodoDiAcquisto ?? '',
+        iata: detalle.iata ?? '',
+        andata: detalle.andata ? toISODateString(detalle.andata) : null,
+        ritorno: detalle.ritorno ? toISODateString(detalle.ritorno) : null,
+        neto: detalle.neto ?? null,
+        venduto: detalle.venduto ?? null,
+        estado: detalle.estado ?? 'Pendiente',
+        fechaPago: detalle.fechaPago ? toISODateString(detalle.fechaPago) : null,
+        fechaActivacion: detalle.fechaActivacion ? toISODateString(detalle.fechaActivacion) : null,
+        notas: detalle.notas ?? null,
+      }));
+
+      const iataFields = mapIataFields();
+      let andataValue = pasajero.andata ? new Date(pasajero.andata).toISOString().split('T')[0] : '';
+      let ritornoValue = pasajero.ritorno ? new Date(pasajero.ritorno).toISOString().split('T')[0] : '';
+      let netoBiglietteria = pasajero.netoBiglietteria?.toString() || '';
+      let vendutoBiglietteria = pasajero.vendutoBiglietteria?.toString() || '';
+      let netoExpress = pasajero.netoExpress?.toString() || '';
+      let vendutoExpress = pasajero.vendutoExpress?.toString() || '';
+      let netoPolizza = pasajero.netoPolizza?.toString() || '';
+      let vendutoPolizza = pasajero.vendutoPolizza?.toString() || '';
+      let netoLetteraInvito = pasajero.netoLetteraInvito?.toString() || '';
+      let vendutoLetteraInvito = pasajero.vendutoLetteraInvito?.toString() || '';
+      let netoHotel = pasajero.netoHotel?.toString() || '';
+      let vendutoHotel = pasajero.vendutoHotel?.toString() || '';
+      let metodoAcquistoBiglietteria = pasajero.metodoAcquistoBiglietteria || '';
+      let metodoAcquistoExpress = pasajero.metodoAcquistoExpress || '';
+      let metodoAcquistoPolizza = pasajero.metodoAcquistoPolizza || '';
+      let metodoAcquistoLetteraInvito = pasajero.metodoAcquistoLetteraInvito || '';
+      let metodoAcquistoHotel = pasajero.metodoAcquistoHotel || '';
+
+      serviciosDetalleNormalizados.forEach((detalle) => {
+        const servicioKey = normalizarServicio(detalle.servicio);
+        const netoString = detalle.neto !== null && detalle.neto !== undefined ? detalle.neto.toString() : '';
+        const vendutoString = detalle.venduto !== null && detalle.venduto !== undefined ? detalle.venduto.toString() : '';
+        const metodoString = detalle.metodoDiAcquisto ?? '';
+
+        const applyDynamicData = () => {
+          const existing = serviciosDataCombinados[servicioKey] || { iata: '', neto: '', venduto: '', metodoDiAcquisto: '' };
+          serviciosDataCombinados[servicioKey] = {
+            iata: detalle.iata ?? existing.iata ?? '',
+            neto: netoString || existing.neto || '',
+            venduto: vendutoString || existing.venduto || '',
+            metodoDiAcquisto: metodoString || existing.metodoDiAcquisto || '',
+          };
+        };
+
+        if (servicioKey.includes('VOLO') || servicioKey.includes('BIGLIETTERIA')) {
+          if (detalle.andata) {
+            andataValue = detalle.andata.split('T')[0];
+          }
+          if (detalle.ritorno) {
+            ritornoValue = detalle.ritorno.split('T')[0];
+          }
+          if (detalle.iata) {
+            iataFields.iata = detalle.iata;
+            iataFields.iataBiglietteria = detalle.iata;
+          }
+          if (netoString) {
+            netoBiglietteria = netoString;
+          }
+          if (vendutoString) {
+            vendutoBiglietteria = vendutoString;
+          }
+          if (metodoString) {
+            metodoAcquistoBiglietteria = metodoString;
+          }
+        } else if (servicioKey.includes('EXPRESS')) {
+          if (detalle.iata) {
+            iataFields.iataExpress = detalle.iata;
+          }
+          if (netoString) {
+            netoExpress = netoString;
+          }
+          if (vendutoString) {
+            vendutoExpress = vendutoString;
+          }
+          if (metodoString) {
+            metodoAcquistoExpress = metodoString;
+          }
+        } else if (servicioKey.includes('POLIZZA')) {
+          if (detalle.iata) {
+            iataFields.iataPolizza = detalle.iata;
+          }
+          if (netoString) {
+            netoPolizza = netoString;
+          }
+          if (vendutoString) {
+            vendutoPolizza = vendutoString;
+          }
+          if (metodoString) {
+            metodoAcquistoPolizza = metodoString;
+          }
+        } else if (servicioKey.includes('INVITO') || servicioKey.includes('LETTERA')) {
+          if (detalle.iata) {
+            iataFields.iataLetteraInvito = detalle.iata;
+          }
+          if (netoString) {
+            netoLetteraInvito = netoString;
+          }
+          if (vendutoString) {
+            vendutoLetteraInvito = vendutoString;
+          }
+          if (metodoString) {
+            metodoAcquistoLetteraInvito = metodoString;
+          }
+        } else if (servicioKey.includes('HOTEL')) {
+          if (detalle.iata) {
+            iataFields.iataHotel = detalle.iata;
+          }
+          if (netoString) {
+            netoHotel = netoString;
+          }
+          if (vendutoString) {
+            vendutoHotel = vendutoString;
+          }
+          if (metodoString) {
+            metodoAcquistoHotel = metodoString;
+          }
+        } else {
+          applyDynamicData();
+        }
+      });
+
+      const serviciosDataFinal: Record<string, { iata: string; neto: string; venduto: string; metodoDiAcquisto?: string }> =
+        Object.keys(serviciosDataCombinados).length > 0 ? serviciosDataCombinados : {};
+
+      const pasajeroResultado: PasajeroData = {
+        id: pasajero.id,
+        nombrePasajero: pasajero.nombrePasajero || '',
+        servicios,
+        andata: andataValue,
+        ritorno: ritornoValue,
+        ...iataFields,
+        serviciosData: serviciosDataFinal,
+        netoBiglietteria,
+        vendutoBiglietteria,
+        tieneExpress: pasajero.tieneExpress || false,
+        netoExpress,
+        vendutoExpress,
+        tienePolizza: pasajero.tienePolizza || false,
+        netoPolizza,
+        vendutoPolizza,
+        tieneLetteraInvito: pasajero.tieneLetteraInvito || false,
+        netoLetteraInvito,
+        vendutoLetteraInvito,
+        tieneHotel: pasajero.tieneHotel || false,
+        netoHotel,
+        vendutoHotel,
+        metodoAcquistoBiglietteria,
+        metodoAcquistoExpress,
+        metodoAcquistoPolizza,
+        metodoAcquistoLetteraInvito,
+        metodoAcquistoHotel,
+        serviciosDetalle: serviciosDetalleNormalizados,
+      };
+
+      pasajeroResultado.serviciosDetalle = serviciosDetalleNormalizados;
+
+      return pasajeroResultado;
     }) || [crearPasajeroVacio()];
     
     
     // Parsear metodoPagamento desde JSON o string
-    let metodoPagamentoArray: string[] = [];
-    if (Array.isArray(record.metodoPagamento)) {
-      metodoPagamentoArray = record.metodoPagamento;
-    } else if (typeof record.metodoPagamento === 'string') {
-      try {
-        // Intentar parsear como JSON
-        const parsed = JSON.parse(record.metodoPagamento);
-        metodoPagamentoArray = Array.isArray(parsed) ? parsed : [record.metodoPagamento];
-      } catch {
-        // Si no es JSON, usar como string simple (compatibilidad con registros antiguos)
-        metodoPagamentoArray = record.metodoPagamento ? [record.metodoPagamento] : [];
-      }
-    }
+    const metodoPagamentoArray = normalizeMetodoPagamentoArray(record.metodoPagamento);
     
     // Cargar datos del formulario
     setFormData({
@@ -1566,7 +2082,7 @@ export default function BiglietteriaPage() {
     });
     
     // Actualizar arrays de dropdowns
-    setShowServiziDropdowns(Array(pasajerosMapeados.length).fill(false));
+    setShowServiziDropdown(null);
     
     // Cargar datos de cuotas si existen - REPLICANDO LÓGICA DE TOUR GRUPPO
     if (record.numeroCuotas && record.numeroCuotas > 0) {
@@ -1958,7 +2474,7 @@ export default function BiglietteriaPage() {
                             }}
                             className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-xs text-gray-900 dark:text-white"
                           >
-                            {nombreCompleto} ({usuario.role})
+                            {nombreCompleto}
                           </div>
                         );
                       })}
@@ -2141,6 +2657,7 @@ export default function BiglietteriaPage() {
                               throw new Error('Error al actualizar');
                             }
                           } catch (error) {
+                            console.error('Error actualizando pagamento', error);
                             setMessage({
                               type: 'error',
                               text: 'Error al actualizar pagamento'
@@ -2203,14 +2720,14 @@ export default function BiglietteriaPage() {
                       // Extraer todos los servicios únicos de todos los pasajeros
                       const serviciosSet = new Set<string>();
                       if (record.pasajeros && Array.isArray(record.pasajeros)) {
-                        record.pasajeros.forEach((pasajero: any) => {
+                        record.pasajeros.forEach((pasajero: PasajeroApi) => {
                           if (pasajero.servicios && Array.isArray(pasajero.servicios)) {
                             pasajero.servicios.forEach((servicio: string) => {
                               serviciosSet.add(servicio.trim());
                             });
-                          } else if (pasajero.servizio) {
-                            // Compatibilidad con formato antiguo (servicio como string separado por comas)
-                            const servicios = pasajero.servizio.split(',').map((s: string) => s.trim());
+                          } else if (typeof pasajero.servizio === 'string') {
+                            // Compatibilidad con formato antiguo
+                            const servicios = pasajero.servizio.split(',').map((s) => s.trim());
                             servicios.forEach((servicio: string) => {
                               serviciosSet.add(servicio);
                             });
@@ -2887,7 +3404,7 @@ export default function BiglietteriaPage() {
                           <h5 className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-3">
                             Costos Volo
                           </h5>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div>
                               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 IATA *
@@ -2960,6 +3477,23 @@ export default function BiglietteriaPage() {
                                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                               />
                             </div>
+                            <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Metodo di acquisto
+                              </label>
+                              <select
+                                value={pasajero.metodoAcquistoBiglietteria}
+                                onChange={(e) => handlePasajeroChange(index, 'metodoAcquistoBiglietteria', e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                              >
+                                <option value="">Seleziona...</option>
+                                {acquistoOptions.map(option => (
+                                  <option key={option} value={option}>
+                                    {option}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
                           </div>
                         </div>
                       )}
@@ -2977,7 +3511,7 @@ export default function BiglietteriaPage() {
                               <h6 className="text-sm font-semibold text-yellow-900 dark:text-yellow-300 mb-2">
                                 Express
                               </h6>
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                                 <div>
                                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     IATA *
@@ -3045,6 +3579,23 @@ export default function BiglietteriaPage() {
                                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                                   />
                                 </div>
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Metodo di acquisto
+                                  </label>
+                                  <select
+                                    value={pasajero.metodoAcquistoExpress}
+                                    onChange={(e) => handlePasajeroChange(index, 'metodoAcquistoExpress', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                                  >
+                                    <option value="">Seleziona...</option>
+                                    {acquistoOptions.map(option => (
+                                      <option key={option} value={option}>
+                                        {option}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
                               </div>
                             </div>
                           )}
@@ -3055,7 +3606,7 @@ export default function BiglietteriaPage() {
                               <h6 className="text-sm font-semibold text-green-900 dark:text-green-300 mb-2">
                                 Polizza
                               </h6>
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                                 <div>
                                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     IATA *
@@ -3123,6 +3674,23 @@ export default function BiglietteriaPage() {
                                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                                   />
                                 </div>
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Metodo di acquisto
+                                  </label>
+                                  <select
+                                    value={pasajero.metodoAcquistoPolizza}
+                                    onChange={(e) => handlePasajeroChange(index, 'metodoAcquistoPolizza', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                                  >
+                                    <option value="">Seleziona...</option>
+                                    {acquistoOptions.map(option => (
+                                      <option key={option} value={option}>
+                                        {option}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
                               </div>
                             </div>
                           )}
@@ -3133,7 +3701,7 @@ export default function BiglietteriaPage() {
                               <h6 className="text-sm font-semibold text-purple-900 dark:text-purple-300 mb-2">
                                 L.invito
                               </h6>
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                                 <div>
                                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     IATA *
@@ -3201,6 +3769,23 @@ export default function BiglietteriaPage() {
                                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                                   />
                                 </div>
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Metodo di acquisto
+                                  </label>
+                                  <select
+                                    value={pasajero.metodoAcquistoLetteraInvito}
+                                    onChange={(e) => handlePasajeroChange(index, 'metodoAcquistoLetteraInvito', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300.dark:border-gray-600 rounded-lg bg-white.dark:bg-gray-800 text-gray-900.dark:text-white"
+                                  >
+                                    <option value="">Seleziona...</option>
+                                    {acquistoOptions.map(option => (
+                                      <option key={option} value={option}>
+                                        {option}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
                               </div>
                             </div>
                           )}
@@ -3211,7 +3796,7 @@ export default function BiglietteriaPage() {
                               <h6 className="text-sm font-semibold text-red-900 dark:text-red-300 mb-2">
                                 Hotel
                               </h6>
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                                 <div>
                                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     IATA *
@@ -3279,6 +3864,23 @@ export default function BiglietteriaPage() {
                                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                                   />
                                 </div>
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Metodo di acquisto
+                                  </label>
+                                  <select
+                                    value={pasajero.metodoAcquistoHotel}
+                                    onChange={(e) => handlePasajeroChange(index, 'metodoAcquistoHotel', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                                  >
+                                    <option value="">Seleziona...</option>
+                                    {acquistoOptions.map(option => (
+                                      <option key={option} value={option}>
+                                        {option}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
                               </div>
                             </div>
                           )}
@@ -3287,7 +3889,7 @@ export default function BiglietteriaPage() {
                           {obtenerServiciosDinamicos(pasajero.servicios).map((servicio) => {
                             // Normalizar el nombre del servicio para usar como clave
                             const servicioKey = normalizarServicio(servicio);
-                            const servicioData = pasajero.serviciosData?.[servicioKey] || { iata: '', neto: '', venduto: '' };
+                            const servicioData = pasajero.serviciosData?.[servicioKey] || { iata: '', neto: '', venduto: '', metodoDiAcquisto: '' };
                             
                             // Colores diferentes para cada servicio (usando hash simple)
                             const colores = [
@@ -3305,7 +3907,7 @@ export default function BiglietteriaPage() {
                                 <h6 className={`text-sm font-semibold ${color.text} ${color.darkText} mb-2`}>
                                   {servicio}
                                 </h6>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                                   <div>
                                     <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                                       IATA *
@@ -3387,6 +3989,27 @@ export default function BiglietteriaPage() {
                                       }}
                                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                                     />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                      Metodo di acquisto
+                                    </label>
+                                <select
+                                  value={servicioData.metodoDiAcquisto || ''}
+                                  onChange={(e) => {
+                                    const newData = { ...servicioData, metodoDiAcquisto: e.target.value };
+                                    const updatedData = { ...(pasajero.serviciosData || {}), [servicioKey]: newData };
+                                    handlePasajeroChange(index, 'serviciosData', updatedData);
+                                  }}
+                                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                                >
+                                  <option value="">Seleziona...</option>
+                                  {acquistoOptions.map(option => (
+                                    <option key={`${servicioKey}-${option}`} value={option}>
+                                      {option}
+                                    </option>
+                                  ))}
+                                </select>
                                   </div>
                                 </div>
                               </div>
@@ -3873,8 +4496,8 @@ export default function BiglietteriaPage() {
       {isDetailsModalOpen && viewingDetails && createPortal(
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999999999] p-2">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-6xl w-full max-h-[95vh] overflow-y-auto">
-            <div className="p-4">
-              <div className="flex justify-between items-center mb-4">
+            <div className="p-6 space-y-5">
+              <div className="flex justify-between items-center">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                   Detalles del Registro
                 </h2>
@@ -3888,141 +4511,314 @@ export default function BiglietteriaPage() {
                 </button>
               </div>
 
+              {/* Información general */}
+              <div className="bg-slate-50 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-700 rounded-lg p-4 space-y-4">
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                  Información general
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+                  <div>
+                    <p className="text-slate-500 dark:text-slate-400">Cliente</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {viewingDetails.cliente || '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 dark:text-slate-400">PNR</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {viewingDetails.pnr || '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 dark:text-slate-400">Itinerario</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {viewingDetails.itinerario || '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 dark:text-slate-400">Fecha registro</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {formatDateDisplay(viewingDetails.createdAt)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 dark:text-slate-400">Última actualización</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {formatDateDisplay(viewingDetails.updatedAt)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 dark:text-slate-400">Agente</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {(() => {
+                        if (viewingDetails.creator) {
+                          const fullName = `${viewingDetails.creator.firstName || ''} ${viewingDetails.creator.lastName || ''}`.trim();
+                          return fullName || viewingDetails.creator.email || '-';
+                        }
+                        return viewingDetails.creadoPor || '-';
+                      })()}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+                  <div>
+                    <p className="text-slate-500 dark:text-slate-400">Estado general (Pagamento)</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {viewingDetails.pagamento || '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 dark:text-slate-400">Método(s) de pago</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {(() => {
+                        const methods = viewingDetails.metodoPagamentoParsed && viewingDetails.metodoPagamentoParsed.length > 0
+                          ? viewingDetails.metodoPagamentoParsed
+                          : viewingDetails.metodoPagamento || [];
+                        if (Array.isArray(methods)) {
+                          const values = methods.map((m) => (typeof m === 'string' ? m : String(m))).filter((m) => m.trim().length > 0);
+                          return values.length > 0 ? values.join(', ') : '-';
+                        }
+                        return methods ? String(methods) : '-';
+                      })()}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 dark:text-slate-400">N.º Pasajeros</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {viewingDetails.numeroPasajeros ?? viewingDetails.pasajeros?.length ?? 0}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 dark:text-slate-400">N.º Cuotas</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {viewingDetails.numeroCuotas ?? (viewingDetails.cuotas ? viewingDetails.cuotas.length : 0)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+                  <div>
+                    <p className="text-slate-500 dark:text-slate-400">Total Neto</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {formatCurrencyDisplay(viewingDetails.netoPrincipal)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 dark:text-slate-400">Total Venduto</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {formatCurrencyDisplay(viewingDetails.vendutoTotal)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 dark:text-slate-400">Pagato / Acconto</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {formatCurrencyDisplay(viewingDetails.acconto)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 dark:text-slate-400">Da pagare</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {formatCurrencyDisplay(viewingDetails.daPagare)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+                  <div>
+                    <p className="text-slate-500 dark:text-slate-400">Fee / AGV</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {formatCurrencyDisplay(viewingDetails.feeAgv)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 dark:text-slate-400">Teléfono</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {viewingDetails.numeroTelefono || '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 dark:text-slate-400">Correo</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {viewingDetails.email || '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 dark:text-slate-400">Dirección</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {viewingDetails.indirizzo || '-'}
+                    </p>
+                  </div>
+                </div>
+              </div>
 
               {/* Pasajeros y Servicios */}
-              <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3">
-                <h3 className="text-base font-semibold text-purple-900 dark:text-purple-300 mb-3">
-                  Pasajeros y Servicios
+              <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 space-y-3 border border-purple-200 dark:border-purple-800">
+                <h3 className="text-base font-semibold text-purple-900 dark:text-purple-200">
+                  Pasajeros y servicios individualizados
                 </h3>
                 {viewingDetails.pasajeros && viewingDetails.pasajeros.length > 0 ? (
-                  <div className="space-y-3">
-                    {viewingDetails.pasajeros.map((pasajero, index) => (
-                      <div key={index} className="border border-purple-200 dark:border-purple-700 rounded-lg p-3">
-                        <h4 className="font-semibold text-purple-800 dark:text-purple-200 mb-2 text-sm">
-                          {index + 1}. {pasajero.nombrePasajero}
-                        </h4>
-                        
-                        {/* Fechas de viaje e IATA (si aplica) */}
-                        {(pasajero.andata || pasajero.ritorno || pasajero.iata) && (
-                          <div className="mb-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-xs">
-                            <div className="flex gap-4 flex-wrap">
-                              {pasajero.iata && (
-                                <div>
-                                  <span className="font-medium text-blue-700 dark:text-blue-300">IATA:</span>
-                                  <span className="text-gray-700 dark:text-gray-300 ml-1">{pasajero.iata}</span>
-                                </div>
-                              )}
-                              {pasajero.andata && (
-                                <div>
-                                  <span className="font-medium text-blue-700 dark:text-blue-300">Fecha Ida:</span>
-                                  <span className="text-gray-700 dark:text-gray-300 ml-1">{new Date(pasajero.andata).toLocaleDateString('it-IT')}</span>
-                                </div>
-                              )}
-                              {pasajero.ritorno && (
-                                <div>
-                                  <span className="font-medium text-blue-700 dark:text-blue-300">Fecha Vuelta:</span>
-                                  <span className="text-gray-700 dark:text-gray-300 ml-1">{new Date(pasajero.ritorno).toLocaleDateString('it-IT')}</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Servicios con costos organizados */}
-                        <div className="space-y-2">
-                          {(() => {
-                            const servicios = [
-                              {
-                                nombre: 'VOLO',
-                                neto: pasajero.netoBiglietteria,
-                                venduto: pasajero.vendutoBiglietteria,
-                                mostrar: !!pasajero.netoBiglietteria
-                              },
-                              {
-                                nombre: 'EXPRESS',
-                                neto: pasajero.netoExpress,
-                                venduto: pasajero.vendutoExpress,
-                                mostrar: pasajero.tieneExpress
-                              },
-                              {
-                                nombre: 'POLIZZA',
-                                neto: pasajero.netoPolizza,
-                                venduto: pasajero.vendutoPolizza,
-                                mostrar: pasajero.tienePolizza
-                              },
-                              {
-                                nombre: 'L.INVITO',
-                                neto: pasajero.netoLetteraInvito,
-                                venduto: pasajero.vendutoLetteraInvito,
-                                mostrar: pasajero.tieneLetteraInvito
-                              },
-                              {
-                                nombre: 'HOTEL',
-                                neto: pasajero.netoHotel,
-                                venduto: pasajero.vendutoHotel,
-                                mostrar: pasajero.tieneHotel
-                              }
-                            ].filter(s => s.mostrar);
-
-                            return servicios.map((servicio, idx) => (
-                              <div key={idx} className="p-2 bg-gray-50 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
-                                <div className="flex items-center justify-between mb-1">
-                                  <span className="font-semibold text-gray-700 dark:text-gray-300 text-sm">{servicio.nombre}</span>
-                                </div>
-                                <div className="grid grid-cols-2 gap-2 text-xs">
-                                  <div className="flex justify-between">
-                                    <span className="text-gray-600 dark:text-gray-400">Neto:</span>
-                                    <span className="font-medium">€{servicio.neto || 0}</span>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <span className="text-gray-600 dark:text-gray-400">Venduto:</span>
-                                    <span className="font-medium">€{servicio.venduto || 0}</span>
-                                  </div>
-                                </div>
+                  <div className="space-y-4">
+                    {viewingDetails.pasajeros.map((pasajero, index) => {
+                      const serviciosDetallados = getServiciosDetallados(pasajero);
+                      return (
+                        <div key={index} className="bg-white dark:bg-gray-900/40 rounded-lg border border-purple-200 dark:border-purple-700 p-4 space-y-3">
+                          <div className="flex flex-wrap justify-between items-center gap-2">
+                            <h4 className="font-semibold text-purple-900 dark:text-purple-100 text-sm">
+                              {index + 1}. {pasajero.nombrePasajero || 'Pasajero sin nombre'}
+                            </h4>
+                            {pasajero.andata || pasajero.ritorno ? (
+                              <div className="flex flex-wrap gap-3 text-xs text-purple-800 dark:text-purple-200">
+                                {pasajero.andata && (
+                                  <span>
+                                    <span className="font-medium">Fecha ida:</span> {formatDateDisplay(pasajero.andata)}
+                                  </span>
+                                )}
+                                {pasajero.ritorno && (
+                                  <span>
+                                    <span className="font-medium">Fecha vuelta:</span> {formatDateDisplay(pasajero.ritorno)}
+                                  </span>
+                                )}
                               </div>
-                            ));
-                          })()}
+                            ) : null}
+                          </div>
+
+                          {serviciosDetallados.length > 0 ? (
+                            <div className="overflow-x-auto rounded-lg border border-purple-100 dark:border-purple-800">
+                              <table className="min-w-full divide-y divide-purple-100 dark:divide-purple-800 text-xs">
+                                <thead className="bg-purple-100 dark:bg-purple-900/50 text-purple-900 dark:text-purple-100">
+                                  <tr>
+                                    <th className="px-3 py-2 text-left font-semibold">Servicio</th>
+                                    <th className="px-3 py-2 text-left font-semibold">Método compra</th>
+                                    <th className="px-3 py-2 text-left font-semibold">IATA / Proveedor</th>
+                                    <th className="px-3 py-2 text-left font-semibold">Fecha ida</th>
+                                    <th className="px-3 py-2 text-left font-semibold">Fecha vuelta</th>
+                                    <th className="px-3 py-2 text-right font-semibold">Neto</th>
+                                    <th className="px-3 py-2 text-right font-semibold">Venduto</th>
+                                    <th className="px-3 py-2 text-center font-semibold">Estado</th>
+                                    <th className="px-3 py-2 text-left font-semibold">Fecha pago</th>
+                                    <th className="px-3 py-2 text-left font-semibold">Fecha activación</th>
+                                    <th className="px-3 py-2 text-left font-semibold">Notas</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-purple-50 dark:divide-purple-900/40 bg-white dark:bg-gray-900">
+                                  {serviciosDetallados.map((detalle, idx) => {
+                                    const { label, className } = getEstadoVisual(detalle.estado);
+                                    return (
+                                      <tr key={detalle.id ?? `${detalle.servicio}-${idx}`} className="hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors">
+                                        <td className="px-3 py-2 font-medium text-gray-800 dark:text-gray-100">
+                                          {detalle.servicio || '-'}
+                                        </td>
+                                        <td className="px-3 py-2 text-gray-700 dark:text-gray-200">
+                                          {detalle.metodoDiAcquisto && detalle.metodoDiAcquisto.trim() ? detalle.metodoDiAcquisto : '-'}
+                                        </td>
+                                        <td className="px-3 py-2 text-gray-700 dark:text-gray-200">
+                                          {detalle.iata && detalle.iata.trim() ? detalle.iata : '-'}
+                                        </td>
+                                        <td className="px-3 py-2 text-gray-700 dark:text-gray-200">
+                                          {formatDateDisplay(detalle.andata || null)}
+                                        </td>
+                                        <td className="px-3 py-2 text-gray-700 dark:text-gray-200">
+                                          {formatDateDisplay(detalle.ritorno || null)}
+                                        </td>
+                                        <td className="px-3 py-2 text-right text-gray-800 dark:text-gray-100">
+                                          {formatCurrencyDisplay(detalle.neto ?? null)}
+                                        </td>
+                                        <td className="px-3 py-2 text-right text-gray-800 dark:text-gray-100">
+                                          {formatCurrencyDisplay(detalle.venduto ?? null)}
+                                        </td>
+                                        <td className="px-3 py-2 text-center">
+                                          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${className}`}>
+                                            {label}
+                                          </span>
+                                        </td>
+                                        <td className="px-3 py-2 text-gray-700 dark:text-gray-200">
+                                          {formatDateDisplay(detalle.fechaPago || null)}
+                                        </td>
+                                        <td className="px-3 py-2 text-gray-700 dark:text-gray-200">
+                                          {formatDateDisplay(detalle.fechaActivacion || null)}
+                                        </td>
+                                        <td className="px-3 py-2 text-gray-700 dark:text-gray-200 max-w-[160px]">
+                                          {getReadableNotes(detalle.notas) || '-'}
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          ) : (
+                            <p className="text-xs text-purple-800 dark:text-purple-200 italic">
+                              No se registraron servicios detallados para este pasajero.
+                            </p>
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
-                  <p className="text-gray-500 dark:text-gray-400 text-xs text-center py-4">No hay pasajeros registrados</p>
+                  <p className="text-gray-600 dark:text-gray-300 text-xs text-center py-4">
+                    No hay pasajeros registrados en este expediente.
+                  </p>
                 )}
               </div>
 
-              {/* Cuotas - Solo si existen */}
+              {/* Cuotas */}
               {viewingDetails.cuotas && viewingDetails.cuotas.length > 0 && (
-                <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-3 mt-4">
-                  <h3 className="text-base font-semibold text-orange-900 dark:text-orange-300 mb-3">
-                    Sistema de Cuotas ({viewingDetails.cuotas.length} cuota{viewingDetails.cuotas.length !== 1 ? 's' : ''})
+                <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 space-y-3 border border-orange-200 dark:border-orange-800">
+                  <h3 className="text-base font-semibold text-orange-900 dark:text-orange-200">
+                    Sistema de cuotas ({viewingDetails.cuotas.length} {viewingDetails.cuotas.length === 1 ? 'cuota' : 'cuotas'})
                   </h3>
-                  <div className="space-y-2">
-                    {viewingDetails.cuotas.map((cuota, index) => (
-                      <div key={index} className="bg-white dark:bg-gray-800 rounded border border-orange-200 dark:border-orange-700 p-2">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="font-semibold text-orange-700 dark:text-orange-300 text-sm">
-                            Cuota {cuota.numeroCuota}
-                          </span>
-                          <span className="font-bold text-green-600 dark:text-green-400">€{cuota.prezzo}</span>
+                  <div className="space-y-3">
+                    {viewingDetails.cuotas.map((cuota, index) => {
+                      const { label, className } = getEstadoVisual(cuota.isPagato ? 'Pagado' : 'Pendiente');
+                      return (
+                        <div key={index} className="bg-white dark:bg-gray-900/40 border border-orange-200 dark:border-orange-700 rounded-lg p-4 space-y-3">
+                          <div className="flex flex-wrap justify-between items-center gap-2">
+                            <div>
+                              <p className="text-sm font-semibold text-orange-800 dark:text-orange-200">
+                                Cuota {cuota.numeroCuota}
+                              </p>
+                              <p className="text-xs text-orange-700 dark:text-orange-300">
+                                Fecha programada: {formatDateDisplay(cuota.data)}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className="text-sm font-bold text-green-700 dark:text-green-300">
+                                {formatCurrencyDisplay(cuota.prezzo)}
+                              </span>
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${className}`}>
+                                {label}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-gray-700 dark:text-gray-200">
+                            <div>
+                              <span className="font-medium">Notas:</span>{' '}
+                              <span>{getReadableNotes(cuota.note) || 'Sin notas'}</span>
+                            </div>
+                            <div>
+                              <span className="font-medium">Archivo:</span>{' '}
+                              <span>
+                                {cuota.attachedFile
+                                  ? cuota.attachedFileName || 'Adjunto disponible en la sección de archivos'
+                                  : 'Sin archivo adjunto'}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex justify-between items-center text-xs">
-                          <span className="text-gray-600 dark:text-gray-400">
-                            {cuota.data ? new Date(cuota.data).toLocaleDateString('it-IT') : 'No definida'}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
 
-
               {/* Botón de cierre */}
-              <div className="flex justify-end mt-4">
+              <div className="flex justify-end">
                 <button
                   onClick={handleCloseDetailsModal}
-                  className="px-3 py-1.5 bg-gray-500 hover:bg-gray-600 text-white rounded text-sm transition-colors"
+                  className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-sm transition-colors"
                 >
                   Cerrar
                 </button>
@@ -4248,18 +5044,14 @@ export default function BiglietteriaPage() {
 
         {/* Tabla de detalles de pasajeros */}
         <PassengerDetailsTable
-          records={records}
           isOpen={isPassengerDetailsOpen}
           onClose={handleClosePassengerDetails}
-          onUpdateRecords={setRecords}
         />
 
         {/* Tabla simplificada de detalles de pasajeros */}
         <PassengerDetailsTableSimple
-          records={records}
           isOpen={isPassengerDetailsSimpleOpen}
           onClose={handleClosePassengerDetailsSimple}
-          onUpdateRecords={setRecords}
         />
     </div>
   );

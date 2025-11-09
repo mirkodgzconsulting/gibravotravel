@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import puppeteer from 'puppeteer-core';
+import puppeteerCore from 'puppeteer-core';
 import chromium from '@sparticuz/chromium';
 import fs from 'fs';
 import path from 'path';
@@ -42,14 +42,6 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       );
     }
-
-    // Función para normalizar servicios (eliminar duplicados y estandarizar)
-    const normalizeServizi = (servizi: string[]): string[] => {
-      if (!Array.isArray(servizi)) return [];
-      
-      const uniqueServizi = [...new Set(servizi)];
-      return uniqueServizi.filter(s => s && s.trim() !== '');
-    };
 
     // Generar datos para la plantilla
     const agenteName = record.creator 
@@ -174,13 +166,9 @@ export async function POST(request: NextRequest) {
       cuotas: (record.cuotas || []).map(cuota => {
         let fechaFormateada = 'Sin fecha';
         if (cuota.data) {
-          try {
-            const fecha = new Date(cuota.data);
-            if (!isNaN(fecha.getTime())) {
-              fechaFormateada = fecha.toLocaleDateString('it-IT');
-            }
-          } catch (error) {
-            // Error silencioso - usar fecha por defecto
+          const fecha = new Date(cuota.data);
+          if (!Number.isNaN(fecha.getTime())) {
+            fechaFormateada = fecha.toLocaleDateString('it-IT');
           }
         }
         
@@ -263,7 +251,7 @@ export async function POST(request: NextRequest) {
     
     // Procesar pasajeros PRIMERO para evitar duplicados
     if (data.pasajeros && Array.isArray(data.pasajeros) && data.pasajeros.length > 0) {
-      const pasajerosArray = data.pasajeros.filter((p: any): p is { nombre: string; servizio: string } => 
+      const pasajerosArray = data.pasajeros.filter((p): p is { nombre: string; servizio: string } => 
         typeof p === 'object' && p !== null && 'nombre' in p
       );
       const nombresUnicosSet = new Set<string>();
@@ -357,68 +345,96 @@ export async function POST(request: NextRequest) {
       html = html.replace('src="logo.png"', `src="${logoBase64}"`);
     }
 
-    // Generar PDF con Puppeteer
-    // Configuración optimizada para Vercel con Chrome incluido
+    // Generar PDF con Puppeteer (local y producción)
     const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
-    
-    const puppeteerConfig = isProduction ? {
-      args: chromium.args,
-      executablePath: await chromium.executablePath(),
-      headless: true,
-    } : {
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--no-first-run',
-        '--no-zygote',
-        '--single-process',
-        '--disable-gpu',
-        '--disable-web-security',
-        '--disable-features=VizDisplayCompositor'
-      ]
-    };
-    
-    const browser = await puppeteer.launch(puppeteerConfig);
-    const page = await browser.newPage();
-    
-    // Configurar viewport
-    await page.setViewport({ width: 1200, height: 800 });
-    
-    // Establecer contenido HTML
-    await page.setContent(html, { 
-      waitUntil: 'networkidle0',
-      timeout: 30000
-    });
-    
-    // Generar PDF
-    const pdfBuffer = await page.pdf({
-      format: 'A4',
-      margin: {
-        top: '10mm',
-        right: '10mm',
-        bottom: '10mm',
-        left: '10mm'
-      },
-      printBackground: true,
-      timeout: 30000
-    });
-    
-    await browser.close();
 
-    // Crear el nombre del archivo
-    const fileName = `Ricevuta_${record.cliente.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`;
+    let browser: import('puppeteer-core').Browser | null = null;
 
-    // Retornar el documento como respuesta
-    return new NextResponse(pdfBuffer as any, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${fileName}"`,
-      },
-    });
+    try {
+      if (isProduction) {
+        const executablePath = await chromium.executablePath();
+        if (!executablePath) {
+          throw new Error('Chromium executable path not found in production environment');
+        }
+
+        browser = await puppeteerCore.launch({
+          args: chromium.args,
+          executablePath,
+          headless: true,
+        });
+      } else {
+        const { default: puppeteer } = await import('puppeteer');
+        const executablePath = process.env.CHROME_EXECUTABLE_PATH || undefined;
+
+        browser = await puppeteer.launch({
+          headless: true,
+          executablePath,
+          args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--disable-gpu',
+            '--disable-web-security',
+            '--disable-features=VizDisplayCompositor',
+          ],
+        }) as unknown as import('puppeteer-core').Browser;
+      }
+
+      if (!browser) {
+        throw new Error('Unable to launch browser instance for PDF generation');
+      }
+
+      const page = await browser.newPage();
+
+      // Configurar viewport
+      await page.setViewport({ width: 1200, height: 800 });
+
+      // Establecer contenido HTML
+      await page.setContent(html, {
+        waitUntil: 'networkidle0',
+        timeout: 30000,
+      });
+
+      // Generar PDF
+      const pdfBuffer = await page.pdf({
+        format: 'A4',
+        margin: {
+          top: '10mm',
+          right: '10mm',
+          bottom: '10mm',
+          left: '10mm',
+        },
+        printBackground: true,
+        timeout: 30000,
+      });
+
+      // Crear el nombre del archivo
+      const fileName = `Ricevuta_${record.cliente.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`;
+
+      // Retornar el documento como respuesta
+      const pdfArray = new Uint8Array(pdfBuffer);
+
+      return new NextResponse(pdfArray, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `attachment; filename="${fileName}"`,
+        },
+      });
+
+    } finally {
+      if (browser) {
+        try {
+          await browser.close();
+          browser = null;
+        } catch (closeError) {
+          console.error('Error closing browser after ricevuta generation:', closeError);
+        }
+      }
+    }
 
   } catch (error) {
     console.error('Error generating ricevuta:', error);

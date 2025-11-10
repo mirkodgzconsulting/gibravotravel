@@ -278,8 +278,8 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ isOpen, o
       'Neto Servicio': item.neto || 0,
       IATA: item.iata || '',
       PNR: item.pnr || '',
-      'Fecha Ida': formatDate(item.servicio.toLowerCase().includes('volo') ? item.andata : null),
-      'Fecha Vuelta': formatDate(item.servicio.toLowerCase().includes('volo') ? item.ritorno : null),
+      'Fecha Ida': formatDate(item.servicio && ['volo', 'express', 'polizza'].some(keyword => item.servicio.toLowerCase().includes(keyword)) ? item.andata : null),
+      'Fecha Vuelta': formatDate(item.servicio && ['volo', 'express', 'polizza'].some(keyword => item.servicio.toLowerCase().includes(keyword)) ? item.ritorno : null),
       Itinerario: item.itinerario || '',
       Netto: item.neto || 0,
       Venduto: item.venduto || 0,
@@ -371,7 +371,7 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ isOpen, o
         </div>
 
         <div className="p-4 border-b border-gray-200 dark:border-gray-700 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
             <div className="relative">
               <input
                 type="text"
@@ -384,38 +384,38 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ isOpen, o
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
-              <div>
+            <div>
               <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Filtra per IATA
               </label>
-                <input
-                  type="text"
+              <input
+                type="text"
                 placeholder="Cerca IATA..."
-                  value={filtroIata}
-                  onChange={(e) => setFiltroIata(e.target.value)}
-                  className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-              </div>
-              <div>
+                value={filtroIata}
+                onChange={(e) => setFiltroIata(e.target.value)}
+                className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+            </div>
+            <div>
               <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Filtra per PNR
               </label>
-                <input
-                  type="text"
+              <input
+                type="text"
                 placeholder="Cerca PNR..."
-                  value={filtroPnr}
-                  onChange={(e) => setFiltroPnr(e.target.value)}
-                  className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-              </div>
-              <div>
+                value={filtroPnr}
+                onChange={(e) => setFiltroPnr(e.target.value)}
+                className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+            </div>
+            <div>
               <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Servicio
               </label>
               <select
                 value={servicioFilter}
                 onChange={(e) => setServicioFilter(e.target.value)}
-                  className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-purple-500 focus-border-transparent"
               >
                 <option value="">Tutti</option>
                 {servicioOptions.map(([value, label]) => (
@@ -424,36 +424,36 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ isOpen, o
                   </option>
                 ))}
               </select>
-              </div>
-              <div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Metodo di acquisto
+              </label>
+              <input
+                type="text"
+                placeholder="Cerca metodo..."
+                value={metodoCompraFilter}
+                onChange={(e) => setMetodoCompraFilter(e.target.value)}
+                className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-purple-500 focus-border-transparent"
+              />
+            </div>
+            <div>
               <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Stato
               </label>
               <select
                 value={estadoFilter}
                 onChange={(e) => setEstadoFilter(e.target.value)}
-                className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-purple-500 focus-border-transparent"
               >
                 <option value="">Tutti</option>
                 <option value="Pendiente">Attesa</option>
                 <option value="Pagado">Pagato</option>
               </select>
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Metodo di acquisto
-              </label>
-                <input
-                type="text"
-                placeholder="Cerca metodo..."
-                value={metodoCompraFilter}
-                onChange={(e) => setMetodoCompraFilter(e.target.value)}
-                  className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-3">
             {[
               {
                 label: 'Data registrazione da',
@@ -538,40 +538,48 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ isOpen, o
                 />
               </div>
             ))}
-            </div>
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            <div>
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+            <div className="w-full lg:w-auto">
               <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Stato
+                Mostra
               </label>
               <select
-                value={estadoFilter}
-                onChange={(e) => setEstadoFilter(e.target.value)}
-                className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                value={itemsPerPage}
+                onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-purple-500 focus-border-transparent"
               >
-                <option value="">Todos</option>
-                <option value="Pagado">Pagato</option>
-                <option value="Pendiente">Attesa</option>
+                {ITEMS_PER_PAGE_OPTIONS.map(option => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
               </select>
             </div>
-            <div className="flex items-end justify-between gap-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Mostra
-                </label>
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                >
-                  {ITEMS_PER_PAGE_OPTIONS.map(option => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </div>
+
+            <div className="flex flex-wrap items-center justify-start gap-2 lg:justify-end">
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setFiltroIata('');
+                  setFiltroPnr('');
+                  setServicioFilter('');
+                  setMetodoCompraFilter('');
+                  setEstadoFilter('');
+                  setFechaDesde('');
+                  setFechaHasta('');
+                  setFechaIdaDesde('');
+                  setFechaIdaHasta('');
+                  setFechaVueltaDesde('');
+                  setFechaVueltaHasta('');
+                  setFechaActivacionDesde('');
+                  setFechaActivacionHasta('');
+                }}
+                className="px-4 py-2 text-xs font-medium border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-100 transition-colors dark:border-gray-600 dark:text-white dark:bg-gray-800 dark:hover:bg-gray-700"
+              >
+                Pulisci filtri
+              </button>
               <button
                 onClick={exportToExcel}
                 className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-xs"
@@ -585,13 +593,13 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ isOpen, o
           </div>
         </div>
 
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-hidden">
           <div className="p-3">
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-x-auto">
-              <div className="min-w-full inline-block align-middle">
+              <div className="min-w-full inline-block align-middle max-h-[75vh] overflow-y-auto relative">
                 <Table>
-                <TableHeader className="sticky top-0 z-10 bg-gray-700 shadow-sm">
-                  <TableRow className="bg-gray-700 border-b-2 border-gray-600">
+                  <TableHeader className="bg-gray-700">
+                    <TableRow className="bg-gray-700 border-b-2 border-gray-600">
                       {[
                         'Cliente',
                         'Pagamento',
@@ -612,19 +620,23 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ isOpen, o
                         'Note',
                         'Data Registrazione',
                         'Creato da',
-                      ].map((header) => (
-                        <TableCell
-                          key={header}
-                          isHeader={true}
-                          className={`font-bold text-white py-3 px-4 text-xs uppercase tracking-wide bg-gray-700 ${
-                            ['Netto Servizio', 'Venduto'].includes(header) ? 'text-right' : 'text-left'
-                          }`}
-                        >
-                          {header}
-                        </TableCell>
-                      ))}
-                  </TableRow>
-                </TableHeader>
+                      ].map((header) => {
+                        const baseClasses = 'bg-gray-700 text-white uppercase tracking-wide text-xs font-bold py-3 px-4';
+                        const alignmentClass = ['Netto Servizio', 'Venduto'].includes(header) ? 'text-right' : 'text-left';
+                        const shadowClass = 'shadow-sm';
+                        return (
+                          <TableCell
+                            key={header}
+                            isHeader={true}
+                            className={`${baseClasses} ${alignmentClass} ${shadowClass}`}
+                            style={{ position: 'sticky', top: 0, zIndex: 50 }}
+                          >
+                            {header}
+                          </TableCell>
+                        );
+                      })}
+                    </TableRow>
+                  </TableHeader>
                 <TableBody>
                     {loading ? (
                       <TableRow>
@@ -679,10 +691,14 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ isOpen, o
                             {item.pnr || '-'}
                         </TableCell>
                           <TableCell className="py-2 px-3 text-xs text-gray-700 dark:text-gray-300">
-                        {item.servicio.toLowerCase().includes('volo') ? formatDate(item.andata) : '-'}
+                        {item.servicio && ['volo', 'express', 'polizza'].some(keyword => item.servicio.toLowerCase().includes(keyword))
+                          ? formatDate(item.andata)
+                          : '-'}
                         </TableCell>
                           <TableCell className="py-2 px-3 text-xs text-gray-700 dark:text-gray-300">
-                        {item.servicio.toLowerCase().includes('volo') ? formatDate(item.ritorno) : '-'}
+                        {item.servicio && ['volo', 'express', 'polizza'].some(keyword => item.servicio.toLowerCase().includes(keyword))
+                          ? formatDate(item.ritorno)
+                          : '-'}
                         </TableCell>
                           <TableCell className="py-2 px-3 text-xs text-gray-700 dark:text-gray-300 truncate max-w-[160px]">
                             <span title={item.itinerario || ''}>

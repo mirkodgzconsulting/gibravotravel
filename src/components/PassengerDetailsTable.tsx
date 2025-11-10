@@ -13,7 +13,14 @@ import {
 import usePassengerServiceDetails, { PassengerServiceUpdatePayload } from '@/hooks/usePassengerServiceDetails';
 import { useUserRole } from '@/hooks/useUserRole';
 
-const ITEMS_PER_PAGE_OPTIONS = [10, 25, 50, 100];
+type ItemsPerPageOption = number | 'ALL';
+
+const ITEMS_PER_PAGE_OPTIONS: Array<{ value: ItemsPerPageOption; label: string }> = [
+  { value: 'ALL', label: 'Tutti' },
+  { value: 25, label: '25' },
+  { value: 50, label: '50' },
+  { value: 100, label: '100' },
+];
 
 const formatCurrency = (value: number | null | undefined) => {
   if (value === null || value === undefined) return '-';
@@ -107,7 +114,7 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ isOpen, o
   }, [details]);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [itemsPerPage, setItemsPerPage] = useState<ItemsPerPageOption>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [filtroIata, setFiltroIata] = useState('');
   const [filtroPnr, setFiltroPnr] = useState('');
@@ -264,9 +271,28 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ isOpen, o
     itemsPerPage,
   ]);
 
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage) || 1;
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentData = filteredData.slice(startIndex, startIndex + itemsPerPage);
+  useEffect(() => {
+    if (itemsPerPage === 'ALL') {
+      setCurrentPage(1);
+    }
+  }, [itemsPerPage]);
+
+  useEffect(() => {
+    if (itemsPerPage === 'ALL') return;
+    const maxPage = Math.max(1, Math.ceil(filteredData.length / itemsPerPage));
+    if (currentPage > maxPage) {
+      setCurrentPage(maxPage);
+    }
+  }, [filteredData.length, itemsPerPage, currentPage]);
+
+  const totalPages =
+    itemsPerPage === 'ALL' ? 1 : Math.ceil(filteredData.length / itemsPerPage) || 1;
+  const startIndex =
+    itemsPerPage === 'ALL' ? 0 : (currentPage - 1) * itemsPerPage;
+  const currentData =
+    itemsPerPage === 'ALL'
+      ? filteredData
+      : filteredData.slice(startIndex, startIndex + itemsPerPage);
   const totalNeto = filteredData.reduce((sum, item) => sum + (item.neto || 0), 0);
   const totalVenduto = filteredData.reduce((sum, item) => sum + (item.venduto || 0), 0);
 
@@ -546,13 +572,19 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ isOpen, o
                 Mostra
               </label>
               <select
-                value={itemsPerPage}
-                onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                value={itemsPerPage === 'ALL' ? 'ALL' : itemsPerPage.toString()}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setItemsPerPage(value === 'ALL' ? 'ALL' : Number(value));
+                }}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-purple-500 focus-border-transparent"
               >
-                {ITEMS_PER_PAGE_OPTIONS.map(option => (
-                  <option key={option} value={option}>
-                    {option}
+                {ITEMS_PER_PAGE_OPTIONS.map((option) => (
+                  <option
+                    key={option.value}
+                    value={option.value === 'ALL' ? 'ALL' : option.value.toString()}
+                  >
+                    {option.label}
                   </option>
                 ))}
               </select>
@@ -593,10 +625,10 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ isOpen, o
           </div>
         </div>
 
-        <div className="flex-1 overflow-hidden">
-          <div className="p-3">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-x-auto">
-              <div className="min-w-full inline-block align-middle max-h-[75vh] overflow-y-auto relative">
+        <div className="flex-1 overflow-hidden min-h-0">
+          <div className="p-3 h-full flex flex-col min-h-0">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-x-auto flex-1 flex flex-col min-h-0">
+              <div className="min-w-full inline-block align-middle overflow-y-auto relative flex-1">
                 <Table>
                   <TableHeader className="bg-gray-700">
                     <TableRow className="bg-gray-700 border-b-2 border-gray-600">
@@ -947,8 +979,17 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ isOpen, o
         <div className="p-4 border-t border-gray-200 dark:border-gray-700">
           <div className="flex justify-between items-center">
             <div className="text-xs text-gray-500 dark:text-gray-400">
-              Visualizzazione {filteredData.length === 0 ? 0 : startIndex + 1} -{' '}
-              {Math.min(startIndex + itemsPerPage, filteredData.length)} di {filteredData.length} record
+              Visualizzazione{' '}
+              {filteredData.length === 0
+                ? 0
+                : itemsPerPage === 'ALL'
+                ? 1
+                : startIndex + 1}{' '}
+              -{' '}
+              {itemsPerPage === 'ALL'
+                ? filteredData.length
+                : Math.min(startIndex + (itemsPerPage as number), filteredData.length)}{' '}
+              di {filteredData.length} record
             </div>
             <div className="flex items-center space-x-2">
               <button

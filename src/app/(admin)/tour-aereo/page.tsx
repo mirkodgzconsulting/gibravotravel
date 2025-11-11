@@ -9,7 +9,7 @@ import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import Button from "@/components/ui/button/Button";
 import { CopyNotification } from "@/components/ui/notification/CopyNotification";
-import { PlaneIcon, CalendarIcon, TargetIcon, DollarSignIcon, TrashIcon, EditIcon, EyeIcon } from "lucide-react";
+import { PlaneIcon, TrashIcon, EditIcon, PlusIcon } from "lucide-react";
 import Image from "next/image";
 
 interface TourAereo {
@@ -104,10 +104,10 @@ export default function TourAereoPage() {
         const data = await response.json();
         setTours(data.tours || []);
       } else {
-        setError('Error al cargar los tours aéreos');
+        setError('Errore nel caricamento dei tour aerei');
       }
     } catch (err) {
-      setError('Error de conexión');
+      setError('Errore di connessione');
       console.error('Error fetching tours:', err);
     } finally {
       setLoading(false);
@@ -180,10 +180,10 @@ export default function TourAereoPage() {
         setTimeout(() => setShowCopyNotification(false), 3000);
       } else {
         const errorData = await response.json();
-        setError(errorData.error || 'Error al crear tour');
+        setError(errorData.error || 'Errore durante la creazione del tour');
       }
     } catch (error) {
-      setError('Error de conexión');
+      setError('Errore di connessione');
     } finally {
       setIsSubmitting(false);
     }
@@ -250,10 +250,10 @@ export default function TourAereoPage() {
         setTimeout(() => setShowCopyNotification(false), 3000);
       } else {
         const errorData = await response.json();
-        setError(errorData.error || 'Error al actualizar tour');
+        setError(errorData.error || "Errore durante l'aggiornamento del tour");
       }
     } catch (error) {
-      setError('Error de conexión');
+      setError('Errore di connessione');
     } finally {
       setIsSubmitting(false);
     }
@@ -282,7 +282,7 @@ export default function TourAereoPage() {
   };
 
   const handleDeleteTour = async (tourId: string) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar este tour aéreo?')) return;
+    if (!confirm('Sei sicuro di voler eliminare questo tour aereo?')) return;
 
     try {
       const response = await fetch(`/api/tour-aereo/${tourId}`, {
@@ -293,10 +293,10 @@ export default function TourAereoPage() {
         setTours(prev => prev.filter(tour => tour.id !== tourId));
       } else {
         const errorData = await response.json();
-        setError(errorData.error || 'Error al eliminar tour');
+        setError(errorData.error || "Errore durante l'eliminazione del tour");
       }
     } catch (error) {
-      setError('Error de conexión');
+      setError('Errore di connessione');
     }
   };
 
@@ -344,7 +344,7 @@ export default function TourAereoPage() {
   if (loading && tours.length === 0) {
     return (
       <div>
-        <PageBreadcrumb pageTitle="Tours Aereo" />
+        <PageBreadcrumb pageTitle="Tour Aereo" />
         <ComponentCard title="">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 6 }).map((_, idx) => (
@@ -375,7 +375,7 @@ export default function TourAereoPage() {
 
   return (
     <div>
-      <PageBreadcrumb pageTitle="Tours Aereo" />
+      <PageBreadcrumb pageTitle="Tour Aereo" />
       
       {error && (
         <div className="mb-6 p-4 rounded-lg bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-200">
@@ -384,7 +384,7 @@ export default function TourAereoPage() {
             onClick={() => setError(null)}
             className="mt-2 px-3 py-1 text-sm border border-red-300 rounded hover:bg-red-200 transition-colors"
           >
-            Cerrar
+            Chiudi
           </button>
         </div>
       )}
@@ -394,7 +394,7 @@ export default function TourAereoPage() {
         <button
           onClick={openModal}
           className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 flex items-center justify-center shadow-md hover:shadow-lg"
-          title="Crear Tour Aéreo"
+          title="Crea Tour Aereo"
         >
           <PlaneIcon className="w-4 h-4" />
         </button>
@@ -440,7 +440,7 @@ export default function TourAereoPage() {
                     {/* Barra de progreso de ventas */}
                     <div className="mb-4">
                       <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
-                        <span>Ventas: {vendidos}/{tour.meta}</span>
+                        <span>Vendite: {vendidos}/{tour.meta}</span>
                         <span>({progressPercentage}%)</span>
                       </div>
                       <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
@@ -457,13 +457,13 @@ export default function TourAereoPage() {
                         <span className="font-medium">Adulto:</span> €{tour.precioAdulto}
                       </div>
                       <div className="text-sm text-gray-600 dark:text-gray-400">
-                        <span className="font-medium">Niño:</span> €{tour.precioNino}
+                        <span className="font-medium">Bambino:</span> €{tour.precioNino}
                       </div>
                     </div>
 
                     {/* Capacidad/Meta */}
                     <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                      <span className="font-medium">Meta:</span> {tour.meta} inscripciones
+                      <span className="font-medium">Obiettivo:</span> {tour.meta} iscrizioni
                     </div>
 
                     {/* Fechas de viaje */}
@@ -488,44 +488,44 @@ export default function TourAereoPage() {
                     <div className="grid grid-cols-2 gap-3 mb-4">
                       <div className="bg-green-100 dark:bg-green-900/20 p-3 rounded-lg text-center">
                         <div className="text-lg font-bold text-green-700 dark:text-green-400">{vendidos}</div>
-                        <div className="text-xs text-green-600 dark:text-green-400">Inscritos</div>
+                        <div className="text-xs text-green-600 dark:text-green-400">Iscritti</div>
                       </div>
                       <div className="bg-blue-100 dark:bg-blue-900/20 p-3 rounded-lg text-center">
                         <div className="text-lg font-bold text-blue-700 dark:text-blue-400">{disponibles}</div>
-                        <div className="text-xs text-blue-600 dark:text-blue-400">Disponibles</div>
+                        <div className="text-xs text-blue-600 dark:text-blue-400">Disponibili</div>
                       </div>
                     </div>
 
                     {/* Ingresos */}
                     <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                      <span className="font-medium">Ingresos:</span> €{ingresos.toFixed(2)}
+                      <span className="font-medium">Entrate:</span> €{ingresos.toFixed(2)}
                     </div>
 
                     {/* Acciones y creador */}
                     <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
                       <span className="text-xs text-gray-500 dark:text-gray-400">
-                        Creado por: {tour.creator.firstName} {tour.creator.lastName}
+                        Creato da: {tour.creator.firstName} {tour.creator.lastName}
                       </span>
                       
                       <div className="flex gap-2">
                         <button
                           onClick={() => window.location.href = `/venta-tour-aereo/${tour.id}`}
                           className="p-2 text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                          title="Ver ventas"
+                          title="Aggiungi pax"
                         >
-                          <EyeIcon className="w-4 h-4" />
+                          <PlusIcon className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleEditTour(tour)}
                           className="p-2 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                          title="Editar"
+                          title="Modifica"
                         >
                           <EditIcon className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDeleteTour(tour.id)}
                           className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                          title="Eliminar"
+                          title="Elimina"
                         >
                           <TrashIcon className="w-4 h-4" />
                         </button>
@@ -541,7 +541,7 @@ export default function TourAereoPage() {
           <div className="text-center py-12">
             <PlaneIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-500 dark:text-gray-400">
-              No hay tours aéreos disponibles
+              Nessun tour aereo disponibile
             </p>
           </div>
         )}
@@ -557,7 +557,7 @@ export default function TourAereoPage() {
           {/* Header fijo */}
           <div className="flex-shrink-0 p-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-              {editingTour ? "Editar Tour Aéreo" : "Crear Nuevo Tour Aéreo"}
+              {editingTour ? "Modifica Tour Aereo" : "Crea Nuovo Tour Aereo"}
             </h2>
           </div>
           
@@ -567,7 +567,7 @@ export default function TourAereoPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="lg:col-span-3">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Título del Tour *
+                  Titolo del Tour *
                 </label>
                 <input
                   type="text"
@@ -580,7 +580,7 @@ export default function TourAereoPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Fecha de Viaje
+                  Data di Partenza
                 </label>
                 <input
                   type="date"
@@ -592,7 +592,7 @@ export default function TourAereoPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Fecha de Fin
+                  Data di Fine
                 </label>
                 <input
                   type="date"
@@ -604,7 +604,7 @@ export default function TourAereoPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Precio Adulto (€) *
+                  Prezzo Adulto (€) *
                 </label>
                 <input
                   type="number"
@@ -618,7 +618,7 @@ export default function TourAereoPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Precio Niño (€)
+                  Prezzo Bambino (€)
                 </label>
                 <input
                   type="number"
@@ -631,7 +631,7 @@ export default function TourAereoPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Meta (Número)
+                  Obiettivo (numero)
                 </label>
                 <input
                   type="number"
@@ -643,7 +643,7 @@ export default function TourAereoPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Coordinatore
+                  Coordinatore (ACC)
                 </label>
                 <input
                   type="text"
@@ -701,7 +701,7 @@ export default function TourAereoPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Notas del Tour
+                Note del Tour
               </label>
               <textarea
                 value={formData.notas}
@@ -713,7 +713,7 @@ export default function TourAereoPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Notas Coordinador
+                Note del Coordinatore
               </label>
               <textarea
                 value={formData.notasCoordinador}
@@ -725,7 +725,7 @@ export default function TourAereoPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Imagen de Portada
+                Immagine di copertina
               </label>
               <input
                 type="file"
@@ -737,7 +737,7 @@ export default function TourAereoPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Archivo PDF
+                File PDF
               </label>
               <input
                 type="file"
@@ -749,7 +749,7 @@ export default function TourAereoPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Descripción
+                Descrizione
               </label>
               <textarea
                 value={formData.descripcion}
@@ -764,14 +764,14 @@ export default function TourAereoPage() {
                 onClick={handleCancelEdit}
                 className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
               >
-                Cancelar
+                Annulla
               </Button>
               <button
                 type="submit"
                 disabled={isSubmitting}
                 className="px-6 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg disabled:opacity-50"
               >
-                {isSubmitting ? 'Guardando...' : (editingTour ? 'Actualizar' : 'Crear Tour')}
+                {isSubmitting ? 'Salvataggio...' : (editingTour ? 'Aggiorna' : 'Crea Tour')}
               </button>
             </div>
             </form>

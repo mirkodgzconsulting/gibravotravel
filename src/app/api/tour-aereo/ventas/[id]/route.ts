@@ -61,11 +61,17 @@ export async function PATCH(
       return NextResponse.json({ error: 'Venta no encontrada' }, { status: 404 });
     }
 
-    // Verificar permisos: ADMIN y TI pueden editar cualquier venta,
-    // USER solo puede editar sus propias ventas
-    // Nota: createdBy almacena el id del usuario, no el clerkId
+    // Verificar permisos:
+    // - ADMIN y TI pueden editar cualquier venta
+    // - USER puede editar sus propias ventas
+    // - USER puede actualizar el estado de ventas ajenas solo si lo establece en Acconto o Ricevuto
     if (user.role === 'USER' && venta.createdBy !== user.id) {
-      return NextResponse.json({ error: 'No autorizado para editar esta venta' }, { status: 403 });
+      const allowedUserStates = new Set(['Acconto', 'Ricevuto']);
+      const keys = Object.keys(body);
+      const soloActualizaEstado = keys.length === 1 && keys[0] === 'stato';
+      if (!(soloActualizaEstado && stato !== undefined && allowedUserStates.has(stato))) {
+        return NextResponse.json({ error: 'No autorizado para editar esta venta' }, { status: 403 });
+      }
     }
 
     // Actualizar el stato y/o metodoCompra
@@ -131,9 +137,7 @@ export async function PUT(
     // Verificar permisos: ADMIN y TI pueden editar cualquier venta,
     // USER solo puede editar sus propias ventas
     // Nota: createdBy almacena el id del usuario, no el clerkId
-    if (user.role === 'USER' && venta.createdBy !== user.id) {
-      return NextResponse.json({ error: 'No autorizado para editar esta venta' }, { status: 403 });
-    }
+    // Los usuarios USER también pueden editar ventas existentes independientemente del creador.
 
     // Extraer datos del FormData
     const pasajero = formData.get('pasajero') as string;

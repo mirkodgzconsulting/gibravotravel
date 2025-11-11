@@ -23,6 +23,7 @@ import {
   TrendingUpIcon,
   FileTextIcon
 } from "lucide-react";
+import SimpleRichTextEditor from "@/components/form/SimpleRichTextEditor";
 
 interface TourAereo {
   id: string;
@@ -160,12 +161,141 @@ interface VentaFormData {
   cuotas: CuotaVenta[];
 }
 
+const normalizeLegacyNote = (note?: string | null) => {
+  if (!note) return '';
+  return note
+    .replace(/\[b\]([\s\S]*?)\[\/b\]/g, '<strong>$1</strong>')
+    .replace(/\[color=(red|blue|black)\]([\s\S]*?)\[\/color\]/g, (_, color: string, content: string) => {
+      const colorMap: Record<string, string> = {
+        red: '#dc2626',
+        blue: '#1d4ed8',
+        black: '#111827',
+      };
+      const mappedColor = colorMap[color] || '#111827';
+      return `<span style="color:${mappedColor};">${content}</span>`;
+    })
+    .replace(/\[size=(small|medium|large)\]([\s\S]*?)\[\/size\]/g, (_, size: string, content: string) => {
+      const sizeMap: Record<string, string> = {
+        small: '0.875rem',
+        medium: '1rem',
+        large: '1.125rem',
+      };
+      const mappedSize = sizeMap[size] || '1rem';
+      return `<span style="font-size:${mappedSize};">${content}</span>`;
+    })
+    .replace(/\n/g, '<br />');
+};
+
+const sanitizeEditorHtml = (note?: string | null) => {
+  const normalized = normalizeLegacyNote(note);
+  if (!normalized) return '';
+
+  const allowedTags = new Set(['B', 'STRONG', 'I', 'EM', 'SPAN', 'BR']);
+  const allowedStyles = new Set(['color', 'font-size']);
+
+  try {
+    if (typeof window !== 'undefined' && typeof DOMParser !== 'undefined') {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(normalized, 'text/html');
+
+      const sanitizeNode = (node: Node) => {
+        Array.from(node.childNodes).forEach((child) => {
+          if (child.nodeType === Node.ELEMENT_NODE) {
+            const el = child as HTMLElement;
+            if (!allowedTags.has(el.tagName)) {
+              const parent = el.parentNode;
+              if (parent) {
+                while (el.firstChild) {
+                  parent.insertBefore(el.firstChild, el);
+                }
+                parent.removeChild(el);
+              }
+              return;
+            }
+
+            if (el.tagName === 'SPAN') {
+              Array.from(el.attributes).forEach((attr) => {
+                if (attr.name !== 'style') {
+                  el.removeAttribute(attr.name);
+                }
+              });
+              const style = el.style;
+              Array.from(style).forEach((prop) => {
+                if (!allowedStyles.has(prop)) {
+                  style.removeProperty(prop);
+                }
+              });
+              if (!style.color && !style.fontSize) {
+                el.removeAttribute('style');
+              }
+            } else {
+              Array.from(el.attributes).forEach((attr) => {
+                el.removeAttribute(attr.name);
+              });
+            }
+
+            sanitizeNode(el);
+          } else if (child.nodeType !== Node.TEXT_NODE) {
+            child.parentNode?.removeChild(child);
+          }
+        });
+      };
+
+      sanitizeNode(doc.body);
+      return doc.body.innerHTML;
+    }
+  } catch {
+    // Fallback if DOMParser is not available
+  }
+
+  return normalized
+    .replace(/<(?!\/?(b|strong|i|em|span|br)\b)[^>]*>/gi, '')
+    .replace(/style=\"([^\"]*)\"/gi, (match, styles) => {
+      const allowed = styles
+        .split(';')
+        .map((rule: string) => rule.trim())
+        .filter((rule: string) => {
+          const [property] = rule.split(':').map((part: string) => part.trim().toLowerCase());
+          return allowedStyles.has(property);
+        });
+      return allowed.length ? `style="${allowed.join('; ')}"` : '';
+    });
+};
+
+const extractPlainText = (note?: string | null) => {
+  const sanitized = sanitizeEditorHtml(note);
+  if (!sanitized) return '';
+  return sanitized
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
 export default function VentaTourAereoPage() {
   const params = useParams();
   const tourId = params.id as string;
-  const { userRole, isLoading: roleLoading } = useUserRole();
+  const { userRole, isLoading: roleLoading, isAdmin, isTI } = useUserRole();
   const { isOpen: isModalOpen, openModal, closeModal } = useModal();
+  const allowedStatiForUser = useMemo(() => new Set(['Acconto', 'Ricevuto']), []);
+  const canEditStato = useCallback(
+    (value: string) => isAdmin || isTI || allowedStatiForUser.has(value),
+    [isAdmin, isTI, allowedStatiForUser]
+  );
 
+  const handleStatoSelectChange = useCallback(
+    (value: string) => {
+      if (!canEditStato(value)) {
+        setMessage({
+          type: 'error',
+          text: 'Il tuo ruolo non consente di impostare questo stato'
+        });
+        return;
+      }
+      setFormData(prev => ({ ...prev, stato: value }));
+    },
+    [canEditStato]
+  );
   const handleCloseModal = () => {
     closeModal();
     setEditingVenta(null);
@@ -186,10 +316,6 @@ export default function VentaTourAereoPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCopyNotification, setShowCopyNotification] = useState(false);
-  const [expandedNotas, setExpandedNotas] = useState<{tour: boolean, coordinador: boolean}>({
-    tour: false,
-    coordinador: false
-  });
   const [editingNotas, setEditingNotas] = useState<{tour: boolean, coordinador: boolean}>({
     tour: false,
     coordinador: false
@@ -248,8 +374,10 @@ export default function VentaTourAereoPage() {
     cuotas: []
   });
 
-  // Estado para el tipo de pasajero (adulto/nino)
+  // Estado para el tipo de pasajero (adulto/nino) y precios editables
   const [tipoPasajero, setTipoPasajero] = useState<'adulto' | 'nino' | null>(null);
+  const [adultoPrice, setAdultoPrice] = useState<string>('');
+  const [bambinoPrice, setBambinoPrice] = useState<string>('');
 
   // Estados para dropdowns de multiselección
   const [iataSearchTerm, setIataSearchTerm] = useState("");
@@ -260,16 +388,17 @@ export default function VentaTourAereoPage() {
 
 
   // Función para manejar el cambio de tipo de pasajero
-  const handleTipoPasajeroChange = useCallback((tipo: 'adulto' | 'nino') => {
-    setTipoPasajero(tipo);
-    
-    // Actualizar el campo venduto automáticamente
-    if (tipo === 'adulto' && tour?.precioAdulto) {
-      setFormData(prev => ({ ...prev, venduto: tour.precioAdulto.toString() }));
-    } else if (tipo === 'nino' && tour?.precioNino) {
-      setFormData(prev => ({ ...prev, venduto: tour.precioNino.toString() }));
-    }
-  }, [tour]);
+  const handleTipoPasajeroChange = useCallback(
+    (tipo: 'adulto' | 'nino') => {
+      setTipoPasajero(tipo);
+      const price = tipo === 'adulto' ? adultoPrice : bambinoPrice;
+      setFormData(prev => ({
+        ...prev,
+        venduto: price ? price.replace(',', '.') : ''
+      }));
+    },
+    [adultoPrice, bambinoPrice]
+  );
 
   // Handler para toggle de IATA (selección múltiple)
   const handleIataToggle = useCallback((iata: string) => {
@@ -331,10 +460,47 @@ export default function VentaTourAereoPage() {
     );
   }, [metodosPagamento, metodoPagamentoSearchTerm]);
 
+  const handlePriceInputChange = useCallback(
+    (type: 'adulto' | 'nino', rawValue: string) => {
+      const sanitized = rawValue.replace(/[^\d.,]/g, '');
+      if (type === 'adulto') {
+        setAdultoPrice(sanitized);
+      } else {
+        setBambinoPrice(sanitized);
+      }
+
+      if (tipoPasajero === type) {
+        setFormData(prev => ({
+          ...prev,
+          venduto: sanitized ? sanitized.replace(',', '.') : ''
+        }));
+      }
+    },
+    [tipoPasajero]
+  );
+
   // Filtrar IATAs no seleccionados (memoizado)
   const availableIatas = useMemo(() => {
     return filteredIatas.filter(iata => !formData.iata.includes(iata.iata));
   }, [filteredIatas, formData.iata]);
+
+  useEffect(() => {
+    if (tour) {
+      setAdultoPrice(
+        tour.precioAdulto !== null && tour.precioAdulto !== undefined
+          ? tour.precioAdulto.toString()
+          : ''
+      );
+      setBambinoPrice(
+        tour.precioNino !== null && tour.precioNino !== undefined
+          ? tour.precioNino.toString()
+          : ''
+      );
+    } else {
+      setAdultoPrice('');
+      setBambinoPrice('');
+    }
+  }, [tour]);
 
   // Función optimizada para cargar todos los datos iniciales en paralelo
   const fetchInitialData = useCallback(async () => {
@@ -383,7 +549,7 @@ export default function VentaTourAereoPage() {
 
     } catch (err) {
       console.error('Error fetching initial data:', err);
-      setError('Error de conexión');
+      setError('Errore di connessione');
     } finally {
       setLoading(false);
     }
@@ -509,10 +675,10 @@ export default function VentaTourAereoPage() {
         setTour(data.tour);
         await fetchVentas();
       } else {
-        setError('Error al cargar el tour');
+        setError('Errore durante il caricamento del tour');
       }
     } catch (error) {
-      setError('Error de conexión');
+      setError('Errore di connessione');
     } finally {
       setLoading(false);
     }
@@ -563,6 +729,8 @@ export default function VentaTourAereoPage() {
     // Resetear el tipo de pasajero cuando se cambia el cliente
     setTipoPasajero(null);
     setFormData(prev => ({ ...prev, venduto: "" }));
+    setAdultoPrice(tour?.precioAdulto != null ? tour.precioAdulto.toString() : '');
+    setBambinoPrice(tour?.precioNino != null ? tour.precioNino.toString() : '');
     
     const cliente = clientes.find(c => c.id === clienteId);
     if (cliente) {
@@ -577,16 +745,17 @@ export default function VentaTourAereoPage() {
         paisOrigen: cliente.birthPlace
       }));
     }
-  }, [clientes]);
+  }, [clientes, tour]);
 
   const handleClientSelect = useCallback((clienteId: string) => {
     const cliente = clientes.find(c => c.id === clienteId);
     if (cliente) {
       setClientSearchTerm(`${cliente.firstName} ${cliente.lastName}`);
       setShowClientDropdown(false);
-      // Resetear el tipo de pasajero cuando se cambia el cliente
       setTipoPasajero(null);
       setFormData(prev => ({ ...prev, venduto: "" }));
+      setAdultoPrice(tour?.precioAdulto != null ? tour.precioAdulto.toString() : '');
+      setBambinoPrice(tour?.precioNino != null ? tour.precioNino.toString() : '');
       setFormData(prev => ({
         ...prev,
         clienteId,
@@ -598,7 +767,7 @@ export default function VentaTourAereoPage() {
         paisOrigen: cliente.birthPlace
       }));
     }
-  }, [clientes]);
+  }, [clientes, tour]);
 
   // Handlers memoizados para los campos del formulario (para evitar re-renders innecesarios)
   const handleInputChange = useCallback((field: keyof VentaFormData) => 
@@ -670,19 +839,25 @@ export default function VentaTourAereoPage() {
     e.preventDefault();
     if (isSubmitting) return;
 
+    const ensureValue = (value?: string | null, fallback?: string) => {
+      const candidate = value ?? fallback ?? '';
+      const trimmed = candidate.toString().trim();
+      return trimmed !== '' ? trimmed : 'sindatos';
+    };
+
     setIsSubmitting(true);
     try {
        
       // Validar que al menos un IATA esté seleccionado
       if (!formData.iata || formData.iata.length === 0) {
-        setMessage({ type: 'error', text: 'Debe seleccionar al menos un IATA' });
+        setMessage({ type: 'error', text: 'Devi selezionare almeno un IATA' });
         setIsSubmitting(false);
         return;
       }
 
       // Validar que al menos un método de pago esté seleccionado
       if (!formData.metodoPagamento || formData.metodoPagamento.length === 0) {
-        setMessage({ type: 'error', text: 'Debe seleccionar al menos un método de pago' });
+        setMessage({ type: 'error', text: 'Devi selezionare almeno un metodo di pagamento' });
         setIsSubmitting(false);
         return;
       }
@@ -693,11 +868,11 @@ export default function VentaTourAereoPage() {
       // Agregar campos del formulario (manejar arrays como JSON)
       formDataToSend.append('clienteId', formData.clienteId);
       formDataToSend.append('pasajero', formData.pasajero);
-      formDataToSend.append('codiceFiscale', formData.codiceFiscale);
-      formDataToSend.append('indirizzo', formData.indirizzo);
-      formDataToSend.append('email', formData.email);
-      formDataToSend.append('numeroTelefono', formData.numeroTelefono);
-      formDataToSend.append('paisOrigen', formData.paisOrigen);
+      formDataToSend.append('codiceFiscale', ensureValue(formData.codiceFiscale));
+      formDataToSend.append('indirizzo', ensureValue(formData.indirizzo));
+      formDataToSend.append('email', ensureValue(formData.email));
+      formDataToSend.append('numeroTelefono', ensureValue(formData.numeroTelefono));
+      formDataToSend.append('paisOrigen', ensureValue(formData.paisOrigen));
       formDataToSend.append('iata', JSON.stringify(formData.iata)); // Convertir array a JSON
       formDataToSend.append('pnr', formData.pnr);
       formDataToSend.append('hotel', formData.hotel);
@@ -759,18 +934,28 @@ export default function VentaTourAereoPage() {
         setCuotas([]);
         setNumeroCuotas(0);
         setAttachedFile(null);
+        setTipoPasajero(null);
+        setAdultoPrice(tour?.precioAdulto != null ? tour.precioAdulto.toString() : '');
+        setBambinoPrice(tour?.precioNino != null ? tour.precioNino.toString() : '');
         closeModal();
         setShowCopyNotification(true);
         setTimeout(() => setShowCopyNotification(false), 3000);
       } else {
-        const errorData = await response.json();
-          const errorMessage = errorData.error || 'Error al crear venta';
-          setMessage({ type: 'error', text: errorMessage });
-          setTimeout(() => setMessage(null), 5000);
+        const errorText = await response.text();
+        console.error('Create venta error:', errorText);
+        let errorMessage = 'Errore durante la creazione della vendita';
+        try {
+          const parsed = JSON.parse(errorText);
+          if (parsed?.error) errorMessage = parsed.error;
+        } catch {
+          if (errorText) errorMessage = errorText;
+        }
+        setMessage({ type: 'error', text: errorMessage });
+        setTimeout(() => setMessage(null), 5000);
       }
     } catch (error) {
         console.error('Error al crear venta:', error);
-        setMessage({ type: 'error', text: 'Error de conexión al crear la venta' });
+        setMessage({ type: 'error', text: 'Errore di connessione durante la creazione della vendita' });
         setTimeout(() => setMessage(null), 5000);
     } finally {
       setIsSubmitting(false);
@@ -778,7 +963,7 @@ export default function VentaTourAereoPage() {
   };
 
   const handleDeleteVenta = useCallback(async (ventaId: string) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar esta venta?')) return;
+    if (!confirm('Sei sicuro di voler eliminare questa vendita?')) return;
 
     try {
       const response = await fetch(`/api/tour-aereo/ventas/${ventaId}`, {
@@ -790,17 +975,17 @@ export default function VentaTourAereoPage() {
         await fetchVentas();
         setMessage({
           type: 'success',
-          text: 'Venta eliminada correctamente'
+          text: 'Vendita eliminata correttamente'
         });
         setTimeout(() => setMessage(null), 3000);
       } else {
         const errorData = await response.json();
-        setMessage({ type: 'error', text: errorData.error || 'Error al eliminar venta' });
+        setMessage({ type: 'error', text: errorData.error || "Errore durante l'eliminazione della vendita" });
         setTimeout(() => setMessage(null), 3000);
       }
     } catch (error) {
       console.error('Error al eliminar venta:', error);
-      setMessage({ type: 'error', text: 'Error de conexión al eliminar la venta' });
+      setMessage({ type: 'error', text: "Errore di connessione durante l'eliminazione della vendita" });
       setTimeout(() => setMessage(null), 3000);
     }
   }, [fetchVentas]);
@@ -808,12 +993,12 @@ export default function VentaTourAereoPage() {
   // Función para exportar a Excel
   const handleExportToExcel = useCallback(() => {
     const dataToExport = filteredVentas.map(venta => ({
-      'Pasajero': venta.pasajero || '',
+      'Passeggero': venta.pasajero || '',
       'Codice Fiscale': venta.codiceFiscale || '',
       'Indirizzo': venta.indirizzo || '',
       'Email': venta.email || '',
       'Telefono': venta.numeroTelefono || '',
-      'País de origen': venta.paisOrigen || '',
+      'Paese di origine': venta.paisOrigen || '',
       'IATA': (() => {
         try {
           const parsed = typeof venta.iata === 'string' 
@@ -826,11 +1011,11 @@ export default function VentaTourAereoPage() {
       })(),
       'PNR': venta.pnr || '',
       'Hotel (€)': venta.hotel || 0,
-      'Transfer (€)': venta.transfer || 0,
+      'Trasporto (€)': venta.transfer || 0,
       'Venduto (€)': venta.venduto || 0,
       'Acconto (€)': venta.acconto || 0,
       'Da pagare (€)': venta.daPagare || 0,
-      'Metodo Pagamento': (() => {
+      'Metodo di pagamento': (() => {
         try {
           const parsed = typeof venta.metodoPagamento === 'string' 
             ? JSON.parse(venta.metodoPagamento) 
@@ -849,9 +1034,9 @@ export default function VentaTourAereoPage() {
 
     const ws = XLSX.utils.json_to_sheet(dataToExport);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Ventas Tour Aereo');
+    XLSX.utils.book_append_sheet(wb, ws, 'Vendite Tour Aereo');
     
-    const fileName = `ventas_tour_aereo_${new Date().toISOString().split('T')[0]}.xlsx`;
+    const fileName = `vendite_tour_aereo_${new Date().toISOString().split('T')[0]}.xlsx`;
     XLSX.writeFile(wb, fileName);
   }, [filteredVentas]);
 
@@ -894,6 +1079,11 @@ export default function VentaTourAereoPage() {
       cuotas: []
     });
     
+    const vendutoValue = venta.venduto != null ? venta.venduto.toString() : '';
+    setAdultoPrice(vendutoValue || (tour?.precioAdulto != null ? tour.precioAdulto.toString() : ''));
+    setBambinoPrice(vendutoValue || (tour?.precioNino != null ? tour.precioNino.toString() : ''));
+    setTipoPasajero('adulto');
+
     // Manejar cuotas
     const ventaCuotas = venta.cuotas || [];
     if (ventaCuotas.length > 0) {
@@ -935,16 +1125,22 @@ export default function VentaTourAereoPage() {
 
     setIsSubmitting(true);
     try {
+      const ensureValue = (value?: string | null, fallback?: string) => {
+        const candidate = value ?? fallback ?? '';
+        const trimmed = candidate.toString().trim();
+        return trimmed !== '' ? trimmed : 'sindatos';
+      };
+
       // Validar que al menos un IATA esté seleccionado
       if (!formData.iata || formData.iata.length === 0) {
-        setMessage({ type: 'error', text: 'Debe seleccionar al menos un IATA' });
+        setMessage({ type: 'error', text: 'Devi selezionare almeno un IATA' });
         setIsSubmitting(false);
         return;
       }
 
       // Validar que al menos un método de pago esté seleccionado
       if (!formData.metodoPagamento || formData.metodoPagamento.length === 0) {
-        setMessage({ type: 'error', text: 'Debe seleccionar al menos un método de pago' });
+        setMessage({ type: 'error', text: 'Devi selezionare almeno un metodo di pagamento' });
         setIsSubmitting(false);
         return;
       }
@@ -955,11 +1151,11 @@ export default function VentaTourAereoPage() {
       // Agregar campos del formulario (manejar arrays como JSON)
       formDataToSend.append('clienteId', formData.clienteId);
       formDataToSend.append('pasajero', formData.pasajero);
-      formDataToSend.append('codiceFiscale', formData.codiceFiscale);
-      formDataToSend.append('indirizzo', formData.indirizzo);
-      formDataToSend.append('email', formData.email);
-      formDataToSend.append('numeroTelefono', formData.numeroTelefono);
-      formDataToSend.append('paisOrigen', formData.paisOrigen);
+      formDataToSend.append('codiceFiscale', ensureValue(formData.codiceFiscale, editingVenta?.codiceFiscale));
+      formDataToSend.append('indirizzo', ensureValue(formData.indirizzo, editingVenta?.indirizzo));
+      formDataToSend.append('email', ensureValue(formData.email, editingVenta?.email));
+      formDataToSend.append('numeroTelefono', ensureValue(formData.numeroTelefono, editingVenta?.numeroTelefono));
+      formDataToSend.append('paisOrigen', ensureValue(formData.paisOrigen, editingVenta?.paisOrigen));
       formDataToSend.append('iata', JSON.stringify(formData.iata)); // Convertir array a JSON
       formDataToSend.append('pnr', formData.pnr);
       formDataToSend.append('hotel', formData.hotel);
@@ -1029,20 +1225,31 @@ export default function VentaTourAereoPage() {
         setAttachedFile(null);
         setNumeroCuotas(0);
         setCuotas([]);
+        setTipoPasajero(null);
+        setAdultoPrice(tour?.precioAdulto != null ? tour.precioAdulto.toString() : '');
+        setBambinoPrice(tour?.precioNino != null ? tour.precioNino.toString() : '');
         setMessage({
           type: 'success',
-          text: 'Venta actualizada correctamente'
+          text: 'Vendita aggiornata correttamente'
         });
         closeModal();
         setTimeout(() => setMessage(null), 3000);
       } else {
-        const errorData = await response.json();
-        setMessage({ type: 'error', text: errorData.error || 'Error al actualizar venta' });
+        const errorText = await response.text();
+        console.error('Update venta error:', errorText);
+        let errorMessage = "Errore durante l'aggiornamento della vendita";
+        try {
+          const parsed = JSON.parse(errorText);
+          if (parsed?.error) errorMessage = parsed.error;
+        } catch {
+          if (errorText) errorMessage = errorText;
+        }
+        setMessage({ type: 'error', text: errorMessage });
         setTimeout(() => setMessage(null), 3000);
       }
     } catch (error) {
       console.error('Error al actualizar venta:', error);
-      setMessage({ type: 'error', text: 'Error de conexión al actualizar la venta' });
+      setMessage({ type: 'error', text: "Errore di connessione durante l'aggiornamento della vendita" });
       setTimeout(() => setMessage(null), 3000);
     } finally {
       setIsSubmitting(false);
@@ -1077,6 +1284,9 @@ export default function VentaTourAereoPage() {
       stato: "",
       cuotas: []
     });
+    setTipoPasajero(null);
+    setAdultoPrice(tour?.precioAdulto != null ? tour.precioAdulto.toString() : '');
+    setBambinoPrice(tour?.precioNino != null ? tour.precioNino.toString() : '');
   };
 
   // Funciones para manejar la edición inline de Método de Compra
@@ -1103,16 +1313,16 @@ export default function VentaTourAereoPage() {
         ));
         setMessage({
           type: 'success',
-          text: 'Método de compra actualizado correctamente'
+          text: 'Metodo di acquisto aggiornato correttamente'
         });
         setTimeout(() => setMessage(null), 3000);
       } else {
-        throw new Error('Error al actualizar');
+        throw new Error("Errore durante l'aggiornamento");
       }
     } catch (error) {
       setMessage({
         type: 'error',
-        text: 'Error al actualizar el método de compra'
+        text: "Errore durante l'aggiornamento del metodo di acquisto"
       });
       setTimeout(() => setMessage(null), 3000);
     }
@@ -1159,9 +1369,10 @@ export default function VentaTourAereoPage() {
   // Funciones para editar notas
   const startEditingNotas = useCallback((type: 'tour' | 'coordinador') => {
     setEditingNotas(prev => ({ ...prev, [type]: true }));
+    const currentValue = type === 'tour' ? tour?.notas : tour?.notasCoordinador;
     setTempNotas(prev => ({
       ...prev,
-      [type]: type === 'tour' ? (tour?.notas || '') : (tour?.notasCoordinador || '')
+      [type]: sanitizeEditorHtml(currentValue)
     }));
   }, [tour]);
 
@@ -1177,8 +1388,18 @@ export default function VentaTourAereoPage() {
       formDataToSend.append('guidaLocale', tour?.guidaLocale?.toString() || '');
       formDataToSend.append('coordinatore', tour?.coordinatore?.toString() || '');
       formDataToSend.append('transporte', tour?.transporte?.toString() || '');
-      formDataToSend.append('notas', type === 'tour' ? tempNotas.tour : (tour?.notas || ''));
-      formDataToSend.append('notasCoordinador', type === 'coordinador' ? tempNotas.coordinador : (tour?.notasCoordinador || ''));
+      formDataToSend.append(
+        'notas',
+        type === 'tour'
+          ? sanitizeEditorHtml(tempNotas.tour)
+          : sanitizeEditorHtml(tour?.notas)
+      );
+      formDataToSend.append(
+        'notasCoordinador',
+        type === 'coordinador'
+          ? sanitizeEditorHtml(tempNotas.coordinador)
+          : sanitizeEditorHtml(tour?.notasCoordinador)
+      );
       formDataToSend.append('descripcion', tour?.descripcion || '');
 
       const response = await fetch(`/api/tour-aereo/${tourId}`, {
@@ -1192,20 +1413,20 @@ export default function VentaTourAereoPage() {
         setEditingNotas(prev => ({ ...prev, [type]: false }));
         setMessage({
           type: 'success',
-          text: 'Notas actualizadas correctamente'
+          text: 'Note aggiornate correttamente'
         });
         setTimeout(() => setMessage(null), 3000);
       } else {
         setMessage({
           type: 'error',
-          text: 'Error al actualizar las notas'
+          text: "Errore durante l'aggiornamento delle note"
         });
         setTimeout(() => setMessage(null), 3000);
       }
     } catch (error) {
       setMessage({
         type: 'error',
-        text: 'Error de conexión'
+        text: 'Errore di connessione'
       });
       setTimeout(() => setMessage(null), 3000);
     }
@@ -1243,7 +1464,7 @@ export default function VentaTourAereoPage() {
       window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
       console.error('Error descargando archivo:', error);
-      alert('Error al descargar el archivo');
+      alert('Errore durante il download del file');
     }
   }, []);
 
@@ -1276,7 +1497,7 @@ export default function VentaTourAereoPage() {
     } catch (error) {
       setMessage({
         type: 'error',
-        text: 'Error al cargar información del cliente'
+        text: 'Errore durante il caricamento delle informazioni del cliente'
       });
       setTimeout(() => setMessage(null), 3000);
     }
@@ -1309,7 +1530,7 @@ export default function VentaTourAereoPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando...</p>
+          <p className="mt-4 text-gray-600">Caricamento...</p>
         </div>
       </div>
     );
@@ -1372,10 +1593,10 @@ export default function VentaTourAereoPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-red-600 mb-4">
-            Tour no encontrado
+            Tour non trovato
           </h1>
           <p className="text-gray-600">
-            El tour que buscas no existe o no tienes acceso a él.
+            Il tour che cerchi non esiste o non hai accesso.
           </p>
         </div>
       </div>
@@ -1384,7 +1605,7 @@ export default function VentaTourAereoPage() {
 
   return (
     <div>
-      <PageBreadcrumb pageTitle={`Ventas - ${tour.titulo}`} />
+      <PageBreadcrumb pageTitle={`Vendite - ${tour.titulo}`} />
       
       {error && (
         <div className="mb-6 p-4 rounded-lg bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-200">
@@ -1395,7 +1616,7 @@ export default function VentaTourAereoPage() {
             variant="outline"
             className="mt-2"
           >
-            Cerrar
+            Chiudi
           </Button>
         </div>
       )}
@@ -1424,7 +1645,7 @@ export default function VentaTourAereoPage() {
             <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
               <div className="flex items-center gap-2 mb-1">
                 <DollarSignIcon className="w-4 h-4 text-blue-600" />
-                <span className="text-xs font-medium text-blue-700 dark:text-blue-300">Precio Adulto</span>
+                <span className="text-xs font-medium text-blue-700 dark:text-blue-300">Prezzo adulto</span>
               </div>
               <div className="text-lg font-bold text-blue-900 dark:text-blue-100">
                 €{tour.precioAdulto}
@@ -1434,7 +1655,7 @@ export default function VentaTourAereoPage() {
             <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
               <div className="flex items-center gap-2 mb-1">
                 <DollarSignIcon className="w-4 h-4 text-green-600" />
-                <span className="text-xs font-medium text-green-700 dark:text-green-300">Precio Niño</span>
+                <span className="text-xs font-medium text-green-700 dark:text-green-300">Prezzo bambino</span>
               </div>
               <div className="text-lg font-bold text-green-900 dark:text-green-100">
                 €{tour.precioNino}
@@ -1444,7 +1665,7 @@ export default function VentaTourAereoPage() {
             <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg">
               <div className="flex items-center gap-2 mb-1">
                 <UsersIcon className="w-4 h-4 text-purple-600" />
-                <span className="text-xs font-medium text-purple-700 dark:text-purple-300">Meta</span>
+                <span className="text-xs font-medium text-purple-700 dark:text-purple-300">Obiettivo</span>
               </div>
               <div className="text-lg font-bold text-purple-900 dark:text-purple-100">
                 {tour.meta}
@@ -1454,7 +1675,7 @@ export default function VentaTourAereoPage() {
             <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded-lg">
               <div className="flex items-center gap-2 mb-1">
                 <TrendingUpIcon className="w-4 h-4 text-orange-600" />
-                <span className="text-xs font-medium text-orange-700 dark:text-orange-300">Progreso</span>
+                <span className="text-xs font-medium text-orange-700 dark:text-orange-300">Progresso</span>
               </div>
               <div className="text-lg font-bold text-orange-900 dark:text-orange-100">
                 {porcentajeVendido}%
@@ -1489,7 +1710,7 @@ export default function VentaTourAereoPage() {
               <div className="bg-cyan-50 dark:bg-cyan-900/20 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
                   <UsersIcon className="w-4 h-4 text-cyan-600" />
-                  <span className="text-xs font-medium text-cyan-700 dark:text-cyan-300">Coord.</span>
+                  <span className="text-xs font-medium text-cyan-700 dark:text-cyan-300">Coordinatore</span>
                 </div>
                 <div className="text-lg font-bold text-cyan-900 dark:text-cyan-100">
                   €{tour.coordinatore.toFixed(2)}
@@ -1525,7 +1746,7 @@ export default function VentaTourAereoPage() {
               <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
                   <PlaneIcon className="w-4 h-4 text-red-600" />
-                  <span className="text-xs font-medium text-red-700 dark:text-red-300">Transporte</span>
+                  <span className="text-xs font-medium text-red-700 dark:text-red-300">Transfer</span>
                 </div>
                 <div className="text-lg font-bold text-red-900 dark:text-red-100">
                   €{tour.transporte.toFixed(2)}
@@ -1541,62 +1762,59 @@ export default function VentaTourAereoPage() {
                 <div className="bg-slate-50 dark:bg-slate-900/20 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
                   <div className="flex items-center gap-2 mb-3">
                     <FileTextIcon className="w-5 h-5 text-slate-600" />
-                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Notas del Tour</span>
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Note del tour</span>
                   </div>
-                  <div 
+                  <div
                     className="text-sm text-slate-600 dark:text-slate-400 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 p-2 rounded transition-colors"
                     onDoubleClick={() => startEditingNotas('tour')}
+                    title={extractPlainText(tour.notas)}
                   >
                     {editingNotas.tour ? (
                       <div className="space-y-2">
-                        <textarea
+                        <SimpleRichTextEditor
                           value={tempNotas.tour}
-                          onChange={(e) => setTempNotas(prev => ({ ...prev, tour: e.target.value }))}
-                          className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent dark:bg-slate-700 dark:text-white"
-                          rows={3}
-                          autoFocus
+                          onChange={(html) =>
+                            setTempNotas(prev => ({ ...prev, tour: html }))
+                          }
+                          placeholder="Scrivi le note del tour..."
+                          rows={4}
+                          className="w-full"
                         />
                         <div className="flex gap-2">
                           <button
-                            onClick={() => saveNotas('tour')}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              saveNotas('tour');
+                            }}
                             className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded transition-colors"
                           >
-                            Guardar
+                            Salva
                           </button>
                           <button
-                            onClick={() => cancelEditingNotas('tour')}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              cancelEditingNotas('tour');
+                            }}
                             className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white text-xs rounded transition-colors"
                           >
-                            Cancelar
+                            Annulla
                           </button>
                         </div>
                       </div>
                     ) : (
-                      <>
-                        {tour.notas.length > 100 && !expandedNotas.tour ? (
-                          <>
-                            {tour.notas.substring(0, 100)}...
-                            <button
-                              onClick={() => setExpandedNotas(prev => ({ ...prev, tour: true }))}
-                              className="ml-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
-                            >
-                              Leer más
-                            </button>
-                          </>
+                      (() => {
+                        const sanitized = sanitizeEditorHtml(tour.notas);
+                        return sanitized ? (
+                          <div
+                            className="leading-relaxed space-y-1"
+                            dangerouslySetInnerHTML={{ __html: sanitized }}
+                          />
                         ) : (
-                          <>
-                            {tour.notas}
-                            {tour.notas.length > 100 && expandedNotas.tour && (
-                              <button
-                                onClick={() => setExpandedNotas(prev => ({ ...prev, tour: false }))}
-                                className="ml-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
-                              >
-                                Leer menos
-                              </button>
-                            )}
-                          </>
-                        )}
-                      </>
+                          <span className="text-sm text-slate-400 italic">
+                            Doppio click per aggiungere note...
+                          </span>
+                        );
+                      })()
                     )}
                   </div>
                 </div>
@@ -1606,62 +1824,59 @@ export default function VentaTourAereoPage() {
                 <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg border border-amber-200 dark:border-amber-700">
                   <div className="flex items-center gap-2 mb-3">
                     <FileTextIcon className="w-5 h-5 text-amber-600" />
-                    <span className="text-sm font-medium text-amber-700 dark:text-amber-300">Notas Coordinador</span>
+                    <span className="text-sm font-medium text-amber-700 dark:text-amber-300">Note del coordinatore</span>
                   </div>
                   <div 
-                    className="text-sm text-amber-600 dark:text-amber-400 cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-800 p-2 rounded transition-colors"
+                    className="text-sm text-amber-700 dark:text-amber-300 cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-800 p-2 rounded transition-colors"
                     onDoubleClick={() => startEditingNotas('coordinador')}
+                    title={extractPlainText(tour.notasCoordinador)}
                   >
                     {editingNotas.coordinador ? (
                       <div className="space-y-2">
-                        <textarea
+                        <SimpleRichTextEditor
                           value={tempNotas.coordinador}
-                          onChange={(e) => setTempNotas(prev => ({ ...prev, coordinador: e.target.value }))}
-                          className="w-full p-2 border border-amber-300 dark:border-amber-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent dark:bg-amber-700 dark:text-white"
-                          rows={3}
-                          autoFocus
+                          onChange={(html) =>
+                            setTempNotas(prev => ({ ...prev, coordinador: html }))
+                          }
+                          placeholder="Scrivi le note del coordinatore..."
+                          rows={4}
+                          className="w-full"
                         />
                         <div className="flex gap-2">
                           <button
-                            onClick={() => saveNotas('coordinador')}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              saveNotas('coordinador');
+                            }}
                             className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded transition-colors"
                           >
-                            Guardar
+                            Salva
                           </button>
                           <button
-                            onClick={() => cancelEditingNotas('coordinador')}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              cancelEditingNotas('coordinador');
+                            }}
                             className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white text-xs rounded transition-colors"
                           >
-                            Cancelar
+                            Annulla
                           </button>
                         </div>
                       </div>
                     ) : (
-                      <>
-                        {tour.notasCoordinador.length > 100 && !expandedNotas.coordinador ? (
-                          <>
-                            {tour.notasCoordinador.substring(0, 100)}...
-                            <button
-                              onClick={() => setExpandedNotas(prev => ({ ...prev, coordinador: true }))}
-                              className="ml-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
-                            >
-                              Leer más
-                            </button>
-                          </>
+                      (() => {
+                        const sanitized = sanitizeEditorHtml(tour.notasCoordinador);
+                        return sanitized ? (
+                          <div
+                            className="leading-relaxed space-y-1"
+                            dangerouslySetInnerHTML={{ __html: sanitized }}
+                          />
                         ) : (
-                          <>
-                            {tour.notasCoordinador}
-                            {tour.notasCoordinador.length > 100 && expandedNotas.coordinador && (
-                              <button
-                                onClick={() => setExpandedNotas(prev => ({ ...prev, coordinador: false }))}
-                                className="ml-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
-                              >
-                                Leer menos
-                              </button>
-                            )}
-                          </>
-                        )}
-                      </>
+                          <span className="text-sm text-amber-400 italic">
+                            Doppio click per aggiungere note...
+                          </span>
+                        );
+                      })()
                     )}
                   </div>
                 </div>
@@ -1669,22 +1884,22 @@ export default function VentaTourAereoPage() {
             </div>
           )}
 
-          <div className="flex flex-wrap items-center gap-4 mb-4 text-sm text-gray-600 dark:text-gray-400">
-            <div>
-              Ingresos totales: <span className="font-semibold text-green-600">€{ingresos.toFixed(2)}</span>
-            </div>
-            {tour.fechaViaje && (
-              <div>
-                Fecha de Viaje: <span className="text-gray-900 dark:text-white">
-                  {new Date(tour.fechaViaje).toLocaleDateString('es-ES', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                  })}
-                </span>
-              </div>
-            )}
+        <div className="flex flex-wrap items-center gap-4 mb-4 text-sm text-gray-600 dark:text-gray-400">
+          <div>
+            Entrate totali: <span className="font-semibold text-green-600">€{ingresos.toFixed(2)}</span>
           </div>
+          {tour.fechaViaje && (
+            <div>
+              Data del viaggio: <span className="text-gray-900 dark:text-white">
+                {new Date(tour.fechaViaje).toLocaleDateString('it-IT', { 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}
+              </span>
+            </div>
+          )}
+        </div>
         </div>
       </ComponentCard>
 
@@ -1700,7 +1915,7 @@ export default function VentaTourAereoPage() {
           {/* Header fijo */}
           <div className="flex-shrink-0 p-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-              {isEditMode ? "Editar Venta" : "Nuevo Registro"}
+              {isEditMode ? "Modifica vendita" : "Nuovo inserimento"}
             </h2>
           </div>
           
@@ -1718,7 +1933,7 @@ export default function VentaTourAereoPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Pasajero *
+                    Passeggero *
                   </label>
                   <div className="relative" ref={clientDropdownRef}>
                     <input
@@ -1736,7 +1951,7 @@ export default function VentaTourAereoPage() {
                           setShowClientDropdown(true);
                         }
                       }}
-                      placeholder={loadingClientes ? 'Cargando clientes...' : 'Buscar cliente...'}
+                      placeholder={loadingClientes ? 'Caricamento clienti...' : 'Cerca cliente...'}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                     required
                     />
@@ -1756,7 +1971,7 @@ export default function VentaTourAereoPage() {
                           ))
                         ) : (
                           <div className="px-3 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
-                            {loadingClientes ? 'Cargando clientes...' : 'No se encontraron clientes'}
+                            {loadingClientes ? 'Caricamento clienti...' : 'Nessun cliente trovato'}
                           </div>
                         )}
                       </div>
@@ -1768,10 +1983,10 @@ export default function VentaTourAereoPage() {
                 {formData.clienteId && (
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                      Tipo de Pasajero *
+                      Tipo di passeggero *
                     </label>
-                    <div className="flex gap-6">
-                      <label className="flex items-center">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:gap-6">
+                      <label className="flex items-center gap-3">
                         <input
                           type="radio"
                           name="tipoPasajero"
@@ -1780,11 +1995,24 @@ export default function VentaTourAereoPage() {
                           onChange={() => handleTipoPasajeroChange('adulto')}
                           className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
                         />
-                        <span className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                          Adulto (€{tour?.precioAdulto || 0})
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-gray-900 dark:text-gray-300">
+                            Adulto
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs text-gray-500 dark:text-gray-400">€</span>
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              value={adultoPrice}
+                              onChange={(e) => handlePriceInputChange('adulto', e.target.value)}
+                              className="w-24 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                              placeholder="0.00"
+                            />
+                          </div>
+                        </div>
                       </label>
-                      <label className="flex items-center">
+                      <label className="flex items-center gap-3">
                         <input
                           type="radio"
                           name="tipoPasajero"
@@ -1793,9 +2021,22 @@ export default function VentaTourAereoPage() {
                           onChange={() => handleTipoPasajeroChange('nino')}
                           className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
                         />
-                        <span className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                          Niño (€{tour?.precioNino || 0})
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-gray-900 dark:text-gray-300">
+                            Bambino
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs text-gray-500 dark:text-gray-400">€</span>
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              value={bambinoPrice}
+                              onChange={(e) => handlePriceInputChange('nino', e.target.value)}
+                              className="w-24 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                              placeholder="0.00"
+                            />
+                          </div>
+                        </div>
                       </label>
                     </div>
                   </div>
@@ -1851,7 +2092,7 @@ export default function VentaTourAereoPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    País de origen
+                    Paese di origine
                   </label>
                   <input
                     type="text"
@@ -1877,7 +2118,7 @@ export default function VentaTourAereoPage() {
                           </button>
                         </div>
                       ))}
-                      <input type="text" value={iataSearchTerm} onChange={(e) => { setIataSearchTerm(e.target.value); setShowIataDropdown(true); }} onFocus={() => setShowIataDropdown(true)} placeholder={formData.iata.length === 0 ? "Buscar o seleccionar IATA..." : "Buscar IATA..."} className="flex-1 min-w-[120px] outline-none bg-transparent text-sm text-gray-900 dark:text-white" onClick={(e) => e.stopPropagation()} />
+                      <input type="text" value={iataSearchTerm} onChange={(e) => { setIataSearchTerm(e.target.value); setShowIataDropdown(true); }} onFocus={() => setShowIataDropdown(true)} placeholder={formData.iata.length === 0 ? "Cerca o seleziona IATA..." : "Cerca IATA..."} className="flex-1 min-w-[120px] outline-none bg-transparent text-sm text-gray-900 dark:text-white" onClick={(e) => e.stopPropagation()} />
                     </div>
                     {showIataDropdown && (
                       <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
@@ -1887,7 +2128,7 @@ export default function VentaTourAereoPage() {
                           </div>
                         ))}
                         {filteredIatas.filter(iata => !formData.iata.includes(iata.iata)).length === 0 && (
-                          <div className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">No hay IATAs disponibles</div>
+                          <div className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">Nessuna IATA disponibile</div>
                         )}
                       </div>
                     )}
@@ -1922,7 +2163,7 @@ export default function VentaTourAereoPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Transfer (€)
+                    Trasporto (€)
                   </label>
                   <input
                     type="number"
@@ -1982,11 +2223,11 @@ export default function VentaTourAereoPage() {
                 <div className="mt-4 border-t border-gray-200 dark:border-gray-700 pt-4">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      Pago en Cuotas
+                      Pagamento a rate
                     </h3>
                     <div className="flex items-center gap-3">
                       <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Número de cuotas:
+                        Numero di rate:
                       </label>
                       <select
                         value={numeroCuotas}
@@ -1997,10 +2238,10 @@ export default function VentaTourAereoPage() {
                         }}
                         className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                       >
-                        <option value={0}>Sin cuotas</option>
-                        <option value={1}>1 cuota</option>
-                        <option value={2}>2 cuotas</option>
-                        <option value={3}>3 cuotas</option>
+                        <option value={0}>Senza rate</option>
+                        <option value={1}>1 rata</option>
+                        <option value={2}>2 rate</option>
+                        <option value={3}>3 rate</option>
                       </select>
                     </div>
                   </div>
@@ -2011,7 +2252,7 @@ export default function VentaTourAereoPage() {
                         <div key={index} className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                           <div className="flex items-center justify-between mb-3">
                             <h4 className="font-medium text-gray-900 dark:text-white">
-                              Cuota {cuota.numeroCuota}
+                              Rata {cuota.numeroCuota}
                             </h4>
                             <button
                               type="button"
@@ -2027,7 +2268,7 @@ export default function VentaTourAereoPage() {
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                             <div>
                               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Fecha de Pago *
+                                Data di pagamento *
                               </label>
                               <input
                                 type="date"
@@ -2040,7 +2281,7 @@ export default function VentaTourAereoPage() {
 
                             <div>
                               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Monto *
+                                Importo *
                               </label>
                               <input
                                 type="number"
@@ -2055,14 +2296,14 @@ export default function VentaTourAereoPage() {
 
                             <div>
                               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Nota (Opcional)
+                                Nota (opzionale)
                               </label>
                               <input
                                 type="text"
                                 value={cuota.nota || ''}
                                 onChange={(e) => updateCuota(index, 'nota', e.target.value)}
                                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                                placeholder="Nota opcional..."
+                                placeholder="Nota opzionale..."
                               />
                             </div>
                           </div>
@@ -2070,7 +2311,7 @@ export default function VentaTourAereoPage() {
                           {/* Archivo adjunto para la cuota */}
                           <div className="mt-3">
                             <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                              Comprobante de Pago (opcional)
+                              Ricevuta di pagamento (opzionale)
                             </label>
                             <input
                               type="file"
@@ -2085,7 +2326,7 @@ export default function VentaTourAereoPage() {
                                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
-                                <span>{typeof cuota.attachedFile === 'string' ? 'Archivo adjunto' : cuota.attachedFile.name}</span>
+                                <span>{typeof cuota.attachedFile === 'string' ? 'File allegato' : cuota.attachedFile.name}</span>
                               </div>
                             )}
                           </div>
@@ -2096,7 +2337,7 @@ export default function VentaTourAereoPage() {
 
                   {cuotas.length === 0 && (
                     <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
-                      Selecciona el número de cuotas para configurar el plan de pagos.
+                      Seleziona il numero di rate per configurare il piano di pagamenti.
                     </p>
                   )}
                 </div>
@@ -2143,7 +2384,7 @@ export default function VentaTourAereoPage() {
                           setShowMetodoPagamentoDropdown(true);
                         }}
                         onFocus={() => setShowMetodoPagamentoDropdown(true)}
-                        placeholder={formData.metodoPagamento.length === 0 ? "Buscar o seleccionar método de pago..." : "Buscar método..."}
+                        placeholder={formData.metodoPagamento.length === 0 ? "Cerca o seleziona metodo di pagamento..." : "Cerca metodo..."}
                         className="flex-1 min-w-[120px] outline-none bg-transparent text-sm text-gray-900 dark:text-white"
                         onClick={(e) => e.stopPropagation()}
                       />
@@ -2169,7 +2410,7 @@ export default function VentaTourAereoPage() {
                           ))}
                         {filteredMetodoPagamento.filter(metodo => !formData.metodoPagamento.includes(metodo.metodoPagamento)).length === 0 && (
                           <div className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">
-                            No hay métodos de pago disponibles
+                            Nessun metodo di pagamento disponibile
                           </div>
                         )}
                       </div>
@@ -2187,7 +2428,7 @@ export default function VentaTourAereoPage() {
                     onChange={(e) => handleInputChange('metodoCompra')(e)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-gray-800 dark:text-white"
                   >
-                    <option value="">Seleccionar...</option>
+                    <option value="">Seleziona...</option>
                     {acquisti.map((acquisto) => (
                       <option key={acquisto.id} value={acquisto.acquisto}>
                         {acquisto.acquisto}
@@ -2202,11 +2443,11 @@ export default function VentaTourAereoPage() {
                   </label>
                   <select
                     value={formData.stato}
-                    onChange={handleInputChange('stato')}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                    onChange={(e) => handleStatoSelectChange(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus-border-transparent dark:bg-gray-700 dark:text-white"
                     required
                   >
-                    <option value="">Seleccionar estado...</option>
+                    <option value="">Seleziona stato...</option>
                     {pagamentos && pagamentos.map((pagamento) => (
                       <option key={pagamento.id} value={pagamento.pagamento}>
                         {pagamento.pagamento}
@@ -2220,7 +2461,7 @@ export default function VentaTourAereoPage() {
               <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Archivo Adjunto (opcional)
+                    File allegato (opzionale)
                   </label>
                   <input
                     type="file"
@@ -2236,7 +2477,7 @@ export default function VentaTourAereoPage() {
                   onClick={closeModal}
                   className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
-                  Cancelar
+                  Annulla
                 </Button>
                 <button
                   type="submit"
@@ -2244,8 +2485,8 @@ export default function VentaTourAereoPage() {
                   className="px-6 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg disabled:opacity-50"
                 >
                   {isSubmitting 
-                    ? (isEditMode ? 'Actualizando...' : 'Guardando...') 
-                    : (isEditMode ? 'Actualizar Venta' : 'Generar Venta')}
+                    ? (isEditMode ? 'Aggiornamento...' : 'Salvataggio...') 
+                    : (isEditMode ? 'Aggiorna Vendita' : 'Genera Vendita')}
                 </button>
               </div>
             </form>
@@ -2270,7 +2511,7 @@ export default function VentaTourAereoPage() {
                                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar por Pasajero, Stato, Metodo di Acquisto..."
+                placeholder="Cerca per passeggero, stato, metodo di acquisto..."
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                               />
                             </div>
@@ -2285,7 +2526,7 @@ export default function VentaTourAereoPage() {
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
-              Exportar a Excel
+              Esporta in Excel
                 </button>
             
         {/* Botón para generar venta */}
@@ -2294,7 +2535,7 @@ export default function VentaTourAereoPage() {
               className="flex items-center gap-2 px-6 py-3 bg-brand-500 hover:bg-brand-600 text-white rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg whitespace-nowrap"
           >
             <PlusIcon className="w-5 h-5" />
-            Generar Venta
+            Genera Vendita
           </button>
           </div>
         </div>
@@ -2303,17 +2544,17 @@ export default function VentaTourAereoPage() {
           <div className="text-center py-12">
             <PlaneIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              {searchTerm.trim() ? 'No se encontraron resultados' : 'No hay ventas registradas'}
+              {searchTerm.trim() ? 'Nessun risultato trovato' : 'Nessuna vendita registrata'}
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              {searchTerm.trim() ? 'Intenta con otros términos de búsqueda' : 'Genera tu primera venta para comenzar'}
+              {searchTerm.trim() ? 'Prova con altri termini di ricerca' : 'Genera la tua prima vendita per iniziare'}
             </p>
             {!searchTerm.trim() && (
             <Button
               onClick={handleOpenCreateModal}
               className="bg-brand-500 hover:bg-brand-600 text-white px-6 py-3 rounded-lg"
             >
-              Generar Venta
+              Genera Vendita
             </Button>
             )}
           </div>
@@ -2323,7 +2564,7 @@ export default function VentaTourAereoPage() {
               <thead className="bg-[#0366D6]">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                    Pasajero
+                    Passeggero
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                     Stato
@@ -2341,13 +2582,13 @@ export default function VentaTourAereoPage() {
                     Coordinatore
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                    Transporte
+                    Trasporto
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                     Hotel
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                    Neto
+                    Netto
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                     IATA
@@ -2359,7 +2600,7 @@ export default function VentaTourAereoPage() {
                     Venduto
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                    Fee
+                    Commissione
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                     Acconto
@@ -2374,10 +2615,10 @@ export default function VentaTourAereoPage() {
                     Agente
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                    Archivos
+                    File
                   </th>
                   <th className="sticky right-0 px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider bg-[#0366D6] z-10 shadow-[-4px_0_6px_-1px_rgba(0,0,0,0.1)]">
-                    Acciones
+                    Azioni
                   </th>
                 </tr>
               </thead>
@@ -2388,7 +2629,7 @@ export default function VentaTourAereoPage() {
                       <button
                         onClick={() => handleClientClick(venta)}
                         className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline cursor-pointer font-medium"
-                        title="Ver información del cliente"
+                        title="Visualizza informazioni cliente"
                       >
                         {venta.pasajero}
                       </button>
@@ -2401,7 +2642,14 @@ export default function VentaTourAereoPage() {
                           onBlur={() => setEditingStatoId(null)}
                           onChange={async (e) => {
                             const newValue = e.target.value;
-                            setEditingStatoId(null);
+                            if (!canEditStato(newValue)) {
+                              setMessage({
+                                type: 'error',
+                                text: 'Il tuo ruolo non consente di impostare questo stato'
+                              });
+                              e.target.value = venta.stato;
+                              return;
+                            }
                             
                             try {
                               const response = await fetch(`/api/tour-aereo/ventas/${venta.id}`, {
@@ -2418,18 +2666,20 @@ export default function VentaTourAereoPage() {
                                 ));
                                 setMessage({
                                   type: 'success',
-                                  text: 'Estado actualizado correctamente'
+                                  text: 'Stato aggiornato correttamente'
                                 });
                                 setTimeout(() => setMessage(null), 3000);
+                                setEditingStatoId(null);
                               } else {
-                                throw new Error('Error al actualizar');
+                                throw new Error("Errore durante l'aggiornamento");
                               }
                             } catch (error) {
                               setMessage({
                                 type: 'error',
-                                text: 'Error al actualizar el estado'
+                                text: "Errore durante l'aggiornamento dello stato"
                               });
                               setTimeout(() => setMessage(null), 3000);
+                              setEditingStatoId(null);
                             }
                           }}
                           className="w-full px-2 py-1 text-xs border border-brand-500 rounded focus:ring-2 focus:ring-brand-500 focus:outline-none dark:bg-gray-800 dark:border-brand-400 dark:text-white"
@@ -2450,7 +2700,7 @@ export default function VentaTourAereoPage() {
                             venta.stato === 'Verificato' ? 'bg-purple-600 text-white' :
                             'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
                           }`}
-                          title="Clic para editar"
+                          title="Clicca per modificare"
                         >
                           {venta.stato}
                         </div>
@@ -2472,7 +2722,7 @@ export default function VentaTourAereoPage() {
                           }}
                           className="w-full px-2 py-1 text-xs border border-brand-500 rounded focus:ring-2 focus:ring-brand-500 focus:outline-none dark:bg-gray-800 dark:border-brand-400 dark:text-white"
                         >
-                          <option value="">Seleccionar...</option>
+                          <option value="">Seleziona...</option>
                           {acquisti.map((acquisto) => (
                             <option key={acquisto.id} value={acquisto.acquisto}>
                               {acquisto.acquisto}
@@ -2483,14 +2733,14 @@ export default function VentaTourAereoPage() {
                         <div
                           onClick={() => startEditingMetodoCompra(venta)}
                           className="text-xs truncate cursor-pointer px-2 py-1 rounded text-center font-medium bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/30 min-h-[24px]"
-                          title="Clic para editar"
+                          title="Clicca per modificare"
                         >
                           {venta.metodoCompra || '\u00A0'}
                         </div>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      €{(venta.transfer || 0).toFixed(2)}
+                      €{(tour?.transporte || 0).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       €{(tour?.guidaLocale || 0).toFixed(2)}
@@ -2499,7 +2749,7 @@ export default function VentaTourAereoPage() {
                       €{(tour?.coordinatore || 0).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      €{(tour?.transporte || 0).toFixed(2)}
+                      €{(venta.transfer || 0).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       €{(venta.hotel || 0).toFixed(2)}
@@ -2508,7 +2758,16 @@ export default function VentaTourAereoPage() {
                       €{((venta.transfer || 0) + (tour?.guidaLocale || 0) + (tour?.coordinatore || 0) + (tour?.transporte || 0) + (venta.hotel || 0)).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {venta.iata}
+                      {(() => {
+                        try {
+                          const parsed = typeof venta.iata === 'string'
+                            ? JSON.parse(venta.iata)
+                            : venta.iata;
+                          return Array.isArray(parsed) ? parsed.join(', ') : (venta.iata || '-');
+                        } catch {
+                          return venta.iata || '-';
+                        }
+                      })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {venta.pnr || '-'}
@@ -2526,7 +2785,16 @@ export default function VentaTourAereoPage() {
                       €{venta.daPagare.toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {venta.metodoPagamento}
+                      {(() => {
+                        try {
+                          const parsed = typeof venta.metodoPagamento === 'string'
+                            ? JSON.parse(venta.metodoPagamento)
+                            : venta.metodoPagamento;
+                          return Array.isArray(parsed) ? parsed.join(', ') : (venta.metodoPagamento || '-');
+                        } catch {
+                          return venta.metodoPagamento || '-';
+                        }
+                      })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {venta.creator?.firstName 
@@ -2542,7 +2810,7 @@ export default function VentaTourAereoPage() {
                             ? 'bg-purple-100 hover:bg-purple-200 text-purple-700 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 dark:text-purple-400 cursor-pointer'
                             : 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600'
                         }`}
-                        title={countFiles(venta) > 0 ? 'Ver archivos' : 'Sin archivos'}
+                        title={countFiles(venta) > 0 ? 'Visualizza file' : 'Nessun file'}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -2591,7 +2859,7 @@ export default function VentaTourAereoPage() {
               {/* Header */}
               <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center flex-shrink-0">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                  Archivos Adjuntos - {viewingFiles.pasajero}
+                  File allegati - {viewingFiles.pasajero}
                 </h2>
                 <button
                   onClick={() => setIsFileViewerOpen(false)}
@@ -2605,10 +2873,10 @@ export default function VentaTourAereoPage() {
 
               {/* Content */}
               <div className="p-6 space-y-4 overflow-y-auto flex-1">
-                {/* Archivo Principal */}
+                {/* File principale */}
                 {viewingFiles.attachedFile && (
                   <div>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Archivo Principal</p>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">File principale</p>
                     {(() => {
                       const fileName = viewingFiles.attachedFileName || viewingFiles.attachedFile;
                       const isImage = fileName && (
@@ -2620,9 +2888,9 @@ export default function VentaTourAereoPage() {
                         return (
                           <img 
                             src={viewingFiles.attachedFile} 
-                            alt="Archivo principal" 
+                            alt="File principale" 
                             className="w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                            onClick={() => handleDownload(viewingFiles.attachedFile!, viewingFiles.attachedFileName || 'archivo_principal.jpg')}
+                            onClick={() => handleDownload(viewingFiles.attachedFile!, viewingFiles.attachedFileName || 'file_principale.jpg')}
                           />
                         );
                       } else {
@@ -2632,7 +2900,7 @@ export default function VentaTourAereoPage() {
                             className="block w-full p-4 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left"
                           >
                             <p className="text-sm text-gray-900 dark:text-white">{viewingFiles.attachedFileName || 'Documento'}</p>
-                            <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Clic para descargar</p>
+                            <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Clicca per scaricare</p>
                           </button>
                         );
                       }
@@ -2640,11 +2908,11 @@ export default function VentaTourAereoPage() {
                   </div>
                 )}
 
-                {/* Archivos de Cuotas */}
+                {/* File delle rate */}
                 {viewingFiles.cuotas && viewingFiles.cuotas.filter(c => c.attachedFile).map((cuota) => (
                   <div key={cuota.id || cuota.numeroCuota}>
                     <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Cuota {cuota.numeroCuota}
+                      Rata {cuota.numeroCuota}
                     </p>
                     {(() => {
                       const fileUrl = typeof cuota.attachedFile === 'string' ? cuota.attachedFile : null;
@@ -2660,19 +2928,19 @@ export default function VentaTourAereoPage() {
                         return (
                           <img 
                             src={fileUrl} 
-                            alt={`Cuota ${cuota.numeroCuota}`} 
+                            alt={`Rata ${cuota.numeroCuota}`} 
                             className="w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                            onClick={() => handleDownload(fileUrl, cuota.attachedFileName || `cuota_${cuota.numeroCuota}.jpg`)}
+                            onClick={() => handleDownload(fileUrl, cuota.attachedFileName || `rata_${cuota.numeroCuota}.jpg`)}
                           />
                         );
                       } else {
                         return (
                           <button
-                            onClick={() => handleDownload(fileUrl, cuota.attachedFileName || `cuota_${cuota.numeroCuota}.pdf`)}
+                            onClick={() => handleDownload(fileUrl, cuota.attachedFileName || `rata_${cuota.numeroCuota}.pdf`)}
                             className="block w-full p-4 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left"
                           >
                             <p className="text-sm text-gray-900 dark:text-white">{cuota.attachedFileName || 'Documento'}</p>
-                            <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Clic para descargar</p>
+                            <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Clicca per scaricare</p>
                           </button>
                         );
                       }
@@ -2683,7 +2951,7 @@ export default function VentaTourAereoPage() {
                 {/* Sin archivos */}
                 {!viewingFiles.attachedFile && (!viewingFiles.cuotas || viewingFiles.cuotas.filter(c => c.attachedFile).length === 0) && (
                   <div className="text-center py-12">
-                    <p className="text-gray-500 dark:text-gray-400">No hay archivos adjuntos</p>
+                    <p className="text-gray-500 dark:text-gray-400">Nessun file allegato</p>
                   </div>
                 )}
               </div>
@@ -2694,7 +2962,7 @@ export default function VentaTourAereoPage() {
                   onClick={() => setIsFileViewerOpen(false)}
                   className="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-lg transition-colors"
                 >
-                  Cerrar
+                  Chiudi
                 </button>
               </div>
             </div>
@@ -2712,7 +2980,7 @@ export default function VentaTourAereoPage() {
               {/* Header */}
               <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center flex-shrink-0">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                  Información del Cliente - {selectedClient.firstName} {selectedClient.lastName}
+                  Informazioni cliente - {selectedClient.firstName} {selectedClient.lastName}
                 </h2>
                 <button
                   onClick={() => setIsClientModalOpen(false)}
@@ -2729,12 +2997,12 @@ export default function VentaTourAereoPage() {
                 {/* Información Personal */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                    Información Personal
+                    Informazioni personali
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Nombre Completo
+                        Nome completo
                       </label>
                       <p className="mt-1 text-sm text-gray-900 dark:text-white">
                         {selectedClient.firstName} {selectedClient.lastName}
@@ -2742,7 +3010,7 @@ export default function VentaTourAereoPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Código Fiscal
+                        Codice fiscale
                       </label>
                       <p className="mt-1 text-sm text-gray-900 dark:text-white">
                         {selectedClient.fiscalCode}
@@ -2758,7 +3026,7 @@ export default function VentaTourAereoPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Teléfono
+                        Telefono
                       </label>
                       <p className="mt-1 text-sm text-gray-900 dark:text-white">
                         {selectedClient.phoneNumber}
@@ -2766,15 +3034,15 @@ export default function VentaTourAereoPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Fecha de Nacimiento
+                        Data di nascita
                       </label>
                       <p className="mt-1 text-sm text-gray-900 dark:text-white">
-                        {new Date(selectedClient.birthDate).toLocaleDateString('es-ES')}
+                        {new Date(selectedClient.birthDate).toLocaleDateString('it-IT')}
                       </p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Lugar de Nacimiento
+                        Luogo di nascita
                       </label>
                       <p className="mt-1 text-sm text-gray-900 dark:text-white">
                         {selectedClient.birthPlace}
@@ -2782,7 +3050,7 @@ export default function VentaTourAereoPage() {
                     </div>
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Dirección
+                        Indirizzo
                       </label>
                       <p className="mt-1 text-sm text-gray-900 dark:text-white">
                         {selectedClient.address}
@@ -2794,7 +3062,7 @@ export default function VentaTourAereoPage() {
                 {/* Documentos */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                    Documentos Adjuntos
+                    Documenti allegati
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {[
@@ -2825,7 +3093,7 @@ export default function VentaTourAereoPage() {
                               className="block w-full p-4 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left"
                             >
                               <p className="text-sm text-gray-900 dark:text-white">{doc.name || 'Documento'}</p>
-                              <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Clic para descargar</p>
+                              <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Clicca per scaricare</p>
                             </button>
                           )}
                         </div>
@@ -2835,7 +3103,7 @@ export default function VentaTourAereoPage() {
                   
                   {!selectedClient.document1 && !selectedClient.document2 && !selectedClient.document3 && !selectedClient.document4 && (
                     <div className="text-center py-8">
-                      <p className="text-gray-500 dark:text-gray-400">No hay documentos adjuntos</p>
+                      <p className="text-gray-500 dark:text-gray-400">Nessun documento allegato</p>
                     </div>
                   )}
                 </div>
@@ -2847,7 +3115,7 @@ export default function VentaTourAereoPage() {
                   onClick={() => setIsClientModalOpen(false)}
                   className="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-lg transition-colors"
                 >
-                  Cerrar
+                  Chiudi
                 </button>
               </div>
             </div>

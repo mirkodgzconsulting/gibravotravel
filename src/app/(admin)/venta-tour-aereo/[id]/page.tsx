@@ -268,10 +268,17 @@ const extractPlainText = (note?: string | null) => {
   const sanitized = sanitizeEditorHtml(note);
   if (!sanitized) return '';
   return sanitized
-    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<br\s*\/?>(?:\r?\n)?/gi, '\n')
     .replace(/<[^>]+>/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+};
+
+const getNotePreview = (note?: string | null, maxLength = 280) => {
+  const text = extractPlainText(note);
+  if (!text) return '';
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, maxLength).trim()}…`;
 };
 
 export default function VentaTourAereoPage() {
@@ -322,9 +329,15 @@ export default function VentaTourAereoPage() {
     tour: false,
     coordinador: false
   });
-  const [tempNotas, setTempNotas] = useState<{tour: string, coordinador: string}>({
-    tour: '',
-    coordinador: ''
+  const [tempNotas, setTempNotas] = useState<{tour: string, coordinador: string}>(
+    {
+      tour: '',
+      coordinador: ''
+    }
+  );
+  const [expandedNotas, setExpandedNotas] = useState<{ tour: boolean; coordinador: boolean }>({
+    tour: false,
+    coordinador: false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingStatoId, setEditingStatoId] = useState<string | null>(null);
@@ -1872,9 +1885,9 @@ export default function VentaTourAereoPage() {
                     <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Note del tour</span>
                   </div>
                   <div
-                    className="text-sm text-slate-600 dark:text-slate-400 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 p-2 rounded transition-colors"
+                    className="text-sm text-slate-600 dark:text-slate-400 p-2 rounded transition-colors"
                     onDoubleClick={() => startEditingNotas('tour')}
-                    title={extractPlainText(tour.notas)}
+                    title={expandedNotas.tour ? undefined : getNotePreview(tour.notas)}
                   >
                     {editingNotas.tour ? (
                       <div className="space-y-2">
@@ -1911,17 +1924,39 @@ export default function VentaTourAereoPage() {
                     ) : (
                       (() => {
                         const sanitized = sanitizeEditorHtml(tour.notas);
-                        return sanitized ? (
-                          <div
-                            className="leading-relaxed space-y-1"
-                            dangerouslySetInnerHTML={{ __html: sanitized }}
-                          />
-                        ) : (
-                          <span className="text-sm text-slate-400 italic">
-                            Doppio click per aggiungere note...
-                          </span>
+                        if (!sanitized) {
+                          return (
+                            <span className="text-sm text-slate-400 italic">
+                              Doppio click per aggiungere note...
+                            </span>
+                          );
+                        }
+
+                        const plain = extractPlainText(tour.notas);
+                        const content = expandedNotas.tour ? sanitized : getNotePreview(tour.notas);
+
+                        return (
+                          <div className="leading-relaxed space-y-1">
+                            {expandedNotas.tour ? (
+                              <div dangerouslySetInnerHTML={{ __html: sanitized }} />
+                            ) : (
+                              <>{content}</>
+                            )}
+                          </div>
                         );
                       })()
+                    )}
+                    {!editingNotas.tour && extractPlainText(tour.notas).length > 280 && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExpandedNotas(prev => ({ ...prev, tour: !prev.tour }));
+                        }}
+                        className="mt-2 text-xs font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
+                      >
+                        {expandedNotas.tour ? 'Mostra meno' : 'Leggi di più'}
+                      </button>
                     )}
                   </div>
                 </div>
@@ -1934,9 +1969,9 @@ export default function VentaTourAereoPage() {
                     <span className="text-sm font-medium text-amber-700 dark:text-amber-300">Note del coordinatore</span>
                   </div>
                   <div 
-                    className="text-sm text-amber-700 dark:text-amber-300 cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-800 p-2 rounded transition-colors"
+                    className="text-sm text-amber-700 dark:text-amber-300 p-2 rounded transition-colors"
                     onDoubleClick={() => startEditingNotas('coordinador')}
-                    title={extractPlainText(tour.notasCoordinador)}
+                    title={expandedNotas.coordinador ? undefined : getNotePreview(tour.notasCoordinador)}
                   >
                     {editingNotas.coordinador ? (
                       <div className="space-y-2">
@@ -1973,17 +2008,40 @@ export default function VentaTourAereoPage() {
                     ) : (
                       (() => {
                         const sanitized = sanitizeEditorHtml(tour.notasCoordinador);
-                        return sanitized ? (
-                          <div
-                            className="leading-relaxed space-y-1"
-                            dangerouslySetInnerHTML={{ __html: sanitized }}
-                          />
-                        ) : (
-                          <span className="text-sm text-amber-400 italic">
-                            Doppio click per aggiungere note...
-                          </span>
+                        if (!sanitized) {
+                          return (
+                            <span className="text-sm text-amber-400 italic">
+                              Doppio click per aggiungere note...
+                            </span>
+                          );
+                        }
+
+                        const content = expandedNotas.coordinador
+                          ? sanitized
+                          : getNotePreview(tour.notasCoordinador);
+
+                        return (
+                          <div className="leading-relaxed space-y-1">
+                            {expandedNotas.coordinador ? (
+                              <div dangerouslySetInnerHTML={{ __html: sanitized }} />
+                            ) : (
+                              <>{content}</>
+                            )}
+                          </div>
                         );
                       })()
+                    )}
+                    {!editingNotas.coordinador && extractPlainText(tour.notasCoordinador).length > 280 && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExpandedNotas(prev => ({ ...prev, coordinador: !prev.coordinador }));
+                        }}
+                        className="mt-2 text-xs font-semibold text-amber-700 hover:text-amber-800 dark:text-amber-300 dark:hover:text-amber-200"
+                      >
+                        {expandedNotas.coordinador ? 'Mostra meno' : 'Leggi di più'}
+                      </button>
                     )}
                   </div>
                 </div>

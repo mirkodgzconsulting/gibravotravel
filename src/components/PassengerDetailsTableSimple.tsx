@@ -129,6 +129,7 @@ const PassengerDetailsTableSimple: React.FC<PassengerDetailsTableSimpleProps> = 
   const [estadoFilter, setEstadoFilter] = useState('');
   const [servicioFilter, setServicioFilter] = useState('');
   const [metodoCompraFilter, setMetodoCompraFilter] = useState('');
+  const [metodoCompraOptions, setMetodoCompraOptions] = useState<string[]>([]);
 
   const [editingEstadoId, setEditingEstadoId] = useState<string | null>(null);
   const [editingFechaPagoId, setEditingFechaPagoId] = useState<string | null>(null);
@@ -182,6 +183,59 @@ const PassengerDetailsTableSimple: React.FC<PassengerDetailsTableSimpleProps> = 
       setTempNotas('');
     }
   }, [canEditEstado, canEditFechaPago, canEditActivacion, canEditNotas]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    let isMounted = true;
+
+    const loadMetodoCompraOptions = async () => {
+      try {
+        const response = await fetch('/api/acquisto');
+        if (!response.ok) {
+          throw new Error(`Errore nel recupero dei metodi di acquisto: ${response.status}`);
+        }
+        const data = await response.json();
+        const rawItems: Array<{ acquisto?: string } | string> =
+          Array.isArray(data)
+            ? data
+            : Array.isArray((data as { acquisti?: Array<{ acquisto?: string } | string> }).acquisti)
+              ? (data as { acquisti: Array<{ acquisto?: string } | string> }).acquisti
+              : [];
+
+        const unique = rawItems.reduce<Map<string, string>>((map, item) => {
+          const value =
+            typeof item === 'string'
+              ? item
+              : typeof item?.acquisto === 'string'
+                ? item.acquisto
+                : '';
+          if (!value) return map;
+          const normalized = value.trim();
+          if (!normalized) return map;
+          const key = normalized.toLowerCase();
+          if (!map.has(key)) {
+            map.set(key, normalized);
+          }
+          return map;
+        }, new Map());
+
+        if (isMounted) {
+          setMetodoCompraOptions(Array.from(unique.values()).sort((a, b) => a.localeCompare(b)));
+        }
+      } catch (error) {
+        console.error('Errore durante il caricamento dei metodi di acquisto', error);
+        if (isMounted) {
+          setMetodoCompraOptions([]);
+        }
+      }
+    };
+
+    loadMetodoCompraOptions();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen]);
 
   const filteredData = useMemo(() => {
     const searchLower = searchTerm.toLowerCase();
@@ -454,13 +508,18 @@ const PassengerDetailsTableSimple: React.FC<PassengerDetailsTableSimpleProps> = 
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Metodo di acquisto
                 </label>
-                <input
-                  type="text"
-                  placeholder="Cerca metodo..."
-                  value={metodoCompraFilter}
-                  onChange={(e) => setMetodoCompraFilter(e.target.value)}
-                  className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-purple-500 focus-border-transparent"
-                />
+              <select
+                value={metodoCompraFilter}
+                onChange={(e) => setMetodoCompraFilter(e.target.value)}
+                className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-purple-500 focus-border-transparent"
+              >
+                <option value="">Tutti</option>
+                {metodoCompraOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">

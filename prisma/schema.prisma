@@ -527,6 +527,7 @@ model VentaTourAereo {
   iata             String
   pnr              String?
   hotel            Float?
+  tkt              Float?
   transfer         Float?
   attachedFile     String?
   attachedFileName String?

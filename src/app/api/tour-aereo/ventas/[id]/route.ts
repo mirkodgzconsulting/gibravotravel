@@ -29,10 +29,10 @@ export async function PATCH(
 
     const { id: ventaId } = await params;
     const body = await request.json();
-    const { stato, metodoCompra } = body;
+    const { stato, metodoCompra, tkt } = body;
 
-    if (!stato && !metodoCompra) {
-      return NextResponse.json({ error: 'Al menos uno de los campos stato o metodoCompra es requerido' }, { status: 400 });
+    if (stato === undefined && metodoCompra === undefined && tkt === undefined) {
+      return NextResponse.json({ error: 'Ì necessario fornire almeno un campo da aggiornare' }, { status: 400 });
     }
 
     // Buscar el usuario en la base de datos
@@ -61,23 +61,35 @@ export async function PATCH(
       return NextResponse.json({ error: 'Venta no encontrada' }, { status: 404 });
     }
 
-    // Verificar permisos:
-    // - ADMIN y TI pueden editar cualquier venta
-    // - USER puede editar sus propias ventas
-    // - USER puede actualizar el estado de ventas ajenas solo si lo establece en Acconto o Ricevuto
+    // Verificar permisos: ADMIN y TI pueden editar cualquier venta,
+    // USER solo puede editar sus propias ventas
+    // Nota: createdBy almacena el id del usuario, no el clerkId
+    const allowedUserStates = new Set(['Acconto', 'Ricevuto']);
+    const keys = Object.keys(body);
+    const soloActualizaEstado = keys.length === 1 && keys[0] === 'stato';
+    const soloActualizaTkt = keys.length === 1 && keys[0] === 'tkt';
+    const puedeActualizarEstado = soloActualizaEstado && stato !== undefined && allowedUserStates.has(stato);
     if (user.role === 'USER' && venta.createdBy !== user.id) {
-      const allowedUserStates = new Set(['Acconto', 'Ricevuto']);
-      const keys = Object.keys(body);
-      const soloActualizaEstado = keys.length === 1 && keys[0] === 'stato';
-      if (!(soloActualizaEstado && stato !== undefined && allowedUserStates.has(stato))) {
+      if (!puedeActualizarEstado && !soloActualizaTkt) {
         return NextResponse.json({ error: 'No autorizado para editar esta venta' }, { status: 403 });
       }
     }
 
     // Actualizar el stato y/o metodoCompra
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (stato !== undefined) updateData.stato = stato;
     if (metodoCompra !== undefined) updateData.metodoCompra = metodoCompra;
+    if (tkt !== undefined) {
+      if (tkt === null || tkt === '') {
+        updateData.tkt = null;
+      } else {
+        const parsedTkt = Number.parseFloat(String(tkt).replace(',', '.'));
+        if (Number.isNaN(parsedTkt)) {
+          return NextResponse.json({ error: 'Il valore di TKT non è valido' }, { status: 400 });
+        }
+        updateData.tkt = Math.round(parsedTkt * 100) / 100;
+      }
+    }
     
     const ventaActualizada = await prisma.ventaTourAereo.update({
       where: { id: ventaId },
@@ -137,7 +149,9 @@ export async function PUT(
     // Verificar permisos: ADMIN y TI pueden editar cualquier venta,
     // USER solo puede editar sus propias ventas
     // Nota: createdBy almacena el id del usuario, no el clerkId
-    // Los usuarios USER también pueden editar ventas existentes independientemente del creador.
+    if (user.role === 'USER' && venta.createdBy !== user.id) {
+      return NextResponse.json({ error: 'No autorizado para editar esta venta' }, { status: 403 });
+    }
 
     // Extraer datos del FormData
     const pasajero = formData.get('pasajero') as string;

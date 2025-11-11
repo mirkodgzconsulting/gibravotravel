@@ -36,6 +36,7 @@ interface TourAereo {
   guidaLocale: number | null;
   coordinatore: number | null;
   hotel: number | null;
+  tkt?: number | null;
   transfer: number | null;
   transporte: number | null;
   notas: string | null;
@@ -81,6 +82,7 @@ interface VentaTourAereo {
   iata: string;
   pnr: string | null;
   hotel: number | null;
+  tkt?: number | null;
   transfer: number | null;
   venduto: number;
   acconto: number;
@@ -328,6 +330,8 @@ export default function VentaTourAereoPage() {
   const [editingStatoId, setEditingStatoId] = useState<string | null>(null);
   const [editingMetodoCompraId, setEditingMetodoCompraId] = useState<string | null>(null);
   const [tempMetodoCompra, setTempMetodoCompra] = useState<string>('');
+  const [editingTktId, setEditingTktId] = useState<string | null>(null);
+  const [tempTktValue, setTempTktValue] = useState<string>('');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [editingVenta, setEditingVenta] = useState<VentaTourAereo | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -347,6 +351,7 @@ export default function VentaTourAereoPage() {
   const [clientSearchTerm, setClientSearchTerm] = useState<string>('');
   const [showClientDropdown, setShowClientDropdown] = useState<boolean>(false);
   const clientDropdownRef = useRef<HTMLDivElement>(null);
+  const tktEditCancelled = useRef(false);
 
   // Estados para manejo de cuotas
   const [numeroCuotas, setNumeroCuotas] = useState<number>(0);
@@ -1011,6 +1016,9 @@ export default function VentaTourAereoPage() {
       })(),
       'PNR': venta.pnr || '',
       'Hotel (€)': venta.hotel || 0,
+      'TKT (€)': venta.tkt !== null && venta.tkt !== undefined
+        ? Number(venta.tkt.toFixed(2))
+        : 0,
       'Trasporto (€)': venta.transfer || 0,
       'Venduto (€)': venta.venduto || 0,
       'Acconto (€)': venta.acconto || 0,
@@ -1331,6 +1339,97 @@ export default function VentaTourAereoPage() {
   const cancelEditingMetodoCompra = useCallback(() => {
     setEditingMetodoCompraId(null);
     setTempMetodoCompra('');
+  }, []);
+
+  const startEditingTkt = useCallback((venta: VentaTourAereo) => {
+    tktEditCancelled.current = false;
+    setEditingTktId(venta.id);
+    setTempTktValue(
+      venta.tkt !== undefined && venta.tkt !== null
+        ? venta.tkt.toString()
+        : ''
+    );
+  }, []);
+
+  const saveTkt = useCallback(async (ventaId: string) => {
+    if (tktEditCancelled.current) {
+      tktEditCancelled.current = false;
+      return;
+    }
+
+    if (editingTktId && editingTktId !== ventaId) {
+      return;
+    }
+
+    const sanitized = tempTktValue.replace(',', '.').trim();
+    let parsedValue: number | null = null;
+
+    if (sanitized !== '') {
+      const numeric = Number.parseFloat(sanitized);
+      if (Number.isNaN(numeric)) {
+        setMessage({
+          type: 'error',
+          text: 'Inserisci un importo valido per TKT'
+        });
+        setTimeout(() => setMessage(null), 4000);
+        return;
+      }
+      parsedValue = Math.round(numeric * 100) / 100;
+    }
+
+    const ventaActual = ventas.find(v => v.id === ventaId);
+    if (ventaActual) {
+      const originalValue = ventaActual.tkt ?? null;
+      if (
+        (parsedValue === null && (originalValue === null || originalValue === undefined)) ||
+        (parsedValue !== null && originalValue !== null && Math.abs(parsedValue - originalValue) < 0.001)
+      ) {
+        setEditingTktId(null);
+        setTempTktValue('');
+        return;
+      }
+    }
+
+    try {
+      const response = await fetch(`/api/tour-aereo/ventas/${ventaId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ tkt: parsedValue }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Errore durante l'aggiornamento del TKT");
+      }
+
+      setVentas(prev => prev.map(v =>
+        v.id === ventaId ? { ...v, tkt: parsedValue } : v
+      ));
+
+      setMessage({
+        type: 'success',
+        text: 'TKT aggiornato correttamente'
+      });
+      setTimeout(() => setMessage(null), 3000);
+    } catch (error) {
+      console.error('Error updating TKT:', error);
+      setMessage({
+        type: 'error',
+        text: "Errore durante l'aggiornamento del TKT"
+      });
+      setTimeout(() => setMessage(null), 4000);
+    } finally {
+      tktEditCancelled.current = false;
+      setEditingTktId(null);
+      setTempTktValue('');
+    }
+  }, [editingTktId, tempTktValue, ventas]);
+
+  const cancelEditingTkt = useCallback(() => {
+    tktEditCancelled.current = true;
+    setEditingTktId(null);
+    setTempTktValue('');
   }, []);
 
   // Funciones para manejar cuotas
@@ -1685,8 +1784,8 @@ export default function VentaTourAereoPage() {
             {tour.acc && (
               <div className="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
-                  <PlaneIcon className="w-4 h-4 text-indigo-600" />
-                  <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300">ACC</span>
+                  <UsersIcon className="w-4 h-4 text-indigo-600" />
+                  <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300">Coordinatore (ACC)</span>
                 </div>
                 <div className="text-lg font-bold text-indigo-900 dark:text-indigo-100">
                   {tour.acc}
@@ -2573,6 +2672,12 @@ export default function VentaTourAereoPage() {
                     Metodo di Acquisto
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                    IATA
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                    PNR
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                     Transfer
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
@@ -2588,28 +2693,25 @@ export default function VentaTourAereoPage() {
                     Hotel
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                    TKT
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                     Netto
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                    IATA
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                    PNR
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                     Venduto
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                    Commissione
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                    Acconto
+                    PAGATO/ACCONTO
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                     Da Pagare
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                    Pagamento
+                    METODOPAG
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                    FEEAGV
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                     Agente
@@ -2740,24 +2842,6 @@ export default function VentaTourAereoPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      €{(tour?.transporte || 0).toFixed(2)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      €{(tour?.guidaLocale || 0).toFixed(2)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      €{(tour?.coordinatore || 0).toFixed(2)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      €{(venta.transfer || 0).toFixed(2)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      €{(venta.hotel || 0).toFixed(2)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      €{((venta.transfer || 0) + (tour?.guidaLocale || 0) + (tour?.coordinatore || 0) + (tour?.transporte || 0) + (venta.hotel || 0)).toFixed(2)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {(() => {
                         try {
                           const parsed = typeof venta.iata === 'string'
@@ -2772,17 +2856,66 @@ export default function VentaTourAereoPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {venta.pnr || '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      €{venta.venduto.toFixed(2)}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm bg-amber-200 text-amber-900 dark:bg-amber-900/60 dark:text-amber-100">
+                       €{(tour?.transporte || 0).toFixed(2)}
+                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm bg-sky-200 text-sky-900 dark:bg-sky-900/60 dark:text-sky-100">
+                      €{(tour?.guidaLocale || 0).toFixed(2)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm bg-emerald-200 text-emerald-900 dark:bg-emerald-900/60 dark:text-emerald-100">
+                      €{(tour?.coordinatore || 0).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      €{(venta.venduto - ((venta.transfer || 0) + (tour?.guidaLocale || 0) + (tour?.coordinatore || 0) + (tour?.transporte || 0) + (venta.hotel || 0))).toFixed(2)}
+                      €{(venta.transfer || 0).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      €{venta.acconto.toFixed(2)}
+                      €{(venta.hotel || 0).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      €{venta.daPagare.toFixed(2)}
+                      {editingTktId === venta.id ? (
+                        <div className="flex items-center gap-1">
+                          <span className="text-gray-500">€</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={tempTktValue}
+                            autoFocus
+                            onChange={(e) => setTempTktValue(e.target.value)}
+                            onBlur={() => saveTkt(venta.id)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                saveTkt(venta.id);
+                              } else if (e.key === 'Escape') {
+                                cancelEditingTkt();
+                              }
+                            }}
+                            className="w-24 px-2 py-1 text-xs border border-brand-500 rounded focus:ring-2 focus:ring-brand-500 focus:outline-none dark:bg-gray-800 dark:border-brand-400 dark:text-white"
+                          />
+                        </div>
+                      ) : (
+                        <div
+                          onClick={() => startEditingTkt(venta)}
+                          className="text-xs truncate cursor-pointer px-2 py-1 rounded text-center font-medium bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 min-h-[24px]"
+                          title="Clicca per modificare"
+                        >
+                          {venta.tkt !== null && venta.tkt !== undefined
+                            ? `€${venta.tkt.toFixed(2)}`
+                            : '€0.00'}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      €{((venta.transfer || 0) + (tour?.guidaLocale || 0) + (tour?.coordinatore || 0) + (tour?.transporte || 0) + (venta.hotel || 0)).toFixed(2)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                       €{venta.venduto.toFixed(2)}
+                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                       €{venta.acconto.toFixed(2)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        €{venta.daPagare.toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {(() => {
@@ -2795,6 +2928,9 @@ export default function VentaTourAereoPage() {
                           return venta.metodoPagamento || '-';
                         }
                       })()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      €{(venta.venduto - ((venta.transfer || 0) + (tour?.guidaLocale || 0) + (tour?.coordinatore || 0) + (tour?.transporte || 0) + (venta.hotel || 0))).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {venta.creator?.firstName 

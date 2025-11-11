@@ -357,7 +357,6 @@ export default function VentaTourAereoPage() {
   const [numeroCuotas, setNumeroCuotas] = useState<number>(0);
   const [cuotas, setCuotas] = useState<CuotaVenta[]>([]);
   const [isLoadingCuotas, setIsLoadingCuotas] = useState(false);
-  const cuotasInicializadas = useRef(false);
 
   const [formData, setFormData] = useState<VentaFormData>({
     clienteId: "",
@@ -634,31 +633,44 @@ export default function VentaTourAereoPage() {
 
   // Manejar cambio de número de cuotas
   useEffect(() => {
-    // No sobrescribir cuotas si estamos cargando desde edición
-    if (isLoadingCuotas) {
-      return;
-    }
-    
-    // Si ya fueron inicializadas, no volver a crear cuotas vacías
-    if (cuotasInicializadas.current && numeroCuotas > 0) {
-      return;
-    }
-    
-    if (numeroCuotas > 0) {
-      const nuevasCuotas = Array.from({ length: numeroCuotas }, (_, i) => ({
-        numeroCuota: i + 1,
-        fechaPago: '',
-        monto: 0,
-        nota: '',
-        estado: 'Pendiente',
-        attachedFile: null
-      }));
-      setCuotas(nuevasCuotas);
-      cuotasInicializadas.current = true;
-    } else {
+    if (isLoadingCuotas) return;
+
+    if (numeroCuotas <= 0) {
       setCuotas([]);
-      cuotasInicializadas.current = false;
+      return;
     }
+
+    setCuotas(prev => {
+      const updated = [...prev];
+
+      if (updated.length > numeroCuotas) {
+        return updated.slice(0, numeroCuotas).map((cuota, index) => ({
+          ...cuota,
+          numeroCuota: index + 1,
+        }));
+      }
+
+      if (updated.length < numeroCuotas) {
+        const next = [...updated];
+        for (let i = updated.length; i < numeroCuotas; i += 1) {
+          next.push({
+            numeroCuota: i + 1,
+            fechaPago: '',
+            monto: 0,
+            nota: '',
+            estado: 'Pendiente',
+            attachedFile: null,
+            attachedFileName: null,
+          });
+        }
+        return next;
+      }
+
+      return updated.map((cuota, index) => ({
+        ...cuota,
+        numeroCuota: index + 1,
+      }));
+    });
   }, [numeroCuotas, isLoadingCuotas]);
 
   useEffect(() => {
@@ -1096,7 +1108,6 @@ export default function VentaTourAereoPage() {
     const ventaCuotas = venta.cuotas || [];
     if (ventaCuotas.length > 0) {
       setIsLoadingCuotas(true);
-      cuotasInicializadas.current = false;
       
       setTimeout(() => {
         setNumeroCuotas(ventaCuotas.length);
@@ -1113,14 +1124,12 @@ export default function VentaTourAereoPage() {
         }));
         
         setCuotas(cuotasFormato);
-        cuotasInicializadas.current = true;
         
         setTimeout(() => setIsLoadingCuotas(false), 50);
       }, 0);
     } else {
       setNumeroCuotas(0);
       setCuotas([]);
-      cuotasInicializadas.current = false;
     }
     
     setIsEditMode(true);
@@ -1272,7 +1281,6 @@ export default function VentaTourAereoPage() {
     setNumeroCuotas(0);
     setCuotas([]);
     setIsLoadingCuotas(false);
-    cuotasInicializadas.current = false;
     setFormData({
       clienteId: "",
       pasajero: "",
@@ -2318,129 +2326,7 @@ export default function VentaTourAereoPage() {
               </div>
 
               {/* Sección de Cuotas - Se muestra automáticamente si Da Pagare > 0 */}
-              {parseFloat(daPagare) > 0 && (
-                <div className="mt-4 border-t border-gray-200 dark:border-gray-700 pt-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      Pagamento a rate
-                    </h3>
-                    <div className="flex items-center gap-3">
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Numero di rate:
-                      </label>
-                      <select
-                        value={numeroCuotas}
-                        onChange={(e) => {
-                          const numCuotas = parseInt(e.target.value);
-                          setNumeroCuotas(numCuotas);
-                          // La lógica de creación de cuotas se maneja en el useEffect
-                        }}
-                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                      >
-                        <option value={0}>Senza rate</option>
-                        <option value={1}>1 rata</option>
-                        <option value={2}>2 rate</option>
-                        <option value={3}>3 rate</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {cuotas.length > 0 && (
-                    <div className="space-y-4">
-                      {cuotas.map((cuota, index) => (
-                        <div key={index} className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                          <div className="flex items-center justify-between mb-3">
-                            <h4 className="font-medium text-gray-900 dark:text-white">
-                              Rata {cuota.numeroCuota}
-                            </h4>
-                            <button
-                              type="button"
-                              onClick={() => removeCuota(index)}
-                              className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                            >
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Data di pagamento *
-                              </label>
-                              <input
-                                type="date"
-                                value={cuota.fechaPago}
-                                onChange={(e) => updateCuota(index, 'fechaPago', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                                required
-                              />
-                            </div>
-
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Importo *
-                              </label>
-                              <input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={cuota.monto}
-                                onChange={(e) => updateCuota(index, 'monto', parseFloat(e.target.value) || 0)}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                                required
-                              />
-                            </div>
-
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Nota (opzionale)
-                              </label>
-                              <input
-                                type="text"
-                                value={cuota.nota || ''}
-                                onChange={(e) => updateCuota(index, 'nota', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                                placeholder="Nota opzionale..."
-                              />
-                            </div>
-                          </div>
-
-                          {/* Archivo adjunto para la cuota */}
-                          <div className="mt-3">
-                            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                              Ricevuta di pagamento (opzionale)
-                            </label>
-                            <input
-                              type="file"
-                              accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf"
-                              onChange={(e) => {
-                                updateCuota(index, 'attachedFile', e.target.files?.[0] || null);
-                              }}
-                              className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 dark:file:bg-brand-900/20 dark:file:text-brand-400"
-                            />
-                            {cuota.attachedFile && (
-                              <div className="mt-1 flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <span>{typeof cuota.attachedFile === 'string' ? 'File allegato' : cuota.attachedFile.name}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {cuotas.length === 0 && (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
-                      Seleziona il numero di rate per configurare il piano di pagamenti.
-                    </p>
-                  )}
-                </div>
-              )}
+              {parseFloat(daPagare) > 0 && null}
 
               {/* Campos Pagamento, Metodo di Acquisto y Stato al final */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
@@ -2570,6 +2456,137 @@ export default function VentaTourAereoPage() {
                   />
                 </div>
               </div>
+
+              {parseFloat(daPagare) > 0 && (
+                <div className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      Pagamento a rate
+                    </h3>
+                    <div className="flex items-center gap-3">
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Numero di rate:
+                      </label>
+                      <select
+                        value={numeroCuotas}
+                        onChange={(e) => {
+                          const numCuotas = parseInt(e.target.value);
+                          setNumeroCuotas(numCuotas);
+                        }}
+                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                      >
+                        <option value={0}>Senza rate</option>
+                        <option value={1}>1 rata</option>
+                        <option value={2}>2 rate</option>
+                        <option value={3}>3 rate</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {cuotas.length > 0 && (
+                    <div className="space-y-4">
+                      {cuotas.map((cuota, index) => (
+                        <div
+                          key={index}
+                          className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700"
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="font-medium text-gray-900 dark:text-white">
+                              Rata {cuota.numeroCuota}
+                            </h4>
+                            <button
+                              type="button"
+                              onClick={() => removeCuota(index)}
+                              className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Data di pagamento *
+                              </label>
+                              <input
+                                type="date"
+                                value={cuota.fechaPago}
+                                onChange={(e) => updateCuota(index, 'fechaPago', e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                                required
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Importo *
+                              </label>
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={cuota.monto}
+                                onChange={(e) =>
+                                  updateCuota(index, 'monto', parseFloat(e.target.value) || 0)
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                                required
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Nota (opzionale)
+                              </label>
+                              <input
+                                type="text"
+                                value={cuota.nota || ''}
+                                onChange={(e) => updateCuota(index, 'nota', e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus-border-transparent dark:bg-gray-700 dark:text-white"
+                                placeholder="Nota opzionale..."
+                              />
+                            </div>
+                          </div>
+
+                          <div className="mt-3">
+                            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              Ricevuta di pagamento (opzionale)
+                            </label>
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf"
+                              onChange={(e) => {
+                                updateCuota(index, 'attachedFile', e.target.files?.[0] || null);
+                              }}
+                              className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 dark:file:bg-brand-900/20 dark:file:text-brand-400"
+                            />
+                            {cuota.attachedFile && (
+                              <div className="mt-1 flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>
+                                  {typeof cuota.attachedFile === 'string'
+                                    ? 'File allegato'
+                                    : cuota.attachedFile.name}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {cuotas.length === 0 && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+                      Seleziona il numero di rate per configurare il piano di pagamenti.
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div className="flex justify-end gap-3 pt-4">
                 <Button

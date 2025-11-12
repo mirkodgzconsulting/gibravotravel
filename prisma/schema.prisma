@@ -355,6 +355,7 @@ model TourAereo {
   guidaLocale      Float?
   coordinatore     Float?
   transporte       Float?
+  hotel            Float?
   notas            String?
   notasCoordinador String?
   feeAgv           Float            @default(0)

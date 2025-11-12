@@ -1,0 +1,1 @@
+ALTER TABLE "tour_aereo" ADD COLUMN "hotel" DOUBLE PRECISION;

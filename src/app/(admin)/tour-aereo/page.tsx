@@ -58,6 +58,7 @@ interface TourFormData {
   guidaLocale: string;
   coordinatore: string;
   transporte: string;
+  hotel: string;
   notas: string;
   notasCoordinador: string;
   coverImage: File | null;
@@ -84,6 +85,7 @@ export default function TourAereoPage() {
     guidaLocale: "",
     coordinatore: "",
     transporte: "",
+    hotel: "",
     notas: "",
     notasCoordinador: "",
     coverImage: null,
@@ -139,6 +141,7 @@ export default function TourAereoPage() {
       formDataToSend.append('guidaLocale', formData.guidaLocale);
       formDataToSend.append('coordinatore', formData.coordinatore);
       formDataToSend.append('transporte', formData.transporte);
+      formDataToSend.append('hotel', formData.hotel);
       formDataToSend.append('notas', formData.notas);
       formDataToSend.append('notasCoordinador', formData.notasCoordinador);
       formDataToSend.append('descripcion', formData.descripcion);
@@ -169,6 +172,7 @@ export default function TourAereoPage() {
           guidaLocale: "",
           coordinatore: "",
           transporte: "",
+          hotel: "",
           notas: "",
           notasCoordinador: "",
           coverImage: null,
@@ -206,6 +210,7 @@ export default function TourAereoPage() {
       formDataToSend.append('guidaLocale', formData.guidaLocale);
       formDataToSend.append('coordinatore', formData.coordinatore);
       formDataToSend.append('transporte', formData.transporte);
+      formDataToSend.append('hotel', formData.hotel);
       formDataToSend.append('notas', formData.notas);
       formDataToSend.append('notasCoordinador', formData.notasCoordinador);
       formDataToSend.append('descripcion', formData.descripcion);
@@ -238,6 +243,7 @@ export default function TourAereoPage() {
           guidaLocale: "",
           coordinatore: "",
           transporte: "",
+          hotel: "",
           notas: "",
           notasCoordinador: "",
           coverImage: null,
@@ -272,6 +278,7 @@ export default function TourAereoPage() {
       guidaLocale: tour.guidaLocale?.toString() || "",
       coordinatore: tour.coordinatore?.toString() || "",
       transporte: tour.transporte?.toString() || "",
+      hotel: tour.hotel?.toString() || "",
       notas: tour.notas || "",
       notasCoordinador: tour.notasCoordinador || "",
       coverImage: null,
@@ -314,6 +321,7 @@ export default function TourAereoPage() {
       guidaLocale: "",
       coordinatore: "",
       transporte: "",
+      hotel: "",
       notas: "",
       notasCoordinador: "",
       coverImage: null,
@@ -693,6 +701,21 @@ export default function TourAereoPage() {
                   min="0"
                   value={formData.transporte}
                   onChange={(e) => setFormData(prev => ({ ...prev, transporte: e.target.value }))}
+                  placeholder="0.00"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Hotel (€)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.hotel}
+                  onChange={(e) => setFormData(prev => ({ ...prev, hotel: e.target.value }))}
                   placeholder="0.00"
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 />

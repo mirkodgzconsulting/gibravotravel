@@ -148,7 +148,8 @@ export async function PUT(
         tourAereo: {
           select: {
             id: true,
-            createdBy: true
+            createdBy: true,
+            hotel: true
           }
         }
       }
@@ -174,11 +175,10 @@ export async function PUT(
     const paisOrigen = formData.get('paisOrigen') as string;
     const iata = formData.get('iata') as string;
     const pnr = formData.get('pnr') as string;
-    const hotel = formData.get('hotel') as string;
     const transfer = formData.get('transfer') as string;
     const venduto = formData.get('venduto') as string;
     const acconto = formData.get('acconto') as string;
-    const polizza = formData.get('polizza') as string;
+    const polizzaRaw = formData.get('polizza');
     const metodoPagamento = formData.get('metodoPagamento') as string;
     const metodoCompra = formData.get('metodoCompra') as string;
     const stato = formData.get('stato') as string;
@@ -296,7 +296,7 @@ export async function PUT(
       paisOrigen,
       iata,
       pnr: pnr || null,
-      hotel: hotel ? parseFloat(hotel) : null,
+      hotel: venta.tourAereo?.hotel ?? null,
       transfer: transfer ? parseFloat(transfer) : null,
       venduto: parseFloat(venduto),
       acconto: parseFloat(acconto || '0'),
@@ -308,7 +308,10 @@ export async function PUT(
       attachedFileName,
     };
 
-    updatePayload.polizza = polizza ? parseFloat(polizza) : null;
+    if (polizzaRaw !== null) {
+      const sanitizedPolizza = String(polizzaRaw).trim();
+      updatePayload.polizza = sanitizedPolizza === '' ? null : parseFloat(sanitizedPolizza);
+    }
 
     const ventaActualizada = await prisma.ventaTourAereo.update({
       where: { id: ventaId },

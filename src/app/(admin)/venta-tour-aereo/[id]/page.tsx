@@ -155,11 +155,9 @@ interface VentaFormData {
   paisOrigen: string;
   iata: string[];
   pnr: string;
-  hotel: string;
   transfer: string;
   venduto: string;
   acconto: string;
-  polizza: string;
   metodoPagamento: string[];
   metodoCompra: string;
   stato: string;
@@ -386,11 +384,9 @@ export default function VentaTourAereoPage() {
     paisOrigen: "",
     iata: [],
     pnr: "",
-    hotel: "",
     transfer: "",
     venduto: "",
     acconto: "",
-    polizza: "",
     metodoPagamento: [],
     metodoCompra: "",
     stato: "",
@@ -911,11 +907,9 @@ export default function VentaTourAereoPage() {
       formDataToSend.append('paisOrigen', ensureValue(formData.paisOrigen));
       formDataToSend.append('iata', JSON.stringify(formData.iata)); // Convertir array a JSON
       formDataToSend.append('pnr', formData.pnr);
-      formDataToSend.append('hotel', formData.hotel);
       formDataToSend.append('transfer', formData.transfer);
       formDataToSend.append('venduto', formData.venduto);
       formDataToSend.append('acconto', formData.acconto);
-      formDataToSend.append('polizza', formData.polizza);
       formDataToSend.append('metodoPagamento', JSON.stringify(formData.metodoPagamento)); // Convertir array a JSON
       formDataToSend.append('metodoCompra', formData.metodoCompra);
       formDataToSend.append('stato', formData.stato);
@@ -959,11 +953,9 @@ export default function VentaTourAereoPage() {
           paisOrigen: "",
           iata: [],
           pnr: "",
-          hotel: "",
           transfer: "",
           venduto: "",
           acconto: "",
-          polizza: "",
           metodoPagamento: [],
           metodoCompra: "",
           stato: "",
@@ -1060,16 +1052,16 @@ export default function VentaTourAereoPage() {
           }
         })(),
         PNR: venta.pnr || '',
-        'Hotel (€)': venta.hotel || 0,
         'Trasporto (€)': venta.transfer || 0,
+        'Hotel (€)': tour?.hotel || 0,
         'TKT (€)': venta.tkt !== null && venta.tkt !== undefined ? Number(venta.tkt.toFixed(2)) : 0,
         'Polizza (€)': venta.polizza !== null && venta.polizza !== undefined ? Number(venta.polizza.toFixed(2)) : 0,
-        'Netto (€)': ((venta.transfer || 0) + (tour?.guidaLocale || 0) + (tour?.coordinatore || 0) + (tour?.transporte || 0) + (venta.hotel || 0)).toFixed(2),
+        'Netto (€)': ((venta.transfer || 0) + (tour?.guidaLocale || 0) + (tour?.coordinatore || 0) + (tour?.transporte || 0) + (tour?.hotel || 0) + (venta.tkt || 0) + (venta.polizza || 0)).toFixed(2),
         'Venduto (€)': venta.venduto || 0,
         'PAGATO/ACCONTO (€)': venta.acconto || 0,
         'Da pagare (€)': venta.daPagare || 0,
         METODOPAG: plainMetodoPagamento,
-        FEEAGV: (venta.venduto - ((venta.transfer || 0) + (tour?.guidaLocale || 0) + (tour?.coordinatore || 0) + (tour?.transporte || 0) + (venta.hotel || 0))).toFixed(2),
+        FEEAGV: (venta.venduto - ((venta.transfer || 0) + (tour?.guidaLocale || 0) + (tour?.coordinatore || 0) + (tour?.transporte || 0) + (tour?.hotel || 0) + (venta.tkt || 0) + (venta.polizza || 0))).toFixed(2),
         Agente: venta.creator?.firstName
           ? `${venta.creator.firstName}${venta.creator.lastName ? ` ${venta.creator.lastName}` : ''}`.trim()
           : venta.creator?.email || 'N/A',
@@ -1108,11 +1100,9 @@ export default function VentaTourAereoPage() {
         }
       })(),
       pnr: venta.pnr || "",
-      hotel: venta.hotel?.toString() || "",
       transfer: venta.transfer?.toString() || "",
       venduto: venta.venduto.toString(),
       acconto: venta.acconto.toString(),
-      polizza: venta.polizza?.toString() || "",
       metodoPagamento: (() => {
         try {
           const parsed = typeof venta.metodoPagamento === 'string' ? JSON.parse(venta.metodoPagamento) : venta.metodoPagamento;
@@ -1202,11 +1192,9 @@ export default function VentaTourAereoPage() {
       formDataToSend.append('paisOrigen', ensureValue(formData.paisOrigen, editingVenta?.paisOrigen));
       formDataToSend.append('iata', JSON.stringify(formData.iata)); // Convertir array a JSON
       formDataToSend.append('pnr', formData.pnr);
-      formDataToSend.append('hotel', formData.hotel);
       formDataToSend.append('transfer', formData.transfer);
       formDataToSend.append('venduto', formData.venduto);
       formDataToSend.append('acconto', formData.acconto);
-      formDataToSend.append('polizza', formData.polizza);
       formDataToSend.append('metodoPagamento', JSON.stringify(formData.metodoPagamento)); // Convertir array a JSON
       formDataToSend.append('metodoCompra', formData.metodoCompra);
       formDataToSend.append('stato', formData.stato);
@@ -1256,11 +1244,9 @@ export default function VentaTourAereoPage() {
           paisOrigen: "",
           iata: [],
           pnr: "",
-          hotel: "",
           transfer: "",
           venduto: "",
           acconto: "",
-          polizza: "",
           metodoPagamento: [],
           metodoCompra: "",
           stato: "",
@@ -1320,11 +1306,9 @@ export default function VentaTourAereoPage() {
       paisOrigen: "",
       iata: [],
       pnr: "",
-      hotel: "",
       transfer: "",
       venduto: "",
       acconto: "",
-      polizza: "",
       metodoPagamento: [],
       metodoCompra: "",
       stato: "",
@@ -1720,6 +1704,7 @@ export default function VentaTourAereoPage() {
     const guidaPerRow = tour.guidaLocale || 0;
     const coordinatorePerRow = tour.coordinatore || 0;
     const transferServizioPerRow = tour.transporte || 0;
+    const hotelPerRow = tour.hotel || 0;
 
     filteredVentas.forEach((venta) => {
       const trasportoPerRow = venta.transfer || 0;
@@ -1727,7 +1712,7 @@ export default function VentaTourAereoPage() {
       baseValues.transfer += transferServizioPerRow;
       baseValues.guidaLocale += guidaPerRow;
       baseValues.coordinatore += coordinatorePerRow;
-      baseValues.hotel += venta.hotel || 0;
+      baseValues.hotel += hotelPerRow;
       baseValues.trasporto += trasportoPerRow;
       baseValues.tkt += venta.tkt || 0;
       baseValues.polizza += venta.polizza || 0;
@@ -1736,7 +1721,9 @@ export default function VentaTourAereoPage() {
         + guidaPerRow
         + coordinatorePerRow
         + transferServizioPerRow
-        + (venta.hotel || 0);
+        + hotelPerRow
+        + (venta.tkt || 0)
+        + (venta.polizza || 0);
 
       baseValues.netto += costoNetto;
       baseValues.venduto += venta.venduto || 0;
@@ -1958,7 +1945,7 @@ export default function VentaTourAereoPage() {
                   <span className="text-xs font-medium text-pink-700 dark:text-pink-300">Hotel</span>
                 </div>
                 <div className="text-lg font-bold text-pink-900 dark:text-pink-100">
-                  €{tour.hotel.toFixed(2)}
+                  €{((tour?.hotel ?? 0)).toFixed(2)}
                 </div>
               </div>
             )}
@@ -2427,20 +2414,6 @@ export default function VentaTourAereoPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Hotel (€)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.hotel}
-                    onChange={handleInputChange('hotel')}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Trasporto (€)
                   </label>
                   <input
@@ -2477,20 +2450,6 @@ export default function VentaTourAereoPage() {
                     min="0"
                     value={formData.acconto}
                     onChange={handleInputChange('acconto')}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Polizza (€)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.polizza}
-                    onChange={handleInputChange('polizza')}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                   />
                 </div>
@@ -3071,7 +3030,7 @@ export default function VentaTourAereoPage() {
                       €{(tour?.coordinatore || 0).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm bg-rose-200 text-rose-900 dark:bg-rose-900/50 dark:text-rose-200">
-                      €{(venta.hotel || 0).toFixed(2)}
+                      €{((tour?.hotel ?? 0)).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                        €{(venta.transfer || 0).toFixed(2)}
@@ -3152,8 +3111,16 @@ export default function VentaTourAereoPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                       €{((venta.transfer || 0) + (tour?.guidaLocale || 0) + (tour?.coordinatore || 0) + (tour?.transporte || 0) + (venta.hotel || 0)).toFixed(2)}
-                     </td>
+                      €{(
+                        (venta.transfer || 0) +
+                        (tour?.guidaLocale || 0) +
+                        (tour?.coordinatore || 0) +
+                        (tour?.transporte || 0) +
+                        (tour?.hotel || 0) +
+                        (venta.tkt || 0) +
+                        (venta.polizza || 0)
+                      ).toFixed(2)}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                        €{venta.venduto.toFixed(2)}
                      </td>
@@ -3176,7 +3143,17 @@ export default function VentaTourAereoPage() {
                       })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      €{(venta.venduto - ((venta.transfer || 0) + (tour?.guidaLocale || 0) + (tour?.coordinatore || 0) + (tour?.transporte || 0) + (venta.hotel || 0))).toFixed(2)}
+                      €{(
+                        venta.venduto - (
+                          (venta.transfer || 0) +
+                          (tour?.guidaLocale || 0) +
+                          (tour?.coordinatore || 0) +
+                          (tour?.transporte || 0) +
+                          (tour?.hotel || 0) +
+                          (venta.tkt || 0) +
+                          (venta.polizza || 0)
+                        )
+                      ).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {venta.creator?.firstName 

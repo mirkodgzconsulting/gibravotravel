@@ -95,6 +95,11 @@ export async function PUT(
     const guidaLocale = parseFloat(formData.get('guidaLocale') as string) || 0;
     const coordinatore = parseFloat(formData.get('coordinatore') as string) || 0;
     const transporte = parseFloat(formData.get('transporte') as string) || 0;
+    const hotelRaw = formData.get('hotel');
+    const hotelParsed = hotelRaw !== null && `${hotelRaw}`.trim() !== ''
+      ? parseFloat(`${hotelRaw}`.replace(',', '.'))
+      : null;
+    const hotel = hotelParsed !== null && !Number.isNaN(hotelParsed) ? hotelParsed : null;
     const notas = formData.get('notas') as string;
     const notasCoordinador = formData.get('notasCoordinador') as string;
     const descripcion = formData.get('descripcion') as string;
@@ -206,6 +211,7 @@ export async function PUT(
         guidaLocale: (guidaLocale > 0 ? guidaLocale : null) as any,
         coordinatore: (coordinatore > 0 ? coordinatore : null) as any,
         transporte: (transporte > 0 ? transporte : null) as any,
+        hotel: hotel !== null ? hotel : null,
         notas: notas || null,
         notasCoordinador: notasCoordinador || null,
         descripcion: descripcion || null,

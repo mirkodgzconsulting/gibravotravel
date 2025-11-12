@@ -21,7 +21,7 @@ async function recalcularFeeAgvAereo(tourId: string) {
     for (const venta of tour.ventas) {
       // Calcular costos totales de esta venta
       const costosTotales = (venta.transfer || 0) + (tour.guidaLocale || 0) + 
-                          (tour.coordinatore || 0) + (tour.transporte || 0) + (venta.hotel || 0);
+                          (tour.coordinatore || 0) + (tour.transporte || 0) + (tour.hotel || 0);
       
       // Calcular FEE/AGV de esta venta: VENDUTO - COSTOS TOTALES
       const feeAgvVenta = (venta.venduto || 0) - costosTotales;
@@ -149,7 +149,7 @@ export async function POST(
     // Verificar que el tour existe y el usuario tiene acceso
     const tour = await prisma.tourAereo.findUnique({
       where: { id: tourId },
-      select: { id: true, createdBy: true, meta: true }
+      select: { id: true, createdBy: true, meta: true, hotel: true }
     });
 
     if (!tour) {
@@ -167,7 +167,6 @@ export async function POST(
     const paisOrigen = formData.get('paisOrigen') as string;
     const iata = formData.get('iata') as string;
     const pnr = formData.get('pnr') as string;
-    const hotel = formData.get('hotel') as string;
     const transfer = formData.get('transfer') as string;
     const venduto = formData.get('venduto') as string;
     const acconto = formData.get('acconto') as string;
@@ -287,7 +286,7 @@ export async function POST(
         paisOrigen: paisOrigen || '',
         iata,
         pnr: pnr || null,
-        hotel: hotel ? parseFloat(hotel) : null,
+        hotel: tour?.hotel ?? null,
         transfer: transfer ? parseFloat(transfer) : null,
         venduto: parseFloat(venduto),
         acconto: parseFloat(acconto || '0'),

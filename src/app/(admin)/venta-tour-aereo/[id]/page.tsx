@@ -332,8 +332,8 @@ export default function VentaTourAereoPage() {
   });
   const [tempNotas, setTempNotas] = useState<{tour: string, coordinador: string}>(
     {
-      tour: '',
-      coordinador: ''
+    tour: '',
+    coordinador: ''
     }
   );
   const [expandedNotas, setExpandedNotas] = useState<{ tour: boolean; coordinador: boolean }>({
@@ -409,7 +409,7 @@ export default function VentaTourAereoPage() {
   // Función para manejar el cambio de tipo de pasajero
   const handleTipoPasajeroChange = useCallback(
     (tipo: 'adulto' | 'nino') => {
-      setTipoPasajero(tipo);
+    setTipoPasajero(tipo);
       const price = tipo === 'adulto' ? adultoPrice : bambinoPrice;
       setFormData(prev => ({
         ...prev,
@@ -602,22 +602,31 @@ export default function VentaTourAereoPage() {
   }, []);
 
   // Función optimizada para cargar clientes bajo demanda (solo cuando se abra el modal)
-  const loadClientesIfNeeded = useCallback(async () => {
-    if (clientesLoaded || loadingClientes) return;
+  const loadClientesIfNeeded = useCallback(async (): Promise<Cliente[]> => {
+    if (clientesLoaded) {
+      return clientes;
+    }
+
+    if (loadingClientes) {
+      return clientes;
+    }
     
     setLoadingClientes(true);
     try {
       const clientsData = await cachedFetch<{ clients?: Cliente[] }>('/api/clients', { ttlMs: 15000 });
       const clientsArray = clientsData.clients || clientsData;
-      setClientes(Array.isArray(clientsArray) ? clientsArray : []);
+      const parsedClients = Array.isArray(clientsArray) ? clientsArray : [];
+      setClientes(parsedClients);
         setClientesLoaded(true);
+      return parsedClients;
     } catch (error) {
       console.error('Error fetching clientes:', error);
       setClientes([]);
+      return [];
     } finally {
       setLoadingClientes(false);
     }
-  }, [clientesLoaded, loadingClientes]);
+  }, [clientes, clientesLoaded, loadingClientes]);
 
   // Cargar clientes cuando se abre el modal
   useEffect(() => {
@@ -654,7 +663,7 @@ export default function VentaTourAereoPage() {
       setCuotas([]);
       return;
     }
-
+    
     setCuotas(prev => {
       const updated = [...prev];
 
@@ -669,11 +678,11 @@ export default function VentaTourAereoPage() {
         const next = [...updated];
         for (let i = updated.length; i < numeroCuotas; i += 1) {
           next.push({
-            numeroCuota: i + 1,
-            fechaPago: '',
-            monto: 0,
-            nota: '',
-            estado: 'Pendiente',
+        numeroCuota: i + 1,
+        fechaPago: '',
+        monto: 0,
+        nota: '',
+        estado: 'Pendiente',
             attachedFile: null,
             attachedFileName: null,
           });
@@ -980,8 +989,8 @@ export default function VentaTourAereoPage() {
         } catch {
           if (errorText) errorMessage = errorText;
         }
-        setMessage({ type: 'error', text: errorMessage });
-        setTimeout(() => setMessage(null), 5000);
+          setMessage({ type: 'error', text: errorMessage });
+          setTimeout(() => setMessage(null), 5000);
       }
     } catch (error) {
         console.error('Error al crear venta:', error);
@@ -1036,34 +1045,34 @@ export default function VentaTourAereoPage() {
 
       return {
         Passeggero: venta.pasajero || '',
-        'Codice Fiscale': venta.codiceFiscale || '',
+      'Codice Fiscale': venta.codiceFiscale || '',
         Indirizzo: venta.indirizzo || '',
         Email: venta.email || '',
         Telefono: venta.numeroTelefono || '',
         'Paese di origine': venta.paisOrigen || '',
         IATA: (() => {
-          try {
-            const parsed = typeof venta.iata === 'string'
-              ? JSON.parse(venta.iata)
-              : venta.iata;
-            return Array.isArray(parsed) ? parsed.join(', ') : venta.iata || '';
-          } catch {
-            return venta.iata || '';
-          }
-        })(),
+        try {
+          const parsed = typeof venta.iata === 'string' 
+            ? JSON.parse(venta.iata) 
+            : venta.iata;
+          return Array.isArray(parsed) ? parsed.join(', ') : venta.iata || '';
+        } catch {
+          return venta.iata || '';
+        }
+      })(),
         PNR: venta.pnr || '',
         'Trasporto (€)': venta.transfer || 0,
         'Hotel (€)': tour?.hotel || 0,
         'TKT (€)': venta.tkt !== null && venta.tkt !== undefined ? Number(venta.tkt.toFixed(2)) : 0,
         'Polizza (€)': venta.polizza !== null && venta.polizza !== undefined ? Number(venta.polizza.toFixed(2)) : 0,
         'Netto (€)': ((venta.transfer || 0) + (tour?.guidaLocale || 0) + (tour?.coordinatore || 0) + (tour?.transporte || 0) + (tour?.hotel || 0) + (venta.tkt || 0) + (venta.polizza || 0)).toFixed(2),
-        'Venduto (€)': venta.venduto || 0,
+      'Venduto (€)': venta.venduto || 0,
         'PAGATO/ACCONTO (€)': venta.acconto || 0,
-        'Da pagare (€)': venta.daPagare || 0,
+      'Da pagare (€)': venta.daPagare || 0,
         METODOPAG: plainMetodoPagamento,
         FEEAGV: (venta.venduto - ((venta.transfer || 0) + (tour?.guidaLocale || 0) + (tour?.coordinatore || 0) + (tour?.transporte || 0) + (tour?.hotel || 0) + (venta.tkt || 0) + (venta.polizza || 0))).toFixed(2),
         Agente: venta.creator?.firstName
-          ? `${venta.creator.firstName}${venta.creator.lastName ? ` ${venta.creator.lastName}` : ''}`.trim()
+        ? `${venta.creator.firstName}${venta.creator.lastName ? ` ${venta.creator.lastName}` : ''}`.trim()
           : venta.creator?.email || 'N/A',
         File: venta.attachedFile ? 'Sì' : 'No',
         Cuotas: venta.cuotas ? venta.cuotas.length : 0,
@@ -1120,7 +1129,7 @@ export default function VentaTourAereoPage() {
     setAdultoPrice(vendutoValue || (tour?.precioAdulto != null ? tour.precioAdulto.toString() : ''));
     setBambinoPrice(vendutoValue || (tour?.precioNino != null ? tour.precioNino.toString() : ''));
     setTipoPasajero('adulto');
-
+    
     // Manejar cuotas
     const ventaCuotas = venta.cuotas || [];
     if (ventaCuotas.length > 0) {
@@ -1647,10 +1656,31 @@ export default function VentaTourAereoPage() {
 
   const handleClientClick = useCallback(async (venta: VentaTourAereo) => {
     try {
-      // Buscar el cliente por email o codiceFiscale
-      const cliente = clientes.find(c => 
+      const loadedClientes = await loadClientesIfNeeded();
+      let cliente = (loadedClientes.length ? loadedClientes : clientes).find(c =>
         c.email === venta.email || c.fiscalCode === venta.codiceFiscale
       );
+
+      if (!cliente && venta.clienteId) {
+        try {
+          const response = await fetch(`/api/clients/${venta.clienteId}`);
+          if (response.ok) {
+            const data = await response.json();
+            const fetchedClient = data?.client as Cliente | undefined;
+            if (fetchedClient) {
+              cliente = fetchedClient;
+              setClientes(prev => {
+                if (prev.some(existing => existing.id === fetchedClient.id)) {
+                  return prev;
+                }
+                return [...prev, fetchedClient];
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching client by ID:', error);
+        }
+      }
       
       if (cliente) {
         setSelectedClient(cliente);
@@ -1669,7 +1699,7 @@ export default function VentaTourAereoPage() {
       });
       setTimeout(() => setMessage(null), 3000);
     }
-  }, [clientes]);
+  }, [clientes, loadClientesIfNeeded]);
 
   // Calcular estadísticas (memoizadas)
   const ventasRealizadas = useMemo(() => ventas.length, [ventas]);
@@ -1984,7 +2014,7 @@ export default function VentaTourAereoPage() {
                     <FileTextIcon className="w-5 h-5 text-slate-600" />
                     <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Note del tour</span>
                   </div>
-                  <div
+                  <div 
                     className="text-sm text-slate-600 dark:text-slate-400 p-2 rounded transition-colors"
                     onDoubleClick={() => startEditingNotas('tour')}
                     title={expandedNotas.tour ? undefined : getNotePreview(tour.notas)}
@@ -2047,7 +2077,7 @@ export default function VentaTourAereoPage() {
                       })()
                     )}
                     {!editingNotas.tour && extractPlainText(tour.notas).length > 280 && (
-                      <button
+                              <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -2056,7 +2086,7 @@ export default function VentaTourAereoPage() {
                         className="mt-2 text-xs font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
                       >
                         {expandedNotas.tour ? 'Mostra meno' : 'Leggi di più'}
-                      </button>
+                              </button>
                     )}
                   </div>
                 </div>
@@ -2132,7 +2162,7 @@ export default function VentaTourAereoPage() {
                       })()
                     )}
                     {!editingNotas.coordinador && extractPlainText(tour.notasCoordinador).length > 280 && (
-                      <button
+                              <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -2141,7 +2171,7 @@ export default function VentaTourAereoPage() {
                         className="mt-2 text-xs font-semibold text-amber-700 hover:text-amber-800 dark:text-amber-300 dark:hover:text-amber-200"
                       >
                         {expandedNotas.coordinador ? 'Mostra meno' : 'Leggi di più'}
-                      </button>
+                              </button>
                     )}
                   </div>
                 </div>
@@ -2149,22 +2179,22 @@ export default function VentaTourAereoPage() {
             </div>
           )}
 
-        <div className="flex flex-wrap items-center gap-4 mb-4 text-sm text-gray-600 dark:text-gray-400">
-          <div>
-            Entrate totali: <span className="font-semibold text-green-600">€{ingresos.toFixed(2)}</span>
-          </div>
-          {tour.fechaViaje && (
+          <div className="flex flex-wrap items-center gap-4 mb-4 text-sm text-gray-600 dark:text-gray-400">
             <div>
+            Entrate totali: <span className="font-semibold text-green-600">€{ingresos.toFixed(2)}</span>
+            </div>
+            {tour.fechaViaje && (
+              <div>
               Data del viaggio: <span className="text-gray-900 dark:text-white">
                 {new Date(tour.fechaViaje).toLocaleDateString('it-IT', { 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })}
-              </span>
-            </div>
-          )}
-        </div>
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  })}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       </ComponentCard>
 
@@ -2263,7 +2293,7 @@ export default function VentaTourAereoPage() {
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium text-gray-900 dark:text-gray-300">
                             Adulto
-                          </span>
+                        </span>
                           <div className="flex items-center gap-1">
                             <span className="text-xs text-gray-500 dark:text-gray-400">€</span>
                             <input
@@ -2289,7 +2319,7 @@ export default function VentaTourAereoPage() {
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium text-gray-900 dark:text-gray-300">
                             Bambino
-                          </span>
+                        </span>
                           <div className="flex items-center gap-1">
                             <span className="text-xs text-gray-500 dark:text-gray-400">€</span>
                             <input
@@ -3034,7 +3064,7 @@ export default function VentaTourAereoPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                        €{(venta.transfer || 0).toFixed(2)}
-                     </td>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {editingTktId === venta.id ? (
                         <div className="flex items-center gap-1">
@@ -3122,13 +3152,13 @@ export default function VentaTourAereoPage() {
                       ).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                       €{venta.venduto.toFixed(2)}
-                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                       €{venta.acconto.toFixed(2)}
+                      €{venta.venduto.toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        €{venta.daPagare.toFixed(2)}
+                      €{venta.acconto.toFixed(2)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      €{venta.daPagare.toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {(() => {
@@ -3219,7 +3249,7 @@ export default function VentaTourAereoPage() {
                   <td className="sticky right-0 px-6 py-3 bg-blue-50 dark:bg-blue-900/20" />
                 </tr>
               </tfoot>
-             </table>
+            </table>
           </div>
         )}
       </ComponentCard>

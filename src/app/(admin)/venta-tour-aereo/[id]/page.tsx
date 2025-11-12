@@ -92,6 +92,8 @@ interface VentaTourAereo {
   metodoPagamento: string;
   metodoCompra?: string | null;
   stato: string;
+  notaEsternaRicevuta?: string | null;
+  notaInterna?: string | null;
   attachedFile?: string | null;
   attachedFileName?: string | null;
   createdBy: string;
@@ -162,6 +164,8 @@ interface VentaFormData {
   metodoCompra: string;
   stato: string;
   cuotas: CuotaVenta[];
+  notaEsternaRicevuta: string;
+  notaInterna: string;
 }
 
 const normalizeLegacyNote = (note?: string | null) => {
@@ -391,6 +395,8 @@ export default function VentaTourAereoPage() {
     metodoCompra: "",
     stato: "",
     cuotas: [],
+    notaEsternaRicevuta: "",
+    notaInterna: "",
   });
 
   // Estado para el tipo de pasajero (adulto/nino) y precios editables
@@ -922,6 +928,8 @@ export default function VentaTourAereoPage() {
       formDataToSend.append('metodoPagamento', JSON.stringify(formData.metodoPagamento)); // Convertir array a JSON
       formDataToSend.append('metodoCompra', formData.metodoCompra);
       formDataToSend.append('stato', formData.stato);
+      formDataToSend.append('notaEsternaRicevuta', formData.notaEsternaRicevuta);
+      formDataToSend.append('notaInterna', formData.notaInterna);
 
       // Agregar archivo principal si existe
       if (attachedFile) {
@@ -969,6 +977,8 @@ export default function VentaTourAereoPage() {
           metodoCompra: "",
           stato: "",
           cuotas: [],
+          notaEsternaRicevuta: "",
+          notaInterna: "",
         });
         setCuotas([]);
         setNumeroCuotas(0);
@@ -1070,6 +1080,8 @@ export default function VentaTourAereoPage() {
         'PAGATO/ACCONTO (€)': venta.acconto || 0,
       'Da pagare (€)': venta.daPagare || 0,
         METODOPAG: plainMetodoPagamento,
+        'Nota esterna ricevuta': venta.notaEsternaRicevuta || '',
+        'Nota interna': venta.notaInterna || '',
         FEEAGV: (venta.venduto - ((venta.transfer || 0) + (tour?.guidaLocale || 0) + (tour?.coordinatore || 0) + (tour?.transporte || 0) + (tour?.hotel || 0) + (venta.tkt || 0) + (venta.polizza || 0))).toFixed(2),
         Agente: venta.creator?.firstName
         ? `${venta.creator.firstName}${venta.creator.lastName ? ` ${venta.creator.lastName}` : ''}`.trim()
@@ -1122,7 +1134,9 @@ export default function VentaTourAereoPage() {
       })(),
       metodoCompra: venta.metodoCompra || "",
       stato: venta.stato,
-      cuotas: []
+      cuotas: [],
+      notaEsternaRicevuta: venta.notaEsternaRicevuta || "",
+      notaInterna: venta.notaInterna || ""
     });
     
     const vendutoValue = venta.venduto != null ? venta.venduto.toString() : '';
@@ -1207,6 +1221,8 @@ export default function VentaTourAereoPage() {
       formDataToSend.append('metodoPagamento', JSON.stringify(formData.metodoPagamento)); // Convertir array a JSON
       formDataToSend.append('metodoCompra', formData.metodoCompra);
       formDataToSend.append('stato', formData.stato);
+      formDataToSend.append('notaEsternaRicevuta', formData.notaEsternaRicevuta);
+      formDataToSend.append('notaInterna', formData.notaInterna);
 
       // Agregar archivo principal si existe
       if (attachedFile) {
@@ -1260,6 +1276,8 @@ export default function VentaTourAereoPage() {
           metodoCompra: "",
           stato: "",
           cuotas: [],
+          notaEsternaRicevuta: "",
+          notaInterna: "",
         });
         setIsEditMode(false);
         setEditingVenta(null);
@@ -1322,6 +1340,8 @@ export default function VentaTourAereoPage() {
       metodoCompra: "",
       stato: "",
       cuotas: [],
+      notaEsternaRicevuta: "",
+      notaInterna: "",
     });
     setTipoPasajero(null);
     setAdultoPrice(tour?.precioAdulto != null ? tour.precioAdulto.toString() : '');
@@ -2203,7 +2223,7 @@ export default function VentaTourAereoPage() {
       <Modal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        className="max-w-2xl mx-4 max-h-[90vh] z-[99999]"
+        className="max-w-4xl mx-4 max-h-[90vh] z-[99999]"
       >
         {isModalOpen && (
         <div className="flex flex-col h-full max-h-[90vh]">
@@ -2495,6 +2515,32 @@ export default function VentaTourAereoPage() {
                     disabled
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 cursor-not-allowed"
                   />
+                </div>
+
+                <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Nota esterna ricevuta
+                    </label>
+                    <SimpleRichTextEditor
+                      value={formData.notaEsternaRicevuta}
+                      onChange={(value) => setFormData(prev => ({ ...prev, notaEsternaRicevuta: value }))}
+                      placeholder="Aggiungi note esterne..."
+                      rows={4}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Nota interna
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={formData.notaInterna}
+                      onChange={handleInputChange('notaInterna')}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                      placeholder="Aggiungi note interne..."
+                    />
+                  </div>
                 </div>
 
               </div>

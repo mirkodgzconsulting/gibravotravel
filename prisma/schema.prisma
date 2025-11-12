@@ -533,6 +533,8 @@ model VentaTourAereo {
   transfer         Float?
   attachedFile     String?
   attachedFileName String?
+  notaEsternaRicevuta String?
+  notaInterna         String?
   venduto          Float
   acconto          Float
   daPagare         Float

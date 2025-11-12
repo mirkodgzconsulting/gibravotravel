@@ -183,6 +183,8 @@ export async function PUT(
     const metodoCompra = formData.get('metodoCompra') as string;
     const stato = formData.get('stato') as string;
     const cuotasJson = formData.get('cuotas') as string;
+    const notaEsternaRicevutaRaw = formData.get('notaEsternaRicevuta');
+    const notaInternaRaw = formData.get('notaInterna');
     
     // Procesar archivo principal
     const file = formData.get('file') as File | null;
@@ -307,6 +309,16 @@ export async function PUT(
       attachedFile: attachedFileUrl,
       attachedFileName,
     };
+
+    if (notaEsternaRicevutaRaw !== null) {
+      const trimmed = String(notaEsternaRicevutaRaw).trim();
+      updatePayload.notaEsternaRicevuta = trimmed === '' ? null : trimmed;
+    }
+
+    if (notaInternaRaw !== null) {
+      const trimmed = String(notaInternaRaw).trim();
+      updatePayload.notaInterna = trimmed === '' ? null : trimmed;
+    }
 
     if (polizzaRaw !== null) {
       const sanitizedPolizza = String(polizzaRaw).trim();

@@ -175,6 +175,8 @@ export async function POST(
     const stato = formData.get('stato') as string;
     const clienteId = formData.get('clienteId') as string;
     const cuotasJson = formData.get('cuotas') as string;
+    const notaEsternaRicevuta = formData.get('notaEsternaRicevuta') as string | null;
+    const notaInterna = formData.get('notaInterna') as string | null;
     
     // Procesar archivo principal
     const file = formData.get('file') as File | null;
@@ -294,6 +296,8 @@ export async function POST(
         metodoPagamento,
         metodoCompra: metodoCompra || null,
         stato,
+        notaEsternaRicevuta: notaEsternaRicevuta && notaEsternaRicevuta.trim() !== '' ? notaEsternaRicevuta.trim() : null,
+        notaInterna: notaInterna && notaInterna.trim() !== '' ? notaInterna.trim() : null,
         attachedFile: attachedFileUrl,
         attachedFileName: attachedFileName,
         createdBy: user.id,

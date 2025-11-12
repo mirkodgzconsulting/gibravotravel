@@ -1699,6 +1699,55 @@ export default function VentaTourAereoPage() {
     return ventas.reduce((sum, venta) => sum + venta.venduto, 0);
   }, [ventas]);
 
+  const totals = useMemo(() => {
+    const baseValues = {
+      transfer: 0,
+      guidaLocale: 0,
+      coordinatore: 0,
+      hotel: 0,
+      trasporto: 0,
+      tkt: 0,
+      polizza: 0,
+      netto: 0,
+      venduto: 0,
+      acconto: 0,
+      daPagare: 0,
+      feeAgv: 0,
+    };
+
+    if (!tour) return baseValues;
+
+    const guidaPerRow = tour.guidaLocale || 0;
+    const coordinatorePerRow = tour.coordinatore || 0;
+    const transferServizioPerRow = tour.transporte || 0;
+
+    filteredVentas.forEach((venta) => {
+      const trasportoPerRow = venta.transfer || 0;
+
+      baseValues.transfer += transferServizioPerRow;
+      baseValues.guidaLocale += guidaPerRow;
+      baseValues.coordinatore += coordinatorePerRow;
+      baseValues.hotel += venta.hotel || 0;
+      baseValues.trasporto += trasportoPerRow;
+      baseValues.tkt += venta.tkt || 0;
+      baseValues.polizza += venta.polizza || 0;
+
+      const costoNetto = trasportoPerRow
+        + guidaPerRow
+        + coordinatorePerRow
+        + transferServizioPerRow
+        + (venta.hotel || 0);
+
+      baseValues.netto += costoNetto;
+      baseValues.venduto += venta.venduto || 0;
+      baseValues.acconto += venta.acconto || 0;
+      baseValues.daPagare += venta.daPagare || 0;
+      baseValues.feeAgv += (venta.venduto || 0) - costoNetto;
+    });
+
+    return baseValues;
+  }, [filteredVentas, tour]);
+
   // Fecha de viaje formateada (memoizada)
   const fechaViajeFormateada = useMemo(() => {
     if (!tour?.fechaViaje) return null;
@@ -3172,7 +3221,28 @@ export default function VentaTourAereoPage() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+              <tfoot>
+                <tr className="bg-blue-50 dark:bg-blue-900/20 font-semibold text-sm text-blue-900 dark:text-blue-100">
+                  <td colSpan={5} className="px-6 py-3 text-right uppercase tracking-wide">Totale:</td>
+                  <td className="px-6 py-3 text-right">€{totals.transfer.toFixed(2)}</td>
+                  <td className="px-6 py-3 text-right">€{totals.guidaLocale.toFixed(2)}</td>
+                  <td className="px-6 py-3 text-right">€{totals.coordinatore.toFixed(2)}</td>
+                  <td className="px-6 py-3 text-right">€{totals.hotel.toFixed(2)}</td>
+                  <td className="px-6 py-3 text-right">€{totals.trasporto.toFixed(2)}</td>
+                  <td className="px-6 py-3 text-right">€{totals.tkt.toFixed(2)}</td>
+                  <td className="px-6 py-3 text-right">€{totals.polizza.toFixed(2)}</td>
+                  <td className="px-6 py-3 text-right">€{totals.netto.toFixed(2)}</td>
+                  <td className="px-6 py-3 text-right">€{totals.venduto.toFixed(2)}</td>
+                  <td className="px-6 py-3 text-right">€{totals.acconto.toFixed(2)}</td>
+                  <td className="px-6 py-3 text-right">€{totals.daPagare.toFixed(2)}</td>
+                  <td className="px-6 py-3" />
+                  <td className="px-6 py-3 text-right">€{totals.feeAgv.toFixed(2)}</td>
+                  <td className="px-6 py-3" />
+                  <td className="px-6 py-3" />
+                  <td className="sticky right-0 px-6 py-3 bg-blue-50 dark:bg-blue-900/20" />
+                </tr>
+              </tfoot>
+             </table>
           </div>
         )}
       </ComponentCard>

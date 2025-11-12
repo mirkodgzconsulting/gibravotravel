@@ -1795,6 +1795,51 @@ export default function VentaTourAereoPage() {
     });
   }, [tour?.fechaViaje]);
 
+  const handleGenerateRicevuta = useCallback(async (ventaId: string) => {
+    try {
+      setMessage({ type: 'success', text: 'Generando ricevuta...' });
+
+      const response = await fetch(`/api/tour-aereo/ventas/${ventaId}/ricevuta`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ventaId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.error || `Error al generar ricevuta (${response.status})`);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+
+      const contentDisposition = response.headers.get('Content-Disposition');
+      const fileName = contentDisposition
+        ? contentDisposition.split('filename=')[1]?.replace(/"/g, '')
+        : `Ricevuta_${ventaId}_${new Date().getTime()}.pdf`;
+
+      a.download = fileName || `Ricevuta_${ventaId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      setMessage({ type: 'success', text: 'Ricevuta generata con successo!' });
+      setTimeout(() => setMessage(null), 3000);
+    } catch (error) {
+      console.error('Error generating ricevuta:', error);
+      setMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Errore durante la generazione della ricevuta'
+      });
+      setTimeout(() => setMessage(null), 4000);
+    }
+  }, []);
+
   if (roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -3268,6 +3313,13 @@ export default function VentaTourAereoPage() {
                           title="Eliminar venta"
                         >
                           <TrashIcon className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleGenerateRicevuta(venta.id)}
+                          className="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300"
+                          title="Generar ricevuta"
+                        >
+                          <FileTextIcon className="w-4 h-4" />
                         </button>
                       </div>
                     </td>

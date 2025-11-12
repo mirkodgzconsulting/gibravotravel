@@ -72,7 +72,7 @@ export async function PATCH(
     const puedeActualizarEstado = soloActualizaEstado && stato !== undefined && allowedUserStates.has(stato);
     if (user.role === 'USER' && venta.createdBy !== user.id) {
       if (!puedeActualizarEstado && !soloActualizaTkt && !soloActualizaPolizza) {
-        return NextResponse.json({ error: 'No autorizado para editar esta venta' }, { status: 403 });
+      return NextResponse.json({ error: 'No autorizado para editar esta venta' }, { status: 403 });
       }
     }
 
@@ -290,23 +290,23 @@ export async function PUT(
     }
 
     const updatePayload: Record<string, unknown> = {
-      pasajero,
-      codiceFiscale,
-      indirizzo,
-      email,
-      numeroTelefono,
-      paisOrigen,
-      iata,
-      pnr: pnr || null,
+        pasajero,
+        codiceFiscale,
+        indirizzo,
+        email,
+        numeroTelefono,
+        paisOrigen,
+        iata,
+        pnr: pnr || null,
       hotel: venta.tourAereo?.hotel ?? null,
       transfer: transfer ? parseFloat(transfer) : null,
-      venduto: parseFloat(venduto),
-      acconto: parseFloat(acconto || '0'),
-      daPagare,
-      metodoPagamento,
-      metodoCompra: metodoCompra || null,
-      stato,
-      attachedFile: attachedFileUrl,
+        venduto: parseFloat(venduto),
+        acconto: parseFloat(acconto || '0'),
+        daPagare,
+        metodoPagamento,
+        metodoCompra: metodoCompra || null,
+        stato,
+        attachedFile: attachedFileUrl,
       attachedFileName,
     };
 

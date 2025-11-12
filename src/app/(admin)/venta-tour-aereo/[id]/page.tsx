@@ -37,6 +37,7 @@ interface TourAereo {
   coordinatore: number | null;
   hotel: number | null;
   tkt?: number | null;
+  polizza?: number | null;
   transfer: number | null;
   transporte: number | null;
   notas: string | null;
@@ -83,6 +84,7 @@ interface VentaTourAereo {
   pnr: string | null;
   hotel: number | null;
   tkt?: number | null;
+  polizza?: number | null;
   transfer: number | null;
   venduto: number;
   acconto: number;
@@ -157,6 +159,7 @@ interface VentaFormData {
   transfer: string;
   venduto: string;
   acconto: string;
+  polizza: string;
   metodoPagamento: string[];
   metodoCompra: string;
   stato: string;
@@ -345,6 +348,8 @@ export default function VentaTourAereoPage() {
   const [tempMetodoCompra, setTempMetodoCompra] = useState<string>('');
   const [editingTktId, setEditingTktId] = useState<string | null>(null);
   const [tempTktValue, setTempTktValue] = useState<string>('');
+  const [editingPolizzaId, setEditingPolizzaId] = useState<string | null>(null);
+  const [tempPolizzaValue, setTempPolizzaValue] = useState<string>('');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [editingVenta, setEditingVenta] = useState<VentaTourAereo | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -385,10 +390,11 @@ export default function VentaTourAereoPage() {
     transfer: "",
     venduto: "",
     acconto: "",
+    polizza: "",
     metodoPagamento: [],
     metodoCompra: "",
     stato: "",
-    cuotas: []
+    cuotas: [],
   });
 
   // Estado para el tipo de pasajero (adulto/nino) y precios editables
@@ -909,6 +915,7 @@ export default function VentaTourAereoPage() {
       formDataToSend.append('transfer', formData.transfer);
       formDataToSend.append('venduto', formData.venduto);
       formDataToSend.append('acconto', formData.acconto);
+      formDataToSend.append('polizza', formData.polizza);
       formDataToSend.append('metodoPagamento', JSON.stringify(formData.metodoPagamento)); // Convertir array a JSON
       formDataToSend.append('metodoCompra', formData.metodoCompra);
       formDataToSend.append('stato', formData.stato);
@@ -956,10 +963,11 @@ export default function VentaTourAereoPage() {
           transfer: "",
           venduto: "",
           acconto: "",
+          polizza: "",
           metodoPagamento: [],
           metodoCompra: "",
           stato: "",
-          cuotas: []
+          cuotas: [],
         });
         setCuotas([]);
         setNumeroCuotas(0);
@@ -1022,48 +1030,53 @@ export default function VentaTourAereoPage() {
 
   // Función para exportar a Excel
   const handleExportToExcel = useCallback(() => {
-    const dataToExport = filteredVentas.map(venta => ({
-      'Passeggero': venta.pasajero || '',
-      'Codice Fiscale': venta.codiceFiscale || '',
-      'Indirizzo': venta.indirizzo || '',
-      'Email': venta.email || '',
-      'Telefono': venta.numeroTelefono || '',
-      'Paese di origine': venta.paisOrigen || '',
-      'IATA': (() => {
+    const dataToExport = filteredVentas.map(venta => {
+      const plainMetodoPagamento = (() => {
         try {
-          const parsed = typeof venta.iata === 'string' 
-            ? JSON.parse(venta.iata) 
-            : venta.iata;
-          return Array.isArray(parsed) ? parsed.join(', ') : venta.iata || '';
-        } catch {
-          return venta.iata || '';
-        }
-      })(),
-      'PNR': venta.pnr || '',
-      'Hotel (€)': venta.hotel || 0,
-      'TKT (€)': venta.tkt !== null && venta.tkt !== undefined
-        ? Number(venta.tkt.toFixed(2))
-        : 0,
-      'Trasporto (€)': venta.transfer || 0,
-      'Venduto (€)': venta.venduto || 0,
-      'Acconto (€)': venta.acconto || 0,
-      'Da pagare (€)': venta.daPagare || 0,
-      'Metodo di pagamento': (() => {
-        try {
-          const parsed = typeof venta.metodoPagamento === 'string' 
-            ? JSON.parse(venta.metodoPagamento) 
+          const parsed = typeof venta.metodoPagamento === 'string'
+            ? JSON.parse(venta.metodoPagamento)
             : venta.metodoPagamento;
           return Array.isArray(parsed) ? parsed.join(', ') : venta.metodoPagamento || '';
         } catch {
           return venta.metodoPagamento || '';
         }
-      })(),
-      'Metodo di Acquisto': venta.metodoCompra || '',
-      'Stato': venta.stato || '',
-      'Agente': venta.creator?.firstName 
-        ? `${venta.creator.firstName}${venta.creator.lastName ? ` ${venta.creator.lastName}` : ''}`.trim()
-        : venta.creator?.email || 'N/A'
-    }));
+      })();
+
+      return {
+        Passeggero: venta.pasajero || '',
+        'Codice Fiscale': venta.codiceFiscale || '',
+        Indirizzo: venta.indirizzo || '',
+        Email: venta.email || '',
+        Telefono: venta.numeroTelefono || '',
+        'Paese di origine': venta.paisOrigen || '',
+        IATA: (() => {
+          try {
+            const parsed = typeof venta.iata === 'string'
+              ? JSON.parse(venta.iata)
+              : venta.iata;
+            return Array.isArray(parsed) ? parsed.join(', ') : venta.iata || '';
+          } catch {
+            return venta.iata || '';
+          }
+        })(),
+        PNR: venta.pnr || '',
+        'Hotel (€)': venta.hotel || 0,
+        'Trasporto (€)': venta.transfer || 0,
+        'TKT (€)': venta.tkt !== null && venta.tkt !== undefined ? Number(venta.tkt.toFixed(2)) : 0,
+        'Polizza (€)': venta.polizza !== null && venta.polizza !== undefined ? Number(venta.polizza.toFixed(2)) : 0,
+        'Netto (€)': ((venta.transfer || 0) + (tour?.guidaLocale || 0) + (tour?.coordinatore || 0) + (tour?.transporte || 0) + (venta.hotel || 0)).toFixed(2),
+        'Venduto (€)': venta.venduto || 0,
+        'PAGATO/ACCONTO (€)': venta.acconto || 0,
+        'Da pagare (€)': venta.daPagare || 0,
+        METODOPAG: plainMetodoPagamento,
+        FEEAGV: (venta.venduto - ((venta.transfer || 0) + (tour?.guidaLocale || 0) + (tour?.coordinatore || 0) + (tour?.transporte || 0) + (venta.hotel || 0))).toFixed(2),
+        Agente: venta.creator?.firstName
+          ? `${venta.creator.firstName}${venta.creator.lastName ? ` ${venta.creator.lastName}` : ''}`.trim()
+          : venta.creator?.email || 'N/A',
+        File: venta.attachedFile ? 'Sì' : 'No',
+        Cuotas: venta.cuotas ? venta.cuotas.length : 0,
+      };
+    });
 
     const ws = XLSX.utils.json_to_sheet(dataToExport);
     const wb = XLSX.utils.book_new();
@@ -1071,7 +1084,7 @@ export default function VentaTourAereoPage() {
     
     const fileName = `vendite_tour_aereo_${new Date().toISOString().split('T')[0]}.xlsx`;
     XLSX.writeFile(wb, fileName);
-  }, [filteredVentas]);
+  }, [filteredVentas, tour]);
 
   const handleEditVenta = useCallback(async (venta: VentaTourAereo) => {
     await loadClientesIfNeeded();
@@ -1099,6 +1112,7 @@ export default function VentaTourAereoPage() {
       transfer: venta.transfer?.toString() || "",
       venduto: venta.venduto.toString(),
       acconto: venta.acconto.toString(),
+      polizza: venta.polizza?.toString() || "",
       metodoPagamento: (() => {
         try {
           const parsed = typeof venta.metodoPagamento === 'string' ? JSON.parse(venta.metodoPagamento) : venta.metodoPagamento;
@@ -1192,6 +1206,7 @@ export default function VentaTourAereoPage() {
       formDataToSend.append('transfer', formData.transfer);
       formDataToSend.append('venduto', formData.venduto);
       formDataToSend.append('acconto', formData.acconto);
+      formDataToSend.append('polizza', formData.polizza);
       formDataToSend.append('metodoPagamento', JSON.stringify(formData.metodoPagamento)); // Convertir array a JSON
       formDataToSend.append('metodoCompra', formData.metodoCompra);
       formDataToSend.append('stato', formData.stato);
@@ -1245,10 +1260,11 @@ export default function VentaTourAereoPage() {
           transfer: "",
           venduto: "",
           acconto: "",
+          polizza: "",
           metodoPagamento: [],
           metodoCompra: "",
           stato: "",
-          cuotas: []
+          cuotas: [],
         });
         setIsEditMode(false);
         setEditingVenta(null);
@@ -1308,10 +1324,11 @@ export default function VentaTourAereoPage() {
       transfer: "",
       venduto: "",
       acconto: "",
+      polizza: "",
       metodoPagamento: [],
       metodoCompra: "",
       stato: "",
-      cuotas: []
+      cuotas: [],
     });
     setTipoPasajero(null);
     setAdultoPrice(tour?.precioAdulto != null ? tour.precioAdulto.toString() : '');
@@ -1451,6 +1468,53 @@ export default function VentaTourAereoPage() {
     tktEditCancelled.current = true;
     setEditingTktId(null);
     setTempTktValue('');
+  }, []);
+
+  const savePolizza = useCallback(async (ventaId: string) => {
+    const sanitized = tempPolizzaValue.replace(',', '.').trim();
+    let parsedValue: number | null = null;
+
+    if (sanitized !== '') {
+      const numeric = Number.parseFloat(sanitized);
+      if (Number.isNaN(numeric)) {
+        setMessage({ type: 'error', text: 'Inserisci un importo valido per Polizza' });
+        setTimeout(() => setMessage(null), 4000);
+        return;
+      }
+      parsedValue = Math.round(numeric * 100) / 100;
+    }
+
+    try {
+      const response = await fetch(`/api/tour-aereo/ventas/${ventaId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ polizza: parsedValue }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Errore durante l'aggiornamento della polizza");
+      }
+
+      setVentas(prev => prev.map(v =>
+        v.id === ventaId ? { ...v, polizza: parsedValue ?? null } : v
+      ));
+      setMessage({ type: 'success', text: 'Polizza aggiornata correttamente' });
+      setTimeout(() => setMessage(null), 3000);
+    } catch (error) {
+      console.error('Error updating polizza:', error);
+      setMessage({ type: 'error', text: "Errore durante l'aggiornamento della polizza" });
+      setTimeout(() => setMessage(null), 4000);
+    } finally {
+      setEditingPolizzaId(null);
+      setTempPolizzaValue('');
+    }
+  }, [tempPolizzaValue]);
+
+  const cancelEditingPolizza = useCallback(() => {
+    setEditingPolizzaId(null);
+    setTempPolizzaValue('');
   }, []);
 
   // Funciones para manejar cuotas
@@ -2370,6 +2434,20 @@ export default function VentaTourAereoPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Polizza (€)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.polizza}
+                    onChange={handleInputChange('polizza')}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Da pagare (€)
                   </label>
                   <input
@@ -2762,13 +2840,16 @@ export default function VentaTourAereoPage() {
                     Coordinatore
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                    Trasporto
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                     Hotel
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                    Trasporto
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                     TKT
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                    Polizza
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                     Netto
@@ -2932,20 +3013,20 @@ export default function VentaTourAereoPage() {
                       {venta.pnr || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm bg-amber-200 text-amber-900 dark:bg-amber-900/60 dark:text-amber-100">
-                       €{(tour?.transporte || 0).toFixed(2)}
-                     </td>
+                      €{(tour?.transporte || 0).toFixed(2)}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm bg-sky-200 text-sky-900 dark:bg-sky-900/60 dark:text-sky-100">
                       €{(tour?.guidaLocale || 0).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm bg-emerald-200 text-emerald-900 dark:bg-emerald-900/60 dark:text-emerald-100">
                       €{(tour?.coordinatore || 0).toFixed(2)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      €{(venta.transfer || 0).toFixed(2)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm bg-rose-200 text-rose-900 dark:bg-rose-900/50 dark:text-rose-200">
                       €{(venta.hotel || 0).toFixed(2)}
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                       €{(venta.transfer || 0).toFixed(2)}
+                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {editingTktId === venta.id ? (
                         <div className="flex items-center gap-1">
@@ -2981,8 +3062,49 @@ export default function VentaTourAereoPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      €{((venta.transfer || 0) + (tour?.guidaLocale || 0) + (tour?.coordinatore || 0) + (tour?.transporte || 0) + (venta.hotel || 0)).toFixed(2)}
+                      {editingPolizzaId === venta.id ? (
+                        <div className="flex items-center gap-1">
+                          <span className="text-gray-500">€</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={tempPolizzaValue}
+                            autoFocus
+                            onChange={(e) => setTempPolizzaValue(e.target.value)}
+                            onBlur={() => savePolizza(venta.id)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                savePolizza(venta.id);
+                              } else if (e.key === 'Escape') {
+                                cancelEditingPolizza();
+                              }
+                            }}
+                            className="w-24 px-2 py-1 text-xs border border-brand-500 rounded focus:ring-2 focus:ring-brand-500 focus:outline-none dark:bg-gray-800 dark:border-brand-400 dark:text-white"
+                          />
+                        </div>
+                      ) : (
+                        <div
+                          onClick={() => {
+                            setEditingPolizzaId(venta.id);
+                            setTempPolizzaValue(
+                              venta.polizza !== null && venta.polizza !== undefined
+                                ? venta.polizza.toString()
+                                : ''
+                            );
+                          }}
+                          className="text-xs truncate cursor-pointer px-2 py-1 rounded text-center font-medium bg-lime-50 dark:bg-lime-900/30 text-lime-700 dark:text-lime-200 hover:bg-lime-100 dark:hover:bg-lime-900/40 min-h-[24px]"
+                          title="Clicca per modificare"
+                        >
+                          {venta.polizza !== null && venta.polizza !== undefined
+                            ? `€${venta.polizza.toFixed(2)}`
+                            : '€0.00'}
+                        </div>
+                      )}
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                       €{((venta.transfer || 0) + (tour?.guidaLocale || 0) + (tour?.coordinatore || 0) + (tour?.transporte || 0) + (venta.hotel || 0)).toFixed(2)}
+                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                        €{venta.venduto.toFixed(2)}
                      </td>

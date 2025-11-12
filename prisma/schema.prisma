@@ -528,6 +528,7 @@ model VentaTourAereo {
   pnr              String?
   hotel            Float?
   tkt              Float?
+  polizza          Float?
   transfer         Float?
   attachedFile     String?
   attachedFileName String?

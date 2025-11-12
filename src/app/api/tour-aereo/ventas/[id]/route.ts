@@ -29,9 +29,9 @@ export async function PATCH(
 
     const { id: ventaId } = await params;
     const body = await request.json();
-    const { stato, metodoCompra, tkt } = body;
+    const { stato, metodoCompra, tkt, polizza } = body;
 
-    if (stato === undefined && metodoCompra === undefined && tkt === undefined) {
+    if (stato === undefined && metodoCompra === undefined && tkt === undefined && polizza === undefined) {
       return NextResponse.json({ error: 'Ì necessario fornire almeno un campo da aggiornare' }, { status: 400 });
     }
 
@@ -68,9 +68,10 @@ export async function PATCH(
     const keys = Object.keys(body);
     const soloActualizaEstado = keys.length === 1 && keys[0] === 'stato';
     const soloActualizaTkt = keys.length === 1 && keys[0] === 'tkt';
+    const soloActualizaPolizza = keys.length === 1 && keys[0] === 'polizza';
     const puedeActualizarEstado = soloActualizaEstado && stato !== undefined && allowedUserStates.has(stato);
     if (user.role === 'USER' && venta.createdBy !== user.id) {
-      if (!puedeActualizarEstado && !soloActualizaTkt) {
+      if (!puedeActualizarEstado && !soloActualizaTkt && !soloActualizaPolizza) {
         return NextResponse.json({ error: 'No autorizado para editar esta venta' }, { status: 403 });
       }
     }
@@ -88,6 +89,17 @@ export async function PATCH(
           return NextResponse.json({ error: 'Il valore di TKT non è valido' }, { status: 400 });
         }
         updateData.tkt = Math.round(parsedTkt * 100) / 100;
+      }
+    }
+    if (polizza !== undefined) {
+      if (polizza === null || polizza === '') {
+        updateData.polizza = null;
+      } else {
+        const parsedPolizza = Number.parseFloat(String(polizza).replace(',', '.'));
+        if (Number.isNaN(parsedPolizza)) {
+          return NextResponse.json({ error: 'Il valore di polizza non è valido' }, { status: 400 });
+        }
+        updateData.polizza = Math.round(parsedPolizza * 100) / 100;
       }
     }
     
@@ -166,6 +178,7 @@ export async function PUT(
     const transfer = formData.get('transfer') as string;
     const venduto = formData.get('venduto') as string;
     const acconto = formData.get('acconto') as string;
+    const polizza = formData.get('polizza') as string;
     const metodoPagamento = formData.get('metodoPagamento') as string;
     const metodoCompra = formData.get('metodoCompra') as string;
     const stato = formData.get('stato') as string;
@@ -274,29 +287,32 @@ export async function PUT(
       }
     }
 
-    // Actualizar la venta
+    const updatePayload: Record<string, unknown> = {
+      pasajero,
+      codiceFiscale,
+      indirizzo,
+      email,
+      numeroTelefono,
+      paisOrigen,
+      iata,
+      pnr: pnr || null,
+      hotel: hotel ? parseFloat(hotel) : null,
+      transfer: transfer ? parseFloat(transfer) : null,
+      venduto: parseFloat(venduto),
+      acconto: parseFloat(acconto || '0'),
+      daPagare,
+      metodoPagamento,
+      metodoCompra: metodoCompra || null,
+      stato,
+      attachedFile: attachedFileUrl,
+      attachedFileName,
+    };
+
+    updatePayload.polizza = polizza ? parseFloat(polizza) : null;
+
     const ventaActualizada = await prisma.ventaTourAereo.update({
       where: { id: ventaId },
-      data: {
-        pasajero,
-        codiceFiscale,
-        indirizzo,
-        email,
-        numeroTelefono,
-        paisOrigen,
-        iata,
-        pnr: pnr || null,
-        hotel: (hotel ? parseFloat(hotel) : null) as any,
-        transfer: (transfer ? parseFloat(transfer) : null) as any,
-        venduto: parseFloat(venduto),
-        acconto: parseFloat(acconto || '0'),
-        daPagare,
-        metodoPagamento,
-        metodoCompra: metodoCompra || null,
-        stato,
-        attachedFile: attachedFileUrl,
-        attachedFileName: attachedFileName
-      }
+      data: updatePayload,
     });
 
     // Actualizar cuotas si se proporcionan

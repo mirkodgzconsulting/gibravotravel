@@ -147,6 +147,7 @@ export async function POST(request: NextRequest) {
     const descripcion = formData.get('descripcion') as string;
     const coverImage = formData.get('coverImage') as File | null;
     const pdfFile = formData.get('pdfFile') as File | null;
+    const documentoViaggioFile = formData.get('documentoViaggio') as File | null;
 
     // Validar campos requeridos
     if (!titulo || !precioAdulto) {
@@ -240,6 +241,34 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    let documentoViaggioUrl = null;
+    let documentoViaggioName = null;
+
+    if (documentoViaggioFile && documentoViaggioFile.size > 0) {
+      try {
+        const bytes = await documentoViaggioFile.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+
+        const result = await new Promise<any>((resolve, reject) => {
+          cloudinary.uploader.upload_stream(
+            {
+              folder: 'gibravotravel/tour_aereo/documenti',
+              resource_type: 'auto'
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          ).end(buffer);
+        });
+
+        documentoViaggioUrl = result.secure_url;
+        documentoViaggioName = documentoViaggioFile.name;
+      } catch (error) {
+        console.error('Error uploading travel document:', error);
+      }
+    }
+ 
     // Crear el tour aéreo en la base de datos
     const tour = await prisma.tourAereo.create({
       data: {
@@ -261,6 +290,8 @@ export async function POST(request: NextRequest) {
         coverImageName,
         pdfFile: pdfFileUrl,
         pdfFileName,
+        documentoViaggio: documentoViaggioUrl,
+        documentoViaggioName,
         createdBy: userId,
       },
       include: {

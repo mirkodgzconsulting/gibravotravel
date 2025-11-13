@@ -32,6 +32,8 @@ interface TourAereo {
   coverImageName: string | null;
   pdfFile: string | null;
   pdfFileName: string | null;
+  documentoViaggio: string | null;
+  documentoViaggioName: string | null;
   descripcion: string | null;
   isActive: boolean;
   createdBy: string;
@@ -63,6 +65,7 @@ interface TourFormData {
   notasCoordinador: string;
   coverImage: File | null;
   pdfFile: File | null;
+  documentoViaggio: File | null;
   descripcion: string;
 }
 
@@ -90,6 +93,7 @@ export default function TourAereoPage() {
     notasCoordinador: "",
     coverImage: null,
     pdfFile: null,
+    documentoViaggio: null,
     descripcion: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -144,6 +148,7 @@ export default function TourAereoPage() {
       formDataToSend.append('hotel', formData.hotel);
       formDataToSend.append('notas', formData.notas);
       formDataToSend.append('notasCoordinador', formData.notasCoordinador);
+      formDataToSend.append('documentoViaggio', formData.documentoViaggio);
       formDataToSend.append('descripcion', formData.descripcion);
       
       if (formData.coverImage) {
@@ -151,6 +156,9 @@ export default function TourAereoPage() {
       }
       if (formData.pdfFile) {
         formDataToSend.append('pdfFile', formData.pdfFile);
+      }
+      if (formData.documentoViaggio) {
+        formDataToSend.append('documentoViaggio', formData.documentoViaggio);
       }
 
       const response = await fetch('/api/tour-aereo', {
@@ -177,6 +185,7 @@ export default function TourAereoPage() {
           notasCoordinador: "",
           coverImage: null,
           pdfFile: null,
+          documentoViaggio: null,
           descripcion: "",
         });
         closeModal();
@@ -213,6 +222,7 @@ export default function TourAereoPage() {
       formDataToSend.append('hotel', formData.hotel);
       formDataToSend.append('notas', formData.notas);
       formDataToSend.append('notasCoordinador', formData.notasCoordinador);
+      formDataToSend.append('documentoViaggio', formData.documentoViaggio);
       formDataToSend.append('descripcion', formData.descripcion);
       
       if (formData.coverImage) {
@@ -220,6 +230,9 @@ export default function TourAereoPage() {
       }
       if (formData.pdfFile) {
         formDataToSend.append('pdfFile', formData.pdfFile);
+      }
+      if (formData.documentoViaggio) {
+        formDataToSend.append('documentoViaggio', formData.documentoViaggio);
       }
 
       const response = await fetch(`/api/tour-aereo/${editingTour.id}`, {
@@ -248,6 +261,7 @@ export default function TourAereoPage() {
           notasCoordinador: "",
           coverImage: null,
           pdfFile: null,
+          documentoViaggio: null,
           descripcion: "",
         });
         setEditingTour(null);
@@ -283,6 +297,7 @@ export default function TourAereoPage() {
       notasCoordinador: tour.notasCoordinador || "",
       coverImage: null,
       pdfFile: null,
+      documentoViaggio: null,
       descripcion: tour.descripcion || "",
     });
     openModal();
@@ -326,6 +341,7 @@ export default function TourAereoPage() {
       notasCoordinador: "",
       coverImage: null,
       pdfFile: null,
+      documentoViaggio: null,
       descripcion: "",
     });
     closeModal();
@@ -768,6 +784,23 @@ export default function TourAereoPage() {
                 onChange={(e) => setFormData(prev => ({ ...prev, pdfFile: e.target.files?.[0] || null }))}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Documento Viaggio
+              </label>
+              <input
+                type="file"
+                accept=".pdf,image/*"
+                onChange={(e) => setFormData(prev => ({ ...prev, documentoViaggio: e.target.files?.[0] || null }))}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              />
+              {editingTour?.documentoViaggio && !formData.documentoViaggio && (
+                <p className="mt-2 text-sm text-blue-600 dark:text-blue-300">
+                  Documento attuale: <a href={editingTour.documentoViaggio} target="_blank" rel="noopener noreferrer" className="underline">Scarica documento</a>
+                </p>
+              )}
             </div>
 
             <div>

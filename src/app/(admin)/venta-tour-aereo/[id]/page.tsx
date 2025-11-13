@@ -20,8 +20,7 @@ import {
   DollarSignIcon,
   UsersIcon,
   CalendarIcon,
-  TrendingUpIcon,
-  FileTextIcon
+  TrendingUpIcon
 } from "lucide-react";
 import SimpleRichTextEditor from "@/components/form/SimpleRichTextEditor";
 
@@ -46,6 +45,8 @@ interface TourAereo {
   coverImageName: string | null;
   pdfFile: string | null;
   pdfFileName: string | null;
+  documentoViaggio?: string | null;
+  documentoViaggioName?: string | null;
   descripcion: string | null;
   createdBy: string;
   createdAt: string;
@@ -330,6 +331,7 @@ export default function VentaTourAereoPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCopyNotification, setShowCopyNotification] = useState(false);
+  const [isUploadingDocumentoViaggio, setIsUploadingDocumentoViaggio] = useState(false);
   const [editingNotas, setEditingNotas] = useState<{tour: boolean, coordinador: boolean}>({
     tour: false,
     coordinador: false
@@ -372,6 +374,7 @@ export default function VentaTourAereoPage() {
   const [showClientDropdown, setShowClientDropdown] = useState<boolean>(false);
   const clientDropdownRef = useRef<HTMLDivElement>(null);
   const tktEditCancelled = useRef(false);
+  const documentoViaggioInputRef = useRef<HTMLInputElement>(null);
 
   // Estados para manejo de cuotas
   const [numeroCuotas, setNumeroCuotas] = useState<number>(0);
@@ -1637,6 +1640,75 @@ export default function VentaTourAereoPage() {
     }));
   }, []);
 
+  const handleDocumentoViaggioUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (!file || !tourId || !tour) {
+      event.target.value = '';
+      return;
+    }
+
+    setIsUploadingDocumentoViaggio(true);
+
+    try {
+      const formDataToSend = new FormData();
+      const formatDate = (value?: string | null) =>
+        value ? new Date(value).toISOString().split('T')[0] : '';
+
+      formDataToSend.append('titulo', tour.titulo || '');
+      formDataToSend.append('precioAdulto', tour.precioAdulto != null ? tour.precioAdulto.toString() : '0');
+      formDataToSend.append('precioNino', tour.precioNino != null ? tour.precioNino.toString() : '0');
+      formDataToSend.append('fechaViaje', formatDate(tour.fechaViaje));
+      formDataToSend.append('meta', tour.meta != null ? tour.meta.toString() : '0');
+      formDataToSend.append('acc', tour.acc || '');
+      formDataToSend.append('guidaLocale', tour.guidaLocale != null ? tour.guidaLocale.toString() : '');
+      formDataToSend.append('coordinatore', tour.coordinatore != null ? tour.coordinatore.toString() : '');
+      formDataToSend.append('transporte', tour.transporte != null ? tour.transporte.toString() : '');
+      formDataToSend.append('hotel', tour.hotel != null ? tour.hotel.toString() : '');
+      formDataToSend.append('notas', sanitizeEditorHtml(tour.notas));
+      formDataToSend.append('notasCoordinador', sanitizeEditorHtml(tour.notasCoordinador));
+      formDataToSend.append('descripcion', tour.descripcion || '');
+      formDataToSend.append('documentoViaggio', file);
+
+      const response = await fetch(`/api/tour-aereo/${tourId}`, {
+        method: 'PUT',
+        body: formDataToSend,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTour(data.tour);
+        setMessage({
+          type: 'success',
+          text: 'Documento di viaggio aggiornato correttamente'
+        });
+        setTimeout(() => setMessage(null), 3000);
+      } else {
+        let errorText = 'Errore durante il caricamento del documento di viaggio';
+        try {
+          const errorData = await response.json();
+          if (errorData?.error) {
+            errorText = errorData.error;
+          }
+        } catch (err) {
+          console.error('Error parsing documento viaggio response:', err);
+        }
+        setMessage({ type: 'error', text: errorText });
+        setTimeout(() => setMessage(null), 4000);
+      }
+    } catch (error) {
+      console.error('Error uploading documento viaggio:', error);
+      setMessage({
+        type: 'error',
+        text: 'Errore di connessione'
+      });
+      setTimeout(() => setMessage(null), 4000);
+    } finally {
+      setIsUploadingDocumentoViaggio(false);
+      event.target.value = '';
+    }
+  }, [tourId, tour]);
+
   // Funciones para manejar archivos
   const handleViewFiles = useCallback((venta: VentaTourAereo) => {
     setViewingFiles(venta);
@@ -1959,7 +2031,7 @@ export default function VentaTourAereoPage() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 mb-6">
             <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
               <div className="flex items-center gap-2 mb-1">
-                <DollarSignIcon className="w-4 h-4 text-blue-600" />
+                <span className="text-lg">💰</span>
                 <span className="text-xs font-medium text-blue-700 dark:text-blue-300">Prezzo adulto</span>
               </div>
               <div className="text-lg font-bold text-blue-900 dark:text-blue-100">
@@ -1969,7 +2041,7 @@ export default function VentaTourAereoPage() {
 
             <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
               <div className="flex items-center gap-2 mb-1">
-                <DollarSignIcon className="w-4 h-4 text-green-600" />
+                <span className="text-lg">💰</span>
                 <span className="text-xs font-medium text-green-700 dark:text-green-300">Prezzo bambino</span>
               </div>
               <div className="text-lg font-bold text-green-900 dark:text-green-100">
@@ -1979,7 +2051,7 @@ export default function VentaTourAereoPage() {
 
             <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg">
               <div className="flex items-center gap-2 mb-1">
-                <UsersIcon className="w-4 h-4 text-purple-600" />
+                <span className="text-lg">🎯</span>
                 <span className="text-xs font-medium text-purple-700 dark:text-purple-300">Obiettivo</span>
               </div>
               <div className="text-lg font-bold text-purple-900 dark:text-purple-100">
@@ -1989,7 +2061,7 @@ export default function VentaTourAereoPage() {
 
             <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded-lg">
               <div className="flex items-center gap-2 mb-1">
-                <TrendingUpIcon className="w-4 h-4 text-orange-600" />
+                <span className="text-lg">📈</span>
                 <span className="text-xs font-medium text-orange-700 dark:text-orange-300">Progresso</span>
               </div>
               <div className="text-lg font-bold text-orange-900 dark:text-orange-100">
@@ -2000,7 +2072,7 @@ export default function VentaTourAereoPage() {
             {tour.acc && (
               <div className="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
-                  <UsersIcon className="w-4 h-4 text-indigo-600" />
+                  <span className="text-lg">🙎</span>
                   <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300">Coordinatore (ACC)</span>
                 </div>
                 <div className="text-lg font-bold text-indigo-900 dark:text-indigo-100">
@@ -2012,7 +2084,7 @@ export default function VentaTourAereoPage() {
             {tour.guidaLocale && (
               <div className="bg-teal-50 dark:bg-teal-900/20 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
-                  <UsersIcon className="w-4 h-4 text-teal-600" />
+                  <span className="text-lg">🙋</span>
                   <span className="text-xs font-medium text-teal-700 dark:text-teal-300">Guida</span>
                 </div>
                 <div className="text-lg font-bold text-teal-900 dark:text-teal-100">
@@ -2024,7 +2096,7 @@ export default function VentaTourAereoPage() {
             {tour.coordinatore && (
               <div className="bg-cyan-50 dark:bg-cyan-900/20 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
-                  <UsersIcon className="w-4 h-4 text-cyan-600" />
+                  <span className="text-lg">🧑‍✈️</span>
                   <span className="text-xs font-medium text-cyan-700 dark:text-cyan-300">Coordinatore</span>
                 </div>
                 <div className="text-lg font-bold text-cyan-900 dark:text-cyan-100">
@@ -2036,7 +2108,7 @@ export default function VentaTourAereoPage() {
             {tour.hotel && (
               <div className="bg-pink-50 dark:bg-pink-900/20 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
-                  <PlaneIcon className="w-4 h-4 text-pink-600" />
+                  <span className="text-lg">🏨</span>
                   <span className="text-xs font-medium text-pink-700 dark:text-pink-300">Hotel</span>
                 </div>
                 <div className="text-lg font-bold text-pink-900 dark:text-pink-100">
@@ -2048,7 +2120,7 @@ export default function VentaTourAereoPage() {
             {tour.transfer && (
               <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
-                  <PlaneIcon className="w-4 h-4 text-yellow-600" />
+                  <span className="text-lg">🚌</span>
                   <span className="text-xs font-medium text-yellow-700 dark:text-yellow-300">Transfer</span>
                 </div>
                 <div className="text-lg font-bold text-yellow-900 dark:text-yellow-100">
@@ -2060,7 +2132,7 @@ export default function VentaTourAereoPage() {
             {tour.transporte && (
               <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
-                  <PlaneIcon className="w-4 h-4 text-red-600" />
+                  <span className="text-lg">🚌</span>
                   <span className="text-xs font-medium text-red-700 dark:text-red-300">Transfer</span>
                 </div>
                 <div className="text-lg font-bold text-red-900 dark:text-red-100">
@@ -2068,6 +2140,46 @@ export default function VentaTourAereoPage() {
                 </div>
               </div>
             )}
+
+            <div className="bg-sky-50 dark:bg-sky-900/20 p-3 rounded-lg">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">📄</span>
+                  <span className="text-xs font-medium text-sky-700 dark:text-sky-300">Documento Viaggio</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => documentoViaggioInputRef.current?.click()}
+                  disabled={isUploadingDocumentoViaggio}
+                  className="px-2 py-1 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {tour.documentoViaggio
+                    ? (isUploadingDocumentoViaggio ? 'Aggiornando...' : 'Aggiorna')
+                    : (isUploadingDocumentoViaggio ? 'Caricando...' : 'Carica')}
+                </button>
+              </div>
+              {tour.documentoViaggio ? (
+                <a
+                  href={tour.documentoViaggio}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-medium text-sky-700 dark:text-sky-200 underline break-words"
+                >
+                  {tour.documentoViaggioName || 'Scarica documento'}
+                </a>
+              ) : (
+                <p className="text-sm text-sky-700 dark:text-sky-200">
+                  Nessun documento caricato
+                </p>
+              )}
+              <input
+                ref={documentoViaggioInputRef}
+                type="file"
+                accept=".pdf,image/*"
+                className="hidden"
+                onChange={handleDocumentoViaggioUpload}
+              />
+            </div>
           </div>
 
           {/* Tarjetas de Notas */}
@@ -2076,7 +2188,7 @@ export default function VentaTourAereoPage() {
               {tour.notas && (
                 <div className="bg-slate-50 dark:bg-slate-900/20 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
                   <div className="flex items-center gap-2 mb-3">
-                    <FileTextIcon className="w-5 h-5 text-slate-600" />
+                    <PlaneIcon className="w-5 h-5 text-slate-600" />
                     <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Note del tour</span>
                   </div>
                   <div 
@@ -2160,7 +2272,7 @@ export default function VentaTourAereoPage() {
               {tour.notasCoordinador && (
                 <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg border border-amber-200 dark:border-amber-700">
                   <div className="flex items-center gap-2 mb-3">
-                    <FileTextIcon className="w-5 h-5 text-amber-600" />
+                    <PlaneIcon className="w-5 h-5 text-amber-600" />
                     <span className="text-sm font-medium text-amber-700 dark:text-amber-300">Note del coordinatore</span>
                   </div>
                   <div 
@@ -3319,7 +3431,9 @@ export default function VentaTourAereoPage() {
                           className="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300"
                           title="Generar ricevuta"
                         >
-                          <FileTextIcon className="w-4 h-4" />
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
                         </button>
                       </div>
                     </td>

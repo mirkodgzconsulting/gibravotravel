@@ -105,6 +105,7 @@ export async function PUT(
     const descripcion = formData.get('descripcion') as string;
     const coverImage = formData.get('coverImage') as File | null;
     const pdfFile = formData.get('pdfFile') as File | null;
+    const documentoViaggioFile = formData.get('documentoViaggio') as File | null;
 
     // Validar campos requeridos
     if (!titulo || !precioAdulto) {
@@ -197,30 +198,63 @@ export async function PUT(
       }
     }
 
+    let documentoViaggioUrl = (existingTour as any).documentoViaggio ?? null;
+    let documentoViaggioName = (existingTour as any).documentoViaggioName ?? null;
+
+    if (documentoViaggioFile && documentoViaggioFile.size > 0) {
+      try {
+        const bytes = await documentoViaggioFile.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+
+        const result = await new Promise<any>((resolve, reject) => {
+          cloudinary.uploader.upload_stream(
+            {
+              folder: 'gibravotravel/tour_aereo/documenti',
+              resource_type: 'auto'
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          ).end(buffer);
+        });
+
+        documentoViaggioUrl = result.secure_url;
+        documentoViaggioName = documentoViaggioFile.name;
+      } catch (error) {
+        console.error('Error uploading travel document:', error);
+      }
+    }
+ 
+    const updateData: Record<string, unknown> = {
+      titulo,
+      precioAdulto,
+      precioNino,
+      fechaViaje: fechaViajeDate,
+      fechaFin: fechaFinDate,
+      meta,
+      acc: acc || null,
+      guidaLocale: (guidaLocale > 0 ? guidaLocale : null) as any,
+      coordinatore: (coordinatore > 0 ? coordinatore : null) as any,
+      transporte: (transporte > 0 ? transporte : null) as any,
+      hotel: hotel !== null ? hotel : null,
+      notas: notas || null,
+      notasCoordinador: notasCoordinador || null,
+      descripcion: descripcion || null,
+      coverImage: coverImageUrl,
+      coverImageName,
+      pdfFile: pdfFileUrl,
+      pdfFileName,
+      updatedAt: new Date(),
+    };
+
+    updateData.documentoViaggio = documentoViaggioUrl;
+    updateData.documentoViaggioName = documentoViaggioName;
+
     // Actualizar el tour aéreo en la base de datos
     const tour = await prisma.tourAereo.update({
       where: { id },
-      data: {
-        titulo,
-        precioAdulto,
-        precioNino,
-        fechaViaje: fechaViajeDate,
-        fechaFin: fechaFinDate,
-        meta,
-        acc: acc || null,
-        guidaLocale: (guidaLocale > 0 ? guidaLocale : null) as any,
-        coordinatore: (coordinatore > 0 ? coordinatore : null) as any,
-        transporte: (transporte > 0 ? transporte : null) as any,
-        hotel: hotel !== null ? hotel : null,
-        notas: notas || null,
-        notasCoordinador: notasCoordinador || null,
-        descripcion: descripcion || null,
-        coverImage: coverImageUrl,
-        coverImageName,
-        pdfFile: pdfFileUrl,
-        pdfFileName,
-        updatedAt: new Date(),
-      },
+      data: updateData,
       include: {
         creator: {
           select: {

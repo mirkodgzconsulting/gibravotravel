@@ -20,9 +20,19 @@ import {
   DollarSignIcon,
   UsersIcon,
   CalendarIcon,
-  TrendingUpIcon
+  TrendingUpIcon,
+  User as UserIcon,
+  Baby,
+  Target,
+  Briefcase,
+  Compass,
+  UserCheck,
+  Hotel,
+  Bus,
+  FileText
 } from "lucide-react";
 import SimpleRichTextEditor from "@/components/form/SimpleRichTextEditor";
+import { Icon } from '@iconify/react';
 
 interface TourAereo {
   id: string;
@@ -2031,7 +2041,7 @@ export default function VentaTourAereoPage() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 mb-6">
             <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-lg">💰</span>
+                <Icon icon="mdi:cash-multiple" width="22" height="22" style={{ color: '#2563eb' }} />
                 <span className="text-xs font-medium text-blue-700 dark:text-blue-300">Prezzo adulto</span>
               </div>
               <div className="text-lg font-bold text-blue-900 dark:text-blue-100">
@@ -2041,7 +2051,7 @@ export default function VentaTourAereoPage() {
 
             <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-lg">💰</span>
+                <Icon icon="mdi:cash-euro" width="22" height="22" style={{ color: '#047857' }} />
                 <span className="text-xs font-medium text-green-700 dark:text-green-300">Prezzo bambino</span>
               </div>
               <div className="text-lg font-bold text-green-900 dark:text-green-100">
@@ -2051,7 +2061,7 @@ export default function VentaTourAereoPage() {
 
             <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-lg">🎯</span>
+                <Icon icon="mdi:bullseye-arrow" width="20" height="20" style={{ color: '#7c3aed' }} />
                 <span className="text-xs font-medium text-purple-700 dark:text-purple-300">Obiettivo</span>
               </div>
               <div className="text-lg font-bold text-purple-900 dark:text-purple-100">
@@ -2061,7 +2071,7 @@ export default function VentaTourAereoPage() {
 
             <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded-lg">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-lg">📈</span>
+                <Icon icon="mdi:chart-line" width="20" height="20" style={{ color: '#ea580c' }} />
                 <span className="text-xs font-medium text-orange-700 dark:text-orange-300">Progresso</span>
               </div>
               <div className="text-lg font-bold text-orange-900 dark:text-orange-100">
@@ -2072,7 +2082,7 @@ export default function VentaTourAereoPage() {
             {tour.acc && (
               <div className="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-lg">🙎</span>
+                  <Icon icon="mdi:account-tie" width="20" height="20" style={{ color: '#4f46e5' }} />
                   <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300">Coordinatore (ACC)</span>
                 </div>
                 <div className="text-lg font-bold text-indigo-900 dark:text-indigo-100">
@@ -2084,7 +2094,7 @@ export default function VentaTourAereoPage() {
             {tour.guidaLocale && (
               <div className="bg-teal-50 dark:bg-teal-900/20 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-lg">🙋</span>
+                  <Icon icon="mdi:account-circle-outline" width="22" height="22" style={{ color: '#0d9488' }} />
                   <span className="text-xs font-medium text-teal-700 dark:text-teal-300">Guida</span>
                 </div>
                 <div className="text-lg font-bold text-teal-900 dark:text-teal-100">
@@ -2096,7 +2106,7 @@ export default function VentaTourAereoPage() {
             {tour.coordinatore && (
               <div className="bg-cyan-50 dark:bg-cyan-900/20 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-lg">🧑‍✈️</span>
+                  <Icon icon="mdi:cash-sync" width="22" height="22" style={{ color: '#0891b2' }} />
                   <span className="text-xs font-medium text-cyan-700 dark:text-cyan-300">Coordinatore</span>
                 </div>
                 <div className="text-lg font-bold text-cyan-900 dark:text-cyan-100">
@@ -2108,7 +2118,7 @@ export default function VentaTourAereoPage() {
             {tour.hotel && (
               <div className="bg-pink-50 dark:bg-pink-900/20 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-lg">🏨</span>
+                  <Icon icon="mdi:hotel" width="20" height="20" style={{ color: '#db2777' }} />
                   <span className="text-xs font-medium text-pink-700 dark:text-pink-300">Hotel</span>
                 </div>
                 <div className="text-lg font-bold text-pink-900 dark:text-pink-100">
@@ -2120,7 +2130,7 @@ export default function VentaTourAereoPage() {
             {tour.transfer && (
               <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-lg">🚌</span>
+                  <Icon icon="mdi:bus-side" width="24" height="24" style={{ color: '#ca8a04' }} />
                   <span className="text-xs font-medium text-yellow-700 dark:text-yellow-300">Transfer</span>
                 </div>
                 <div className="text-lg font-bold text-yellow-900 dark:text-yellow-100">
@@ -2132,8 +2142,8 @@ export default function VentaTourAereoPage() {
             {tour.transporte && (
               <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-lg">🚌</span>
-                  <span className="text-xs font-medium text-red-700 dark:text-red-300">Transfer</span>
+                  <Icon icon="mdi:bus-articulated-front" width="22" height="22" style={{ color: '#dc2626' }} />
+                  <span className="text-xs font-medium text-red-700 dark:text-red-300">Trasporto</span>
                 </div>
                 <div className="text-lg font-bold text-red-900 dark:text-red-100">
                   €{tour.transporte.toFixed(2)}
@@ -2144,7 +2154,7 @@ export default function VentaTourAereoPage() {
             <div className="bg-sky-50 dark:bg-sky-900/20 p-3 rounded-lg">
               <div className="flex items-center justify-between gap-2 mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-lg">📄</span>
+                  <Icon icon="mdi:file-document" width="20" height="20" style={{ color: '#0284c7' }} />
                   <span className="text-xs font-medium text-sky-700 dark:text-sky-300">Documento Viaggio</span>
                 </div>
                 <button

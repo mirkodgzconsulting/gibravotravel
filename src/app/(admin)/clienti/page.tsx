@@ -486,9 +486,13 @@ export default function ClientiPage() {
         modal.closeModal();
         fetchClienti(); // Recargar la lista
       } else {
+        console.error('Error response:', data);
+        const errorMessage = data.error || 'Errore durante la creazione del cliente';
+        const detailsMessage = data.details ? `: ${data.details}` : '';
+        const fieldMessage = data.field ? ` (Campo: ${data.field})` : '';
         setMessage({ 
           type: 'error', 
-          text: `${data.error || 'Errore durante la creazione del cliente'}${data.details ? ': ' + data.details : ''}` 
+          text: `${errorMessage}${detailsMessage}${fieldMessage}` 
         });
       }
       

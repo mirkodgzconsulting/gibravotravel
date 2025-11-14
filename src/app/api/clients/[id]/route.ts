@@ -107,12 +107,13 @@ export async function PUT(
       return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 404 });
     }
 
-    // Verificar si ya existe otro cliente con el mismo código fiscal (solo si se proporciona)
+    // Verificar si ya existe otro cliente activo con el mismo código fiscal (solo si se proporciona)
     if (fiscalCode && fiscalCode.trim() !== '') {
       const duplicateClientByFiscal = await prisma.client.findFirst({
         where: { 
           fiscalCode: fiscalCode.trim(),
-          id: { not: id }
+          id: { not: id },
+          isActive: true
         }
       });
 
@@ -121,17 +122,33 @@ export async function PUT(
       }
     }
 
-    // Verificar si ya existe otro cliente con el mismo email (solo si se proporciona)
+    // Verificar si ya existe otro cliente activo con el mismo email (solo si se proporciona)
     if (email && email.trim() !== '') {
       const duplicateClientByEmail = await prisma.client.findFirst({
         where: { 
           email: email.trim(),
-          id: { not: id }
+          id: { not: id },
+          isActive: true
         }
       });
 
       if (duplicateClientByEmail) {
         return NextResponse.json({ error: 'Ya existe otro cliente con este email' }, { status: 400 });
+      }
+    }
+
+    // Verificar si ya existe otro cliente activo con el mismo número de teléfono
+    if (phoneNumber && phoneNumber.trim() !== '') {
+      const duplicateClientByPhone = await prisma.client.findFirst({
+        where: { 
+          phoneNumber: phoneNumber.trim(),
+          id: { not: id },
+          isActive: true
+        }
+      });
+
+      if (duplicateClientByPhone) {
+        return NextResponse.json({ error: 'Ya existe otro cliente con este número de teléfono' }, { status: 400 });
       }
     }
 

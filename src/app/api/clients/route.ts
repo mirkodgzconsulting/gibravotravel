@@ -138,25 +138,66 @@ export async function POST(request: NextRequest) {
 
     // document1 es opcional (como los demás documentos)
 
-    // Verificar si ya existe un cliente con el mismo código fiscal (solo si se proporciona)
-    if (fiscalCode && fiscalCode.trim() !== '') {
+    // Verificar si ya existe un cliente activo con el mismo código fiscal (solo si se proporciona y no está vacío)
+    const fiscalCodeTrimmed = fiscalCode?.trim() || '';
+    if (fiscalCodeTrimmed !== '') {
       const existingClientByFiscal = await prisma.client.findFirst({
-        where: { fiscalCode: fiscalCode.trim() }
+        where: { 
+          fiscalCode: fiscalCodeTrimmed,
+          isActive: true,
+          NOT: { fiscalCode: '' } // Excluir strings vacíos
+        }
       });
 
       if (existingClientByFiscal) {
-        return NextResponse.json({ error: 'Ya existe un cliente con este código fiscal' }, { status: 400 });
+        console.log('Duplicate fiscal code found:', { fiscalCode: fiscalCodeTrimmed, existingId: existingClientByFiscal.id });
+        return NextResponse.json({ 
+          error: 'Ya existe un cliente con este código fiscal',
+          field: 'fiscalCode',
+          details: `El código fiscal "${fiscalCodeTrimmed}" ya está registrado`
+        }, { status: 400 });
       }
     }
 
-    // Verificar si ya existe un cliente con el mismo email (solo si se proporciona)
-    if (email && email.trim() !== '') {
+    // Verificar si ya existe un cliente activo con el mismo email (solo si se proporciona y no está vacío)
+    const emailTrimmed = email?.trim() || '';
+    if (emailTrimmed !== '' && !emailTrimmed.startsWith('temp-email-')) {
       const existingClientByEmail = await prisma.client.findFirst({
-        where: { email: email.trim() }
+        where: { 
+          email: emailTrimmed,
+          isActive: true,
+          NOT: { email: { startsWith: 'temp-email-' } } // Excluir emails temporales
+        }
       });
 
       if (existingClientByEmail) {
-        return NextResponse.json({ error: 'Ya existe un cliente con este email' }, { status: 400 });
+        console.log('Duplicate email found:', { email: emailTrimmed, existingId: existingClientByEmail.id });
+        return NextResponse.json({ 
+          error: 'Ya existe un cliente con este email',
+          field: 'email',
+          details: `El email "${emailTrimmed}" ya está registrado`
+        }, { status: 400 });
+      }
+    }
+
+    // Verificar si ya existe un cliente activo con el mismo número de teléfono (siempre verificar porque es obligatorio)
+    const phoneNumberTrimmed = phoneNumber?.trim() || '';
+    if (phoneNumberTrimmed !== '') {
+      const existingClientByPhone = await prisma.client.findFirst({
+        where: { 
+          phoneNumber: phoneNumberTrimmed,
+          isActive: true,
+          NOT: { phoneNumber: '' } // Excluir strings vacíos
+        }
+      });
+
+      if (existingClientByPhone) {
+        console.log('Duplicate phone number found:', { phoneNumber: phoneNumberTrimmed, existingId: existingClientByPhone.id });
+        return NextResponse.json({ 
+          error: 'Ya existe un cliente con este número de teléfono',
+          field: 'phoneNumber',
+          details: `El número de teléfono "${phoneNumberTrimmed}" ya está registrado`
+        }, { status: 400 });
       }
     }
 
@@ -248,21 +289,36 @@ export async function POST(request: NextRequest) {
     // Crear el cliente
     // Nota: fiscalCode, address y email ahora son opcionales
     // Para email vacío, usar un valor único temporal para evitar conflictos con @unique
-    const emailValue = email?.trim() || `temp-email-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+    // emailTrimmed ya está definido arriba en las validaciones
+    const emailValue = emailTrimmed !== '' 
+      ? emailTrimmed 
+      : `temp-email-${Date.now()}-${Math.random().toString(36).substring(2, 15)}-${userId.substring(0, 8)}`;
+    
+    // Preparar datos para crear el cliente
+    const clientData: any = {
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      fiscalCode: fiscalCode?.trim() || '',
+      address: address?.trim() || '',
+      email: emailValue,
+      phoneNumber: phoneNumber.trim(),
+      birthPlace: birthPlace?.trim() || '',
+      birthDate: birthDate && birthDate.trim() !== '' ? new Date(birthDate) : new Date('1900-01-01'),
+      ...documentData,
+      createdBy: userId
+    };
+
+    // Log de los datos que se intentan crear (para debugging)
+    console.log('Creating client with data:', {
+      firstName: clientData.firstName,
+      lastName: clientData.lastName,
+      fiscalCode: fiscalCodeTrimmed || '(empty)',
+      email: emailTrimmed !== '' ? emailTrimmed : '(temp email)',
+      phoneNumber: phoneNumberTrimmed,
+    });
     
     const newClient = await prisma.client.create({
-      data: {
-        firstName,
-        lastName,
-        fiscalCode: fiscalCode?.trim() || '',
-        address: address?.trim() || '',
-        email: emailValue,
-        phoneNumber,
-        birthPlace: birthPlace || '',
-        birthDate: birthDate && birthDate.trim() !== '' ? new Date(birthDate) : new Date('1900-01-01'), // Usar fecha por defecto si no se proporciona
-        ...documentData,
-        createdBy: userId
-      }
+      data: clientData
     });
 
     return NextResponse.json({ 
@@ -272,34 +328,39 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Error creating client:', error);
+    console.error('Error code:', error.code);
+    console.error('Error meta:', error.meta);
+    console.error('Error message:', error.message);
     
     // Detectar errores de Prisma relacionados con constraints únicos
     if (error.code === 'P2002') {
       // Error de unique constraint en Prisma
       const target = error.meta?.target;
       
-      if (Array.isArray(target)) {
+      console.error('P2002 error - Unique constraint violation on:', target);
+      
+      if (Array.isArray(target) && target.length > 0) {
         const field = target[0];
         
         // Mapear nombres de campos a mensajes más amigables
         const fieldMessages: Record<string, string> = {
-          'email': 'Ya existe un cliente con este email. Por favor, verifica el email ingresado.',
-          'fiscalCode': 'Ya existe un cliente con este código fiscal. Por favor, verifica el código fiscal ingresado.',
-          'phoneNumber': 'Ya existe un cliente con este número de teléfono. Por favor, verifica el teléfono ingresado.',
+          'email': 'Ya existe un cliente activo con este email. Por favor, verifica el email ingresado.',
+          'fiscalCode': 'Ya existe un cliente activo con este código fiscal. Por favor, verifica el código fiscal ingresado.',
+          'phoneNumber': 'Ya existe un cliente activo con este número de teléfono. Por favor, verifica el teléfono ingresado.',
         };
         
-        const message = fieldMessages[field] || `Ya existe un cliente con este ${field}. Por favor, verifica el campo ${field}.`;
+        const message = fieldMessages[field] || `Ya existe un cliente activo con este ${field}. Por favor, verifica el campo ${field}.`;
         
         return NextResponse.json({ 
           error: message,
           field: field,
-          details: `El campo '${field}' ya está registrado en el sistema`
+          details: `El campo '${field}' ya está registrado en el sistema (cliente activo)`
         }, { status: 400 });
       }
       
       return NextResponse.json({ 
-        error: 'Ya existe un cliente con estos datos. Por favor, verifica la información ingresada.',
-        details: 'Los datos ingresados ya están registrados en el sistema'
+        error: 'Ya existe un cliente activo con estos datos. Por favor, verifica la información ingresada.',
+        details: 'Los datos ingresados ya están registrados en el sistema (cliente activo)'
       }, { status: 400 });
     }
     

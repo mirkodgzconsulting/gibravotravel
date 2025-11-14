@@ -148,7 +148,6 @@ export default function TourAereoPage() {
       formDataToSend.append('hotel', formData.hotel);
       formDataToSend.append('notas', formData.notas);
       formDataToSend.append('notasCoordinador', formData.notasCoordinador);
-      formDataToSend.append('documentoViaggio', formData.documentoViaggio);
       formDataToSend.append('descripcion', formData.descripcion);
       
       if (formData.coverImage) {
@@ -157,7 +156,7 @@ export default function TourAereoPage() {
       if (formData.pdfFile) {
         formDataToSend.append('pdfFile', formData.pdfFile);
       }
-      if (formData.documentoViaggio) {
+      if (formData.documentoViaggio instanceof File) {
         formDataToSend.append('documentoViaggio', formData.documentoViaggio);
       }
 
@@ -222,7 +221,6 @@ export default function TourAereoPage() {
       formDataToSend.append('hotel', formData.hotel);
       formDataToSend.append('notas', formData.notas);
       formDataToSend.append('notasCoordinador', formData.notasCoordinador);
-      formDataToSend.append('documentoViaggio', formData.documentoViaggio);
       formDataToSend.append('descripcion', formData.descripcion);
       
       if (formData.coverImage) {
@@ -231,7 +229,7 @@ export default function TourAereoPage() {
       if (formData.pdfFile) {
         formDataToSend.append('pdfFile', formData.pdfFile);
       }
-      if (formData.documentoViaggio) {
+      if (formData.documentoViaggio instanceof File) {
         formDataToSend.append('documentoViaggio', formData.documentoViaggio);
       }
 

@@ -78,13 +78,15 @@ export function useUserRole() {
           }
         }, 5000);
         
+        // Usar caché del navegador para reducir consultas a la base de datos
+        // El caché del servidor (vía headers) durará 5 minutos, reduciendo significativamente las operaciones
         const response = await fetch(`/api/user/role?clerkId=${clerkUser.id}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
           },
           signal,
-          cache: 'no-store'
+          cache: 'default' // Permitir caché del navegador (el servidor controla el TTL)
         });
         
         clearTimeout(timeoutId);

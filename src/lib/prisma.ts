@@ -21,9 +21,14 @@ const createPrismaClient = () => {
   console.log('🔍 Using database URL from:', process.env.PRISMA_DATABASE_URL ? 'PRISMA_DATABASE_URL' : 'DATABASE_URL');
   
   // Agregar parámetros de conexión para prevenir "too many connections"
+  // Plan gratuito de Prisma Postgres: usar límite bajo (3 conexiones)
+  // Esto ayuda a evitar suspensiones por exceso de uso
+  const connectionLimit = process.env.NODE_ENV === 'production' ? 3 : 5;
+  const poolTimeout = 10;
+  
   const urlWithParams = databaseUrl?.includes('?') 
-    ? `${databaseUrl}&connection_limit=5&pool_timeout=10`
-    : `${databaseUrl}?connection_limit=5&pool_timeout=10`;
+    ? `${databaseUrl}&connection_limit=${connectionLimit}&pool_timeout=${poolTimeout}`
+    : `${databaseUrl}?connection_limit=${connectionLimit}&pool_timeout=${poolTimeout}`;
   
   return new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],

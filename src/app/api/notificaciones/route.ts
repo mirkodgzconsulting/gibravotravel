@@ -38,11 +38,18 @@ export async function GET(request: NextRequest) {
     // Contar las no leídas
     const noLeidas = notificaciones.filter(n => !n.isLeida).length;
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       notificaciones,
       noLeidas
     });
+
+    // Agregar headers de caché para reducir consultas repetidas
+    // Las notificaciones se actualizan solo 2 veces al día (8 AM y 9 AM)
+    // Por lo tanto, podemos cachear por 30 minutos
+    response.headers.set('Cache-Control', 'private, max-age=1800, stale-while-revalidate=3600');
+    
+    return response;
 
   } catch (error) {
     console.error('Error fetching notifications:', error);

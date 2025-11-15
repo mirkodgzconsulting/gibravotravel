@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 
@@ -20,15 +20,83 @@ export default function NotificationDropdown() {
   const [notificaciones, setNotificaciones] = useState<Notificacion[]>([]);
   const [noLeidas, setNoLeidas] = useState(0);
   const [loading, setLoading] = useState(true);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Obtener notificaciones
-  useEffect(() => {
-    fetchNotificaciones();
+  // Función para obtener la hora actual en Italia (Europe/Rome)
+  const getItalyHour = () => {
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Europe/Rome',
+      hour: '2-digit',
+      hour12: false
+    });
+    const hourStr = formatter.format(now);
+    return parseInt(hourStr);
+  };
+
+  // Función para calcular milisegundos hasta la próxima carga (8 AM o 9 AM hora Italia)
+  const getMsUntilNextScheduledTime = () => {
+    const now = new Date();
+    const currentHourItaly = getItalyHour();
     
-    // Recargar cada 30 segundos
-    const interval = setInterval(fetchNotificaciones, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    // Horas programadas: 8 AM y 9 AM
+    let nextHour: number;
+    let isTomorrow = false;
+    
+    if (currentHourItaly < 8) {
+      // Antes de las 8 AM: programar para las 8 AM de hoy
+      nextHour = 8;
+    } else if (currentHourItaly < 9) {
+      // Entre 8 AM y 9 AM: programar para las 9 AM de hoy
+      nextHour = 9;
+    } else {
+      // Después de las 9 AM: programar para las 8 AM de mañana
+      nextHour = 8;
+      isTomorrow = true;
+    }
+    
+    // Calcular el tiempo objetivo iterando desde ahora
+    let testTime = new Date(now);
+    const maxAttempts = 48; // Máximo 48 horas
+    let attempts = 0;
+    
+    while (attempts < maxAttempts) {
+      const testHour = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Europe/Rome',
+        hour: '2-digit',
+        hour12: false
+      }).format(testTime);
+      
+      const testHourNum = parseInt(testHour);
+      
+      if (testHourNum === nextHour) {
+        // Verificar que sea el día correcto (hoy o mañana)
+        const testDay = new Intl.DateTimeFormat('en-US', {
+          timeZone: 'Europe/Rome',
+          day: '2-digit'
+        }).format(testTime);
+        
+        const todayDay = new Intl.DateTimeFormat('en-US', {
+          timeZone: 'Europe/Rome',
+          day: '2-digit'
+        }).format(now);
+        
+        // Si buscamos mañana, debe ser diferente; si buscamos hoy, debe ser igual
+        if ((isTomorrow && testDay !== todayDay) || (!isTomorrow && testDay === todayDay)) {
+          const msUntil = testTime.getTime() - now.getTime();
+          // Asegurar que sea al menos 1 minuto en el futuro
+          return msUntil > 60000 ? msUntil : 60000;
+        }
+      }
+      
+      // Avanzar 1 minuto
+      testTime = new Date(testTime.getTime() + 60000);
+      attempts++;
+    }
+    
+    // Fallback: retornar 1 hora si no se encuentra
+    return 3600000;
+  };
 
   const fetchNotificaciones = async () => {
     try {
@@ -44,6 +112,39 @@ export default function NotificationDropdown() {
       setLoading(false);
     }
   };
+
+  // Programar la próxima carga automática
+  const scheduleNextFetch = () => {
+    // Limpiar timeout anterior si existe
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    const msUntil = getMsUntilNextScheduledTime();
+    
+    timeoutRef.current = setTimeout(() => {
+      fetchNotificaciones();
+      // Programar la siguiente carga después de esta
+      scheduleNextFetch();
+    }, msUntil);
+  };
+
+  // Obtener notificaciones
+  useEffect(() => {
+    // Cargar notificaciones al montar el componente
+    fetchNotificaciones();
+    
+    // Programar las cargas automáticas a las 8 AM y 9 AM hora Italia
+    scheduleNextFetch();
+    
+    // Cleanup: limpiar timeout al desmontar
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function toggleDropdown() {
     setIsOpen(!isOpen);

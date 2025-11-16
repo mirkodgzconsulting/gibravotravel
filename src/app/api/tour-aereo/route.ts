@@ -119,10 +119,25 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json({ tours: normalizedTours });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching tours aereo:', error);
+    console.error('Error details:', {
+      message: error?.message,
+      code: error?.code,
+      meta: error?.meta,
+      stack: error?.stack
+    });
+    
+    // Si es un error de Prisma relacionado con tipos de datos, intentar manejar
+    if (error?.code === 'P2022' || error?.message?.includes('column') || error?.message?.includes('does not exist')) {
+      console.error('⚠️ Posible problema de schema: campo faltante o tipo incorrecto');
+    }
+    
     return NextResponse.json(
-      { error: 'Error interno del servidor' },
+      { 
+        error: 'Error interno del servidor',
+        details: process.env.NODE_ENV === 'development' ? error?.message : undefined
+      },
       { status: 500 }
     );
   }

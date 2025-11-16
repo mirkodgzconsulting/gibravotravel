@@ -69,6 +69,7 @@ async function runFastMigration() {
     // Migraciones para TOUR AEREO
     { table: 'tour_aereo', column: 'documentoViaggioName', type: 'TEXT' },
     { table: 'tour_aereo', column: 'documentoViaggioName_old', type: 'TEXT' },
+    { table: 'tour_aereo', column: 'documentoViaggio_old', type: 'TEXT' },
   ];
 
   let success = 0;

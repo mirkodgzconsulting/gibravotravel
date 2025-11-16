@@ -107,19 +107,65 @@ export async function GET(request: NextRequest) {
         ],
       });
     } catch (prismaError: any) {
-      // Si falla por campos faltantes, intentar agregar las columnas faltantes
+      // Si falla por campos faltantes, ejecutar migración usando el mismo patrón que migrate-production-fast.js
       if (prismaError?.message?.includes('Unknown field') || prismaError?.message?.includes('documentoViaggioName') || prismaError?.code === 'P2022') {
-        console.log('⚠️ Campo faltante detectado, agregando columnas necesarias...');
+        console.log('⚠️ Campo faltante detectado, ejecutando migración rápida...');
         
         try {
-          // Agregar todas las columnas que pueden faltar
-          await prisma.$executeRawUnsafe(`
-            ALTER TABLE "tour_aereo" 
-            ADD COLUMN IF NOT EXISTS "documentoViaggioName" TEXT,
-            ADD COLUMN IF NOT EXISTS "documentoViaggioName_old" TEXT,
-            ADD COLUMN IF NOT EXISTS "documentoViaggio_old" TEXT
-          `);
-          console.log('✅ Columnas agregadas, reintentando consulta...');
+          // Usar la misma lógica que migrate-production-fast.js
+          const QUERY_TIMEOUT = 5000; // 5 segundos
+          
+          async function quickAddColumn(tableName: string, columnName: string, columnType: string = 'TEXT'): Promise<boolean> {
+            try {
+              // Verificar si existe con timeout corto
+              const checkPromise = prisma.$queryRawUnsafe(`
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_schema = 'public'
+                AND table_name = '${tableName}'
+                AND column_name = '${columnName}'
+                LIMIT 1
+              `);
+              
+              const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Timeout')), QUERY_TIMEOUT)
+              );
+              
+              const result = await Promise.race([checkPromise, timeoutPromise]) as any[];
+              
+              if (Array.isArray(result) && result.length > 0) {
+                return false; // Ya existe
+              }
+
+              // Agregar columna con timeout
+              const addPromise = prisma.$executeRawUnsafe(
+                `ALTER TABLE "${tableName}" ADD COLUMN IF NOT EXISTS "${columnName}" ${columnType}`
+              );
+              
+              await Promise.race([addPromise, timeoutPromise]);
+              return true; // Se agregó
+            } catch (error: any) {
+              if (error.message === 'Timeout') {
+                console.log(`⏱️  Timeout en ${tableName}.${columnName}, continuando...`);
+              } else {
+                console.log(`⚠️  ${tableName}.${columnName}: ${error.message}`);
+              }
+              return false;
+            }
+          }
+          
+          // Agregar todas las columnas necesarias (mismo patrón que migrate-production-fast.js)
+          const migrations = [
+            { table: 'tour_aereo', column: 'documentoViaggioName', type: 'TEXT' },
+            { table: 'tour_aereo', column: 'documentoViaggioName_old', type: 'TEXT' },
+            { table: 'tour_aereo', column: 'documentoViaggio_old', type: 'TEXT' },
+          ];
+          
+          for (const migration of migrations) {
+            await quickAddColumn(migration.table, migration.column, migration.type);
+          }
+          
+          console.log('✅ Migración rápida completada, reintentando consulta...');
           
           // Esperar un momento para que la transacción se complete
           await new Promise(resolve => setTimeout(resolve, 500));

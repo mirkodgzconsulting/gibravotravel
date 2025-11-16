@@ -574,7 +574,6 @@ export default function VentaTourAereoPage() {
       }
 
     } catch (err) {
-      console.error('Error fetching initial data:', err);
       setError('Errore di connessione');
     } finally {
       setLoading(false);
@@ -591,7 +590,7 @@ export default function VentaTourAereoPage() {
         setVentas(data.ventas || []);
       }
     } catch (error) {
-      console.error('Error fetching ventas:', error);
+      // Error silencioso, se maneja en la UI
     }
   }, [tourId]);
 
@@ -628,7 +627,6 @@ export default function VentaTourAereoPage() {
         setClientesLoaded(true);
       return parsedClients;
     } catch (error) {
-      console.error('Error fetching clientes:', error);
       setClientes([]);
       return [];
     } finally {
@@ -743,7 +741,6 @@ export default function VentaTourAereoPage() {
         setIatas(data || []);
       }
     } catch (error) {
-      console.error('Error fetching iatas:', error);
       setIatas([]);
     }
   };
@@ -756,7 +753,6 @@ export default function VentaTourAereoPage() {
         setMetodosPagamento(data.metodosPagamento || []);
       }
     } catch (error) {
-      console.error('Error fetching metodos pagamento:', error);
       setMetodosPagamento([]);
     }
   };
@@ -769,7 +765,6 @@ export default function VentaTourAereoPage() {
         setPagamentos(data || []);
       }
     } catch (error) {
-      console.error('Error fetching pagamentos:', error);
       setPagamentos([]);
     }
   };
@@ -993,7 +988,6 @@ export default function VentaTourAereoPage() {
         setTimeout(() => setShowCopyNotification(false), 3000);
       } else {
         const errorText = await response.text();
-        console.error('Create venta error:', errorText);
         let errorMessage = 'Errore durante la creazione della vendita';
         try {
           const parsed = JSON.parse(errorText);
@@ -1005,7 +999,6 @@ export default function VentaTourAereoPage() {
           setTimeout(() => setMessage(null), 5000);
       }
     } catch (error) {
-        console.error('Error al crear venta:', error);
         setMessage({ type: 'error', text: 'Errore di connessione durante la creazione della vendita' });
         setTimeout(() => setMessage(null), 5000);
     } finally {
@@ -1035,7 +1028,6 @@ export default function VentaTourAereoPage() {
         setTimeout(() => setMessage(null), 3000);
       }
     } catch (error) {
-      console.error('Error al eliminar venta:', error);
       setMessage({ type: 'error', text: "Errore di connessione durante l'eliminazione della vendita" });
       setTimeout(() => setMessage(null), 3000);
     }
@@ -1297,7 +1289,6 @@ export default function VentaTourAereoPage() {
         setTimeout(() => setMessage(null), 3000);
       } else {
         const errorText = await response.text();
-        console.error('Update venta error:', errorText);
         let errorMessage = "Errore durante l'aggiornamento della vendita";
         try {
           const parsed = JSON.parse(errorText);
@@ -1309,7 +1300,6 @@ export default function VentaTourAereoPage() {
         setTimeout(() => setMessage(null), 3000);
       }
     } catch (error) {
-      console.error('Error al actualizar venta:', error);
       setMessage({ type: 'error', text: "Errore di connessione durante l'aggiornamento della vendita" });
       setTimeout(() => setMessage(null), 3000);
     } finally {
@@ -1466,7 +1456,6 @@ export default function VentaTourAereoPage() {
       });
       setTimeout(() => setMessage(null), 3000);
     } catch (error) {
-      console.error('Error updating TKT:', error);
       setMessage({
         type: 'error',
         text: "Errore durante l'aggiornamento del TKT"
@@ -1518,7 +1507,6 @@ export default function VentaTourAereoPage() {
       setMessage({ type: 'success', text: 'Polizza aggiornata correttamente' });
       setTimeout(() => setMessage(null), 3000);
     } catch (error) {
-      console.error('Error updating polizza:', error);
       setMessage({ type: 'error', text: "Errore durante l'aggiornamento della polizza" });
       setTimeout(() => setMessage(null), 4000);
     } finally {
@@ -1715,13 +1703,12 @@ export default function VentaTourAereoPage() {
             errorText = errorData.error;
           }
         } catch (err) {
-          console.error('Error parsing documento viaggio response:', err);
+          // Error parsing response, usar mensaje por defecto
         }
         setMessage({ type: 'error', text: errorText });
         setTimeout(() => setMessage(null), 4000);
       }
     } catch (error) {
-      console.error('Error uploading documento viaggio:', error);
       setMessage({
         type: 'error',
         text: 'Errore di connessione'
@@ -1779,7 +1766,6 @@ export default function VentaTourAereoPage() {
         setTimeout(() => setMessage(null), 4000);
       }
     } catch (error) {
-      console.error('Error deleting file:', error);
       setMessage({
         type: 'error',
         text: 'Errore durante l\'eliminazione del file'
@@ -1811,7 +1797,6 @@ export default function VentaTourAereoPage() {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
-      console.error('Error descargando archivo:', error);
       alert('Errore durante il download del file');
     }
   }, []);
@@ -1849,7 +1834,7 @@ export default function VentaTourAereoPage() {
             }
           }
         } catch (error) {
-          console.error('Error fetching client by ID:', error);
+          // Error silencioso al buscar cliente por ID
         }
       }
       
@@ -1982,7 +1967,6 @@ export default function VentaTourAereoPage() {
       setMessage({ type: 'success', text: 'Ricevuta generata con successo!' });
       setTimeout(() => setMessage(null), 3000);
     } catch (error) {
-      console.error('Error generating ricevuta:', error);
       setMessage({
         type: 'error',
         text: error instanceof Error ? error.message : 'Errore durante la generazione della ricevuta'

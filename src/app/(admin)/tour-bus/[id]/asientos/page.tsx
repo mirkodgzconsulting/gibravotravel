@@ -304,7 +304,7 @@ export default function AsientosTourBusPage() {
         stati: statiData.stati?.map((s: any) => s.stato) || []
       });
     } catch (error) {
-      console.error('Error loading reference data:', error);
+      // Error silencioso, se maneja en la UI
     } finally {
       setIsLoadingReference(false);
     }
@@ -346,14 +346,12 @@ export default function AsientosTourBusPage() {
         fetchTour();
       } else {
         const errorData = await response.json();
-        console.error('Error response:', errorData);
         const errorMessage = errorData.details 
           ? `${errorData.error}\n\nDetalles: ${errorData.details}` 
           : errorData.error || 'Error al crear la venta';
         alert(errorMessage);
       }
     } catch (error: any) {
-      console.error('Error creating venta:', error);
       alert(`Error de conexión: ${error.message}`);
     } finally {
       setIsSubmitting(false);
@@ -394,7 +392,7 @@ export default function AsientosTourBusPage() {
         }
       }
     } catch (error) {
-      console.error('Error fetching user info:', error);
+      // Error silencioso al buscar información de usuario
     }
   };
 
@@ -492,7 +490,6 @@ export default function AsientosTourBusPage() {
       setTimeout(() => setShowNotification(false), 3000);
       
     } catch (error) {
-      console.error('Error updating venta:', error);
       setError(error instanceof Error ? error.message : 'Error al actualizar la venta');
       alert(error instanceof Error ? error.message : 'Error al actualizar la venta');
     } finally {
@@ -524,7 +521,6 @@ export default function AsientosTourBusPage() {
       setTimeout(() => setShowNotification(false), 3000);
       
     } catch (error) {
-      console.error('Error deleting venta:', error);
       alert(error instanceof Error ? error.message : 'Error al eliminar la venta');
     } finally {
       setIsSubmitting(false);
@@ -736,7 +732,6 @@ export default function AsientosTourBusPage() {
       XLSX.writeFile(wb, fileName);
       
     } catch (error) {
-      console.error('Error al exportar pasajeros:', error);
       alert('Error al exportar el archivo Excel');
     }
   };

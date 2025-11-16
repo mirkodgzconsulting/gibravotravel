@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useModal } from "@/hooks/useModal";
 import { useSearch } from "@/context/SearchContext";
@@ -126,7 +126,6 @@ export default function TourAereoPage() {
       if (response.ok) {
         const data = await response.json();
         const toursData = data.tours || [];
-        // Ordenar tours por fecha de inicio (más reciente primero)
         const sortedTours = sortToursByFechaViaje(toursData);
         setTours(sortedTours);
       } else {
@@ -134,7 +133,6 @@ export default function TourAereoPage() {
       }
     } catch (err) {
       setError('Errore di connessione');
-      console.error('Error fetching tours:', err);
     } finally {
       setLoading(false);
     }
@@ -457,7 +455,6 @@ export default function TourAereoPage() {
               const progressPercentage = getProgressPercentage(tour);
               const vendidos = tour._count?.ventas || 0;
               const disponibles = tour.meta - vendidos;
-              const ingresos = 0; // Se calculará con datos reales de las ventas
               
               return (
                 <div
@@ -547,10 +544,6 @@ export default function TourAereoPage() {
                       </div>
                     </div>
 
-                    {/* Ingresos */}
-                    <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                      <span className="font-medium">Entrate:</span> €{ingresos.toFixed(2)}
-                    </div>
 
                     {/* Acciones y creador */}
                     <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useModal } from "@/hooks/useModal";
 import { useSearch } from "@/context/SearchContext";
@@ -150,11 +150,8 @@ export default function TourBusPage() {
       setLoading(true);
       setError(null);
       
-      // Todos los usuarios ven todos los tours para poder realizar ventas (con cache en memoria)
-      // Datos dinámicos: 30 segundos (cambian frecuentemente)
       const data = await cachedFetch<{ tours: any[] }>(`/api/tour-bus`, { ttlMs: 30000 });
       const toursData = data.tours || [];
-      // Ordenar tours por fecha de inicio (más próximo primero)
       const sortedTours = sortToursByFechaViaje(toursData);
       setTours(sortedTours);
     } catch {
@@ -246,9 +243,7 @@ export default function TourBusPage() {
 
       if (response.ok) {
         const data = await response.json();
-        // Invalidar cache para ver el cambio al instante
         invalidateCacheByPrefix('/api/tour-bus');
-        // Agregar el nuevo tour y ordenar por fecha
         setTours(prev => sortToursByFechaViaje([data.tour, ...prev]));
         setFormData({
           titulo: "",
@@ -327,7 +322,6 @@ export default function TourBusPage() {
 
       if (response.ok) {
         const data = await response.json();
-        // Actualizar el tour y reordenar por fecha
         setTours(prev => {
           const updatedTours = prev.map(tour => 
             tour.id === editingTour.id ? data.tour : tour

@@ -373,6 +373,7 @@ model TourAereo {
   documentoViaggio_old     String?
   documentoViaggioName_old String?
   documentoViaggio         Json?
+  documentoViaggioName     String?
   creator                  User             @relation(fields: [createdBy], references: [clerkId])
   ventas                   VentaTourAereo[]
 

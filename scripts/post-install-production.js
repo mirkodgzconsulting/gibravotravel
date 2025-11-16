@@ -17,6 +17,15 @@ async function postInstallProduction() {
     console.log('🌍 Entorno de producción detectado');
     console.log('🔧 Ejecutando configuración automática...\n');
 
+    // Ejecutar migración de documentoViaggioName (preservar datos)
+    try {
+      console.log('🔄 Preservando documentoViaggioName...');
+      execSync('node scripts/migrate-documento-viaggio-preserve.js', { stdio: 'inherit' });
+      console.log('✅ Preservación de documentoViaggioName completada');
+    } catch (error) {
+      console.log('⚠️  Preservación de documentoViaggioName con advertencias, continuando...');
+    }
+
     // Ejecutar migración de notas (segura, no borra datos)
     try {
       console.log('🔄 Ejecutando migración de campos de notas...');

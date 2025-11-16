@@ -57,9 +57,38 @@ export async function GET(request: NextRequest) {
       };
     }
 
+    // Usar select explícito para evitar problemas con campos que pueden no existir
     const tours = await prisma.tourAereo.findMany({
       where: whereCondition,
-      include: {
+      select: {
+        id: true,
+        titulo: true,
+        precioAdulto: true,
+        precioNino: true,
+        fechaViaje: true,
+        fechaFin: true,
+        meta: true,
+        acc: true,
+        guidaLocale: true,
+        coordinatore: true,
+        transporte: true,
+        hotel: true,
+        notas: true,
+        notasCoordinador: true,
+        feeAgv: true,
+        coverImage: true,
+        coverImageName: true,
+        pdfFile: true,
+        pdfFileName: true,
+        documentoViaggio: true,
+        documentoViaggioName: true,
+        documentoViaggio_old: true,
+        documentoViaggioName_old: true,
+        descripcion: true,
+        isActive: true,
+        createdBy: true,
+        createdAt: true,
+        updatedAt: true,
         creator: {
           select: {
             firstName: true,

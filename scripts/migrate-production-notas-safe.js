@@ -13,20 +13,40 @@
 
 const { PrismaClient } = require('@prisma/client');
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL,
+    },
+  },
+  log: ['error'],
+});
+
+// Timeout para conexiones
+const CONNECTION_TIMEOUT = 10000; // 10 segundos
 
 async function checkColumnExists(tableName, columnName) {
   try {
-    const result = await prisma.$queryRaw`
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Timeout')), CONNECTION_TIMEOUT)
+    );
+    
+    const queryPromise = prisma.$queryRaw`
       SELECT column_name 
       FROM information_schema.columns 
       WHERE table_schema = 'public'
       AND table_name = ${tableName}
       AND column_name = ${columnName}
     `;
+    
+    const result = await Promise.race([queryPromise, timeoutPromise]);
     return Array.isArray(result) && result.length > 0;
   } catch (error) {
-    console.error(`Error verificando columna ${columnName} en ${tableName}:`, error);
+    if (error.message === 'Timeout') {
+      console.error(`⏱️  Timeout verificando columna ${columnName} en ${tableName}`);
+    } else {
+      console.error(`Error verificando columna ${columnName} en ${tableName}:`, error.message);
+    }
     return false;
   }
 }

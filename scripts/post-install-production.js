@@ -17,10 +17,33 @@ async function postInstallProduction() {
     console.log('🌍 Entorno de producción detectado');
     console.log('🔧 Ejecutando configuración automática...\n');
 
+    // Ejecutar migraciones con timeout para no bloquear el build
+    const runWithTimeout = (command, timeout = 30000) => {
+      return new Promise((resolve) => {
+        const startTime = Date.now();
+        try {
+          execSync(command, { 
+            stdio: 'inherit',
+            timeout: timeout,
+            killSignal: 'SIGTERM'
+          });
+          resolve(true);
+        } catch (error) {
+          const elapsed = Date.now() - startTime;
+          if (elapsed >= timeout) {
+            console.log(`⏱️  Timeout después de ${timeout/1000}s, continuando...`);
+          } else {
+            console.log('⚠️  Error en migración, continuando...');
+          }
+          resolve(false);
+        }
+      });
+    };
+
     // Ejecutar migración de documentoViaggioName (preservar datos)
     try {
       console.log('🔄 Preservando documentoViaggioName...');
-      execSync('node scripts/migrate-documento-viaggio-preserve.js', { stdio: 'inherit' });
+      await runWithTimeout('node scripts/migrate-documento-viaggio-preserve.js', 30000);
       console.log('✅ Preservación de documentoViaggioName completada');
     } catch (error) {
       console.log('⚠️  Preservación de documentoViaggioName con advertencias, continuando...');
@@ -29,7 +52,7 @@ async function postInstallProduction() {
     // Ejecutar migración de notas (segura, no borra datos)
     try {
       console.log('🔄 Ejecutando migración de campos de notas...');
-      execSync('node scripts/migrate-production-notas-safe.js', { stdio: 'inherit' });
+      await runWithTimeout('node scripts/migrate-production-notas-safe.js', 30000);
       console.log('✅ Migración de notas completada');
     } catch (error) {
       console.log('⚠️  Migración de notas con advertencias, continuando...');

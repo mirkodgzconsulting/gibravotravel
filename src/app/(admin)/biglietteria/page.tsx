@@ -1078,7 +1078,7 @@ const getEstadoVisual = (estado?: string | null) => {
           const rawUsersArray = Array.isArray(cachedUsers)
             ? cachedUsers
             : Array.isArray((cachedUsers as { users?: ApiUser[] })?.users)
-              ? (cachedUsers as { users?: ApiUser[] }).users
+              ? ((cachedUsers as { users?: ApiUser[] }).users ?? [])
               : [];
           const usuariosNormalizados = rawUsersArray.filter((usuario) => {
             const role = typeof usuario.role === 'string' ? usuario.role.toUpperCase() : '';
@@ -1146,7 +1146,7 @@ const getEstadoVisual = (estado?: string | null) => {
         const rawUsersArray = Array.isArray(usersData)
           ? usersData
           : Array.isArray((usersData as { users?: ApiUser[] })?.users)
-            ? (usersData as { users: ApiUser[] }).users
+            ? ((usersData as { users?: ApiUser[] }).users ?? [])
             : [];
         const usuariosNormalizados = rawUsersArray.filter((usuario) => {
           const role = typeof usuario.role === 'string' ? usuario.role.toUpperCase() : '';

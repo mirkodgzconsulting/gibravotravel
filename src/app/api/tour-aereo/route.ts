@@ -115,12 +115,15 @@ export async function GET(request: NextRequest) {
         stack: prismaError?.stack?.substring(0, 500)
       });
       
-      // Si falla por campos faltantes, usar SQL directo como fallback
+      // Si falla por campos faltantes o error de parsing JSON, usar SQL directo como fallback
       const isSchemaError = prismaError?.message?.includes('Unknown field') || 
                            prismaError?.message?.includes('documentoViaggioName') || 
                            prismaError?.code === 'P2022' ||
                            prismaError?.message?.includes('does not exist') ||
-                           prismaError?.message?.includes('column');
+                           prismaError?.message?.includes('column') ||
+                           prismaError?.message?.includes('is not valid JSON') ||
+                           prismaError?.message?.includes('Unexpected token') ||
+                           prismaError?.name === 'SyntaxError';
       
       if (isSchemaError) {
         console.log('⚠️ Error de schema detectado, usando SQL directo como fallback...');
@@ -157,6 +160,7 @@ export async function GET(request: NextRequest) {
           }
           
           // Usar SQL directo que maneja columnas que pueden no existir
+          // También maneja documentoViaggio que puede ser JSONB o TEXT (legacy)
           const sqlQuery = `
             SELECT 
               t."id",
@@ -178,7 +182,12 @@ export async function GET(request: NextRequest) {
               COALESCE(t."coverImageName", NULL) as "coverImageName",
               t."pdfFile",
               COALESCE(t."pdfFileName", NULL) as "pdfFileName",
-              t."documentoViaggio",
+              -- Manejar documentoViaggio que puede ser JSONB o TEXT
+              CASE 
+                WHEN pg_typeof(t."documentoViaggio") = 'jsonb'::regtype THEN t."documentoViaggio"::text
+                WHEN pg_typeof(t."documentoViaggio") = 'text'::regtype THEN t."documentoViaggio"::text
+                ELSE NULL
+              END as "documentoViaggio",
               COALESCE(t."documentoViaggioName", NULL) as "documentoViaggioName",
               COALESCE(t."documentoViaggio_old", NULL) as "documentoViaggio_old",
               COALESCE(t."documentoViaggioName_old", NULL) as "documentoViaggioName_old",

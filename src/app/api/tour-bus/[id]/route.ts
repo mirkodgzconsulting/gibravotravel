@@ -116,6 +116,8 @@ export async function PUT(
     const autoservicio = formData.get('autoservicio') as string;
     // Archivos y descripción
     const descripcion = formData.get('descripcion') as string;
+    const notas = formData.get('notas') as string;
+    const notasCoordinador = formData.get('notasCoordinador') as string;
     const coverImage = formData.get('coverImage') as File;
     const pdfFile = formData.get('pdfFile') as File;
 
@@ -289,7 +291,9 @@ export async function PUT(
         coverImageName,
         pdfFile: pdfFileUrl,
         pdfFileName,
-        descripcion
+        descripcion: descripcion && descripcion.trim() !== '' ? descripcion : null,
+        notas: notas && notas.trim() !== '' ? notas : null,
+        notasCoordinador: notasCoordinador && notasCoordinador.trim() !== '' ? notasCoordinador : null
       },
       include: {
         creator: {
@@ -302,6 +306,23 @@ export async function PUT(
         asientos: {
           orderBy: {
             numeroAsiento: 'asc'
+          }
+        },
+        ventasTourBus: {
+          include: {
+            acompanantes: true,
+            cuotas: true,
+            creator: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'desc'
           }
         },
         _count: {

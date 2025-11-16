@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useUserRole } from "@/hooks/useUserRole";
 import { CopyNotification } from "@/components/ui/notification/CopyNotification";
 import { Modal } from "@/components/ui/modal";
 import VentaForm from "@/components/tour-bus/VentaForm";
 import EditVentaForm from "@/components/tour-bus/EditVentaForm";
+import SimpleRichTextEditor from "@/components/form/SimpleRichTextEditor";
 import { 
   UsersIcon, 
   CalendarIcon, 
@@ -16,8 +17,10 @@ import {
   SearchIcon,
   DownloadIcon,
   FilterIcon,
-  TrashIcon
+  TrashIcon,
+  PlaneIcon
 } from "lucide-react";
+import { Icon } from '@iconify/react';
 
 interface TourBus {
   id: string;
@@ -27,6 +30,8 @@ interface TourBus {
   cantidadAsientos: number;
   fechaViaje: string | null;
   descripcion: string | null;
+  notas: string | null;
+  notasCoordinador: string | null;
   // Campos de costos
   bus: number | null;
   pasti: number | null;
@@ -129,6 +134,86 @@ interface Client {
   birthDate: string;
 }
 
+// Funciones de utilidad para notas
+const sanitizeEditorHtml = (note?: string | null) => {
+  if (!note) return '';
+  const allowedTags = ['b', 'strong', 'i', 'em', 'span', 'br'];
+  const allowedStyles = ['color', 'font-size'];
+
+  // Usar solo regex para evitar manipulación del DOM
+  let sanitized = note;
+
+  // Remover todos los tags excepto los permitidos
+  sanitized = sanitized.replace(/<(\/?)([^>]+)>/gi, (match, closing, tagContent) => {
+    const tagName = tagContent.split(/\s/)[0].toLowerCase();
+    
+    // Si es un tag de cierre
+    if (closing) {
+      return allowedTags.includes(tagName) ? `</${tagName}>` : '';
+    }
+    
+    // Si es un tag de apertura
+    if (allowedTags.includes(tagName)) {
+      // Si es span, permitir solo atributos style con estilos permitidos
+      if (tagName === 'span') {
+        const styleMatch = tagContent.match(/style\s*=\s*["']([^"']*)["']/i);
+        if (styleMatch) {
+          const styles = styleMatch[1];
+          const allowedStylesList = styles
+            .split(';')
+            .map((rule: string) => rule.trim())
+            .filter((rule: string) => {
+              const [property] = rule.split(':').map((part: string) => part.trim().toLowerCase());
+              return allowedStyles.includes(property);
+            });
+          if (allowedStylesList.length > 0) {
+            return `<span style="${allowedStylesList.join('; ')}">`;
+          }
+        }
+        return '<span>';
+      }
+      
+      // Para otros tags permitidos, remover todos los atributos
+      return `<${tagName}>`;
+    }
+    
+    // Si el tag no está permitido, removerlo
+    return '';
+  });
+
+  // Limpiar atributos restantes que puedan haber quedado
+  sanitized = sanitized.replace(/\s+style\s*=\s*["'][^"']*["']/gi, (match) => {
+    const styles = match.match(/["']([^"']*)["']/)?.[1] || '';
+    const allowedStylesList = styles
+      .split(';')
+      .map((rule: string) => rule.trim())
+      .filter((rule: string) => {
+        const [property] = rule.split(':').map((part: string) => part.trim().toLowerCase());
+        return allowedStyles.includes(property);
+      });
+    return allowedStylesList.length > 0 ? ` style="${allowedStylesList.join('; ')}"` : '';
+  });
+
+  return sanitized;
+};
+
+const extractPlainText = (note?: string | null) => {
+  const sanitized = sanitizeEditorHtml(note);
+  if (!sanitized) return '';
+  return sanitized
+    .replace(/<br\s*\/?>(?:\r?\n)?/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+const getNotePreview = (note?: string | null, maxLength = 280) => {
+  const text = extractPlainText(note);
+  if (!text) return '';
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, maxLength).trim()}…`;
+};
+
 export default function AsientosTourBusPage() {
   const params = useParams();
   const router = useRouter();
@@ -167,6 +252,21 @@ export default function AsientosTourBusPage() {
   const busLayoutRef = useRef<HTMLDivElement>(null);
   const ventasListRef = useRef<HTMLDivElement>(null);
   const pasajeroTableRef = useRef<HTMLDivElement>(null);
+
+  // Estados para editar notas
+  const [editingNotas, setEditingNotas] = useState<{tour: boolean, coordinador: boolean}>({
+    tour: false,
+    coordinador: false
+  });
+  const [tempNotas, setTempNotas] = useState<{tour: string, coordinador: string}>({
+    tour: '',
+    coordinador: ''
+  });
+  const [expandedNotas, setExpandedNotas] = useState<{ tour: boolean; coordinador: boolean }>({
+    tour: false,
+    coordinador: false
+  });
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Cargar datos de referencia UNA VEZ al montar
   useEffect(() => {
@@ -1387,9 +1487,93 @@ export default function AsientosTourBusPage() {
     }
   };
 
+  // Funciones para editar notas
+  const startEditingNotas = useCallback((type: 'tour' | 'coordinador') => {
+    setEditingNotas(prev => ({ ...prev, [type]: true }));
+    const currentValue = type === 'tour' ? tour?.notas : tour?.notasCoordinador;
+    setTempNotas(prev => ({
+      ...prev,
+      [type]: sanitizeEditorHtml(currentValue)
+    }));
+  }, [tour]);
+
+  const saveNotas = useCallback(async (type: 'tour' | 'coordinador') => {
+    if (!tour) return;
+    
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append('titulo', tour.titulo || '');
+      formDataToSend.append('precioAdulto', tour.precioAdulto.toString() || '0');
+      formDataToSend.append('precioNino', tour.precioNino.toString() || '0');
+      formDataToSend.append('cantidadAsientos', tour.cantidadAsientos.toString() || '53');
+      formDataToSend.append('fechaViaje', tour.fechaViaje ? new Date(tour.fechaViaje).toISOString().split('T')[0] : '');
+      formDataToSend.append('fechaFin', '');
+      formDataToSend.append('acc', tour.acc || '');
+      formDataToSend.append('bus', tour.bus?.toString() || '');
+      formDataToSend.append('pasti', tour.pasti?.toString() || '');
+      formDataToSend.append('parking', tour.parking?.toString() || '');
+      formDataToSend.append('coordinatore1', tour.coordinatore1?.toString() || '');
+      formDataToSend.append('coordinatore2', tour.coordinatore2?.toString() || '');
+      formDataToSend.append('ztl', tour.ztl?.toString() || '');
+      formDataToSend.append('hotel', tour.hotel?.toString() || '');
+      formDataToSend.append('polizza', tour.polizza?.toString() || '');
+      formDataToSend.append('tkt', tour.tkt?.toString() || '');
+      formDataToSend.append('autoservicio', tour.autoservicio || '');
+      formDataToSend.append('descripcion', tour.descripcion || '');
+      formDataToSend.append(
+        'notas',
+        type === 'tour'
+          ? sanitizeEditorHtml(tempNotas.tour)
+          : sanitizeEditorHtml(tour?.notas)
+      );
+      formDataToSend.append(
+        'notasCoordinador',
+        type === 'coordinador'
+          ? sanitizeEditorHtml(tempNotas.coordinador)
+          : sanitizeEditorHtml(tour?.notasCoordinador)
+      );
+
+      const response = await fetch(`/api/tour-bus/${tour.id}`, {
+        method: 'PUT',
+        body: formDataToSend,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTour(data.tour);
+        setEditingNotas(prev => ({ ...prev, [type]: false }));
+        setMessage({
+          type: 'success',
+          text: 'Note aggiornate correttamente'
+        });
+        setTimeout(() => setMessage(null), 3000);
+      } else {
+        setMessage({
+          type: 'error',
+          text: "Errore durante l'aggiornamento delle note"
+        });
+        setTimeout(() => setMessage(null), 3000);
+      }
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: 'Errore di connessione'
+      });
+      setTimeout(() => setMessage(null), 3000);
+    }
+  }, [tour, tempNotas]);
+
+  const cancelEditingNotas = useCallback((type: 'tour' | 'coordinador') => {
+    setEditingNotas(prev => ({ ...prev, [type]: false }));
+    setTempNotas(prev => ({
+      ...prev,
+      [type]: ''
+    }));
+  }, []);
+
   // Función para obtener la fermata de un asiento
   const getFermataAsiento = (numeroAsiento: number) => {
-    if (!tour) return '';
+    if (!tour || !tour.ventasTourBus) return '';
     
     // Buscar en ventas principales
     const ventaPrincipal = tour.ventasTourBus.find(v => v.numeroAsiento === numeroAsiento);
@@ -1529,59 +1713,137 @@ export default function AsientosTourBusPage() {
         {/* Visualización del Bus */}
         <div ref={busLayoutRef} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8">
           
-          {/* Información del Tour - Integrada */}
+          {/* Título del tour centrado */}
+          <div className="text-center mb-6">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              {tour.titulo}
+            </h1>
+          </div>
+
+          {/* Información del Tour - Estilo similar a TOUR AEREO */}
           <div className="mb-8 pb-6 border-b border-gray-200 dark:border-gray-700">
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-              <div className="flex items-center gap-2">
-                <DollarSignIcon className="w-5 h-5 text-green-500" />
-                <div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">Precio Adulto</div>
-                  <div className="text-base font-semibold text-gray-900 dark:text-white">€{tour.precioAdulto}</div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 mb-6">
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                <div className="flex items-center gap-2 mb-1">
+                  <Icon icon="mdi:cash-multiple" width="22" height="22" style={{ color: '#2563eb' }} />
+                  <span className="text-xs font-medium text-blue-700 dark:text-blue-300">Prezzo adulto</span>
+                </div>
+                <div className="text-lg font-bold text-blue-900 dark:text-blue-100">
+                  €{tour.precioAdulto}
                 </div>
               </div>
-              
-              <div className="flex items-center gap-2">
-                <DollarSignIcon className="w-5 h-5 text-blue-500" />
-                <div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">Precio Niño</div>
-                  <div className="text-base font-semibold text-gray-900 dark:text-white">€{tour.precioNino}</div>
+
+              <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
+                <div className="flex items-center gap-2 mb-1">
+                  <Icon icon="mdi:cash-euro" width="22" height="22" style={{ color: '#047857' }} />
+                  <span className="text-xs font-medium text-green-700 dark:text-green-300">Prezzo bambino</span>
+                </div>
+                <div className="text-lg font-bold text-green-900 dark:text-green-100">
+                  €{tour.precioNino}
                 </div>
               </div>
-              
-              <div className="flex items-center gap-2">
-                <UsersIcon className="w-5 h-5 text-blue-500" />
-                <div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">Asientos</div>
-                  <div className="text-base font-semibold text-gray-900 dark:text-white">{tour.cantidadAsientos}</div>
+
+              <div className="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-lg">
+                <div className="flex items-center gap-2 mb-1">
+                  <Icon icon="mdi:account-group" width="20" height="20" style={{ color: '#4f46e5' }} />
+                  <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300">Asientos</span>
+                </div>
+                <div className="text-lg font-bold text-indigo-900 dark:text-indigo-100">
+                  {tour.cantidadAsientos}
                 </div>
               </div>
-              
+
               {tour.fechaViaje && (
-                <div className="flex items-center gap-2">
-                  <CalendarIcon className="w-5 h-5 text-orange-500" />
-                  <div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">Fecha Viaje</div>
-                    <div className="text-base font-semibold text-gray-900 dark:text-white">
-                      {new Date(tour.fechaViaje).toLocaleDateString()}
-                    </div>
+                <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded-lg">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Icon icon="mdi:calendar" width="20" height="20" style={{ color: '#ea580c' }} />
+                    <span className="text-xs font-medium text-orange-700 dark:text-orange-300">Data Inizio</span>
+                  </div>
+                  <div className="text-lg font-bold text-orange-900 dark:text-orange-100">
+                    {new Date(tour.fechaViaje).toLocaleDateString('it-IT')}
                   </div>
                 </div>
               )}
 
-              <div className="text-center">
-                <div className="text-xl font-bold text-green-600">{asientosDisponibles}</div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">Disponibles</div>
+              <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
+                <div className="flex items-center gap-2 mb-1">
+                  <Icon icon="mdi:seat-passenger" width="20" height="20" style={{ color: '#047857' }} />
+                  <span className="text-xs font-medium text-green-700 dark:text-green-300">Disponibili</span>
+                </div>
+                <div className="text-lg font-bold text-green-900 dark:text-green-100">
+                  {asientosDisponibles}
+                </div>
               </div>
 
-              <div className="text-center">
-                <div className="text-xl font-bold text-red-600">{asientosVendidos}</div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">Vendidos</div>
+              <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
+                <div className="flex items-center gap-2 mb-1">
+                  <Icon icon="mdi:seatbelt" width="20" height="20" style={{ color: '#dc2626' }} />
+                  <span className="text-xs font-medium text-red-700 dark:text-red-300">Venduti</span>
+                </div>
+                <div className="text-lg font-bold text-red-900 dark:text-red-100">
+                  {asientosVendidos}
+                </div>
               </div>
 
-              <div className="text-center">
-                <div className="text-xl font-bold text-brand-600">{tour.cantidadAsientos}</div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">Total</div>
-              </div>
+              {tour.acc && (
+                <div className="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-lg">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Icon icon="mdi:account-tie" width="20" height="20" style={{ color: '#4f46e5' }} />
+                    <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300">Coordinatore (ACC)</span>
+                  </div>
+                  <div className="text-lg font-bold text-indigo-900 dark:text-indigo-100">
+                    {tour.acc}
+                  </div>
+                </div>
+              )}
+
+              {tour.hotel && (
+                <div className="bg-pink-50 dark:bg-pink-900/20 p-3 rounded-lg">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Icon icon="mdi:hotel" width="20" height="20" style={{ color: '#db2777' }} />
+                    <span className="text-xs font-medium text-pink-700 dark:text-pink-300">Hotel</span>
+                  </div>
+                  <div className="text-lg font-bold text-pink-900 dark:text-pink-100">
+                    €{((tour?.hotel ?? 0)).toFixed(2)}
+                  </div>
+                </div>
+              )}
+
+              {tour.bus && (
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Icon icon="mdi:bus-side" width="24" height="24" style={{ color: '#ca8a04' }} />
+                    <span className="text-xs font-medium text-yellow-700 dark:text-yellow-300">Bus</span>
+                  </div>
+                  <div className="text-lg font-bold text-yellow-900 dark:text-yellow-100">
+                    €{((tour?.bus ?? 0)).toFixed(2)}
+                  </div>
+                </div>
+              )}
+
+              {tour.coordinatore1 && (
+                <div className="bg-cyan-50 dark:bg-cyan-900/20 p-3 rounded-lg">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Icon icon="mdi:cash-sync" width="22" height="22" style={{ color: '#0891b2' }} />
+                    <span className="text-xs font-medium text-cyan-700 dark:text-cyan-300">Coordinatore 1</span>
+                  </div>
+                  <div className="text-lg font-bold text-cyan-900 dark:text-cyan-100">
+                    €{((tour?.coordinatore1 ?? 0)).toFixed(2)}
+                  </div>
+                </div>
+              )}
+
+              {tour.coordinatore2 && (
+                <div className="bg-cyan-50 dark:bg-cyan-900/20 p-3 rounded-lg">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Icon icon="mdi:cash-sync" width="22" height="22" style={{ color: '#0891b2' }} />
+                    <span className="text-xs font-medium text-cyan-700 dark:text-cyan-300">Coordinatore 2</span>
+                  </div>
+                  <div className="text-lg font-bold text-cyan-900 dark:text-cyan-100">
+                    €{((tour?.coordinatore2 ?? 0)).toFixed(2)}
+                  </div>
+                </div>
+              )}
             </div>
             
             {/* Botón de Imprimir Layout del Bus */}
@@ -1593,6 +1855,188 @@ export default function AsientosTourBusPage() {
               >
                 📄
               </button>
+            </div>
+          </div>
+
+          {/* Tarjetas de Notas */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="bg-slate-50 dark:bg-slate-900/20 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
+              <div className="flex items-center gap-2 mb-3">
+                <Icon icon="mdi:bus-side" width="20" height="20" style={{ color: '#475569' }} />
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Note del tour</span>
+              </div>
+              <div 
+                className="text-sm text-slate-600 dark:text-slate-400 p-2 rounded transition-colors"
+                onDoubleClick={() => startEditingNotas('tour')}
+                title={expandedNotas.tour ? undefined : getNotePreview(tour.notas)}
+              >
+                {editingNotas.tour ? (
+                  <div className="space-y-2">
+                    <SimpleRichTextEditor
+                      value={tempNotas.tour}
+                      onChange={(html) =>
+                        setTempNotas(prev => ({ ...prev, tour: html }))
+                      }
+                      placeholder="Scrivi le note del tour..."
+                      rows={4}
+                      className="w-full"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          saveNotas('tour');
+                        }}
+                        className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded transition-colors"
+                      >
+                        Salva
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          cancelEditingNotas('tour');
+                        }}
+                        className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white text-xs rounded transition-colors"
+                      >
+                        Annulla
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  (() => {
+                    if (!tour.notas) {
+                      return (
+                        <span className="text-sm text-slate-400 italic">
+                          Doppio click per aggiungere note...
+                        </span>
+                      );
+                    }
+
+                    const plain = extractPlainText(tour.notas);
+                    const content = expandedNotas.tour 
+                      ? sanitizeEditorHtml(tour.notas) 
+                      : getNotePreview(tour.notas);
+
+                    // Solo usar dangerouslySetInnerHTML si hay HTML real
+                    const hasHtml = /<[^>]+>/.test(tour.notas);
+
+                    return (
+                      <div className="leading-relaxed space-y-1">
+                        {expandedNotas.tour && hasHtml ? (
+                          <div 
+                            key={`tour-notas-${tour.id}-${tour.notas.length}`}
+                            dangerouslySetInnerHTML={{ __html: sanitizeEditorHtml(tour.notas) }} 
+                            suppressHydrationWarning
+                          />
+                        ) : (
+                          <div>{content}</div>
+                        )}
+                      </div>
+                    );
+                  })()
+                )}
+                {!editingNotas.tour && tour.notas && extractPlainText(tour.notas).length > 280 && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setExpandedNotas(prev => ({ ...prev, tour: !prev.tour }));
+                    }}
+                    className="mt-2 text-xs font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
+                  >
+                    {expandedNotas.tour ? 'Mostra meno' : 'Leggi di più'}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg border border-amber-200 dark:border-amber-700">
+              <div className="flex items-center gap-2 mb-3">
+                <Icon icon="mdi:bus-side" width="20" height="20" style={{ color: '#d97706' }} />
+                <span className="text-sm font-medium text-amber-700 dark:text-amber-300">Note del coordinatore</span>
+              </div>
+              <div 
+                className="text-sm text-amber-700 dark:text-amber-300 p-2 rounded transition-colors"
+                onDoubleClick={() => startEditingNotas('coordinador')}
+                title={expandedNotas.coordinador ? undefined : getNotePreview(tour.notasCoordinador)}
+              >
+                {editingNotas.coordinador ? (
+                  <div className="space-y-2">
+                    <SimpleRichTextEditor
+                      value={tempNotas.coordinador}
+                      onChange={(html) =>
+                        setTempNotas(prev => ({ ...prev, coordinador: html }))
+                      }
+                      placeholder="Scrivi le note del coordinatore..."
+                      rows={4}
+                      className="w-full"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          saveNotas('coordinador');
+                        }}
+                        className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded transition-colors"
+                      >
+                        Salva
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          cancelEditingNotas('coordinador');
+                        }}
+                        className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white text-xs rounded transition-colors"
+                      >
+                        Annulla
+                      </button>
+                    </div>
+                  </div>
+                    ) : (
+                      (() => {
+                        if (!tour.notasCoordinador) {
+                          return (
+                            <span className="text-sm text-amber-400 italic">
+                              Doppio click per aggiungere note...
+                            </span>
+                          );
+                        }
+
+                        const content = expandedNotas.coordinador
+                          ? sanitizeEditorHtml(tour.notasCoordinador)
+                          : getNotePreview(tour.notasCoordinador);
+
+                        // Solo usar dangerouslySetInnerHTML si hay HTML real
+                        const hasHtml = /<[^>]+>/.test(tour.notasCoordinador);
+
+                        return (
+                          <div className="leading-relaxed space-y-1">
+                            {expandedNotas.coordinador && hasHtml ? (
+                              <div 
+                                key={`coordinador-notas-${tour.id}-${tour.notasCoordinador.length}`}
+                                dangerouslySetInnerHTML={{ __html: sanitizeEditorHtml(tour.notasCoordinador) }} 
+                                suppressHydrationWarning
+                              />
+                            ) : (
+                              <div>{content}</div>
+                            )}
+                          </div>
+                        );
+                      })()
+                    )}
+                {!editingNotas.coordinador && tour.notasCoordinador && extractPlainText(tour.notasCoordinador).length > 280 && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setExpandedNotas(prev => ({ ...prev, coordinador: !prev.coordinador }));
+                    }}
+                    className="mt-2 text-xs font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
+                  >
+                    {expandedNotas.coordinador ? 'Mostra meno' : 'Leggi di più'}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
           
@@ -2428,6 +2872,17 @@ export default function AsientosTourBusPage() {
         show={showNotification} 
         onHide={() => setShowNotification(false)} 
       />
+
+      {/* Mensaje de notificación para notas */}
+      {message && (
+        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
+          message.type === 'success' 
+            ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200'
+            : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-200'
+        }`}>
+          <p>{message.text}</p>
+        </div>
+      )}
       </div>
     </div>
   );

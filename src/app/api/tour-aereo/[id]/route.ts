@@ -48,7 +48,21 @@ export async function GET(
 
     // Los usuarios USER pueden acceder a todos los tours para realizar ventas
 
-    return NextResponse.json({ tour });
+    // Normalizar documentoViaggio: convertir formato legacy (string) a array
+    const tourAny = tour as any;
+    if (tourAny.documentoViaggio) {
+      if (typeof tourAny.documentoViaggio === 'string') {
+        // Formato legacy: convertir a array
+        tourAny.documentoViaggio = [{
+          url: tourAny.documentoViaggio,
+          name: tourAny.documentoViaggioName || 'documento'
+        }];
+        delete tourAny.documentoViaggioName;
+      }
+      // Si ya es array, dejarlo como está
+    }
+
+    return NextResponse.json({ tour: tourAny });
   } catch (error) {
     console.error('Error fetching tour aereo:', error);
     return NextResponse.json(
@@ -198,35 +212,89 @@ export async function PUT(
       }
     }
 
-    let documentoViaggioUrl = (existingTour as any).documentoViaggio ?? null;
-    let documentoViaggioName = (existingTour as any).documentoViaggioName ?? null;
-
-    if (documentoViaggioFile && documentoViaggioFile.size > 0) {
+    // Manejar múltiples documentos de viaje
+    let documentoViaggioArray: Array<{ url: string; name: string }> = [];
+    
+    // Obtener archivos existentes si se proporcionan
+    const documentoViaggioExisting = formData.get('documentoViaggioExisting') as string | null;
+    if (documentoViaggioExisting) {
       try {
-        const bytes = await documentoViaggioFile.arrayBuffer();
-        const buffer = Buffer.from(bytes);
-
-        const result = await new Promise<any>((resolve, reject) => {
-          cloudinary.uploader.upload_stream(
-            {
-              folder: 'gibravotravel/tour_aereo/documenti',
-              resource_type: 'auto'
-            },
-            (error, result) => {
-              if (error) reject(error);
-              else resolve(result);
-            }
-          ).end(buffer);
-        });
-
-        documentoViaggioUrl = result.secure_url;
-        documentoViaggioName = documentoViaggioFile.name;
+        documentoViaggioArray = JSON.parse(documentoViaggioExisting);
       } catch (error) {
-        console.error('Error uploading travel document:', error);
+        console.error('Error parsing existing documents:', error);
+        // Si hay un documento antiguo (formato legacy), convertirlo
+        if ((existingTour as any).documentoViaggio && typeof (existingTour as any).documentoViaggio === 'string') {
+          documentoViaggioArray = [{
+            url: (existingTour as any).documentoViaggio,
+            name: (existingTour as any).documentoViaggioName || 'documento'
+          }];
+        }
+      }
+    } else {
+      // Si no se proporcionan archivos existentes, verificar si hay formato legacy
+      if ((existingTour as any).documentoViaggio) {
+        if (typeof (existingTour as any).documentoViaggio === 'string') {
+          // Formato legacy: convertir a array
+          documentoViaggioArray = [{
+            url: (existingTour as any).documentoViaggio,
+            name: (existingTour as any).documentoViaggioName || 'documento'
+          }];
+        } else if (Array.isArray((existingTour as any).documentoViaggio)) {
+          // Ya es un array
+          documentoViaggioArray = (existingTour as any).documentoViaggio;
+        }
       }
     }
+
+    // Procesar nuevos archivos
+    const documentoViaggioFiles = formData.getAll('documentoViaggio') as File[];
+    const validFiles = documentoViaggioFiles.filter(file => file && file.size > 0);
+
+    if (validFiles.length > 0) {
+      // Validar máximo de 5 archivos
+      if (documentoViaggioArray.length + validFiles.length > 5) {
+        return NextResponse.json(
+          { error: 'Massimo 5 file consentiti per Documento Viaggio' },
+          { status: 400 }
+        );
+      }
+
+      // Subir nuevos archivos a Cloudinary
+      for (const file of validFiles) {
+        try {
+          const bytes = await file.arrayBuffer();
+          const buffer = Buffer.from(bytes);
+
+          const result = await new Promise<any>((resolve, reject) => {
+            cloudinary.uploader.upload_stream(
+              {
+                folder: 'gibravotravel/tour_aereo/documenti',
+                resource_type: 'auto'
+              },
+              (error, result) => {
+                if (error) reject(error);
+                else resolve(result);
+              }
+            ).end(buffer);
+          });
+
+          documentoViaggioArray.push({
+            url: result.secure_url,
+            name: file.name
+          });
+        } catch (error) {
+          console.error('Error uploading travel document:', error);
+        }
+      }
+    }
+
+    // Si no hay archivos, dejar como array vacío o null
+    // Convertir a Prisma.JsonValue para que Prisma lo acepte
+    const documentoViaggioFinal = documentoViaggioArray.length > 0 
+      ? (documentoViaggioArray as any) 
+      : null;
  
-    const updateData: Record<string, unknown> = {
+    const updateData: any = {
       titulo,
       precioAdulto,
       precioNino,
@@ -248,13 +316,19 @@ export async function PUT(
       updatedAt: new Date(),
     };
 
-    updateData.documentoViaggio = documentoViaggioUrl;
-    updateData.documentoViaggioName = documentoViaggioName;
+    // Solo agregar documentoViaggio si hay datos
+    // Usar cast explícito a any para evitar problemas de tipo con Prisma
+    if (documentoViaggioFinal !== null) {
+      updateData.documentoViaggio = documentoViaggioFinal as any;
+    } else {
+      updateData.documentoViaggio = null;
+    }
 
     // Actualizar el tour aéreo en la base de datos
+    // Usar cast a any para el data completo para evitar problemas de tipo
     const tour = await prisma.tourAereo.update({
       where: { id },
-      data: updateData,
+      data: updateData as any,
       include: {
         creator: {
           select: {

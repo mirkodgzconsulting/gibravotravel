@@ -101,7 +101,24 @@ export async function GET(request: NextRequest) {
       ],
     });
 
-    return NextResponse.json({ tours });
+    // Normalizar documentoViaggio: convertir formato legacy (string) a array
+    const normalizedTours = tours.map(tour => {
+      const tourAny = tour as any;
+      if (tourAny.documentoViaggio) {
+        if (typeof tourAny.documentoViaggio === 'string') {
+          // Formato legacy: convertir a array
+          tourAny.documentoViaggio = [{
+            url: tourAny.documentoViaggio,
+            name: tourAny.documentoViaggioName || 'documento'
+          }];
+          delete tourAny.documentoViaggioName;
+        }
+        // Si ya es array, dejarlo como está
+      }
+      return tourAny;
+    });
+
+    return NextResponse.json({ tours: normalizedTours });
   } catch (error) {
     console.error('Error fetching tours aereo:', error);
     return NextResponse.json(
@@ -246,59 +263,90 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    let documentoViaggioUrl = null;
-    let documentoViaggioName = null;
+    // Manejar múltiples documentos de viaje
+    let documentoViaggioArray: Array<{ url: string; name: string }> = [];
+    
+    // Procesar archivos (puede ser uno o múltiples)
+    const documentoViaggioFiles = formData.getAll('documentoViaggio') as File[];
+    const validFiles = documentoViaggioFiles.filter(file => file && file.size > 0);
 
-    if (documentoViaggioFile && documentoViaggioFile.size > 0) {
-      try {
-        const bytes = await documentoViaggioFile.arrayBuffer();
-        const buffer = Buffer.from(bytes);
+    // También verificar el formato antiguo (un solo archivo)
+    if (validFiles.length === 0 && documentoViaggioFile && documentoViaggioFile.size > 0) {
+      validFiles.push(documentoViaggioFile);
+    }
 
-        const result = await new Promise<any>((resolve, reject) => {
-          cloudinary.uploader.upload_stream(
-            {
-              folder: 'gibravotravel/tour_aereo/documenti',
-              resource_type: 'auto'
-            },
-            (error, result) => {
-              if (error) reject(error);
-              else resolve(result);
-            }
-          ).end(buffer);
-        });
+    if (validFiles.length > 0) {
+      // Validar máximo de 5 archivos
+      if (validFiles.length > 5) {
+        return NextResponse.json(
+          { error: 'Massimo 5 file consentiti per Documento Viaggio' },
+          { status: 400 }
+        );
+      }
 
-        documentoViaggioUrl = result.secure_url;
-        documentoViaggioName = documentoViaggioFile.name;
-      } catch (error) {
-        console.error('Error uploading travel document:', error);
+      // Subir archivos a Cloudinary
+      for (const file of validFiles) {
+        try {
+          const bytes = await file.arrayBuffer();
+          const buffer = Buffer.from(bytes);
+
+          const result = await new Promise<any>((resolve, reject) => {
+            cloudinary.uploader.upload_stream(
+              {
+                folder: 'gibravotravel/tour_aereo/documenti',
+                resource_type: 'auto'
+              },
+              (error, result) => {
+                if (error) reject(error);
+                else resolve(result);
+              }
+            ).end(buffer);
+          });
+
+          documentoViaggioArray.push({
+            url: result.secure_url,
+            name: file.name
+          });
+        } catch (error) {
+          console.error('Error uploading travel document:', error);
+        }
       }
     }
+
+    const documentoViaggioFinal = documentoViaggioArray.length > 0 
+      ? (documentoViaggioArray as any) 
+      : null;
  
     // Crear el tour aéreo en la base de datos
+    const createData: any = {
+      titulo,
+      precioAdulto,
+      precioNino,
+      fechaViaje: fechaViajeDate,
+      fechaFin: fechaFinDate,
+      meta,
+      acc: acc || null,
+      guidaLocale: (guidaLocale > 0 ? guidaLocale : null) as any,
+      coordinatore: (coordinatore > 0 ? coordinatore : null) as any,
+      transporte: (transporte > 0 ? transporte : null) as any,
+      hotel: hotel !== null ? hotel : null,
+      notas: notas || null,
+      notasCoordinador: notasCoordinador || null,
+      descripcion: descripcion || null,
+      coverImage: coverImageUrl,
+      coverImageName,
+      pdfFile: pdfFileUrl,
+      pdfFileName,
+      createdBy: userId,
+    };
+
+    // Solo agregar documentoViaggio si hay datos
+    if (documentoViaggioFinal !== null) {
+      createData.documentoViaggio = documentoViaggioFinal;
+    }
+
     const tour = await prisma.tourAereo.create({
-      data: {
-        titulo,
-        precioAdulto,
-        precioNino,
-        fechaViaje: fechaViajeDate,
-        fechaFin: fechaFinDate,
-        meta,
-        acc: acc || null,
-        guidaLocale: (guidaLocale > 0 ? guidaLocale : null) as any,
-        coordinatore: (coordinatore > 0 ? coordinatore : null) as any,
-        transporte: (transporte > 0 ? transporte : null) as any,
-        hotel: hotel !== null ? hotel : null,
-        notas: notas || null,
-        notasCoordinador: notasCoordinador || null,
-        descripcion: descripcion || null,
-        coverImage: coverImageUrl,
-        coverImageName,
-        pdfFile: pdfFileUrl,
-        pdfFileName,
-        documentoViaggio: documentoViaggioUrl,
-        documentoViaggioName,
-        createdBy: userId,
-      },
+      data: createData,
       include: {
         creator: {
           select: {

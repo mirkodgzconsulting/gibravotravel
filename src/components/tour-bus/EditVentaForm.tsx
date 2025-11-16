@@ -56,6 +56,8 @@ interface VentaTourBus {
   daPagare: number;
   metodoPagamento: string;
   estadoPago: string;
+  notaEsternaRicevuta?: string | null;
+  notaInterna?: string | null;
   numeroAcompanantes?: number;
   createdBy: string;
   createdAt: string;
@@ -145,6 +147,8 @@ export default function EditVentaForm({
   const [daPagare, setDaPagare] = useState(venta.daPagare);
   const [metodoPagamento, setMetodoPagamento] = useState(venta.metodoPagamento);
   const [stato, setStato] = useState(venta.estadoPago);
+  const [notaEsternaRicevuta, setNotaEsternaRicevuta] = useState(venta.notaEsternaRicevuta || '');
+  const [notaInterna, setNotaInterna] = useState(venta.notaInterna || '');
   
   // Estados para cuotas - Inicializar con datos existentes
   const [numeroCuotas, setNumeroCuotas] = useState(venta.cuotas.length);
@@ -376,6 +380,8 @@ export default function EditVentaForm({
       daPagare,
       metodoPagamento,
       estadoPago: stato,
+      notaEsternaRicevuta: notaEsternaRicevuta || null,
+      notaInterna: notaInterna || null,
       cuotas: numeroCuotas > 0 ? cuotas : [],
     };
     
@@ -923,6 +929,32 @@ export default function EditVentaForm({
                     <option key={index} value={st}>{st}</option>
                   ))}
                 </select>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Nota esterna ricevuta
+                </label>
+                <textarea
+                  value={notaEsternaRicevuta}
+                  onChange={(e) => setNotaEsternaRicevuta(e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                  placeholder="Inserisci nota esterna ricevuta..."
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Nota interna
+                </label>
+                <textarea
+                  value={notaInterna}
+                  onChange={(e) => setNotaInterna(e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                  placeholder="Inserisci nota interna..."
+                />
               </div>
             </div>
 

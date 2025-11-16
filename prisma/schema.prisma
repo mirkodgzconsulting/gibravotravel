@@ -189,9 +189,7 @@ model Biglietteria {
   data             DateTime
   pnr              String?
   itinerario       String
-  metodoPagamento  String // JSON array de métodos de pago
-  notaDiVendita    String?
-  notaDiRicevuta   String?
+  metodoPagamento  String
   cliente          String
   codiceFiscale    String
   indirizzo        String
@@ -210,6 +208,8 @@ model Biglietteria {
   attachedFileName String?
   numeroCuotas     Int?
   numeroPasajeros  Int                    @default(1)
+  notaDiVendita    String?
+  notaDiRicevuta   String?
   creator          User                   @relation(fields: [creadoPor], references: [id])
   cuotas           Cuota[]
   pasajeros        PasajeroBiglietteria[]
@@ -223,7 +223,7 @@ model Biglietteria {
 }
 
 model PasajeroBiglietteria {
-  id                   String       @id @default(cuid())
+  id                   String                         @id @default(cuid())
   biglietteriaId       String
   nombrePasajero       String
   servizio             String
@@ -232,26 +232,26 @@ model PasajeroBiglietteria {
   iata                 String?
   netoBiglietteria     Float?
   vendutoBiglietteria  Float?
-  tieneExpress         Boolean?     @default(false)
+  tieneExpress         Boolean?                       @default(false)
   netoExpress          Float?
   vendutoExpress       Float?
-  tienePolizza         Boolean?     @default(false)
+  tienePolizza         Boolean?                       @default(false)
   netoPolizza          Float?
   vendutoPolizza       Float?
-  tieneLetteraInvito   Boolean?     @default(false)
+  tieneLetteraInvito   Boolean?                       @default(false)
   netoLetteraInvito    Float?
   vendutoLetteraInvito Float?
-  tieneHotel           Boolean?     @default(false)
+  tieneHotel           Boolean?                       @default(false)
   netoHotel            Float?
   vendutoHotel         Float?
-  estado               String       @default("Pendiente")
+  estado               String                         @default("Pendiente")
   fechaPago            DateTime?
   fechaActivacion      DateTime?
   notas                String?
-  createdAt            DateTime     @default(now())
-  updatedAt            DateTime     @updatedAt
-  biglietteria         Biglietteria @relation(fields: [biglietteriaId], references: [id], onDelete: Cascade)
+  createdAt            DateTime                       @default(now())
+  updatedAt            DateTime                       @updatedAt
   serviciosDetalle     PasajeroServicioBiglietteria[]
+  biglietteria         Biglietteria                   @relation(fields: [biglietteriaId], references: [id], onDelete: Cascade)
 
   @@index([estado], map: "idx_pasajeros_biglietteria_estado")
   @@index([biglietteriaId], map: "idx_pasajeros_biglietteria_id")
@@ -259,22 +259,22 @@ model PasajeroBiglietteria {
 }
 
 model PasajeroServicioBiglietteria {
-  id                String                @id @default(cuid())
-  pasajeroId        String
-  servicio          String
-  metodoDiAcquisto  String?
-  andata            DateTime?
-  ritorno           DateTime?
-  iata              String?
-  neto              Float?
-  venduto           Float?
-  estado            String               @default("Pendiente")
-  fechaPago         DateTime?
-  fechaActivacion   DateTime?
-  notas             String?
-  createdAt         DateTime              @default(now())
-  updatedAt         DateTime              @updatedAt
-  pasajero          PasajeroBiglietteria  @relation(fields: [pasajeroId], references: [id], onDelete: Cascade)
+  id               String               @id @default(cuid())
+  pasajeroId       String
+  servicio         String
+  metodoDiAcquisto String?
+  andata           DateTime?
+  ritorno          DateTime?
+  iata             String?
+  neto             Float?
+  venduto          Float?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  estado           String               @default("Pendiente")
+  fechaActivacion  DateTime?
+  fechaPago        DateTime?
+  notas            String?
+  pasajero         PasajeroBiglietteria @relation(fields: [pasajeroId], references: [id], onDelete: Cascade)
 
   @@index([pasajeroId], map: "idx_pasajero_servicio_biglietteria_pasajero_id")
   @@index([servicio], map: "idx_pasajero_servicio_biglietteria_servicio")
@@ -326,6 +326,8 @@ model TourBus {
   pdfFile          String?
   pdfFileName      String?
   descripcion      String?
+  notas            String?
+  notasCoordinador String?
   isActive         Boolean        @default(true)
   createdBy        String
   createdAt        DateTime       @default(now())
@@ -344,34 +346,35 @@ model TourBus {
 }
 
 model TourAereo {
-  id               String           @id @default(cuid())
-  titulo           String
-  precioAdulto     Float            @default(0)
-  precioNino       Float            @default(0)
-  fechaViaje       DateTime?
-  fechaFin         DateTime?
-  meta             Int              @default(0)
-  acc              String?
-  guidaLocale      Float?
-  coordinatore     Float?
-  transporte       Float?
-  hotel            Float?
-  documentoViaggio     String?
-  documentoViaggioName String?
-  notas            String?
-  notasCoordinador String?
-  feeAgv           Float            @default(0)
-  coverImage       String?
-  coverImageName   String?
-  pdfFile          String?
-  pdfFileName      String?
-  descripcion      String?
-  isActive         Boolean          @default(true)
-  createdBy        String
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  creator          User             @relation(fields: [createdBy], references: [clerkId])
-  ventas           VentaTourAereo[]
+  id                       String           @id @default(cuid())
+  titulo                   String
+  precioAdulto             Float            @default(0)
+  precioNino               Float            @default(0)
+  fechaViaje               DateTime?
+  fechaFin                 DateTime?
+  meta                     Int              @default(0)
+  acc                      String?
+  guidaLocale              Float?
+  coordinatore             Float?
+  transporte               Float?
+  notas                    String?
+  notasCoordinador         String?
+  feeAgv                   Float            @default(0)
+  coverImage               String?
+  coverImageName           String?
+  pdfFile                  String?
+  pdfFileName              String?
+  descripcion              String?
+  isActive                 Boolean          @default(true)
+  createdBy                String
+  createdAt                DateTime         @default(now())
+  updatedAt                DateTime         @updatedAt
+  hotel                    Float?
+  documentoViaggio_old     String?
+  documentoViaggioName_old String?
+  documentoViaggio         Json?
+  creator                  User             @relation(fields: [createdBy], references: [clerkId])
+  ventas                   VentaTourAereo[]
 
   @@index([fechaViaje], map: "idx_tour_aereo_fecha_viaje")
   @@index([fechaFin], map: "idx_tour_aereo_fecha_fin")
@@ -447,6 +450,8 @@ model VentaTourBus {
   daPagare           Float
   metodoPagamento    String
   estadoPago         String
+  notaEsternaRicevuta String?
+  notaInterna        String?
   numeroAcompanantes Int                  @default(0)
   numeroCuotas       Int?
   createdBy          String
@@ -518,37 +523,37 @@ model StatoBus {
 }
 
 model VentaTourAereo {
-  id               String                @id @default(cuid())
-  tourAereoId      String
-  clienteId        String?
-  pasajero         String
-  codiceFiscale    String
-  indirizzo        String
-  email            String
-  numeroTelefono   String
-  paisOrigen       String
-  iata             String
-  pnr              String?
-  hotel            Float?
-  tkt              Float?
-  polizza          Float?
-  transfer         Float?
-  attachedFile     String?
-  attachedFileName String?
+  id                  String                @id @default(cuid())
+  tourAereoId         String
+  clienteId           String?
+  pasajero            String
+  codiceFiscale       String
+  indirizzo           String
+  email               String
+  numeroTelefono      String
+  paisOrigen          String
+  iata                String
+  pnr                 String?
+  hotel               Float?
+  transfer            Float?
+  attachedFile        String?
+  attachedFileName    String?
+  venduto             Float
+  acconto             Float
+  daPagare            Float
+  metodoPagamento     String
+  metodoCompra        String?
+  stato               String
+  createdBy           String
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  tkt                 Float?
+  polizza             Float?
   notaEsternaRicevuta String?
   notaInterna         String?
-  venduto          Float
-  acconto          Float
-  daPagare         Float
-  metodoPagamento  String
-  metodoCompra     String?
-  stato            String
-  createdBy        String
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @updatedAt
-  cuotas           CuotaVentaTourAereo[]
-  creator          User                  @relation(fields: [createdBy], references: [id])
-  tourAereo        TourAereo             @relation(fields: [tourAereoId], references: [id], onDelete: Cascade)
+  cuotas              CuotaVentaTourAereo[]
+  creator             User                  @relation(fields: [createdBy], references: [id])
+  tourAereo           TourAereo             @relation(fields: [tourAereoId], references: [id], onDelete: Cascade)
 
   @@index([createdAt], map: "idx_ventas_tour_aereo_created_at")
   @@index([tourAereoId], map: "idx_ventas_tour_aereo_tour")

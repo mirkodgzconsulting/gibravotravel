@@ -10,7 +10,7 @@ import PassengerDetailsTable from "@/components/PassengerDetailsTable";
 import PassengerDetailsTableSimple from "@/components/PassengerDetailsTableSimple";
 import SimpleRichTextEditor from "@/components/form/SimpleRichTextEditor";
 import * as XLSX from 'xlsx';
-import { cachedFetch } from "@/utils/cachedFetch";
+import { cachedFetch, getCachedData } from "@/utils/cachedFetch";
 // ==================== INTERFACES ====================
 
 interface Cuota {
@@ -1045,13 +1045,66 @@ const getEstadoVisual = (estado?: string | null) => {
     });
   }, [totalesCalculados]);
   
-  // Cargar datos iniciales - OPTIMIZADO: Llamadas paralelas con Promise.all
+  // Cargar datos iniciales - OPTIMIZADO: Mostrar datos del caché inmediatamente
   const fetchData = useCallback(async () => {
     if (roleLoading) return;
       try {
-        setLoading(true);
+        // OPTIMIZACIÓN: Primero verificar si hay datos en caché
+        // Si hay datos en caché, mostrarlos inmediatamente sin loading
+        const biglietteriaUrl = `/api/biglietteria${isUser ? '?userOnly=true' : ''}`;
+        // Datos dinámicos: 30 segundos
+        const cachedRecords = getCachedData<{ records: BiglietteriaRecordApi[] }>(biglietteriaUrl, { ttlMs: 30000 });
+        // Datos de referencia: 5 minutos
+        const cachedClients = getCachedData<{ clients: Client[] }>('/api/clients', { ttlMs: 300000 });
+        const cachedServizi = getCachedData<ServizioOption[]>('/api/servizi', { ttlMs: 300000 });
+        const cachedUsers = getCachedData<ApiUser[]>('/api/users', { ttlMs: 300000 });
+        const cachedPagamentos = getCachedData<PagamentoOption[]>('/api/pagamento', { ttlMs: 300000 });
+        const cachedIata = getCachedData<IataOption[]>('/api/iata', { ttlMs: 300000 });
+        const cachedMetodo = getCachedData<{ metodosPagamento: MetodoPagamentoOption[] }>('/api/metodo-pagamento', { ttlMs: 300000 });
+        const cachedAcquisto = getCachedData<{ acquisti: AcquistoOption[] }>('/api/acquisto', { ttlMs: 300000 });
+
+        // Si tenemos todos los datos en caché, mostrarlos inmediatamente
+        const hasAllCachedData = cachedRecords && cachedClients && cachedServizi && cachedUsers && 
+                                 cachedPagamentos && cachedIata && cachedMetodo && cachedAcquisto;
+
+        if (hasAllCachedData) {
+          // Mostrar datos del caché inmediatamente (sin loading)
+          const processedRecords = (cachedRecords.records ?? []).map(processRecord);
+          setRecords(processedRecords);
+          setClients(Array.isArray(cachedClients.clients) ? cachedClients.clients : []);
+          setServizi(Array.isArray(cachedServizi) ? cachedServizi : []);
+          
+          const validRoles = new Set(['USER', 'ADMIN', 'TI']);
+          const rawUsersArray = Array.isArray(cachedUsers)
+            ? cachedUsers
+            : Array.isArray((cachedUsers as { users?: ApiUser[] })?.users)
+              ? (cachedUsers as { users?: ApiUser[] }).users
+              : [];
+          const usuariosNormalizados = rawUsersArray.filter((usuario) => {
+            const role = typeof usuario.role === 'string' ? usuario.role.toUpperCase() : '';
+            return validRoles.has(role);
+          });
+          setUsuarios(usuariosNormalizados);
+          
+          const pagamentosNombres = (Array.isArray(cachedPagamentos) ? cachedPagamentos : []).map(option => option.pagamento);
+          setPagamentos(pagamentosNombres);
+          
+          const iataNombres = (Array.isArray(cachedIata) ? cachedIata : []).map(option => option.iata);
+          setIataList(iataNombres);
+          
+          const metodoPagamentoNombres = (cachedMetodo?.metodosPagamento ?? []).map(option => option.metodoPagamento);
+          setMetodoPagamentoList(metodoPagamentoNombres);
+
+          const acquistoNombres = Array.isArray(cachedAcquisto?.acquisti) ? cachedAcquisto.acquisti.map(item => item.acquisto) : [];
+          setAcquistoOptions(acquistoNombres);
+          
+          setLoading(false); // No mostrar loading si tenemos datos en caché
+        } else {
+          // Si no hay datos en caché, mostrar loading
+          setLoading(true);
+        }
         
-        // OPTIMIZACIÓN: Cargar todas las APIs en paralelo
+        // Siempre hacer fetch en background para actualizar datos (incluso si tenemos caché)
         const [
           recordsData,
           clientsData,
@@ -1062,18 +1115,20 @@ const getEstadoVisual = (estado?: string | null) => {
           metodoData,
           acquistoData,
         ] = await Promise.all([
-          cachedFetch<{ records: BiglietteriaRecordApi[] }>(`/api/biglietteria${isUser ? '?userOnly=true' : ''}`, {
-            ttlMs: 15000,
+          // Datos dinámicos: 30 segundos (cambian frecuentemente)
+          cachedFetch<{ records: BiglietteriaRecordApi[] }>(biglietteriaUrl, {
+            ttlMs: 30000,
           }),
-          cachedFetch<{ clients: Client[] }>(`/api/clients`, { ttlMs: 15000 }).catch(() => ({ clients: [] })),
-          cachedFetch<ServizioOption[]>('/api/servizi', { ttlMs: 15000 }).catch(() => []),
-          cachedFetch<ApiUser[]>('/api/users', { ttlMs: 15000 }).catch(() => []),
-          cachedFetch<PagamentoOption[]>('/api/pagamento', { ttlMs: 15000 }).catch(() => []),
-          cachedFetch<IataOption[]>('/api/iata', { ttlMs: 15000 }).catch(() => []),
+          // Datos de referencia: 5 minutos (cambian raramente)
+          cachedFetch<{ clients: Client[] }>(`/api/clients`, { ttlMs: 300000 }).catch(() => ({ clients: [] })),
+          cachedFetch<ServizioOption[]>('/api/servizi', { ttlMs: 300000 }).catch(() => []),
+          cachedFetch<ApiUser[]>('/api/users', { ttlMs: 300000 }).catch(() => []),
+          cachedFetch<PagamentoOption[]>('/api/pagamento', { ttlMs: 300000 }).catch(() => []),
+          cachedFetch<IataOption[]>('/api/iata', { ttlMs: 300000 }).catch(() => []),
           cachedFetch<{ metodosPagamento: MetodoPagamentoOption[] }>('/api/metodo-pagamento', {
-            ttlMs: 15000,
+            ttlMs: 300000,
           }).catch(() => ({ metodosPagamento: [] })),
-          cachedFetch<{ acquisti: AcquistoOption[] }>('/api/acquisto', { ttlMs: 15000 }).catch(() => ({ acquisti: [] })),
+          cachedFetch<{ acquisti: AcquistoOption[] }>('/api/acquisto', { ttlMs: 300000 }).catch(() => ({ acquisti: [] })),
         ]);
         
         // Procesar registros y pre-parsear metodoPagamento para evitar JSON.parse en filtro

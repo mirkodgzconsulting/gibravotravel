@@ -82,6 +82,8 @@ export async function POST(request: NextRequest) {
       daPagare,
       metodoPagamento,
       estadoPago,
+      notaEsternaRicevuta,
+      notaInterna,
       // Cuotas
       cuotas
     } = body;
@@ -165,6 +167,8 @@ export async function POST(request: NextRequest) {
           daPagare: parseFloat(daPagare),
           metodoPagamento,
           estadoPago,
+          notaEsternaRicevuta: notaEsternaRicevuta || null,
+          notaInterna: notaInterna || null,
           numeroAcompanantes: acompanantes?.length || 0,
           numeroCuotas: cuotas?.length || null,
           createdBy: user.id

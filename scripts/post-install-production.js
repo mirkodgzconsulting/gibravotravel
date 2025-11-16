@@ -17,6 +17,15 @@ async function postInstallProduction() {
     console.log('🌍 Entorno de producción detectado');
     console.log('🔧 Ejecutando configuración automática...\n');
 
+    // Ejecutar migración de notas (segura, no borra datos)
+    try {
+      console.log('🔄 Ejecutando migración de campos de notas...');
+      execSync('node scripts/migrate-production-notas-safe.js', { stdio: 'inherit' });
+      console.log('✅ Migración de notas completada');
+    } catch (error) {
+      console.log('⚠️  Migración de notas con advertencias, continuando...');
+    }
+
     // Ejecutar configuración automática
     try {
       execSync('node scripts/auto-fix-production.js', { stdio: 'pipe' });

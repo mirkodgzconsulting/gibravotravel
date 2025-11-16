@@ -39,6 +39,8 @@ export async function PUT(
       daPagare,
       metodoPagamento,
       estadoPago,
+      notaEsternaRicevuta,
+      notaInterna,
       // Cuotas
       cuotas
     } = body;
@@ -174,6 +176,8 @@ export async function PUT(
           daPagare: parseFloat(daPagare),
           metodoPagamento,
           estadoPago,
+          notaEsternaRicevuta: notaEsternaRicevuta || null,
+          notaInterna: notaInterna || null,
           numeroAcompanantes: acompanantes?.length || 0,
           numeroCuotas: cuotas?.length || null,
         }

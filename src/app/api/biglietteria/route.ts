@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
     const createdBy = user ? user.id : 'Usuario';
 
     const formData = await request.formData();
-
+    
     const getStringField = (key: string): string | null => {
       const value = formData.get(key);
       return typeof value === 'string' ? value : null;
@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
       (acc, item) => acc + item.vendutoContribution,
       0
     );
-
+    
     const accontoValue = toNumberOrNull(accontoRaw) ?? 0;
     const daPagare = vendutoTotal - accontoValue;
     const feeAgv = vendutoTotal - netoPrincipal;
@@ -207,7 +207,7 @@ export async function POST(request: NextRequest) {
     const file = fileEntry instanceof File ? fileEntry : null;
     let attachedFileUrl: string | null = null;
     let attachedFileName: string | null = null;
-
+    
     if (file && file.size > 0) {
       try {
         const bytes = await file.arrayBuffer();
@@ -215,19 +215,19 @@ export async function POST(request: NextRequest) {
         const fileExtension = file.name.toLowerCase().split('.').pop();
         const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension ?? '');
         const resourceType = isImage ? 'image' : 'raw';
-
+        
         const result = await new Promise<UploadApiResponse>((resolve, reject) => {
           cloudinary.uploader
             .upload_stream(
-              {
-                folder: 'gibravotravel/biglietteria',
+            {
+              folder: 'gibravotravel/biglietteria',
                 resource_type: resourceType,
               },
               parseUploadResult(resolve, reject)
             )
             .end(buffer);
         });
-
+        
         attachedFileUrl = result.secure_url;
         attachedFileName = file.name;
       } catch (error) {
@@ -249,7 +249,7 @@ export async function POST(request: NextRequest) {
         const cuotaFile = cuotaFileEntry instanceof File ? cuotaFileEntry : null;
         let cuotaFileUrl = normalizedCuota.attachedFile;
         let cuotaFileName = normalizedCuota.attachedFileName;
-
+        
         if (cuotaFile && cuotaFile.size > 0) {
           try {
             const bytes = await cuotaFile.arrayBuffer();
@@ -257,26 +257,26 @@ export async function POST(request: NextRequest) {
             const fileExtension = cuotaFile.name.toLowerCase().split('.').pop();
             const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension ?? '');
             const resourceType = isImage ? 'image' : 'raw';
-
+            
             const result = await new Promise<UploadApiResponse>((resolve, reject) => {
               cloudinary.uploader
                 .upload_stream(
-                  {
-                    folder: 'gibravotravel/biglietteria/cuotas',
+                {
+                  folder: 'gibravotravel/biglietteria/cuotas',
                     resource_type: resourceType,
                   },
                   parseUploadResult(resolve, reject)
                 )
                 .end(buffer);
             });
-
+            
             cuotaFileUrl = result.secure_url;
             cuotaFileName = cuotaFile.name;
           } catch (error) {
             console.error(`Error uploading cuota file ${i}:`, error);
           }
         }
-
+        
         cuotasConArchivos.push({
           numeroCuota: normalizedCuota.numeroCuota,
           data: normalizedCuota.data,
@@ -331,13 +331,13 @@ export async function POST(request: NextRequest) {
         },
       },
     });
-
+    
     return NextResponse.json(record, { status: 201 });
   } catch (error) {
     console.error('Error creating biglietteria record:', error);
     return NextResponse.json(
       {
-        error: 'Error interno del servidor',
+      error: 'Error interno del servidor',
         details:
           process.env.NODE_ENV === 'development'
             ? error instanceof Error

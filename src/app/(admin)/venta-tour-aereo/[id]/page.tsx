@@ -55,8 +55,7 @@ interface TourAereo {
   coverImageName: string | null;
   pdfFile: string | null;
   pdfFileName: string | null;
-  documentoViaggio?: string | null;
-  documentoViaggioName?: string | null;
+  documentoViaggio?: Array<{ url: string; name: string }> | null;
   descripcion: string | null;
   createdBy: string;
   createdAt: string;
@@ -207,77 +206,64 @@ const normalizeLegacyNote = (note?: string | null) => {
 const sanitizeEditorHtml = (note?: string | null) => {
   const normalized = normalizeLegacyNote(note);
   if (!normalized) return '';
+  const allowedTags = ['b', 'strong', 'i', 'em', 'span', 'br'];
+  const allowedStyles = ['color', 'font-size'];
 
-  const allowedTags = new Set(['B', 'STRONG', 'I', 'EM', 'SPAN', 'BR']);
-  const allowedStyles = new Set(['color', 'font-size']);
+  // Usar solo regex para evitar manipulación del DOM
+  let sanitized = normalized;
 
-  try {
-    if (typeof window !== 'undefined' && typeof DOMParser !== 'undefined') {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(normalized, 'text/html');
-
-      const sanitizeNode = (node: Node) => {
-        Array.from(node.childNodes).forEach((child) => {
-          if (child.nodeType === Node.ELEMENT_NODE) {
-            const el = child as HTMLElement;
-            if (!allowedTags.has(el.tagName)) {
-              const parent = el.parentNode;
-              if (parent) {
-                while (el.firstChild) {
-                  parent.insertBefore(el.firstChild, el);
-                }
-                parent.removeChild(el);
-              }
-              return;
-            }
-
-            if (el.tagName === 'SPAN') {
-              Array.from(el.attributes).forEach((attr) => {
-                if (attr.name !== 'style') {
-                  el.removeAttribute(attr.name);
-                }
-              });
-              const style = el.style;
-              Array.from(style).forEach((prop) => {
-                if (!allowedStyles.has(prop)) {
-                  style.removeProperty(prop);
-                }
-              });
-              if (!style.color && !style.fontSize) {
-                el.removeAttribute('style');
-              }
-            } else {
-              Array.from(el.attributes).forEach((attr) => {
-                el.removeAttribute(attr.name);
-              });
-            }
-
-            sanitizeNode(el);
-          } else if (child.nodeType !== Node.TEXT_NODE) {
-            child.parentNode?.removeChild(child);
-          }
-        });
-      };
-
-      sanitizeNode(doc.body);
-      return doc.body.innerHTML;
+  // Remover todos los tags excepto los permitidos
+  sanitized = sanitized.replace(/<(\/?)([^>]+)>/gi, (match, closing, tagContent) => {
+    const tagName = tagContent.split(/\s/)[0].toLowerCase();
+    
+    // Si es un tag de cierre
+    if (closing) {
+      return allowedTags.includes(tagName) ? `</${tagName}>` : '';
     }
-  } catch {
-    // Fallback if DOMParser is not available
-  }
+    
+    // Si es un tag de apertura
+    if (allowedTags.includes(tagName)) {
+      // Si es span, permitir solo atributos style con estilos permitidos
+      if (tagName === 'span') {
+        const styleMatch = tagContent.match(/style\s*=\s*["']([^"']*)["']/i);
+        if (styleMatch) {
+          const styles = styleMatch[1];
+          const allowedStylesList = styles
+            .split(';')
+            .map((rule: string) => rule.trim())
+            .filter((rule: string) => {
+              const [property] = rule.split(':').map((part: string) => part.trim().toLowerCase());
+              return allowedStyles.includes(property);
+            });
+          if (allowedStylesList.length > 0) {
+            return `<span style="${allowedStylesList.join('; ')}">`;
+          }
+        }
+        return '<span>';
+      }
+      
+      // Para otros tags permitidos, remover todos los atributos
+      return `<${tagName}>`;
+    }
+    
+    // Si el tag no está permitido, removerlo
+    return '';
+  });
 
-  return normalized
-    .replace(/<(?!\/?(b|strong|i|em|span|br)\b)[^>]*>/gi, '')
-    .replace(/style=\"([^\"]*)\"/gi, (match, styles) => {
-      const allowed = styles
-        .split(';')
-        .map((rule: string) => rule.trim())
-        .filter((rule: string) => {
-          const [property] = rule.split(':').map((part: string) => part.trim().toLowerCase());
-          return allowedStyles.has(property);
-        });
-      return allowed.length ? `style="${allowed.join('; ')}"` : '';
-    });
+  // Limpiar atributos restantes que puedan haber quedado
+  sanitized = sanitized.replace(/\s+style\s*=\s*["'][^"']*["']/gi, (match) => {
+    const styles = match.match(/["']([^"']*)["']/)?.[1] || '';
+    const allowedStylesList = styles
+      .split(';')
+      .map((rule: string) => rule.trim())
+      .filter((rule: string) => {
+        const [property] = rule.split(':').map((part: string) => part.trim().toLowerCase());
+        return allowedStyles.includes(property);
+      });
+    return allowedStylesList.length > 0 ? ` style="${allowedStylesList.join('; ')}"` : '';
+  });
+
+  return sanitized;
 };
 
 const extractPlainText = (note?: string | null) => {
@@ -342,6 +328,7 @@ export default function VentaTourAereoPage() {
   const [error, setError] = useState<string | null>(null);
   const [showCopyNotification, setShowCopyNotification] = useState(false);
   const [isUploadingDocumentoViaggio, setIsUploadingDocumentoViaggio] = useState(false);
+  const [isDocumentoViaggioModalOpen, setIsDocumentoViaggioModalOpen] = useState(false);
   const [editingNotas, setEditingNotas] = useState<{tour: boolean, coordinador: boolean}>({
     tour: false,
     coordinador: false
@@ -553,10 +540,11 @@ export default function VentaTourAereoPage() {
       const [tourResponse, ventasResponse, iatasData, metodosData, pagamentosData, acquistiData] = await Promise.all([
         fetch(`/api/tour-aereo/${tourId}`),
         fetch(`/api/tour-aereo/${tourId}/ventas`),
-        cachedFetch<{ iatas?: IATA[] }>('/api/iata', { ttlMs: 30000 }),
-        cachedFetch<{ metodosPagamento?: MetodoPagamento[] }>('/api/metodo-pagamento', { ttlMs: 30000 }),
-        cachedFetch<{ pagamentos?: Pagamento[] }>('/api/pagamento', { ttlMs: 30000 }),
-        cachedFetch<{ acquisti?: Acquisto[] }>('/api/acquisto', { ttlMs: 30000 })
+        // Datos de referencia: 5 minutos (cambian raramente)
+        cachedFetch<{ iatas?: IATA[] }>('/api/iata', { ttlMs: 300000 }),
+        cachedFetch<{ metodosPagamento?: MetodoPagamento[] }>('/api/metodo-pagamento', { ttlMs: 300000 }),
+        cachedFetch<{ pagamentos?: Pagamento[] }>('/api/pagamento', { ttlMs: 300000 }),
+        cachedFetch<{ acquisti?: Acquisto[] }>('/api/acquisto', { ttlMs: 300000 })
       ]);
 
       // Procesar respuestas
@@ -632,7 +620,8 @@ export default function VentaTourAereoPage() {
     
     setLoadingClientes(true);
     try {
-      const clientsData = await cachedFetch<{ clients?: Cliente[] }>('/api/clients', { ttlMs: 15000 });
+      // Datos de referencia: 5 minutos
+      const clientsData = await cachedFetch<{ clients?: Cliente[] }>('/api/clients', { ttlMs: 300000 });
       const clientsArray = clientsData.clients || clientsData;
       const parsedClients = Array.isArray(clientsArray) ? clientsArray : [];
       setClientes(parsedClients);
@@ -1651,9 +1640,25 @@ export default function VentaTourAereoPage() {
   }, []);
 
   const handleDocumentoViaggioUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+    const files = event.target.files;
+    if (!files || files.length === 0 || !tourId || !tour) {
+      event.target.value = '';
+      return;
+    }
 
-    if (!file || !tourId || !tour) {
+    // Obtener archivos existentes
+    const existingFiles = Array.isArray(tour.documentoViaggio) ? tour.documentoViaggio : [];
+    const currentCount = existingFiles.length;
+    const newFilesCount = files.length;
+    const totalCount = currentCount + newFilesCount;
+
+    // Validar máximo de 5 archivos
+    if (totalCount > 5) {
+      setMessage({
+        type: 'error',
+        text: `Massimo 5 file consentiti. Hai ${currentCount} file esistenti e stai cercando di aggiungere ${newFilesCount}.`
+      });
+      setTimeout(() => setMessage(null), 4000);
       event.target.value = '';
       return;
     }
@@ -1678,7 +1683,16 @@ export default function VentaTourAereoPage() {
       formDataToSend.append('notas', sanitizeEditorHtml(tour.notas));
       formDataToSend.append('notasCoordinador', sanitizeEditorHtml(tour.notasCoordinador));
       formDataToSend.append('descripcion', tour.descripcion || '');
-      formDataToSend.append('documentoViaggio', file);
+
+      // Agregar archivos existentes (para preservarlos)
+      if (existingFiles.length > 0) {
+        formDataToSend.append('documentoViaggioExisting', JSON.stringify(existingFiles));
+      }
+
+      // Agregar nuevos archivos
+      Array.from(files).forEach((file) => {
+        formDataToSend.append('documentoViaggio', file);
+      });
 
       const response = await fetch(`/api/tour-aereo/${tourId}`, {
         method: 'PUT',
@@ -1690,7 +1704,7 @@ export default function VentaTourAereoPage() {
         setTour(data.tour);
         setMessage({
           type: 'success',
-          text: 'Documento di viaggio aggiornato correttamente'
+          text: `${newFilesCount} file ${newFilesCount === 1 ? 'caricato' : 'caricati'} correttamente`
         });
         setTimeout(() => setMessage(null), 3000);
       } else {
@@ -1716,6 +1730,61 @@ export default function VentaTourAereoPage() {
     } finally {
       setIsUploadingDocumentoViaggio(false);
       event.target.value = '';
+    }
+  }, [tourId, tour]);
+
+  // Función para eliminar un archivo del documento viaggio
+  const handleDeleteDocumentoViaggio = useCallback(async (indexToDelete: number) => {
+    if (!tour || !tourId) return;
+
+    const updatedFiles = tour.documentoViaggio?.filter((_, i) => i !== indexToDelete) || [];
+    try {
+      const formDataToSend = new FormData();
+      const formatDate = (value?: string | null) =>
+        value ? new Date(value).toISOString().split('T')[0] : '';
+
+      formDataToSend.append('titulo', tour.titulo || '');
+      formDataToSend.append('precioAdulto', tour.precioAdulto != null ? tour.precioAdulto.toString() : '0');
+      formDataToSend.append('precioNino', tour.precioNino != null ? tour.precioNino.toString() : '0');
+      formDataToSend.append('fechaViaje', formatDate(tour.fechaViaje));
+      formDataToSend.append('meta', tour.meta != null ? tour.meta.toString() : '0');
+      formDataToSend.append('acc', tour.acc || '');
+      formDataToSend.append('guidaLocale', tour.guidaLocale != null ? tour.guidaLocale.toString() : '');
+      formDataToSend.append('coordinatore', tour.coordinatore != null ? tour.coordinatore.toString() : '');
+      formDataToSend.append('transporte', tour.transporte != null ? tour.transporte.toString() : '');
+      formDataToSend.append('hotel', tour.hotel != null ? tour.hotel.toString() : '');
+      formDataToSend.append('notas', sanitizeEditorHtml(tour.notas));
+      formDataToSend.append('notasCoordinador', sanitizeEditorHtml(tour.notasCoordinador));
+      formDataToSend.append('descripcion', tour.descripcion || '');
+      formDataToSend.append('documentoViaggioExisting', JSON.stringify(updatedFiles));
+
+      const response = await fetch(`/api/tour-aereo/${tourId}`, {
+        method: 'PUT',
+        body: formDataToSend,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTour(data.tour);
+        setMessage({
+          type: 'success',
+          text: 'File eliminato correttamente'
+        });
+        setTimeout(() => setMessage(null), 3000);
+      } else {
+        setMessage({
+          type: 'error',
+          text: 'Errore durante l\'eliminazione del file'
+        });
+        setTimeout(() => setMessage(null), 4000);
+      }
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      setMessage({
+        type: 'error',
+        text: 'Errore durante l\'eliminazione del file'
+      });
+      setTimeout(() => setMessage(null), 4000);
     }
   }, [tourId, tour]);
 
@@ -2152,40 +2221,36 @@ export default function VentaTourAereoPage() {
             )}
 
             <div className="bg-sky-50 dark:bg-sky-900/20 p-3 rounded-lg">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <div className="flex items-center gap-2">
-                  <Icon icon="mdi:file-document" width="20" height="20" style={{ color: '#0284c7' }} />
-                  <span className="text-xs font-medium text-sky-700 dark:text-sky-300">Documento Viaggio</span>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 flex-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsDocumentoViaggioModalOpen(true)}
+                    className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                  >
+                    <Icon icon="mdi:file-document" width="20" height="20" style={{ color: '#0284c7' }} />
+                    <span className="text-xs font-medium text-sky-700 dark:text-sky-300">Documento Viaggio</span>
+                    {Array.isArray(tour.documentoViaggio) && tour.documentoViaggio.length > 0 && (
+                      <span className="text-xs font-semibold text-white bg-sky-600 px-1.5 py-0.5 rounded">
+                        {tour.documentoViaggio.length}/5
+                      </span>
+                    )}
+                  </button>
                 </div>
                 <button
                   type="button"
                   onClick={() => documentoViaggioInputRef.current?.click()}
-                  disabled={isUploadingDocumentoViaggio}
+                  disabled={isUploadingDocumentoViaggio || (Array.isArray(tour.documentoViaggio) && tour.documentoViaggio.length >= 5)}
                   className="px-2 py-1 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  {tour.documentoViaggio
-                    ? (isUploadingDocumentoViaggio ? 'Aggiornando...' : 'Aggiorna')
-                    : (isUploadingDocumentoViaggio ? 'Caricando...' : 'Carica')}
+                  {isUploadingDocumentoViaggio ? 'Caricando...' : 'Aggiungi'}
                 </button>
               </div>
-              {tour.documentoViaggio ? (
-                <a
-                  href={tour.documentoViaggio}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm font-medium text-sky-700 dark:text-sky-200 underline break-words"
-                >
-                  {tour.documentoViaggioName || 'Scarica documento'}
-                </a>
-              ) : (
-                <p className="text-sm text-sky-700 dark:text-sky-200">
-                  Nessun documento caricato
-                </p>
-              )}
               <input
                 ref={documentoViaggioInputRef}
                 type="file"
                 accept=".pdf,image/*"
+                multiple
                 className="hidden"
                 onChange={handleDocumentoViaggioUpload}
               />
@@ -2240,8 +2305,7 @@ export default function VentaTourAereoPage() {
                       </div>
                     ) : (
                       (() => {
-                        const sanitized = sanitizeEditorHtml(tour.notas);
-                        if (!sanitized) {
+                        if (!tour.notas) {
                           return (
                             <span className="text-sm text-slate-400 italic">
                               Doppio click per aggiungere note...
@@ -2250,14 +2314,23 @@ export default function VentaTourAereoPage() {
                         }
 
                         const plain = extractPlainText(tour.notas);
-                        const content = expandedNotas.tour ? sanitized : getNotePreview(tour.notas);
+                        const content = expandedNotas.tour 
+                          ? sanitizeEditorHtml(tour.notas) 
+                          : getNotePreview(tour.notas);
+
+                        // Solo usar dangerouslySetInnerHTML si hay HTML real
+                        const hasHtml = /<[^>]+>/.test(tour.notas);
 
                         return (
                           <div className="leading-relaxed space-y-1">
-                            {expandedNotas.tour ? (
-                              <div dangerouslySetInnerHTML={{ __html: sanitized }} />
+                            {expandedNotas.tour && hasHtml ? (
+                              <div 
+                                key={`tour-notas-${tour.id}-${tour.notas.length}`}
+                                dangerouslySetInnerHTML={{ __html: sanitizeEditorHtml(tour.notas) }} 
+                                suppressHydrationWarning
+                              />
                             ) : (
-                              <>{content}</>
+                              <div>{content}</div>
                             )}
                           </div>
                         );
@@ -2324,8 +2397,7 @@ export default function VentaTourAereoPage() {
                       </div>
                     ) : (
                       (() => {
-                        const sanitized = sanitizeEditorHtml(tour.notasCoordinador);
-                        if (!sanitized) {
+                        if (!tour.notasCoordinador) {
                           return (
                             <span className="text-sm text-amber-400 italic">
                               Doppio click per aggiungere note...
@@ -2334,15 +2406,22 @@ export default function VentaTourAereoPage() {
                         }
 
                         const content = expandedNotas.coordinador
-                          ? sanitized
+                          ? sanitizeEditorHtml(tour.notasCoordinador)
                           : getNotePreview(tour.notasCoordinador);
+
+                        // Solo usar dangerouslySetInnerHTML si hay HTML real
+                        const hasHtml = /<[^>]+>/.test(tour.notasCoordinador);
 
                         return (
                           <div className="leading-relaxed space-y-1">
-                            {expandedNotas.coordinador ? (
-                              <div dangerouslySetInnerHTML={{ __html: sanitized }} />
+                            {expandedNotas.coordinador && hasHtml ? (
+                              <div 
+                                key={`coordinador-notas-${tour.id}-${tour.notasCoordinador.length}`}
+                                dangerouslySetInnerHTML={{ __html: sanitizeEditorHtml(tour.notasCoordinador) }} 
+                                suppressHydrationWarning
+                              />
                             ) : (
-                              <>{content}</>
+                              <div>{content}</div>
                             )}
                           </div>
                         );
@@ -3481,6 +3560,71 @@ export default function VentaTourAereoPage() {
         show={showCopyNotification}
         onHide={() => setShowCopyNotification(false)}
       />
+
+      {/* Modal de Documento Viaggio */}
+      <Modal
+        isOpen={isDocumentoViaggioModalOpen}
+        onClose={() => setIsDocumentoViaggioModalOpen(false)}
+        className="max-w-2xl mx-4"
+      >
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+              Documenti Viaggio
+            </h2>
+            <button
+              onClick={() => setIsDocumentoViaggioModalOpen(false)}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+            >
+              ✕
+            </button>
+          </div>
+          
+          {Array.isArray(tour?.documentoViaggio) && tour.documentoViaggio.length > 0 ? (
+            <div className="space-y-3">
+              {tour.documentoViaggio.map((doc, index) => (
+                <div 
+                  key={index} 
+                  className="flex items-center justify-between gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+                >
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <Icon icon="mdi:file-document" width="24" height="24" style={{ color: '#0284c7' }} />
+                    <a
+                      href={doc.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 text-sm font-medium text-sky-700 dark:text-sky-200 hover:text-sky-900 dark:hover:text-sky-100 underline truncate"
+                      title={doc.name || `Documento ${index + 1}`}
+                    >
+                      {doc.name || `Documento ${index + 1}`}
+                    </a>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteDocumentoViaggio(index)}
+                    className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/20 rounded transition-colors"
+                    title="Elimina file"
+                  >
+                    <TrashIcon className="w-5 h-5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <div className="flex justify-center mb-3">
+                <Icon icon="mdi:file-document-outline" width="48" height="48" style={{ color: '#9ca3af' }} />
+              </div>
+              <p className="text-gray-500 dark:text-gray-400">
+                Nessun documento caricato
+              </p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+                Massimo 5 file consentiti
+              </p>
+            </div>
+          )}
+        </div>
+      </Modal>
 
       {/* Modal visor de archivos */}
       {isMounted && isFileViewerOpen && viewingFiles && createPortal(

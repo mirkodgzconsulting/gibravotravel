@@ -9,7 +9,7 @@
     "build:production-force": "node scripts/build-with-migration.js",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "prisma generate && node scripts/post-install-production.js",
+    "postinstall": "echo 'Post-install: Prisma Client se genera durante el build'",
     "migrate-acc": "node scripts/migrate-acc-field.js",
     "dev:local": "node scripts/dev-local.js",
     "setup-local": "node scripts/setup-local-dev.js",

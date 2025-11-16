@@ -33,6 +33,7 @@ interface TourBus {
   notas: string | null;
   notasCoordinador: string | null;
   // Campos de costos
+  acc: string | null;
   bus: number | null;
   pasti: number | null;
   parking: number | null;

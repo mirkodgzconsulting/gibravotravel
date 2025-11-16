@@ -1,7 +1,8 @@
 "use client";
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { ApexOptions } from "apexcharts";
 import dynamic from "next/dynamic";
+import { useDashboardData } from '@/contexts/DashboardDataContext';
 
 const ReactApexChart = dynamic(() => import("react-apexcharts"), {
   ssr: false,
@@ -12,7 +13,6 @@ interface TotalFeeCardProps {
     startDate: Date;
     endDate: Date;
   };
-  userId?: string;
 }
 
 interface TotalFeeData {
@@ -22,102 +22,70 @@ interface TotalFeeData {
   total: number;
 }
 
-export default function TotalFeeCard({ dateRange, userId }: TotalFeeCardProps) {
+export default function TotalFeeCard({ dateRange }: TotalFeeCardProps) {
+  const dashboardData = useDashboardData();
   const [feeData, setFeeData] = useState<TotalFeeData>({ biglietteria: 0, toursBus: 0, tourAereo: 0, total: 0 });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
+  // Calcular fees usando datos del Context
   useEffect(() => {
-    const fetchTotalFeeData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+    if (dashboardData.loading) return;
 
-        const startDate = dateRange.startDate;
-        const endDate = dateRange.endDate;
+    const startDate = dateRange.startDate;
+    const endDate = dateRange.endDate;
 
-        // Fetch BIGLIETTERIA data
-        const userIdParam = userId ? `?userId=${userId}` : '';
-        const biglietteriaResponse = await fetch(`/api/biglietteria${userIdParam}`);
-        const biglietteriaData = await biglietteriaResponse.json();
-        const biglietteriaRecords = biglietteriaData.records || [];
+    const { biglietteria, tourBus, tourAereo } = dashboardData;
 
-        // Fetch TOUR BUS data
-        const tourBusResponse = await fetch(`/api/tour-bus${userIdParam}`);
-        const tourBusData = await tourBusResponse.json();
-        const tourBusTours = tourBusData.tours || [];
+    // Calculate BIGLIETTERIA fees
+    const biglietteriaFee = biglietteria
+      .filter((record: any) => {
+        const recordDate = new Date(record.data);
+        return recordDate >= startDate && recordDate <= endDate;
+      })
+      .reduce((sum: number, record: any) => sum + (record.feeAgv || 0), 0);
 
-        // Fetch TOUR AEREO data
-        const tourAereoResponse = await fetch(`/api/tour-aereo${userIdParam}`);
-        const tourAereoData = await tourAereoResponse.json();
-        const tourAereoTours = tourAereoData.tours || [];
+    // Calculate TOUR BUS fees
+    const toursBusFee = tourBus
+      .filter((tour: any) => {
+        const tourFechaViaje = new Date(tour.fechaViaje);
+        return tourFechaViaje >= startDate && tourFechaViaje <= endDate;
+      })
+      .reduce((sum: number, tour: any) => {
+        const spesaTotale = (tour.bus || 0) + (tour.pasti || 0) + (tour.parking || 0) + 
+                           (tour.coordinatore1 || 0) + (tour.coordinatore2 || 0) + 
+                           (tour.ztl || 0) + (tour.hotel || 0) + (tour.polizza || 0) + (tour.tkt || 0);
+        const ricavoTotale = tour.ventasTourBus?.reduce((ventaSum: number, venta: any) => {
+          return ventaSum + (venta.acconto || 0);
+        }, 0) || 0;
+        return sum + (ricavoTotale - spesaTotale);
+      }, 0);
 
-        let biglietteriaFee = 0;
-        let toursBusFee = 0;
-        let tourAereoFee = 0;
+    // Calculate TOUR AEREO fees
+    const tourAereoFee = tourAereo
+      .filter((tour: any) => {
+        const tourFechaViaje = new Date(tour.fechaViaje);
+        return tourFechaViaje >= startDate && tourFechaViaje <= endDate;
+      })
+      .reduce((sum: number, tour: any) => {
+        if (tour.ventas?.length > 0) {
+          return sum + tour.ventas.reduce((ventaSum: number, venta: any) => {
+            const costosTotales = (venta.transfer || 0) + (tour.guidaLocale || 0) + 
+                                (tour.coordinatore || 0) + (tour.transporte || 0) + (venta.hotel || 0);
+            const fee = (venta.venduto || 0) - costosTotales;
+            return ventaSum + fee;
+          }, 0);
+        }
+        return sum;
+      }, 0);
 
-        // Calculate BIGLIETTERIA fees
-        const filteredBiglietteriaRecords = biglietteriaRecords.filter((record: any) => {
-          const recordDate = new Date(record.data);
-          return recordDate >= startDate && recordDate <= endDate;
-        });
+    const total = biglietteriaFee + toursBusFee + tourAereoFee;
 
-        filteredBiglietteriaRecords.forEach((record: any) => {
-          biglietteriaFee += record.feeAgv || 0;
-        });
-
-        // Calculate TOUR BUS fees - Same logic as other charts
-        tourBusTours.forEach((tour: any) => {
-          const tourFechaViaje = new Date(tour.fechaViaje);
-          if (tourFechaViaje >= startDate && tourFechaViaje <= endDate) {
-            // Calcular costos totales del tour (una sola vez por tour)
-            const spesaTotale = (tour.bus || 0) + (tour.pasti || 0) + (tour.parking || 0) + 
-                               (tour.coordinatore1 || 0) + (tour.coordinatore2 || 0) + 
-                               (tour.ztl || 0) + (tour.hotel || 0) + (tour.polizza || 0) + (tour.tkt || 0);
-            
-            // Calcular ingresos totales de todas las ventas del tour
-            const ricavoTotale = tour.ventasTourBus?.reduce((ventaSum: number, venta: any) => {
-              return ventaSum + (venta.acconto || 0);
-            }, 0) || 0;
-            
-            // FEE/AGV = Ingresos totales - Costos totales (por tour)
-            toursBusFee += (ricavoTotale - spesaTotale);
-          }
-        });
-
-        // Calculate TOUR AEREO fees - Same logic as other charts
-        tourAereoTours.forEach((tour: any) => {
-          const tourFechaViaje = new Date(tour.fechaViaje);
-          if (tourFechaViaje >= startDate && tourFechaViaje <= endDate) {
-            if (tour.ventas?.length > 0) {
-              tourAereoFee += tour.ventas.reduce((ventaSum: number, venta: any) => {
-                const costosTotales = (venta.transfer || 0) + (tour.guidaLocale || 0) + 
-                                    (tour.coordinatore || 0) + (tour.transporte || 0) + (venta.hotel || 0);
-                const fee = (venta.venduto || 0) - costosTotales;
-                return ventaSum + fee;
-              }, 0);
-            }
-          }
-        });
-
-        const total = biglietteriaFee + toursBusFee + tourAereoFee;
-
-        setFeeData({ 
-          biglietteria: biglietteriaFee, 
-          toursBus: toursBusFee, 
-          tourAereo: tourAereoFee, 
-          total 
-        });
-      } catch (error) {
-        console.error('Error fetching total fee data:', error);
-        setError('Error al cargar datos de fees');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTotalFeeData();
-  }, [dateRange, userId]);
+    setFeeData({ 
+      biglietteria: biglietteriaFee, 
+      toursBus: toursBusFee, 
+      tourAereo: tourAereoFee, 
+      total 
+    });
+  }, [dateRange, dashboardData]);
 
   const chartOptions: ApexOptions = useMemo(() => ({
     chart: {
@@ -150,7 +118,7 @@ export default function TotalFeeCard({ dateRange, userId }: TotalFeeCardProps) {
     labels: ['BIGLIETTERIA', 'TOURS BUS', 'TOUR AEREO'],
   }), [feeData]);
 
-  if (loading) {
+  if (dashboardData.loading) {
     return (
       <div className="rounded-2xl border border-gray-200 bg-white px-6 py-6 dark:border-gray-800 dark:bg-white/[0.03]">
         {/* Header skeleton */}
@@ -172,11 +140,11 @@ export default function TotalFeeCard({ dateRange, userId }: TotalFeeCardProps) {
     );
   }
 
-  if (error) {
+  if (dashboardData.error) {
     return (
       <div className="rounded-2xl border border-gray-200 bg-white px-6 py-6 dark:border-gray-800 dark:bg-white/[0.03]">
         <div className="text-center text-red-500">
-          <p>{error}</p>
+          <p>{dashboardData.error}</p>
         </div>
       </div>
     );

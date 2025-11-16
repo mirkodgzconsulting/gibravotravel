@@ -5,6 +5,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { useUser } from '@clerk/nextjs';
 import { ApexOptions } from "apexcharts";
 import dynamic from "next/dynamic";
+import { DashboardDataProvider, useDashboardData } from '@/contexts/DashboardDataContext';
 import BiglietteriaUserSalesChart from '@/components/dashboard/BiglietteriaUserSalesChart';
 import TourAereoUserSalesChart from '@/components/dashboard/TourAereoUserSalesChart';
 import TourBusUserSalesChart from '@/components/dashboard/TourBusUserSalesChart';
@@ -52,13 +53,12 @@ const CHART_CONFIG = {
   BORDER_RADIUS: 5
 } as const;
 
-export default function DashboardViajesPage() {
+function DashboardViajesContent() {
   const { userRole, isLoading: roleLoading, isUser, isAdmin, isTI } = useUserRole();
-  const { user: clerkUser } = useUser();
+  const dashboardData = useDashboardData();
   const [monthlyData, setMonthlyData] = useState<MonthlyFeeData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   
   // Date range filters for first 6 charts + percentage chart
   const currentDate = new Date();
@@ -79,31 +79,6 @@ export default function DashboardViajesPage() {
     startDate: new Date(startDate),
     endDate: new Date(endDate + 'T23:59:59')
   }), [startDate, endDate]);
-
-  // Obtener el ID del usuario actual para filtrado
-  useEffect(() => {
-    // Para USER, necesitamos obtener el user.id de la base de datos
-    const fetchUserId = async () => {
-      if (clerkUser && isUser) {
-        try {
-          const response = await fetch(`/api/user/role?clerkId=${clerkUser.id}`);
-          if (response.ok) {
-            const data = await response.json();
-            // Necesitamos obtener el user.id, no solo el rol
-            const userResponse = await fetch(`/api/user/profile`);
-            if (userResponse.ok) {
-              const userData = await userResponse.json();
-              setCurrentUserId(userData.id || userData.clerkId);
-            }
-          }
-        } catch (error) {
-          console.error('Error fetching user ID:', error);
-        }
-      }
-    };
-    
-    fetchUserId();
-  }, [clerkUser, isUser]);
 
   // Memoized year options
   const yearOptions = useMemo(() => {
@@ -161,64 +136,57 @@ export default function DashboardViajesPage() {
     };
   }, [monthlyData]);
 
-  // Optimized data fetching with parallel requests
-  const fetchMonthlyFeeData = useCallback(async () => {
+  // OPTIMIZADO: Usar datos del Context en lugar de hacer 36 consultas
+  const fetchMonthlyFeeData = useCallback(() => {
+    if (dashboardData.loading) {
+      setLoading(true);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
 
-      const monthlyStats: MonthlyFeeData[] = [];
+      // Usar datos del Context (ya cargados una sola vez)
+      const { biglietteria, tourBus, tourAereo } = dashboardData;
 
-      // Process each month in parallel
-      const monthPromises = Array.from({ length: 12 }, async (_, month) => {
+      // Calcular fees por mes filtrando en el frontend
+      const monthlyStats: MonthlyFeeData[] = Array.from({ length: 12 }, (_, month) => {
         const startDate = new Date(selectedYear, month, 1);
         const endDate = new Date(selectedYear, month + 1, 0, 23, 59, 59);
         const monthName = startDate.toLocaleDateString('es-ES', { month: 'short' });
-        
-        const dateRange = {
-          fechaDesde: startDate.toISOString(),
-          fechaHasta: endDate.toISOString()
-        };
 
-        try {
-          // Construir URLs con filtro de usuario si es necesario
-          const userIdParam = isUser && currentUserId ? `&userId=${currentUserId}` : '';
-          
-          // Parallel API calls
-          const [biglietteriaRes, toursBusRes, toursAereoRes] = await Promise.all([
-            fetch(`/api/biglietteria?fechaDesde=${dateRange.fechaDesde}&fechaHasta=${dateRange.fechaHasta}${userIdParam}`),
-            fetch(`/api/tour-bus?fechaDesde=${dateRange.fechaDesde}&fechaHasta=${dateRange.fechaHasta}${userIdParam}`),
-            fetch(`/api/tour-aereo?fechaDesde=${dateRange.fechaDesde}&fechaHasta=${dateRange.fechaHasta}${userIdParam}`)
-          ]);
+        // Filtrar biglietteria por mes
+        const biglietteriaFee = biglietteria
+          .filter((record: any) => {
+            const recordDate = new Date(record.data);
+            return recordDate >= startDate && recordDate <= endDate;
+          })
+          .reduce((sum: number, record: any) => sum + (record.feeAgv || 0), 0);
 
-          // Process responses
-          const [biglietteriaData, toursBusData, toursAereoData] = await Promise.all([
-            biglietteriaRes.ok ? biglietteriaRes.json() : { records: [] },
-            toursBusRes.ok ? toursBusRes.json() : { tours: [] },
-            toursAereoRes.ok ? toursAereoRes.json() : { tours: [] }
-          ]);
-
-          // Calculate fees
-          const biglietteriaFee = (biglietteriaData.records || []).reduce(
-            (sum: number, record: any) => sum + (record.feeAgv || 0), 0
-          );
-
-          const toursBusFee = (toursBusData.tours || []).reduce((sum: number, tour: any) => {
-            // Calcular costos totales del tour (una sola vez por tour)
+        // Filtrar tours bus por mes
+        const toursBusFee = tourBus
+          .filter((tour: any) => {
+            const tourDate = new Date(tour.fechaViaje);
+            return tourDate >= startDate && tourDate <= endDate;
+          })
+          .reduce((sum: number, tour: any) => {
             const spesaTotale = (tour.bus || 0) + (tour.pasti || 0) + (tour.parking || 0) + 
                                (tour.coordinatore1 || 0) + (tour.coordinatore2 || 0) + 
                                (tour.ztl || 0) + (tour.hotel || 0) + (tour.polizza || 0) + (tour.tkt || 0);
-            
-            // Calcular ingresos totales de todas las ventas del tour
             const ricavoTotale = tour.ventasTourBus?.reduce((ventaSum: number, venta: any) => {
               return ventaSum + (venta.acconto || 0);
             }, 0) || 0;
-            
-            // FEE/AGV = Ingresos totales - Costos totales (por tour)
             return sum + (ricavoTotale - spesaTotale);
           }, 0);
 
-          const toursAereoFee = (toursAereoData.tours || []).reduce((sum: number, tour: any) => {
+        // Filtrar tours aereo por mes
+        const toursAereoFee = tourAereo
+          .filter((tour: any) => {
+            const tourDate = new Date(tour.fechaViaje);
+            return tourDate >= startDate && tourDate <= endDate;
+          })
+          .reduce((sum: number, tour: any) => {
             if (tour.ventas?.length > 0) {
               return sum + tour.ventas.reduce((ventaSum: number, venta: any) => {
                 const costosTotales = (venta.transfer || 0) + (tour.guidaLocale || 0) + 
@@ -230,41 +198,32 @@ export default function DashboardViajesPage() {
             return sum;
           }, 0);
 
-          const total = biglietteriaFee + toursBusFee + toursAereoFee;
+        const total = biglietteriaFee + toursBusFee + toursAereoFee;
 
-          return {
-            month: monthName,
-            biglietteria: biglietteriaFee,
-            toursBus: toursBusFee,
-            toursAereo: toursAereoFee,
-            total
-          };
-        } catch (error) {
-          console.error(`Error fetching data for month ${month}:`, error);
-          return {
-            month: monthName,
-            biglietteria: 0,
-            toursBus: 0,
-            toursAereo: 0,
-            total: 0
-          };
-        }
+        return {
+          month: monthName,
+          biglietteria: biglietteriaFee,
+          toursBus: toursBusFee,
+          toursAereo: toursAereoFee,
+          total
+        };
       });
 
-      const monthlyResults = await Promise.all(monthPromises);
-      setMonthlyData(monthlyResults);
+      setMonthlyData(monthlyStats);
+      setLoading(false);
     } catch (error) {
-      console.error('Error fetching monthly fee data:', error);
-      setError('Error al cargar los datos de FEE/AGV');
-    } finally {
+      console.error('Error calculating monthly fee data:', error);
+      setError('Error al calcular los datos de FEE/AGV');
       setLoading(false);
     }
-  }, [selectedYear, isUser, currentUserId]);
+  }, [selectedYear, dashboardData]);
 
-  // Effect to fetch data when year changes
+  // Effect to recalculate data when year changes or dashboard data loads
   useEffect(() => {
-    fetchMonthlyFeeData();
-  }, [fetchMonthlyFeeData]);
+    if (!dashboardData.loading) {
+      fetchMonthlyFeeData();
+    }
+  }, [fetchMonthlyFeeData, dashboardData.loading]);
 
   // Memoized chart options
   const chartOptions: ApexOptions = useMemo(() => ({
@@ -396,15 +355,12 @@ export default function DashboardViajesPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <ToursFeeCard 
               dateRange={dateRange}
-              userId={isUser ? currentUserId || undefined : undefined}
             />
             <BiglietteriaFeeCard 
               dateRange={dateRange}
-              userId={isUser ? currentUserId || undefined : undefined}
             />
             <TotalFeeCard 
               dateRange={dateRange}
-              userId={isUser ? currentUserId || undefined : undefined}
             />
           </div>
         </div>
@@ -421,15 +377,12 @@ export default function DashboardViajesPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <BiglietteriaUserSalesChart 
               dateRange={dateRange}
-              userId={isUser ? currentUserId || undefined : undefined}
             />
             <TourAereoUserSalesChart 
               dateRange={dateRange}
-              userId={isUser ? currentUserId || undefined : undefined}
             />
             <TourBusUserSalesChart 
               dateRange={dateRange}
-              userId={isUser ? currentUserId || undefined : undefined}
             />
           </div>
         </div>
@@ -438,7 +391,6 @@ export default function DashboardViajesPage() {
         <div className="mb-8">
           <AgentSalesPercentageChart 
             dateRange={dateRange}
-            userId={isUser ? currentUserId || undefined : undefined}
           />
         </div>
 
@@ -464,7 +416,6 @@ export default function DashboardViajesPage() {
           </div>
           <AgentRankingChart 
             selectedYear={selectedYear}
-            userId={isUser ? currentUserId || undefined : undefined}
           />
         </div>
 
@@ -637,5 +588,37 @@ export default function DashboardViajesPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Wrapper component que provee el Context
+export default function DashboardViajesPage() {
+  const { user: clerkUser } = useUser();
+  const { isUser } = useUserRole();
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // Obtener el ID del usuario actual para filtrado
+  useEffect(() => {
+    const fetchUserId = async () => {
+      if (clerkUser && isUser) {
+        try {
+          const userResponse = await fetch(`/api/user/profile`);
+          if (userResponse.ok) {
+            const userData = await userResponse.json();
+            setCurrentUserId(userData.id || userData.clerkId);
+          }
+        } catch (error) {
+          console.error('Error fetching user ID:', error);
+        }
+      }
+    };
+    
+    fetchUserId();
+  }, [clerkUser, isUser]);
+
+  return (
+    <DashboardDataProvider userId={isUser ? currentUserId || undefined : undefined}>
+      <DashboardViajesContent />
+    </DashboardDataProvider>
   );
 }

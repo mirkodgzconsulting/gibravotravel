@@ -274,15 +274,31 @@ export async function GET(request: NextRequest) {
     const normalizedTours = tours.map(tour => {
       const tourAny = tour as any;
       if (tourAny.documentoViaggio) {
+        // Si es string (formato legacy), convertir a array
         if (typeof tourAny.documentoViaggio === 'string') {
-          // Formato legacy: convertir a array
-          tourAny.documentoViaggio = [{
-            url: tourAny.documentoViaggio,
-            name: tourAny.documentoViaggioName || 'documento'
-          }];
+          try {
+            // Intentar parsear como JSON primero
+            const parsed = JSON.parse(tourAny.documentoViaggio);
+            if (Array.isArray(parsed)) {
+              tourAny.documentoViaggio = parsed;
+            } else {
+              // Si es un objeto JSON pero no array, convertirlo a array
+              tourAny.documentoViaggio = [parsed];
+            }
+          } catch (e) {
+            // Si no es JSON válido, es una URL string (formato legacy)
+            tourAny.documentoViaggio = [{
+              url: tourAny.documentoViaggio,
+              name: tourAny.documentoViaggioName || 'documento'
+            }];
+          }
           delete tourAny.documentoViaggioName;
+        } else if (Array.isArray(tourAny.documentoViaggio)) {
+          // Ya es array, dejarlo como está
+        } else if (typeof tourAny.documentoViaggio === 'object') {
+          // Si es objeto, convertirlo a array
+          tourAny.documentoViaggio = [tourAny.documentoViaggio];
         }
-        // Si ya es array, dejarlo como está
       }
       return tourAny;
     });

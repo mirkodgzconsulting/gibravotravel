@@ -107,9 +107,23 @@ export async function GET(request: NextRequest) {
         ],
       });
     } catch (prismaError: any) {
+      // Log detallado del error para debugging
+      console.error('❌ Error en Prisma tour-aereo:', {
+        message: prismaError?.message,
+        code: prismaError?.code,
+        meta: prismaError?.meta,
+        stack: prismaError?.stack?.substring(0, 500)
+      });
+      
       // Si falla por campos faltantes, ejecutar migración usando el mismo patrón que migrate-production-fast.js
-      if (prismaError?.message?.includes('Unknown field') || prismaError?.message?.includes('documentoViaggioName') || prismaError?.code === 'P2022') {
-        console.log('⚠️ Campo faltante detectado, ejecutando migración rápida...');
+      const isSchemaError = prismaError?.message?.includes('Unknown field') || 
+                           prismaError?.message?.includes('documentoViaggioName') || 
+                           prismaError?.code === 'P2022' ||
+                           prismaError?.message?.includes('does not exist') ||
+                           prismaError?.message?.includes('column');
+      
+      if (isSchemaError) {
+        console.log('⚠️ Error de schema detectado, ejecutando migración rápida...');
         
         try {
           // Usar la misma lógica que migrate-production-fast.js
@@ -134,15 +148,18 @@ export async function GET(request: NextRequest) {
               const result = await Promise.race([checkPromise, timeoutPromise]) as any[];
               
               if (Array.isArray(result) && result.length > 0) {
+                console.log(`✓ Columna ${tableName}.${columnName} ya existe`);
                 return false; // Ya existe
               }
 
               // Agregar columna con timeout
+              console.log(`📦 Agregando columna ${tableName}.${columnName}...`);
               const addPromise = prisma.$executeRawUnsafe(
                 `ALTER TABLE "${tableName}" ADD COLUMN IF NOT EXISTS "${columnName}" ${columnType}`
               );
               
               await Promise.race([addPromise, timeoutPromise]);
+              console.log(`✅ Columna ${tableName}.${columnName} agregada exitosamente`);
               return true; // Se agregó
             } catch (error: any) {
               if (error.message === 'Timeout') {
@@ -161,6 +178,7 @@ export async function GET(request: NextRequest) {
             { table: 'tour_aereo', column: 'documentoViaggio_old', type: 'TEXT' },
           ];
           
+          console.log('🔄 Ejecutando migraciones...');
           for (const migration of migrations) {
             await quickAddColumn(migration.table, migration.column, migration.type);
           }
@@ -168,7 +186,7 @@ export async function GET(request: NextRequest) {
           console.log('✅ Migración rápida completada, reintentando consulta...');
           
           // Esperar un momento para que la transacción se complete
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise(resolve => setTimeout(resolve, 1000));
           
           // Reintentar con Prisma después de agregar las columnas
           tours = await prisma.tourAereo.findMany({
@@ -214,11 +232,18 @@ export async function GET(request: NextRequest) {
               },
             ],
           });
+          console.log('✅ Consulta exitosa después de migración');
         } catch (migrationError: any) {
-          console.log('⚠️ Error en migración lazy, lanzando error original:', migrationError?.message);
-          throw prismaError; // Lanzar el error original
+          console.error('❌ Error en migración lazy:', {
+            message: migrationError?.message,
+            code: migrationError?.code,
+            stack: migrationError?.stack?.substring(0, 500)
+          });
+          // Lanzar el error de migración para que se capture en el catch general
+          throw migrationError;
         }
       } else {
+        // Si no es un error de schema, lanzar el error original
         throw prismaError;
       }
     }
@@ -242,23 +267,25 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ tours: normalizedTours });
   } catch (error: any) {
-    console.error('Error fetching tours aereo:', error);
-    console.error('Error details:', {
+    console.error('❌ Error fetching tours aereo:', error);
+    console.error('❌ Error details:', {
       message: error?.message,
       code: error?.code,
       meta: error?.meta,
-      stack: error?.stack
+      stack: error?.stack?.substring(0, 1000),
+      name: error?.name
     });
     
     // Si es un error de Prisma relacionado con tipos de datos, intentar manejar
-    if (error?.code === 'P2022' || error?.message?.includes('column') || error?.message?.includes('does not exist')) {
+    if (error?.code === 'P2022' || error?.message?.includes('column') || error?.message?.includes('does not exist') || error?.message?.includes('Unknown field')) {
       console.error('⚠️ Posible problema de schema: campo faltante o tipo incorrecto');
+      console.error('⚠️ La migración lazy debería haber manejado esto. Revisar logs anteriores.');
     }
     
     return NextResponse.json(
       { 
         error: 'Error interno del servidor',
-        details: process.env.NODE_ENV === 'development' ? error?.message : undefined
+        details: process.env.NODE_ENV === 'development' ? error?.message : 'Revisar logs del servidor para más detalles'
       },
       { status: 500 }
     );

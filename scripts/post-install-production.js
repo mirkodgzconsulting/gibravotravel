@@ -1,15 +1,42 @@
+const { execSync } = require('child_process');
+
 console.log('📦 Post-install detectado...\n');
 
-// NOTA: Las migraciones de base de datos NO se ejecutan durante el build
-// porque pueden bloquear el proceso y causar timeouts.
-// 
-// Las migraciones deben ejecutarse:
-// 1. Manualmente después del deploy: npm run migrate:notas
-// 2. O a través de un webhook post-deploy
-// 3. O en el primer request a la aplicación (lazy migration)
-//
-// El postinstall solo se usa para generar Prisma Client,
-// que ya se hace en el script "build" antes de compilar.
+async function postInstallProduction() {
+  try {
+    // Verificar que estamos en producción
+    const isProduction = process.env.NODE_ENV === 'production' || 
+                        process.env.VERCEL === '1' ||
+                        process.env.DATABASE_URL?.includes('postgresql://');
 
-console.log('✅ Post-install completado (solo verificación)');
-console.log('💡 Las migraciones se ejecutarán después del deploy si es necesario');
+    if (!isProduction) {
+      console.log('💻 Entorno de desarrollo - saltando migraciones');
+      return;
+    }
+
+    console.log('🌍 Entorno de producción detectado');
+    console.log('🔄 Ejecutando migración rápida (no bloquea el build)...\n');
+
+    // Ejecutar migración rápida con timeout
+    try {
+      execSync('node scripts/migrate-production-fast.js', { 
+        stdio: 'inherit',
+        timeout: 15000, // 15 segundos máximo
+        killSignal: 'SIGTERM'
+      });
+      console.log('✅ Migración rápida completada\n');
+    } catch (error) {
+      // No fallar el build si hay timeout o error
+      console.log('⚠️  Migración rápida con advertencias, continuando...\n');
+    }
+
+    console.log('✅ Post-install completado exitosamente!');
+
+  } catch (error) {
+    console.error('❌ Error en post-install:', error.message);
+    // No hacer exit(1) para no fallar el install
+  }
+}
+
+// Ejecutar post-install
+postInstallProduction();

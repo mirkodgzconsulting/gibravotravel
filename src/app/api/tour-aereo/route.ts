@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
         stack: prismaError?.stack?.substring(0, 500)
       });
       
-      // Si falla por campos faltantes, ejecutar migración usando el mismo patrón que migrate-production-fast.js
+      // Si falla por campos faltantes, usar SQL directo como fallback
       const isSchemaError = prismaError?.message?.includes('Unknown field') || 
                            prismaError?.message?.includes('documentoViaggioName') || 
                            prismaError?.code === 'P2022' ||
@@ -123,86 +123,97 @@ export async function GET(request: NextRequest) {
                            prismaError?.message?.includes('column');
       
       if (isSchemaError) {
-        console.log('⚠️ Error de schema detectado, ejecutando migración rápida...');
+        console.log('⚠️ Error de schema detectado, usando SQL directo como fallback...');
         
         try {
-          // Usar la misma lógica que migrate-production-fast.js
-          const QUERY_TIMEOUT = 5000; // 5 segundos
+          // Primero intentar agregar las columnas si no existen
+          try {
+            await prisma.$executeRawUnsafe(`
+              ALTER TABLE "tour_aereo" 
+              ADD COLUMN IF NOT EXISTS "documentoViaggioName" TEXT,
+              ADD COLUMN IF NOT EXISTS "documentoViaggioName_old" TEXT,
+              ADD COLUMN IF NOT EXISTS "documentoViaggio_old" TEXT
+            `);
+            console.log('✅ Columnas verificadas/agregadas');
+          } catch (alterError: any) {
+            console.log('⚠️ Error agregando columnas (puede que ya existan):', alterError?.message);
+          }
           
-          async function quickAddColumn(tableName: string, columnName: string, columnType: string = 'TEXT'): Promise<boolean> {
+          // Construir WHERE clause para SQL directo
+          let whereClause = 'WHERE t."isActive" = true';
+          const params: any[] = [];
+          let paramIndex = 1;
+          
+          if (fechaDesde && fechaHasta) {
+            whereClause += ` AND t."fechaViaje" >= $${paramIndex} AND t."fechaViaje" <= $${paramIndex + 1}`;
+            params.push(new Date(fechaDesde), new Date(fechaHasta));
+            paramIndex += 2;
+          }
+          
+          if (userOnly && user.role === 'USER') {
+            whereClause += ` AND t."createdBy" = $${paramIndex}`;
+            params.push(userId);
+            paramIndex++;
+          }
+          
+          // Usar SQL directo que maneja columnas que pueden no existir
+          const sqlQuery = `
+            SELECT 
+              t."id",
+              t."titulo",
+              t."precioAdulto",
+              t."precioNino",
+              t."fechaViaje",
+              t."fechaFin",
+              t."meta",
+              t."acc",
+              t."guidaLocale",
+              t."coordinatore",
+              t."transporte",
+              t."hotel",
+              COALESCE(t."notas", NULL) as "notas",
+              COALESCE(t."notasCoordinador", NULL) as "notasCoordinador",
+              t."feeAgv",
+              t."coverImage",
+              COALESCE(t."coverImageName", NULL) as "coverImageName",
+              t."pdfFile",
+              COALESCE(t."pdfFileName", NULL) as "pdfFileName",
+              t."documentoViaggio",
+              COALESCE(t."documentoViaggioName", NULL) as "documentoViaggioName",
+              COALESCE(t."documentoViaggio_old", NULL) as "documentoViaggio_old",
+              COALESCE(t."documentoViaggioName_old", NULL) as "documentoViaggioName_old",
+              COALESCE(t."descripcion", NULL) as "descripcion",
+              t."isActive",
+              t."createdBy",
+              t."createdAt",
+              t."updatedAt",
+              json_build_object(
+                'firstName', u."firstName",
+                'lastName', u."lastName",
+                'email', u."email"
+              ) as creator
+            FROM "tour_aereo" t
+            LEFT JOIN "users" u ON t."createdBy" = u."clerkId"
+            ${whereClause}
+            ORDER BY t."fechaViaje" ASC NULLS LAST, t."createdAt" DESC
+          `;
+          
+          const rawTours = await prisma.$queryRawUnsafe(sqlQuery, ...params) as any[];
+          
+          // Cargar ventas por separado
+          const tourIds = rawTours.map((t: any) => t.id);
+          let ventasMap: any = {};
+          
+          if (tourIds.length > 0) {
             try {
-              // Verificar si existe con timeout corto
-              const checkPromise = prisma.$queryRawUnsafe(`
-                SELECT column_name 
-                FROM information_schema.columns 
-                WHERE table_schema = 'public'
-                AND table_name = '${tableName}'
-                AND column_name = '${columnName}'
-                LIMIT 1
-              `);
-              
-              const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Timeout')), QUERY_TIMEOUT)
-              );
-              
-              const result = await Promise.race([checkPromise, timeoutPromise]) as any[];
-              
-              if (Array.isArray(result) && result.length > 0) {
-                console.log(`✓ Columna ${tableName}.${columnName} ya existe`);
-                return false; // Ya existe
-              }
-
-              // Agregar columna con timeout
-              console.log(`📦 Agregando columna ${tableName}.${columnName}...`);
-              const addPromise = prisma.$executeRawUnsafe(
-                `ALTER TABLE "${tableName}" ADD COLUMN IF NOT EXISTS "${columnName}" ${columnType}`
-              );
-              
-              await Promise.race([addPromise, timeoutPromise]);
-              console.log(`✅ Columna ${tableName}.${columnName} agregada exitosamente`);
-              return true; // Se agregó
-            } catch (error: any) {
-              if (error.message === 'Timeout') {
-                console.log(`⏱️  Timeout en ${tableName}.${columnName}, continuando...`);
-              } else {
-                console.log(`⚠️  ${tableName}.${columnName}: ${error.message}`);
-              }
-              return false;
-            }
-          }
-          
-          // Agregar todas las columnas necesarias (mismo patrón que migrate-production-fast.js)
-          const migrations = [
-            { table: 'tour_aereo', column: 'documentoViaggioName', type: 'TEXT' },
-            { table: 'tour_aereo', column: 'documentoViaggioName_old', type: 'TEXT' },
-            { table: 'tour_aereo', column: 'documentoViaggio_old', type: 'TEXT' },
-          ];
-          
-          console.log('🔄 Ejecutando migraciones...');
-          for (const migration of migrations) {
-            await quickAddColumn(migration.table, migration.column, migration.type);
-          }
-          
-          console.log('✅ Migración rápida completada, reintentando consulta...');
-          
-          // Esperar un momento para que la transacción se complete
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          // Reintentar con Prisma después de agregar las columnas
-          tours = await prisma.tourAereo.findMany({
-            where: whereCondition,
-            include: {
-              creator: {
-                select: {
-                  firstName: true,
-                  lastName: true,
-                  email: true,
+              const ventas = await prisma.ventaTourAereo.findMany({
+                where: {
+                  tourAereoId: { in: tourIds },
+                  ...(userIdParam ? { createdBy: userIdParam } : {})
                 },
-              },
-              ventas: {
-                where: userIdParam ? { createdBy: userIdParam } : undefined,
                 select: {
                   id: true,
+                  tourAereoId: true,
                   venduto: true,
                   transfer: true,
                   hotel: true,
@@ -216,31 +227,33 @@ export async function GET(request: NextRequest) {
                     }
                   }
                 }
-              },
-              _count: {
-                select: {
-                  ventas: true,
-                },
-              },
-            },
-            orderBy: [
-              {
-                fechaViaje: 'asc',
-              },
-              {
-                createdAt: 'desc',
-              },
-            ],
+              });
+              
+              ventasMap = ventas.reduce((acc: any, venta: any) => {
+                if (!acc[venta.tourAereoId]) acc[venta.tourAereoId] = [];
+                acc[venta.tourAereoId].push(venta);
+                return acc;
+              }, {});
+            } catch (e) {
+              console.log('⚠️ Error cargando ventas:', e);
+            }
+          }
+          
+          tours = rawTours.map((tour: any) => ({
+            ...tour,
+            creator: tour.creator || { firstName: null, lastName: null, email: '' },
+            ventas: ventasMap[tour.id] || [],
+            _count: { ventas: ventasMap[tour.id]?.length || 0 }
+          }));
+          
+          console.log('✅ Consulta SQL directa exitosa');
+        } catch (sqlError: any) {
+          console.error('❌ Error en SQL directo:', {
+            message: sqlError?.message,
+            code: sqlError?.code,
+            stack: sqlError?.stack?.substring(0, 500)
           });
-          console.log('✅ Consulta exitosa después de migración');
-        } catch (migrationError: any) {
-          console.error('❌ Error en migración lazy:', {
-            message: migrationError?.message,
-            code: migrationError?.code,
-            stack: migrationError?.stack?.substring(0, 500)
-          });
-          // Lanzar el error de migración para que se capture en el catch general
-          throw migrationError;
+          throw sqlError;
         }
       } else {
         // Si no es un error de schema, lanzar el error original

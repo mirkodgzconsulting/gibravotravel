@@ -139,9 +139,14 @@ export async function GET(request: NextRequest) {
           }
         }
       },
-      orderBy: {
-        createdAt: 'desc'
-      }
+      orderBy: [
+        {
+          fechaViaje: 'asc',
+        },
+        {
+          createdAt: 'desc',
+        },
+      ],
     });
 
     const res = NextResponse.json({ tours });

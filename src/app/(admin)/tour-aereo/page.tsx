@@ -99,6 +99,23 @@ export default function TourAereoPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingTour, setEditingTour] = useState<TourAereo | null>(null);
 
+  // Función para ordenar tours por fecha de inicio (más próximo primero - ascendente)
+  const sortToursByFechaViaje = (toursToSort: TourAereo[]): TourAereo[] => {
+    return [...toursToSort].sort((a, b) => {
+      // Si ambos tienen fecha, ordenar por fecha ascendente (más próximo primero)
+      if (a.fechaViaje && b.fechaViaje) {
+        const dateA = new Date(a.fechaViaje).getTime();
+        const dateB = new Date(b.fechaViaje).getTime();
+        return dateA - dateB; // Ascendente (más próximo primero)
+      }
+      // Si solo uno tiene fecha, el que tiene fecha va primero
+      if (a.fechaViaje && !b.fechaViaje) return -1;
+      if (!a.fechaViaje && b.fechaViaje) return 1;
+      // Si ninguno tiene fecha, mantener orden original
+      return 0;
+    });
+  };
+
   const fetchTours = useCallback(async () => {
     try {
       setLoading(true);
@@ -108,7 +125,10 @@ export default function TourAereoPage() {
       const response = await fetch('/api/tour-aereo');
       if (response.ok) {
         const data = await response.json();
-        setTours(data.tours || []);
+        const toursData = data.tours || [];
+        // Ordenar tours por fecha de inicio (más reciente primero)
+        const sortedTours = sortToursByFechaViaje(toursData);
+        setTours(sortedTours);
       } else {
         setError('Errore nel caricamento dei tour aerei');
       }
@@ -126,7 +146,10 @@ export default function TourAereoPage() {
     }
   }, [roleLoading, fetchTours]);
 
-  const filteredTours: TourAereo[] = searchTerm && searchResults.length > 0 ? searchResults as TourAereo[] : tours;
+  // Ordenar también los tours filtrados
+  const filteredTours: TourAereo[] = searchTerm && searchResults.length > 0 
+    ? sortToursByFechaViaje(searchResults as TourAereo[])
+    : tours;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -167,7 +190,9 @@ export default function TourAereoPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setTours(prev => [data.tour, ...prev]);
+        // Agregar el nuevo tour y ordenar por fecha
+        const updatedTours = sortToursByFechaViaje([data.tour, ...tours]);
+        setTours(updatedTours);
         setFormData({
           titulo: "",
           precioAdulto: "",
@@ -240,9 +265,13 @@ export default function TourAereoPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setTours(prev => prev.map(tour => 
-          tour.id === editingTour.id ? data.tour : tour
-        ));
+        // Actualizar el tour y reordenar por fecha
+        setTours(prev => {
+          const updatedTours = prev.map(tour => 
+            tour.id === editingTour.id ? data.tour : tour
+          );
+          return sortToursByFechaViaje(updatedTours);
+        });
         setFormData({
           titulo: "",
           precioAdulto: "",

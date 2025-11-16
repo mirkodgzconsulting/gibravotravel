@@ -128,14 +128,35 @@ export default function TourBusPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingTour, setEditingTour] = useState<TourBus | null>(null);
 
+  // Función para ordenar tours por fecha de inicio (más próximo primero - ascendente)
+  const sortToursByFechaViaje = (toursToSort: TourBus[]): TourBus[] => {
+    return [...toursToSort].sort((a, b) => {
+      // Si ambos tienen fecha, ordenar por fecha ascendente (más próximo primero)
+      if (a.fechaViaje && b.fechaViaje) {
+        const dateA = new Date(a.fechaViaje).getTime();
+        const dateB = new Date(b.fechaViaje).getTime();
+        return dateA - dateB; // Ascendente (más próximo primero)
+      }
+      // Si solo uno tiene fecha, el que tiene fecha va primero
+      if (a.fechaViaje && !b.fechaViaje) return -1;
+      if (!a.fechaViaje && b.fechaViaje) return 1;
+      // Si ninguno tiene fecha, mantener orden original
+      return 0;
+    });
+  };
+
   const fetchTours = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
       // Todos los usuarios ven todos los tours para poder realizar ventas (con cache en memoria)
-      const data = await cachedFetch<{ tours: any[] }>(`/api/tour-bus`, { ttlMs: 15000 });
-      setTours(data.tours || []);
+      // Datos dinámicos: 30 segundos (cambian frecuentemente)
+      const data = await cachedFetch<{ tours: any[] }>(`/api/tour-bus`, { ttlMs: 30000 });
+      const toursData = data.tours || [];
+      // Ordenar tours por fecha de inicio (más próximo primero)
+      const sortedTours = sortToursByFechaViaje(toursData);
+      setTours(sortedTours);
     } catch {
       setError('Error de conexión');
     } finally {
@@ -153,7 +174,8 @@ export default function TourBusPage() {
     if (!tours || tours.length === 0) return [];
     
     if (searchTerm && searchResults.length > 0) {
-      return searchResults as TourBus[];
+      // Ordenar también los tours filtrados
+      return sortToursByFechaViaje(searchResults as TourBus[]);
     }
     
     return tours;
@@ -226,7 +248,8 @@ export default function TourBusPage() {
         const data = await response.json();
         // Invalidar cache para ver el cambio al instante
         invalidateCacheByPrefix('/api/tour-bus');
-        setTours(prev => [data.tour, ...prev]);
+        // Agregar el nuevo tour y ordenar por fecha
+        setTours(prev => sortToursByFechaViaje([data.tour, ...prev]));
         setFormData({
           titulo: "",
           precioAdulto: "",
@@ -304,9 +327,13 @@ export default function TourBusPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setTours(prev => prev.map(tour => 
-          tour.id === editingTour.id ? data.tour : tour
-        ));
+        // Actualizar el tour y reordenar por fecha
+        setTours(prev => {
+          const updatedTours = prev.map(tour => 
+            tour.id === editingTour.id ? data.tour : tour
+          );
+          return sortToursByFechaViaje(updatedTours);
+        });
         setFormData({
           titulo: "",
           precioAdulto: "",

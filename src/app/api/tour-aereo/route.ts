@@ -107,116 +107,71 @@ export async function GET(request: NextRequest) {
         ],
       });
     } catch (prismaError: any) {
-      // Si falla por campos faltantes, usar consulta SQL directa
-      if (prismaError?.message?.includes('Unknown field') || prismaError?.code === 'P2022') {
-        console.log('⚠️ Usando consulta SQL directa debido a campos faltantes en Prisma Client');
+      // Si falla por campos faltantes, intentar agregar las columnas faltantes
+      if (prismaError?.message?.includes('Unknown field') || prismaError?.message?.includes('documentoViaggioName') || prismaError?.code === 'P2022') {
+        console.log('⚠️ Campo faltante detectado, agregando columnas necesarias...');
         
-        // Construir WHERE clause
-        let whereClause = 'WHERE t."isActive" = true';
-        const params: any[] = [];
-        let paramIndex = 1;
-        
-        if (fechaDesde && fechaHasta) {
-          whereClause += ` AND t."fechaViaje" >= $${paramIndex} AND t."fechaViaje" <= $${paramIndex + 1}`;
-          params.push(new Date(fechaDesde), new Date(fechaHasta));
-          paramIndex += 2;
-        }
-        
-        if (userOnly && user.role === 'USER') {
-          whereClause += ` AND t."createdBy" = $${paramIndex}`;
-          params.push(userId);
-          paramIndex++;
-        }
-        
-        // Consulta SQL que selecciona todos los campos necesarios
-        const sqlQuery = `
-          SELECT 
-            t."id",
-            t."titulo",
-            t."precioAdulto",
-            t."precioNino",
-            t."fechaViaje",
-            t."fechaFin",
-            t."meta",
-            t."acc",
-            t."guidaLocale",
-            t."coordinatore",
-            t."transporte",
-            t."hotel",
-            t."notas",
-            t."notasCoordinador",
-            t."feeAgv",
-            t."coverImage",
-            t."coverImageName",
-            t."pdfFile",
-            t."pdfFileName",
-            t."documentoViaggio",
-            t."documentoViaggioName",
-            t."documentoViaggio_old",
-            t."documentoViaggioName_old",
-            t."descripcion",
-            t."isActive",
-            t."createdBy",
-            t."createdAt",
-            t."updatedAt",
-            json_build_object(
-              'firstName', u."firstName",
-              'lastName', u."lastName",
-              'email', u."email"
-            ) as creator
-          FROM "tour_aereo" t
-          LEFT JOIN "users" u ON t."createdBy" = u."clerkId"
-          ${whereClause}
-          ORDER BY t."fechaViaje" ASC NULLS LAST, t."createdAt" DESC
-        `;
-        
-        const rawTours = await prisma.$queryRawUnsafe(sqlQuery, ...params);
-        
-        // Cargar ventas por separado si es necesario
-        const tourIds = (rawTours as any[]).map((t: any) => t.id);
-        let ventasMap: any = {};
-        
-        if (tourIds.length > 0) {
-          try {
-            const ventas = await prisma.ventaTourAereo.findMany({
-              where: {
-                tourAereoId: { in: tourIds },
-                ...(userIdParam ? { createdBy: userIdParam } : {})
+        try {
+          // Agregar todas las columnas que pueden faltar
+          await prisma.$executeRawUnsafe(`
+            ALTER TABLE "tour_aereo" 
+            ADD COLUMN IF NOT EXISTS "documentoViaggioName" TEXT,
+            ADD COLUMN IF NOT EXISTS "documentoViaggioName_old" TEXT,
+            ADD COLUMN IF NOT EXISTS "documentoViaggio_old" TEXT
+          `);
+          console.log('✅ Columnas agregadas, reintentando consulta...');
+          
+          // Esperar un momento para que la transacción se complete
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Reintentar con Prisma después de agregar las columnas
+          tours = await prisma.tourAereo.findMany({
+            where: whereCondition,
+            include: {
+              creator: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                  email: true,
+                },
               },
-              select: {
-                id: true,
-                tourAereoId: true,
-                venduto: true,
-                transfer: true,
-                hotel: true,
-                createdAt: true,
-                creator: {
-                  select: {
-                    id: true,
-                    firstName: true,
-                    lastName: true,
-                    email: true
+              ventas: {
+                where: userIdParam ? { createdBy: userIdParam } : undefined,
+                select: {
+                  id: true,
+                  venduto: true,
+                  transfer: true,
+                  hotel: true,
+                  createdAt: true,
+                  creator: {
+                    select: {
+                      id: true,
+                      firstName: true,
+                      lastName: true,
+                      email: true
+                    }
                   }
                 }
-              }
-            });
-            
-            ventasMap = ventas.reduce((acc: any, venta: any) => {
-              if (!acc[venta.tourAereoId]) acc[venta.tourAereoId] = [];
-              acc[venta.tourAereoId].push(venta);
-              return acc;
-            }, {});
-          } catch (e) {
-            console.log('⚠️ Error cargando ventas:', e);
-          }
+              },
+              _count: {
+                select: {
+                  ventas: true,
+                },
+              },
+            },
+            orderBy: [
+              {
+                fechaViaje: 'asc',
+              },
+              {
+                createdAt: 'desc',
+              },
+            ],
+          });
+        } catch (migrationError: any) {
+          console.log('⚠️ Error en migración lazy, lanzando error original:', migrationError?.message);
+          throw prismaError; // Lanzar el error original
         }
-        
-        tours = (rawTours as any[]).map((tour: any) => ({
-          ...tour,
-          creator: tour.creator || { firstName: null, lastName: null, email: '' },
-          ventas: ventasMap[tour.id] || [],
-          _count: { ventas: ventasMap[tour.id]?.length || 0 }
-        }));
       } else {
         throw prismaError;
       }

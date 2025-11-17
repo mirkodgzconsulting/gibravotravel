@@ -58,22 +58,21 @@ export async function GET(request: NextRequest) {
     }
 
     // Si userIdParam está presente, solo mostrar tours que tienen ventas de ese usuario
-    if (userIdParam) {
-      whereCondition.ventas = {
-        some: {
-          createdBy: userIdParam
-        }
-      };
-    }
+    // Nota: userIdParam es el user.id (UUID/CUID), no clerkId
+    // VentaTourAereo.createdBy referencia User.id
+    // Usamos SQL directo cuando userIdParam está presente para evitar problemas con el filtro 'some' en Prisma
+    let useSqlDirect = !!userIdParam;
 
     // Usar consulta SQL directa para evitar problemas con campos que pueden no existir
     // Esto es más tolerante a diferencias entre schema y BD
-    let tours: any[];
+    let tours: any[] = [];
     
-    try {
-      // Intentar con Prisma normal primero
-      tours = await prisma.tourAereo.findMany({
-        where: whereCondition,
+    if (!useSqlDirect) {
+      // Solo intentar con Prisma si no hay userIdParam
+      try {
+        // Intentar con Prisma normal primero
+        tours = await prisma.tourAereo.findMany({
+          where: whereCondition,
         include: {
           creator: {
             select: {
@@ -115,7 +114,7 @@ export async function GET(request: NextRequest) {
           },
         ],
       });
-    } catch (prismaError: any) {
+      } catch (prismaError: any) {
       // Log detallado del error para debugging
       console.error('❌ Error en Prisma tour-aereo:', {
         message: prismaError?.message,
@@ -124,7 +123,8 @@ export async function GET(request: NextRequest) {
         stack: prismaError?.stack?.substring(0, 500)
       });
       
-      // Si falla por campos faltantes o error de parsing JSON, usar SQL directo como fallback
+      // Si falla por campos faltantes, error de parsing JSON, o cualquier error de Prisma,
+      // usar SQL directo como fallback
       const isSchemaError = prismaError?.message?.includes('Unknown field') || 
                            prismaError?.message?.includes('documentoViaggioName') || 
                            prismaError?.code === 'P2022' ||
@@ -132,12 +132,36 @@ export async function GET(request: NextRequest) {
                            prismaError?.message?.includes('column') ||
                            prismaError?.message?.includes('is not valid JSON') ||
                            prismaError?.message?.includes('Unexpected token') ||
-                           prismaError?.name === 'SyntaxError';
+                           prismaError?.name === 'SyntaxError' ||
+                           prismaError?.code === 'P2009' || // Query parsing error
+                           prismaError?.code === 'P2010' || // Raw query failed
+                           prismaError?.code === 'P2011' || // Null constraint violation
+                           prismaError?.code === 'P2012' || // Missing required value
+                           prismaError?.code === 'P2013' || // Missing required argument
+                           prismaError?.code === 'P2014' || // Relation violation
+                           prismaError?.code === 'P2015' || // Related record not found
+                           prismaError?.code === 'P2016' || // Query interpretation error
+                           prismaError?.code === 'P2017' || // Records for relation not connected
+                           prismaError?.code === 'P2018' || // Required connected records not found
+                           prismaError?.code === 'P2019' || // Input error
+                           prismaError?.code === 'P2020' || // Value out of range
+                           prismaError?.code === 'P2021' || // Table does not exist
+                           prismaError?.code === 'P2025'; // Record not found
       
-      if (isSchemaError) {
-        console.log('⚠️ Error de schema detectado, usando SQL directo como fallback...');
-        
-        try {
+        // Si es un error de Prisma o schema, usar SQL directo como fallback
+        if (isSchemaError || prismaError?.code?.startsWith('P')) {
+          console.log('⚠️ Error de schema detectado, usando SQL directo como fallback...');
+          useSqlDirect = true; // Forzar uso de SQL directo
+        } else {
+          // Si no es un error de schema, lanzar el error original
+          throw prismaError;
+        }
+      }
+    }
+    
+    // Si necesitamos usar SQL directo (por userIdParam o error de Prisma)
+    if (useSqlDirect) {
+      try {
           // Primero intentar agregar las columnas si no existen
           try {
             await prisma.$executeRawUnsafe(`
@@ -169,9 +193,10 @@ export async function GET(request: NextRequest) {
           }
           
           // Si userIdParam está presente, solo mostrar tours que tienen ventas de ese usuario
+          // Nota: El nombre de la tabla es "ventas_tour_aereo" (con "s")
           if (userIdParam) {
             whereClause += ` AND EXISTS (
-              SELECT 1 FROM "venta_tour_aereo" v 
+              SELECT 1 FROM "ventas_tour_aereo" v 
               WHERE v."tourAereoId" = t."id" 
               AND v."createdBy" = $${paramIndex}
             )`;
@@ -277,16 +302,12 @@ export async function GET(request: NextRequest) {
           
           console.log('✅ Consulta SQL directa exitosa');
         } catch (sqlError: any) {
-          console.error('❌ Error en SQL directo:', {
-            message: sqlError?.message,
-            code: sqlError?.code,
-            stack: sqlError?.stack?.substring(0, 500)
-          });
-          throw sqlError;
-        }
-      } else {
-        // Si no es un error de schema, lanzar el error original
-        throw prismaError;
+        console.error('❌ Error en SQL directo:', {
+          message: sqlError?.message,
+          code: sqlError?.code,
+          stack: sqlError?.stack?.substring(0, 500)
+        });
+        throw sqlError;
       }
     }
 

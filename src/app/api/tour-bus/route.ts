@@ -79,7 +79,14 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    // Los usuarios USER pueden ver todos los tours para realizar ventas
+    // Si userIdParam está presente, solo mostrar tours que tienen ventas de ese usuario
+    if (userIdParam) {
+      whereCondition.ventasTourBus = {
+        some: {
+          createdBy: userIdParam
+        }
+      };
+    }
 
     const tours = await prisma.tourBus.findMany({
       where: whereCondition,

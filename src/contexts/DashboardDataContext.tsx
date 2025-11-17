@@ -22,12 +22,13 @@ const DashboardDataContext = createContext<DashboardDataContextType | undefined>
 interface DashboardDataProviderProps {
   children: ReactNode;
   userId?: string;
+  waitForUserId?: boolean; // Si es true, espera a que userId esté disponible antes de cargar
 }
 
 // TTL del caché: 2 minutos (120,000 ms)
 const CACHE_TTL_MS = 120000;
 
-export function DashboardDataProvider({ children, userId }: DashboardDataProviderProps) {
+export function DashboardDataProvider({ children, userId, waitForUserId = false }: DashboardDataProviderProps) {
   const [data, setData] = useState<DashboardData>({
     biglietteria: [],
     tourAereo: [],
@@ -38,6 +39,12 @@ export function DashboardDataProvider({ children, userId }: DashboardDataProvide
   });
 
   const fetchData = useCallback(async () => {
+    // Si waitForUserId es true y userId no está disponible, no cargar datos aún
+    if (waitForUserId && !userId) {
+      setData(prev => ({ ...prev, loading: true }));
+      return;
+    }
+
     try {
       setData(prev => ({ ...prev, loading: true, error: null }));
 
@@ -67,7 +74,7 @@ export function DashboardDataProvider({ children, userId }: DashboardDataProvide
         error: error instanceof Error ? error.message : 'Error al cargar datos del dashboard',
       }));
     }
-  }, [userId]);
+  }, [userId, waitForUserId]);
 
   // Verificar si los datos están obsoletos (más de 2 minutos)
   const isStale = useCallback(() => {

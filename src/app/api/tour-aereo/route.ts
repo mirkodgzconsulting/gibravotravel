@@ -57,6 +57,15 @@ export async function GET(request: NextRequest) {
       };
     }
 
+    // Si userIdParam está presente, solo mostrar tours que tienen ventas de ese usuario
+    if (userIdParam) {
+      whereCondition.ventas = {
+        some: {
+          createdBy: userIdParam
+        }
+      };
+    }
+
     // Usar consulta SQL directa para evitar problemas con campos que pueden no existir
     // Esto es más tolerante a diferencias entre schema y BD
     let tours: any[];
@@ -156,6 +165,17 @@ export async function GET(request: NextRequest) {
           if (userOnly && user.role === 'USER') {
             whereClause += ` AND t."createdBy" = $${paramIndex}`;
             params.push(userId);
+            paramIndex++;
+          }
+          
+          // Si userIdParam está presente, solo mostrar tours que tienen ventas de ese usuario
+          if (userIdParam) {
+            whereClause += ` AND EXISTS (
+              SELECT 1 FROM "venta_tour_aereo" v 
+              WHERE v."tourAereoId" = t."id" 
+              AND v."createdBy" = $${paramIndex}
+            )`;
+            params.push(userIdParam);
             paramIndex++;
           }
           

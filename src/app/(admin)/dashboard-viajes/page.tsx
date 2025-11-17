@@ -53,7 +53,11 @@ const CHART_CONFIG = {
   BORDER_RADIUS: 5
 } as const;
 
-function DashboardViajesContent() {
+interface DashboardViajesContentProps {
+  currentUserId?: string;
+}
+
+function DashboardViajesContent({ currentUserId }: DashboardViajesContentProps) {
   const { userRole, isLoading: roleLoading, isUser, isAdmin, isTI } = useUserRole();
   const dashboardData = useDashboardData();
   const [monthlyData, setMonthlyData] = useState<MonthlyFeeData[]>([]);
@@ -355,9 +359,11 @@ function DashboardViajesContent() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <ToursFeeCard 
               dateRange={dateRange}
+              userId={currentUserId}
             />
             <BiglietteriaFeeCard 
               dateRange={dateRange}
+              userId={currentUserId}
             />
             <TotalFeeCard 
               dateRange={dateRange}
@@ -377,12 +383,15 @@ function DashboardViajesContent() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <BiglietteriaUserSalesChart 
               dateRange={dateRange}
+              userId={currentUserId}
             />
             <TourAereoUserSalesChart 
               dateRange={dateRange}
+              userId={currentUserId}
             />
             <TourBusUserSalesChart 
               dateRange={dateRange}
+              userId={currentUserId}
             />
           </div>
         </div>
@@ -391,6 +400,7 @@ function DashboardViajesContent() {
         <div className="mb-8">
           <AgentSalesPercentageChart 
             dateRange={dateRange}
+            userId={currentUserId}
           />
         </div>
 
@@ -416,6 +426,7 @@ function DashboardViajesContent() {
           </div>
           <AgentRankingChart 
             selectedYear={selectedYear}
+            userId={currentUserId}
           />
         </div>
 
@@ -596,11 +607,13 @@ export default function DashboardViajesPage() {
   const { user: clerkUser } = useUser();
   const { isUser } = useUserRole();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [userIdLoading, setUserIdLoading] = useState(true);
 
   // Obtener el ID del usuario actual para filtrado
   useEffect(() => {
     const fetchUserId = async () => {
       if (clerkUser && isUser) {
+        setUserIdLoading(true);
         try {
           const userResponse = await fetch(`/api/user/profile`);
           if (userResponse.ok) {
@@ -609,16 +622,33 @@ export default function DashboardViajesPage() {
           }
         } catch (error) {
           console.error('Error fetching user ID:', error);
+        } finally {
+          setUserIdLoading(false);
         }
+      } else {
+        // Si no es USER, no necesitamos esperar
+        setUserIdLoading(false);
       }
     };
     
     fetchUserId();
   }, [clerkUser, isUser]);
 
+  // Si es USER y aún estamos cargando el userId, mostrar loading
+  if (isUser && userIdLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-500"></div>
+      </div>
+    );
+  }
+
   return (
-    <DashboardDataProvider userId={isUser ? currentUserId || undefined : undefined}>
-      <DashboardViajesContent />
+    <DashboardDataProvider 
+      userId={isUser ? currentUserId || undefined : undefined}
+      waitForUserId={isUser}
+    >
+      <DashboardViajesContent currentUserId={isUser ? currentUserId || undefined : undefined} />
     </DashboardDataProvider>
   );
 }

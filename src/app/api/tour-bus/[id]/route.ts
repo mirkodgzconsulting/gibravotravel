@@ -67,7 +67,25 @@ export async function GET(
       return NextResponse.json({ error: 'Tour no encontrado' }, { status: 404 });
     }
 
-    return NextResponse.json({ tour });
+    // Normalizar documentoViaggio: convertir formato legacy (string) a array
+    const tourAny = tour as any;
+    if (tourAny.documentoViaggio) {
+      if (typeof tourAny.documentoViaggio === 'string') {
+        // Formato legacy: convertir a array
+        tourAny.documentoViaggio = [{
+          url: tourAny.documentoViaggio,
+          name: tourAny.documentoViaggioName || 'documento'
+        }];
+        delete tourAny.documentoViaggioName;
+      } else if (Array.isArray(tourAny.documentoViaggio)) {
+        // Ya es array, dejarlo como está
+      } else if (typeof tourAny.documentoViaggio === 'object') {
+        // Si es objeto, convertirlo a array
+        tourAny.documentoViaggio = [tourAny.documentoViaggio];
+      }
+    }
+
+    return NextResponse.json({ tour: tourAny });
 
   } catch (error) {
     console.error('Error fetching tour bus:', error);
@@ -261,40 +279,134 @@ export async function PUT(
       }
     }
 
+    // Manejar múltiples documentos de viaje
+    let documentoViaggioArray: Array<{ url: string; name: string }> = [];
+    
+    // Obtener archivos existentes si se proporcionan
+    const documentoViaggioExisting = formData.get('documentoViaggioExisting') as string | null;
+    if (documentoViaggioExisting) {
+      try {
+        documentoViaggioArray = JSON.parse(documentoViaggioExisting);
+      } catch (error) {
+        console.error('Error parsing existing documents:', error);
+        // Si hay un documento antiguo (formato legacy), convertirlo
+        if ((tourExistente as any).documentoViaggio && typeof (tourExistente as any).documentoViaggio === 'string') {
+          documentoViaggioArray = [{
+            url: (tourExistente as any).documentoViaggio,
+            name: (tourExistente as any).documentoViaggioName || 'documento'
+          }];
+        }
+      }
+    } else {
+      // Si no se proporcionan archivos existentes, verificar si hay formato legacy
+      if ((tourExistente as any).documentoViaggio) {
+        if (typeof (tourExistente as any).documentoViaggio === 'string') {
+          // Formato legacy: convertir a array
+          documentoViaggioArray = [{
+            url: (tourExistente as any).documentoViaggio,
+            name: (tourExistente as any).documentoViaggioName || 'documento'
+          }];
+        } else if (Array.isArray((tourExistente as any).documentoViaggio)) {
+          // Ya es un array
+          documentoViaggioArray = (tourExistente as any).documentoViaggio;
+        }
+      }
+    }
+
+    // Procesar nuevos archivos
+    const documentoViaggioFiles = formData.getAll('documentoViaggio') as File[];
+    const validFiles = documentoViaggioFiles.filter(file => file && file.size > 0);
+
+    if (validFiles.length > 0) {
+      // Validar máximo de 5 archivos
+      if (documentoViaggioArray.length + validFiles.length > 5) {
+        return NextResponse.json(
+          { error: 'Massimo 5 file consentiti per Documento Viaggio' },
+          { status: 400 }
+        );
+      }
+
+      // Subir nuevos archivos a Cloudinary
+      for (const file of validFiles) {
+        try {
+          const bytes = await file.arrayBuffer();
+          const buffer = Buffer.from(bytes);
+
+          const result = await new Promise<any>((resolve, reject) => {
+            cloudinary.uploader.upload_stream(
+              {
+                folder: 'gibravotravel/tour-bus/documenti',
+                resource_type: 'auto'
+              },
+              (error, result) => {
+                if (error) reject(error);
+                else resolve(result);
+              }
+            ).end(buffer);
+          });
+
+          documentoViaggioArray.push({
+            url: result.secure_url,
+            name: file.name
+          });
+        } catch (error) {
+          console.error('Error uploading travel document:', error);
+        }
+      }
+    }
+
+    // Si no hay archivos, dejar como array vacío o null
+    // Convertir a Prisma.JsonValue para que Prisma lo acepte
+    const documentoViaggioFinal = documentoViaggioArray.length > 0 
+      ? (documentoViaggioArray as any) 
+      : null;
+
     // Cantidad de asientos siempre es 53 (no se puede cambiar)
     const cantidadAsientos = 53;
+
+    // Preparar datos de actualización
+    const updateData: any = {
+      titulo,
+      precioAdulto: parseFloat(precioAdulto),
+      precioNino: parseFloat(precioNino),
+      cantidadAsientos: cantidadAsientos,
+      fechaViaje: fechaViaje ? new Date(fechaViaje) : null,
+      fechaFin: fechaFin ? new Date(fechaFin) : null,
+      acc: acc && acc.trim() !== '' ? acc : null,
+      // Campos de costos
+      bus: bus && bus.trim() !== '' ? parseFloat(bus) : null,
+      pasti: pasti && pasti.trim() !== '' ? parseFloat(pasti) : null,
+      parking: parking && parking.trim() !== '' ? parseFloat(parking) : null,
+      coordinatore1: coordinatore1 && coordinatore1.trim() !== '' ? parseFloat(coordinatore1) : null,
+      coordinatore2: coordinatore2 && coordinatore2.trim() !== '' ? parseFloat(coordinatore2) : null,
+      ztl: ztl && ztl.trim() !== '' ? parseFloat(ztl) : null,
+      hotel: hotel && hotel.trim() !== '' ? parseFloat(hotel) : null,
+      polizza: polizza && polizza.trim() !== '' ? parseFloat(polizza) : null,
+      tkt: tkt && tkt.trim() !== '' ? parseFloat(tkt) : null,
+      autoservicio: autoservicio && autoservicio.trim() !== '' ? autoservicio : null,
+      // Archivos
+      coverImage: coverImageUrl,
+      coverImageName,
+      pdfFile: pdfFileUrl,
+      pdfFileName,
+      descripcion: descripcion && descripcion.trim() !== '' ? descripcion : null,
+      notas: notas && notas.trim() !== '' ? notas : null,
+      notasCoordinador: notasCoordinador && notasCoordinador.trim() !== '' ? notasCoordinador : null,
+      updatedAt: new Date(),
+    };
+
+    // Solo agregar documentoViaggio si hay datos
+    // Usar cast explícito a any para evitar problemas de tipo con Prisma
+    if (documentoViaggioFinal !== null) {
+      updateData.documentoViaggio = documentoViaggioFinal as any;
+    } else {
+      updateData.documentoViaggio = null;
+    }
 
     // Actualizar el tour
     const tourActualizado = await prisma.tourBus.update({
       where: { id },
-      data: {
-        titulo,
-        precioAdulto: parseFloat(precioAdulto),
-        precioNino: parseFloat(precioNino),
-        cantidadAsientos: cantidadAsientos,
-        fechaViaje: fechaViaje ? new Date(fechaViaje) : null,
-        fechaFin: fechaFin ? new Date(fechaFin) : null,
-        acc: acc && acc.trim() !== '' ? acc : null,
-        // Campos de costos
-        bus: bus && bus.trim() !== '' ? parseFloat(bus) : null,
-        pasti: pasti && pasti.trim() !== '' ? parseFloat(pasti) : null,
-        parking: parking && parking.trim() !== '' ? parseFloat(parking) : null,
-        coordinatore1: coordinatore1 && coordinatore1.trim() !== '' ? parseFloat(coordinatore1) : null,
-        coordinatore2: coordinatore2 && coordinatore2.trim() !== '' ? parseFloat(coordinatore2) : null,
-        ztl: ztl && ztl.trim() !== '' ? parseFloat(ztl) : null,
-        hotel: hotel && hotel.trim() !== '' ? parseFloat(hotel) : null,
-        polizza: polizza && polizza.trim() !== '' ? parseFloat(polizza) : null,
-        tkt: tkt && tkt.trim() !== '' ? parseFloat(tkt) : null,
-        autoservicio: autoservicio && autoservicio.trim() !== '' ? autoservicio : null,
-        // Archivos
-        coverImage: coverImageUrl,
-        coverImageName,
-        pdfFile: pdfFileUrl,
-        pdfFileName,
-        descripcion: descripcion && descripcion.trim() !== '' ? descripcion : null,
-        notas: notas && notas.trim() !== '' ? notas : null,
-        notasCoordinador: notasCoordinador && notasCoordinador.trim() !== '' ? notasCoordinador : null
-      },
+      data: updateData as any,
       include: {
         creator: {
           select: {

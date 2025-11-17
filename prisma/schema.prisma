@@ -328,6 +328,8 @@ model TourBus {
   descripcion      String?
   notas            String?
   notasCoordinador String?
+  documentoViaggio         Json?
+  documentoViaggioName     String?
   isActive         Boolean        @default(true)
   createdBy        String
   createdAt        DateTime       @default(now())

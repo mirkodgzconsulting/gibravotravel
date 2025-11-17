@@ -66,6 +66,8 @@ async function runFastMigration() {
     { table: 'ventas_tour_bus', column: 'notaInterna', type: 'TEXT' },
     { table: 'tour_bus', column: 'notas', type: 'TEXT' },
     { table: 'tour_bus', column: 'notasCoordinador', type: 'TEXT' },
+    { table: 'tour_bus', column: 'documentoViaggio', type: 'JSONB' },
+    { table: 'tour_bus', column: 'documentoViaggioName', type: 'TEXT' },
     // Migraciones para TOUR AEREO
     { table: 'tour_aereo', column: 'documentoViaggioName', type: 'TEXT' },
     { table: 'tour_aereo', column: 'documentoViaggioName_old', type: 'TEXT' },

@@ -44,6 +44,7 @@ interface TourBus {
   polizza: number | null;
   tkt: number | null;
   autoservicio: string | null;
+  documentoViaggio?: Array<{ url: string; name: string }> | null;
   creator: {
     firstName: string | null;
     lastName: string | null;
@@ -268,6 +269,11 @@ export default function AsientosTourBusPage() {
     coordinador: false
   });
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  
+  // Estados para Documento Viaggio
+  const [isUploadingDocumentoViaggio, setIsUploadingDocumentoViaggio] = useState(false);
+  const [isDocumentoViaggioModalOpen, setIsDocumentoViaggioModalOpen] = useState(false);
+  const documentoViaggioInputRef = useRef<HTMLInputElement>(null);
 
   // Cargar datos de referencia UNA VEZ al montar
   useEffect(() => {
@@ -1567,6 +1573,164 @@ export default function AsientosTourBusPage() {
     }));
   }, []);
 
+  // Funciones para manejo de Documento Viaggio
+  const handleDocumentoViaggioUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0 || !tour) {
+      event.target.value = '';
+      return;
+    }
+
+    // Obtener archivos existentes
+    const existingFiles = Array.isArray(tour.documentoViaggio) ? tour.documentoViaggio : [];
+    const currentCount = existingFiles.length;
+    const newFilesCount = files.length;
+    const totalCount = currentCount + newFilesCount;
+
+    // Validar máximo de 5 archivos
+    if (totalCount > 5) {
+      setMessage({
+        type: 'error',
+        text: `Massimo 5 file consentiti. Hai ${currentCount} file esistenti e stai cercando di aggiungere ${newFilesCount}.`
+      });
+      setTimeout(() => setMessage(null), 4000);
+      event.target.value = '';
+      return;
+    }
+
+    setIsUploadingDocumentoViaggio(true);
+
+    try {
+      const formDataToSend = new FormData();
+      const formatDate = (value?: string | null) =>
+        value ? new Date(value).toISOString().split('T')[0] : '';
+
+      formDataToSend.append('titulo', tour.titulo || '');
+      formDataToSend.append('precioAdulto', tour.precioAdulto != null ? tour.precioAdulto.toString() : '0');
+      formDataToSend.append('precioNino', tour.precioNino != null ? tour.precioNino.toString() : '0');
+      formDataToSend.append('fechaViaje', formatDate(tour.fechaViaje));
+      formDataToSend.append('acc', tour.acc || '');
+      formDataToSend.append('bus', tour.bus != null ? tour.bus.toString() : '0');
+      formDataToSend.append('pasti', tour.pasti != null ? tour.pasti.toString() : '0');
+      formDataToSend.append('parking', tour.parking != null ? tour.parking.toString() : '0');
+      formDataToSend.append('coordinatore1', tour.coordinatore1 != null ? tour.coordinatore1.toString() : '0');
+      formDataToSend.append('coordinatore2', tour.coordinatore2 != null ? tour.coordinatore2.toString() : '0');
+      formDataToSend.append('ztl', tour.ztl != null ? tour.ztl.toString() : '0');
+      formDataToSend.append('hotel', tour.hotel != null ? tour.hotel.toString() : '0');
+      formDataToSend.append('polizza', tour.polizza != null ? tour.polizza.toString() : '0');
+      formDataToSend.append('tkt', tour.tkt != null ? tour.tkt.toString() : '0');
+      formDataToSend.append('autoservicio', tour.autoservicio || '');
+      formDataToSend.append('notas', sanitizeEditorHtml(tour.notas));
+      formDataToSend.append('notasCoordinador', sanitizeEditorHtml(tour.notasCoordinador));
+      formDataToSend.append('descripcion', tour.descripcion || '');
+
+      // Agregar archivos existentes (para preservarlos)
+      if (existingFiles.length > 0) {
+        formDataToSend.append('documentoViaggioExisting', JSON.stringify(existingFiles));
+      }
+
+      // Agregar nuevos archivos
+      Array.from(files).forEach((file) => {
+        formDataToSend.append('documentoViaggio', file);
+      });
+
+      const response = await fetch(`/api/tour-bus/${tour.id}`, {
+        method: 'PUT',
+        body: formDataToSend,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTour(data.tour);
+        setMessage({
+          type: 'success',
+          text: `${newFilesCount} file ${newFilesCount === 1 ? 'caricato' : 'caricati'} correttamente`
+        });
+        setTimeout(() => setMessage(null), 3000);
+      } else {
+        let errorText = 'Errore durante il caricamento del documento di viaggio';
+        try {
+          const errorData = await response.json();
+          if (errorData?.error) {
+            errorText = errorData.error;
+          }
+        } catch (err) {
+          // Error parsing response, usar mensaje por defecto
+        }
+        setMessage({ type: 'error', text: errorText });
+        setTimeout(() => setMessage(null), 4000);
+      }
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: 'Errore di connessione'
+      });
+      setTimeout(() => setMessage(null), 4000);
+    } finally {
+      setIsUploadingDocumentoViaggio(false);
+      event.target.value = '';
+    }
+  }, [tour]);
+
+  // Función para eliminar un archivo del documento viaggio
+  const handleDeleteDocumentoViaggio = useCallback(async (indexToDelete: number) => {
+    if (!tour) return;
+
+    const updatedFiles = tour.documentoViaggio?.filter((_, i) => i !== indexToDelete) || [];
+    try {
+      const formDataToSend = new FormData();
+      const formatDate = (value?: string | null) =>
+        value ? new Date(value).toISOString().split('T')[0] : '';
+
+      formDataToSend.append('titulo', tour.titulo || '');
+      formDataToSend.append('precioAdulto', tour.precioAdulto != null ? tour.precioAdulto.toString() : '0');
+      formDataToSend.append('precioNino', tour.precioNino != null ? tour.precioNino.toString() : '0');
+      formDataToSend.append('fechaViaje', formatDate(tour.fechaViaje));
+      formDataToSend.append('acc', tour.acc || '');
+      formDataToSend.append('bus', tour.bus != null ? tour.bus.toString() : '0');
+      formDataToSend.append('pasti', tour.pasti != null ? tour.pasti.toString() : '0');
+      formDataToSend.append('parking', tour.parking != null ? tour.parking.toString() : '0');
+      formDataToSend.append('coordinatore1', tour.coordinatore1 != null ? tour.coordinatore1.toString() : '0');
+      formDataToSend.append('coordinatore2', tour.coordinatore2 != null ? tour.coordinatore2.toString() : '0');
+      formDataToSend.append('ztl', tour.ztl != null ? tour.ztl.toString() : '0');
+      formDataToSend.append('hotel', tour.hotel != null ? tour.hotel.toString() : '0');
+      formDataToSend.append('polizza', tour.polizza != null ? tour.polizza.toString() : '0');
+      formDataToSend.append('tkt', tour.tkt != null ? tour.tkt.toString() : '0');
+      formDataToSend.append('autoservicio', tour.autoservicio || '');
+      formDataToSend.append('notas', sanitizeEditorHtml(tour.notas));
+      formDataToSend.append('notasCoordinador', sanitizeEditorHtml(tour.notasCoordinador));
+      formDataToSend.append('descripcion', tour.descripcion || '');
+      formDataToSend.append('documentoViaggioExisting', JSON.stringify(updatedFiles));
+
+      const response = await fetch(`/api/tour-bus/${tour.id}`, {
+        method: 'PUT',
+        body: formDataToSend,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTour(data.tour);
+        setMessage({
+          type: 'success',
+          text: 'File eliminato correttamente'
+        });
+        setTimeout(() => setMessage(null), 3000);
+      } else {
+        setMessage({
+          type: 'error',
+          text: 'Errore durante l\'eliminazione del file'
+        });
+        setTimeout(() => setMessage(null), 4000);
+      }
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: 'Errore durante l\'eliminazione del file'
+      });
+      setTimeout(() => setMessage(null), 4000);
+    }
+  }, [tour]);
+
   // Función para obtener la fermata de un asiento
   const getFermataAsiento = (numeroAsiento: number) => {
     if (!tour || !tour.ventasTourBus) return '';
@@ -1840,6 +2004,43 @@ export default function AsientosTourBusPage() {
                   </div>
                 </div>
               )}
+
+              {/* Tarjeta de Documento Viaggio */}
+              <div className="bg-sky-50 dark:bg-sky-900/20 p-3 rounded-lg">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 flex-1">
+                    <button
+                      type="button"
+                      onClick={() => setIsDocumentoViaggioModalOpen(true)}
+                      className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                    >
+                      <Icon icon="mdi:file-document" width="20" height="20" style={{ color: '#0284c7' }} />
+                      <span className="text-xs font-medium text-sky-700 dark:text-sky-300">Documento Viaggio</span>
+                      {Array.isArray(tour.documentoViaggio) && tour.documentoViaggio.length > 0 && (
+                        <span className="text-xs font-semibold text-white bg-sky-600 px-1.5 py-0.5 rounded">
+                          {tour.documentoViaggio.length}/5
+                        </span>
+                      )}
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => documentoViaggioInputRef.current?.click()}
+                    disabled={isUploadingDocumentoViaggio || (Array.isArray(tour.documentoViaggio) && tour.documentoViaggio.length >= 5)}
+                    className="px-2 py-1 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {isUploadingDocumentoViaggio ? 'Caricando...' : 'Aggiungi'}
+                  </button>
+                </div>
+                <input
+                  ref={documentoViaggioInputRef}
+                  type="file"
+                  accept=".pdf,image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleDocumentoViaggioUpload}
+                />
+              </div>
             </div>
             
             {/* Botón de Imprimir Layout del Bus */}
@@ -2861,6 +3062,84 @@ export default function AsientosTourBusPage() {
               isSubmitting={isSubmitting}
             />
           )}
+        </div>
+      </Modal>
+
+      {/* Modal de Documento Viaggio */}
+      <Modal
+        isOpen={isDocumentoViaggioModalOpen}
+        onClose={() => setIsDocumentoViaggioModalOpen(false)}
+        className="max-w-2xl mx-4"
+      >
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+              Documenti Viaggio
+            </h2>
+            <button
+              onClick={() => setIsDocumentoViaggioModalOpen(false)}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+            >
+              ✕
+            </button>
+          </div>
+          
+          {Array.isArray(tour?.documentoViaggio) && tour.documentoViaggio.length > 0 ? (
+            <div className="space-y-3">
+              {tour.documentoViaggio.map((doc, index) => (
+                <div 
+                  key={index} 
+                  className="flex items-center justify-between gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+                >
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <Icon icon="mdi:file-document" width="24" height="24" style={{ color: '#0284c7' }} />
+                    <a
+                      href={doc.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 text-sm font-medium text-sky-700 dark:text-sky-200 hover:text-sky-900 dark:hover:text-sky-100 underline truncate"
+                      title={doc.name || `Documento ${index + 1}`}
+                    >
+                      {doc.name || `Documento ${index + 1}`}
+                    </a>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteDocumentoViaggio(index)}
+                    className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/20 rounded transition-colors"
+                    title="Elimina file"
+                  >
+                    <TrashIcon className="w-5 h-5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <div className="flex justify-center mb-3">
+                <Icon icon="mdi:file-document-outline" width="48" height="48" style={{ color: '#9ca3af' }} />
+              </div>
+              <p className="text-gray-500 dark:text-gray-400">
+                Nessun documento caricato
+              </p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+                Massimo 5 file consentiti
+              </p>
+            </div>
+          )}
+
+          {/* Botón para agregar archivos */}
+          <div className="mt-4 flex justify-end">
+            <button
+              type="button"
+              onClick={() => documentoViaggioInputRef.current?.click()}
+              disabled={isUploadingDocumentoViaggio || (Array.isArray(tour.documentoViaggio) && tour.documentoViaggio.length >= 5)}
+              className="px-4 py-2 text-sm font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded disabled:opacity-60 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+            >
+              <Icon icon="mdi:plus" width="20" height="20" />
+              {isUploadingDocumentoViaggio ? 'Caricando...' : 'Aggiungi'}
+            </button>
+          </div>
         </div>
       </Modal>
 

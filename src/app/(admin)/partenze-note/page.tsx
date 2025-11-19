@@ -87,10 +87,20 @@ export default function PartenzeNotePage() {
       const busTours = (busData.tours || []).map((tour: TourBus) => ({ ...tour, tipo: 'bus' as const }));
       const aereoTours = (aereoData.tours || []).map((tour: TourAereo) => ({ ...tour, tipo: 'aereo' as const }));
       
-      // Combinar y ordenar por fecha de creación (más recientes primero)
-      const allTours = [...busTours, ...aereoTours].sort((a, b) => 
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
+      // Combinar y ordenar por fecha de viaje (ascendente - más próximo primero)
+      const allTours = [...busTours, ...aereoTours].sort((a, b) => {
+        // Si ambos tienen fechaViaje, ordenar ascendente (más próximo primero)
+        if (a.fechaViaje && b.fechaViaje) {
+          const dateA = new Date(a.fechaViaje).getTime();
+          const dateB = new Date(b.fechaViaje).getTime();
+          return dateA - dateB; // Ascendente
+        }
+        // Si solo uno tiene fechaViaje, el que tiene fecha va primero
+        if (a.fechaViaje && !b.fechaViaje) return -1;
+        if (!a.fechaViaje && b.fechaViaje) return 1;
+        // Si ninguno tiene fechaViaje, ordenar por fecha de creación (más recientes primero)
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
       
       setTours(allTours);
     } catch {

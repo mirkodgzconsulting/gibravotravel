@@ -37,11 +37,14 @@ export default function AgentSalesPercentageChart({ dateRange, userId }: AgentSa
         const startDate = dateRange.startDate;
         const endDate = dateRange.endDate;
 
-        // Fetch all data sources
-        const userIdParam = userId ? `?userId=${userId}` : '';
+        // Este gráfico siempre muestra TODOS los agentes (vista completa)
+        // - Para ADMIN/TI: muestran todos los agentes + el total FEE/AGV
+        // - Para USER: muestran todos los agentes pero SIN el total FEE/AGV
+        // Por eso siempre traemos todos los datos (sin userIdParam)
+        // IMPORTANTE: No usar userId aquí, siempre traer todos los datos
         const [biglietteriaResponse, tourAereoResponse] = await Promise.all([
-          fetch(`/api/biglietteria${userIdParam}`),
-          fetch(`/api/tour-aereo${userIdParam}`)
+          fetch(`/api/biglietteria`),
+          fetch(`/api/tour-aereo`)
         ]);
 
         const [biglietteriaData, tourAereoData] = await Promise.all([
@@ -129,7 +132,7 @@ export default function AgentSalesPercentageChart({ dateRange, userId }: AgentSa
     };
 
     fetchAgentFeeData();
-  }, [dateRange, userId]);
+  }, [dateRange]); // Removido userId de las dependencias porque siempre queremos todos los datos
 
   const chartOptions: ApexOptions = useMemo(() => ({
     colors: ["#2a31d8", "#465fff", "#7592ff", "#c2d6ff"],
@@ -167,6 +170,7 @@ export default function AgentSalesPercentageChart({ dateRange, userId }: AgentSa
           fontSize: '12px',
           fontWeight: 500,
         },
+        formatter: (val: string) => `${val}%`,
       },
     },
     yaxis: {
@@ -209,6 +213,16 @@ export default function AgentSalesPercentageChart({ dateRange, userId }: AgentSa
         const agentName = w.globals.labels[dataPointIndex];
         const feeAmount = agentData[dataPointIndex]?.feeAmount || 0;
         
+        // Si userId está presente (es USER), solo mostrar porcentaje, no el monto
+        if (userId) {
+          return `
+            <div>
+              <span style="color: #6b7280;">Porcentaje:</span> ${value.toFixed(2)}%
+            </div>
+          `;
+        }
+        
+        // Para ADMIN/TI, mostrar porcentaje y monto
         return `
           <div style="margin-bottom: 4px;">
             <span style="color: #6b7280;">Porcentaje:</span> ${value.toFixed(2)}%
@@ -219,7 +233,7 @@ export default function AgentSalesPercentageChart({ dateRange, userId }: AgentSa
         `;
       }
     },
-  }), [agentData, totalFee]);
+  }), [agentData, totalFee, userId]);
 
   const series = useMemo(() => {
     return [
@@ -268,15 +282,17 @@ export default function AgentSalesPercentageChart({ dateRange, userId }: AgentSa
         </div>
       ) : (
         <div className="bg-gray-50 dark:bg-gray-800/30 rounded-lg p-4">
-          {/* Total Fee Display */}
-          <div className="text-center mb-6">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-              Total FEE/AGV del Período
-            </p>
-            <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-              {totalFee.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0 })}
-            </p>
-          </div>
+          {/* Total Fee Display - Solo mostrar si NO es usuario USER */}
+          {!userId && (
+            <div className="text-center mb-6">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                Total FEE/AGV del Período
+              </p>
+              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                {totalFee.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0 })}
+              </p>
+            </div>
+          )}
 
           {/* Chart */}
           <div className="max-w-full overflow-x-auto">

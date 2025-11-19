@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import SimpleRichTextEditor from "@/components/form/SimpleRichTextEditor";
 import { Icon } from '@iconify/react';
+import GestionesStanza from "@/components/GestionesStanza";
 
 interface TourAereo {
   id: string;
@@ -329,6 +330,7 @@ export default function VentaTourAereoPage() {
   const [showCopyNotification, setShowCopyNotification] = useState(false);
   const [isUploadingDocumentoViaggio, setIsUploadingDocumentoViaggio] = useState(false);
   const [isDocumentoViaggioModalOpen, setIsDocumentoViaggioModalOpen] = useState(false);
+  const [isGestionesStanzaOpen, setIsGestionesStanzaOpen] = useState(false);
   const [editingNotas, setEditingNotas] = useState<{tour: boolean, coordinador: boolean}>({
     tour: false,
     coordinador: false
@@ -3084,6 +3086,18 @@ export default function VentaTourAereoPage() {
                           </div>
 
           <div className="flex items-center gap-2">
+            {/* Botón Gestiones Stanza - Visible para todos los usuarios */}
+            <button
+              onClick={() => setIsGestionesStanzaOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg whitespace-nowrap"
+              title="Gestiones Stanza"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+              Gestiones Stanza
+            </button>
+            
             {/* Botón Exportar a Excel */}
                           <button
               onClick={handleExportToExcel}
@@ -3883,6 +3897,23 @@ export default function VentaTourAereoPage() {
         </>,
         document.body
       )}
+
+      {/* Modal Gestiones Stanza */}
+      <GestionesStanza
+        isOpen={isGestionesStanzaOpen}
+        onClose={() => setIsGestionesStanzaOpen(false)}
+        tourId={tourId}
+        ventas={ventas.map(v => ({
+          id: v.id,
+          pasajero: v.pasajero,
+          email: v.email,
+          numeroTelefono: v.numeroTelefono,
+          paisOrigen: v.paisOrigen,
+          iata: v.iata,
+          pnr: v.pnr,
+          stato: v.stato,
+        }))}
+      />
     </div>
   );
 }

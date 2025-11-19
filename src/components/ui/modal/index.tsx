@@ -51,11 +51,15 @@ export const Modal: React.FC<ModalProps> = ({
   if (!isOpen) return null;
 
   const contentClasses = isFullscreen
-    ? "w-full h-full"
+    ? "w-full h-screen"
     : "relative w-auto rounded-3xl bg-white  dark:bg-gray-900";
 
+  // Si className incluye overflow-hidden, no aplicar overflow-y-auto
+  const hasOverflowHidden = className?.includes("overflow-hidden");
+  const overflowClass = hasOverflowHidden ? "" : "overflow-y-auto";
+
   return (
-    <div className="fixed inset-0 flex items-center justify-center p-4 modal z-[9999999999]">
+    <div className={`fixed inset-0 ${isFullscreen ? "flex" : "flex items-center justify-center p-4"} modal z-[9999999999]`}>
       {!isFullscreen && (
         <div
           className="fixed inset-0 h-full w-full bg-gray-400/50 backdrop-blur-[32px] z-[9999999998]"
@@ -64,7 +68,7 @@ export const Modal: React.FC<ModalProps> = ({
       )}
       <div
         ref={modalRef}
-        className={`${contentClasses} ${className} relative z-[9999999999] max-h-[90vh] overflow-y-auto`}
+        className={`${contentClasses} ${className} relative z-[9999999999] ${isFullscreen ? "" : "max-h-[90vh]"} ${overflowClass}`}
         onClick={(e) => e.stopPropagation()}
       >
         {showCloseButton && (
@@ -88,7 +92,7 @@ export const Modal: React.FC<ModalProps> = ({
             </svg>
           </button>
         )}
-        <div>{children}</div>
+        <div className={isFullscreen ? "h-full" : ""}>{children}</div>
       </div>
     </div>
   );

@@ -378,6 +378,7 @@ model TourAereo {
   documentoViaggioName     String?
   creator                  User             @relation(fields: [createdBy], references: [clerkId])
   ventas                   VentaTourAereo[]
+  stanze                   StanzaTourAereo[]
 
   @@index([fechaViaje], map: "idx_tour_aereo_fecha_viaje")
   @@index([fechaFin], map: "idx_tour_aereo_fecha_fin")
@@ -555,6 +556,7 @@ model VentaTourAereo {
   notaEsternaRicevuta String?
   notaInterna         String?
   cuotas              CuotaVentaTourAereo[]
+  asignacionesStanza  AsignacionStanza[]
   creator             User                  @relation(fields: [createdBy], references: [id])
   tourAereo           TourAereo             @relation(fields: [tourAereoId], references: [id], onDelete: Cascade)
 
@@ -660,4 +662,42 @@ enum UserRole {
   USER
   ADMIN
   TI
+}
+
+enum TipoStanza {
+  Singola
+  Doppia
+  Matrimoniale
+  Tripla
+  Suite
+  FamilyRoom
+}
+
+model StanzaTourAereo {
+  id          String            @id @default(cuid())
+  tourAereoId String
+  tipo        TipoStanza
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  tourAereo   TourAereo         @relation(fields: [tourAereoId], references: [id], onDelete: Cascade)
+  asignaciones AsignacionStanza[]
+
+  @@index([tourAereoId], map: "idx_stanze_tour_aereo_tour")
+  @@index([tipo], map: "idx_stanze_tour_aereo_tipo")
+  @@map("stanze_tour_aereo")
+}
+
+model AsignacionStanza {
+  id              String          @id @default(cuid())
+  stanzaId        String
+  ventaTourAereoId String
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  stanza          StanzaTourAereo @relation(fields: [stanzaId], references: [id], onDelete: Cascade)
+  ventaTourAereo  VentaTourAereo  @relation(fields: [ventaTourAereoId], references: [id], onDelete: Cascade)
+
+  @@unique([stanzaId, ventaTourAereoId])
+  @@index([stanzaId], map: "idx_asignaciones_stanza_stanza")
+  @@index([ventaTourAereoId], map: "idx_asignaciones_stanza_venta")
+  @@map("asignaciones_stanza")
 }

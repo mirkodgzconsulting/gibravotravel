@@ -57,8 +57,134 @@ async function quickAddColumn(tableName, columnName, columnType = 'TEXT') {
   }
 }
 
+async function createEnumIfNotExists(enumName, enumValues) {
+  try {
+    // Verificar si el enum existe
+    const checkEnum = await prisma.$queryRawUnsafe(`
+      SELECT EXISTS (
+        SELECT 1 FROM pg_type WHERE typname = '${enumName}'
+      ) as exists;
+    `);
+    
+    if (Array.isArray(checkEnum) && checkEnum[0]?.exists) {
+      return false; // Ya existe
+    }
+
+    // Crear el enum
+    const values = enumValues.map(v => `'${v}'`).join(', ');
+    await prisma.$executeRawUnsafe(`
+      CREATE TYPE "${enumName}" AS ENUM (${values});
+    `);
+    return true;
+  } catch (error) {
+    console.log(`⚠️  Error creando enum ${enumName}: ${error.message}`);
+    return false;
+  }
+}
+
+async function createTableIfNotExists(tableName, createTableSQL) {
+  try {
+    // Verificar si la tabla existe
+    const checkTable = await prisma.$queryRawUnsafe(`
+      SELECT EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = '${tableName}'
+      ) as exists;
+    `);
+    
+    if (Array.isArray(checkTable) && checkTable[0]?.exists) {
+      return false; // Ya existe
+    }
+
+    // Crear la tabla
+    await prisma.$executeRawUnsafe(createTableSQL);
+    return true;
+  } catch (error) {
+    console.log(`⚠️  Error creando tabla ${tableName}: ${error.message}`);
+    return false;
+  }
+}
+
 async function runFastMigration() {
   console.log('🚀 Migración rápida iniciada...\n');
+
+  // Crear enum TipoStanza si no existe
+  await createEnumIfNotExists('TipoStanza', ['Singola', 'Doppia', 'Matrimoniale', 'Tripla', 'Suite', 'FamilyRoom']);
+
+  // Crear tabla stanze_tour_aereo si no existe
+  await createTableIfNotExists('stanze_tour_aereo', `
+    CREATE TABLE "stanze_tour_aereo" (
+      "id" TEXT NOT NULL,
+      "tourAereoId" TEXT NOT NULL,
+      "tipo" "TipoStanza" NOT NULL,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL,
+      CONSTRAINT "stanze_tour_aereo_pkey" PRIMARY KEY ("id")
+    );
+  `);
+
+  // Crear tabla asignaciones_stanza si no existe
+  await createTableIfNotExists('asignaciones_stanza', `
+    CREATE TABLE "asignaciones_stanza" (
+      "id" TEXT NOT NULL,
+      "stanzaId" TEXT NOT NULL,
+      "ventaTourAereoId" TEXT NOT NULL,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL,
+      CONSTRAINT "asignaciones_stanza_pkey" PRIMARY KEY ("id"),
+      CONSTRAINT "asignaciones_stanza_stanzaId_ventaTourAereoId_key" UNIQUE ("stanzaId", "ventaTourAereoId")
+    );
+  `);
+
+  // Crear índices si no existen
+  try {
+    await prisma.$executeRawUnsafe(`
+      CREATE INDEX IF NOT EXISTS "idx_stanze_tour_aereo_tour" ON "stanze_tour_aereo"("tourAereoId");
+      CREATE INDEX IF NOT EXISTS "idx_stanze_tour_aereo_tipo" ON "stanze_tour_aereo"("tipo");
+      CREATE INDEX IF NOT EXISTS "idx_asignaciones_stanza_stanza" ON "asignaciones_stanza"("stanzaId");
+      CREATE INDEX IF NOT EXISTS "idx_asignaciones_stanza_venta" ON "asignaciones_stanza"("ventaTourAereoId");
+    `);
+  } catch (error) {
+    console.log(`⚠️  Error creando índices: ${error.message}`);
+  }
+
+  // Agregar foreign keys si no existen
+  try {
+    await prisma.$executeRawUnsafe(`
+      DO $$ 
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'stanze_tour_aereo_tourAereoId_fkey'
+        ) THEN
+          ALTER TABLE "stanze_tour_aereo" ADD CONSTRAINT "stanze_tour_aereo_tourAereoId_fkey" 
+          FOREIGN KEY ("tourAereoId") REFERENCES "tour_aereo"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+        END IF;
+      END $$;
+
+      DO $$ 
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'asignaciones_stanza_stanzaId_fkey'
+        ) THEN
+          ALTER TABLE "asignaciones_stanza" ADD CONSTRAINT "asignaciones_stanza_stanzaId_fkey" 
+          FOREIGN KEY ("stanzaId") REFERENCES "stanze_tour_aereo"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+        END IF;
+      END $$;
+
+      DO $$ 
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'asignaciones_stanza_ventaTourAereoId_fkey'
+        ) THEN
+          ALTER TABLE "asignaciones_stanza" ADD CONSTRAINT "asignaciones_stanza_ventaTourAereoId_fkey" 
+          FOREIGN KEY ("ventaTourAereoId") REFERENCES "ventas_tour_aereo"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+        END IF;
+      END $$;
+    `);
+  } catch (error) {
+    console.log(`⚠️  Error agregando foreign keys: ${error.message}`);
+  }
 
   const migrations = [
     // Migraciones para TOUR BUS

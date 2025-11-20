@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Modal } from "@/components/ui/modal";
-import { User, Users, X, Plus, GripVertical } from 'lucide-react';
+import { User, Users, X, Plus, GripVertical, Save } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 // Tipos de habitación disponibles
@@ -74,19 +74,28 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
   const [saving, setSaving] = useState(false);
   // Estado inicial para comparar cambios
   const [estadoInicial, setEstadoInicial] = useState<string | null>(null);
+  // Ref para prevenir guardados simultáneos
+  const isSavingRef = useRef(false);
+  // Mapa para mantener el orden original de los pasajeros
+  const ordenPasajerosRef = useRef<Map<string, number>>(new Map());
 
-  // Convertir ventas a pasajeros
+  // Convertir ventas a pasajeros manteniendo el orden original
   const todosLosPasajeros = useMemo(() => {
-    return ventas.map(venta => ({
-      id: venta.id,
-      nombre: venta.pasajero,
-      email: venta.email,
-      telefono: venta.numeroTelefono,
-      paisOrigen: venta.paisOrigen,
-      iata: venta.iata,
-      pnr: venta.pnr,
-      estado: venta.stato,
-    }));
+    const pasajeros = ventas.map((venta, index) => {
+      // Guardar el orden original en el mapa
+      ordenPasajerosRef.current.set(venta.id, index);
+      return {
+        id: venta.id,
+        nombre: venta.pasajero,
+        email: venta.email,
+        telefono: venta.numeroTelefono,
+        paisOrigen: venta.paisOrigen,
+        iata: venta.iata,
+        pnr: venta.pnr,
+        estado: venta.stato,
+      };
+    });
+    return pasajeros;
   }, [ventas]);
 
   // Cargar habitaciones desde la BD cuando se abre el modal
@@ -120,11 +129,18 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
 
           setHabitaciones(habitacionesCargadas);
 
-          // Calcular pasajeros sin asignar
+          // Calcular pasajeros sin asignar manteniendo el orden original
           const pasajerosAsignadosIds = new Set(
             habitacionesCargadas.flatMap(h => h.pasajeros.map(p => p.id))
           );
-          const sinAsignar = todosLosPasajeros.filter(p => !pasajerosAsignadosIds.has(p.id));
+          const sinAsignar = todosLosPasajeros
+            .filter(p => !pasajerosAsignadosIds.has(p.id))
+            .sort((a, b) => {
+              // Mantener el orden original basado en el índice guardado
+              const ordenA = ordenPasajerosRef.current.get(a.id) ?? Infinity;
+              const ordenB = ordenPasajerosRef.current.get(b.id) ?? Infinity;
+              return ordenA - ordenB;
+            });
           setPasajerosSinAsignar(sinAsignar);
           
           // Guardar estado inicial para comparar cambios
@@ -137,16 +153,28 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
           setEstadoInicial(estadoInicialData);
         } else {
           // Si no hay habitaciones guardadas, inicializar con todos los pasajeros sin asignar
+          // Mantener el orden original
+          const pasajerosOrdenados = [...todosLosPasajeros].sort((a, b) => {
+            const ordenA = ordenPasajerosRef.current.get(a.id) ?? Infinity;
+            const ordenB = ordenPasajerosRef.current.get(b.id) ?? Infinity;
+            return ordenA - ordenB;
+          });
           setHabitaciones([]);
-          setPasajerosSinAsignar(todosLosPasajeros);
+          setPasajerosSinAsignar(pasajerosOrdenados);
           // Guardar estado inicial vacío
           setEstadoInicial(JSON.stringify({ habitaciones: [] }));
         }
       } catch (error) {
         console.error('Error loading stanze:', error);
         // En caso de error, inicializar con todos los pasajeros sin asignar
+        // Mantener el orden original
+        const pasajerosOrdenados = [...todosLosPasajeros].sort((a, b) => {
+          const ordenA = ordenPasajerosRef.current.get(a.id) ?? Infinity;
+          const ordenB = ordenPasajerosRef.current.get(b.id) ?? Infinity;
+          return ordenA - ordenB;
+        });
         setHabitaciones([]);
-        setPasajerosSinAsignar(todosLosPasajeros);
+        setPasajerosSinAsignar(pasajerosOrdenados);
         // Guardar estado inicial vacío
         setEstadoInicial(JSON.stringify({ habitaciones: [] }));
       } finally {
@@ -158,11 +186,19 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
   }, [isOpen, tourId, todosLosPasajeros]);
 
   // Calcular pasajeros realmente sin asignar (excluyendo los que están en habitaciones)
+  // Mantener el orden original
   const pasajerosDisponibles = useMemo(() => {
     const pasajerosAsignadosIds = new Set(
       habitaciones.flatMap(h => h.pasajeros.map(p => p.id))
     );
-    return pasajerosSinAsignar.filter(p => !pasajerosAsignadosIds.has(p.id));
+    return pasajerosSinAsignar
+      .filter(p => !pasajerosAsignadosIds.has(p.id))
+      .sort((a, b) => {
+        // Mantener el orden original basado en el índice guardado
+        const ordenA = ordenPasajerosRef.current.get(a.id) ?? Infinity;
+        const ordenB = ordenPasajerosRef.current.get(b.id) ?? Infinity;
+        return ordenA - ordenB;
+      });
   }, [pasajerosSinAsignar, habitaciones]);
 
   // Función para crear una nueva habitación
@@ -179,8 +215,16 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
   const eliminarHabitacion = (habitacionId: string) => {
     const habitacion = habitaciones.find(h => h.id === habitacionId);
     if (habitacion) {
-      // Mover pasajeros de vuelta a sin asignar
-      setPasajerosSinAsignar(prev => [...prev, ...habitacion.pasajeros]);
+      // Mover pasajeros de vuelta a sin asignar manteniendo el orden
+      setPasajerosSinAsignar(prev => {
+        const nuevosPasajeros = [...prev, ...habitacion.pasajeros];
+        // Ordenar manteniendo el orden original
+        return nuevosPasajeros.sort((a, b) => {
+          const ordenA = ordenPasajerosRef.current.get(a.id) ?? Infinity;
+          const ordenB = ordenPasajerosRef.current.get(b.id) ?? Infinity;
+          return ordenA - ordenB;
+        });
+      });
       setHabitaciones(prev => prev.filter(h => h.id !== habitacionId));
     }
   };
@@ -226,7 +270,15 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
           ? { ...h, pasajeros: h.pasajeros.filter(p => p.id !== pasajero.id) }
           : h
       ));
-      setPasajerosSinAsignar(prev => [...prev, pasajero]);
+      setPasajerosSinAsignar(prev => {
+        const nuevosPasajeros = [...prev, pasajero];
+        // Ordenar manteniendo el orden original
+        return nuevosPasajeros.sort((a, b) => {
+          const ordenA = ordenPasajerosRef.current.get(a.id) ?? Infinity;
+          const ordenB = ordenPasajerosRef.current.get(b.id) ?? Infinity;
+          return ordenA - ordenB;
+        });
+      });
     }
     setDraggedPasajero(null);
     setDraggedFrom(null);
@@ -256,7 +308,14 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
       return;
     }
 
+    // Prevenir guardados simultáneos
+    if (isSavingRef.current) {
+      console.log('Ya hay un guardado en progreso, ignorando...');
+      return;
+    }
+
     try {
+      isSavingRef.current = true;
       setSaving(true);
       
       // Preparar los datos para enviar
@@ -286,18 +345,38 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
         const habitacionesActualizadas: Habitacion[] = data.stanze.map((stanza: any) => ({
           id: stanza.id,
           tipo: stanza.tipo === 'FamilyRoom' ? 'Family Room' : stanza.tipo,
-          pasajeros: stanza.asignaciones.map((asignacion: any) => ({
-            id: asignacion.ventaTourAereo.id,
-            nombre: asignacion.ventaTourAereo.pasajero,
-            email: asignacion.ventaTourAereo.email,
-            telefono: asignacion.ventaTourAereo.numeroTelefono,
-            paisOrigen: asignacion.ventaTourAereo.paisOrigen,
-            iata: asignacion.ventaTourAereo.iata,
-            pnr: asignacion.ventaTourAereo.pnr,
-            estado: asignacion.ventaTourAereo.stato,
-          })),
+          pasajeros: stanza.asignaciones
+            .map((asignacion: any) => ({
+              id: asignacion.ventaTourAereo.id,
+              nombre: asignacion.ventaTourAereo.pasajero,
+              email: asignacion.ventaTourAereo.email,
+              telefono: asignacion.ventaTourAereo.numeroTelefono,
+              paisOrigen: asignacion.ventaTourAereo.paisOrigen,
+              iata: asignacion.ventaTourAereo.iata,
+              pnr: asignacion.ventaTourAereo.pnr,
+              estado: asignacion.ventaTourAereo.stato,
+            }))
+            .sort((a: Pasajero, b: Pasajero) => {
+              // Mantener el orden original basado en el índice guardado
+              const ordenA = ordenPasajerosRef.current.get(a.id) ?? Infinity;
+              const ordenB = ordenPasajerosRef.current.get(b.id) ?? Infinity;
+              return ordenA - ordenB;
+            }),
         }));
         setHabitaciones(habitacionesActualizadas);
+        
+        // Actualizar pasajeros sin asignar manteniendo el orden
+        const pasajerosAsignadosIds = new Set(
+          habitacionesActualizadas.flatMap(h => h.pasajeros.map(p => p.id))
+        );
+        const sinAsignar = todosLosPasajeros
+          .filter(p => !pasajerosAsignadosIds.has(p.id))
+          .sort((a, b) => {
+            const ordenA = ordenPasajerosRef.current.get(a.id) ?? Infinity;
+            const ordenB = ordenPasajerosRef.current.get(b.id) ?? Infinity;
+            return ordenA - ordenB;
+          });
+        setPasajerosSinAsignar(sinAsignar);
         
         // Actualizar el estado inicial con el nuevo estado guardado
         const nuevoEstadoInicial = JSON.stringify({
@@ -313,19 +392,11 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
       // No mostrar alert para no interrumpir la experiencia del usuario
     } finally {
       setSaving(false);
+      isSavingRef.current = false;
     }
   }, [habitaciones, isOpen, loading, saving, tourId, hayCambios]);
 
-  // Guardar automáticamente cuando cambian las habitaciones (con debounce)
-  useEffect(() => {
-    if (!isOpen || loading) return;
-
-    const timeoutId = setTimeout(() => {
-      guardarStanze();
-    }, 1500); // Guardar 1.5 segundos después del último cambio
-
-    return () => clearTimeout(timeoutId);
-  }, [habitaciones, isOpen, loading, guardarStanze]);
+  // Ya no guardamos automáticamente - el usuario debe hacer clic en "Guardar"
 
   // Handlers para drag and drop
   const handleDragStart = (pasajero: Pasajero, from: { type: 'unassigned' | 'room'; roomId?: string }) => {
@@ -450,19 +521,10 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
         {/* Encabezado fijo - Título, barra de herramientas y pasajeros sin asignar */}
         <div className="flex-shrink-0 p-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
           {/* Título */}
-          <div className="flex items-center justify-between mb-4 px-2">
+          <div className="mb-4 px-2">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
               Gestione Stanze - Organizzazione Passeggeri
             </h2>
-            {saving && (
-              <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Salvando...
-              </span>
-            )}
           </div>
           
           {!loading && (
@@ -486,7 +548,36 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
                     {tipo}
                   </button>
                 ))}
-                <div className="ml-auto">
+                <div className="ml-auto flex items-center gap-2">
+                  <div className="flex items-center gap-2">
+                    {hayCambios() && !saving && (
+                      <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                        Cambios sin guardar
+                      </span>
+                    )}
+                    {saving && (
+                      <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                        <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Salvando...
+                      </span>
+                    )}
+                    <button
+                      onClick={guardarStanze}
+                      disabled={!hayCambios() || saving || loading}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md text-xs font-medium ${
+                        hayCambios() && !saving && !loading
+                          ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                          : 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                      }`}
+                      title={hayCambios() ? 'Guardar cambios' : 'No hay cambios para guardar'}
+                    >
+                      <Save className="w-4 h-4" />
+                      Guardar
+                    </button>
+                  </div>
                   <button
                     onClick={handleExportToExcel}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md text-xs font-medium"

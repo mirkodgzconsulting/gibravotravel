@@ -150,7 +150,6 @@ export async function GET(request: NextRequest) {
       
         // Si es un error de Prisma o schema, usar SQL directo como fallback
         if (isSchemaError || prismaError?.code?.startsWith('P')) {
-          console.log('⚠️ Error de schema detectado, usando SQL directo como fallback...');
           useSqlDirect = true; // Forzar uso de SQL directo
         } else {
           // Si no es un error de schema, lanzar el error original
@@ -170,9 +169,7 @@ export async function GET(request: NextRequest) {
               ADD COLUMN IF NOT EXISTS "documentoViaggioName_old" TEXT,
               ADD COLUMN IF NOT EXISTS "documentoViaggio_old" TEXT
             `);
-            console.log('✅ Columnas verificadas/agregadas');
           } catch (alterError: any) {
-            console.log('⚠️ Error agregando columnas (puede que ya existan):', alterError?.message);
           }
           
           // Construir WHERE clause para SQL directo
@@ -289,7 +286,6 @@ export async function GET(request: NextRequest) {
                 return acc;
               }, {});
             } catch (e) {
-              console.log('⚠️ Error cargando ventas:', e);
             }
           }
           
@@ -300,7 +296,6 @@ export async function GET(request: NextRequest) {
             _count: { ventas: ventasMap[tour.id]?.length || 0 }
           }));
           
-          console.log('✅ Consulta SQL directa exitosa');
         } catch (sqlError: any) {
         console.error('❌ Error en SQL directo:', {
           message: sqlError?.message,
@@ -533,11 +528,16 @@ export async function POST(request: NextRequest) {
           const bytes = await file.arrayBuffer();
           const buffer = Buffer.from(bytes);
 
+          // Detectar el tipo de archivo para usar el resource_type correcto
+          const fileExtension = file.name.toLowerCase().split('.').pop();
+          const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension || '');
+          const resourceType = isImage ? 'image' : 'raw'; // PDFs y otros archivos usan 'raw'
+
           const result = await new Promise<any>((resolve, reject) => {
             cloudinary.uploader.upload_stream(
               {
                 folder: 'gibravotravel/tour_aereo/documenti',
-                resource_type: 'auto'
+                resource_type: resourceType // Usar 'raw' para PDFs, 'image' para imágenes
               },
               (error, result) => {
                 if (error) reject(error);

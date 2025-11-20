@@ -150,7 +150,6 @@ export async function POST(request: NextRequest) {
       });
 
       if (existingClientByFiscal) {
-        console.log('Duplicate fiscal code found:', { fiscalCode: fiscalCodeTrimmed, existingId: existingClientByFiscal.id });
         return NextResponse.json({ 
           error: 'Ya existe un cliente con este código fiscal',
           field: 'fiscalCode',
@@ -171,7 +170,6 @@ export async function POST(request: NextRequest) {
       });
 
       if (existingClientByEmail) {
-        console.log('Duplicate email found:', { email: emailTrimmed, existingId: existingClientByEmail.id });
         return NextResponse.json({ 
           error: 'Ya existe un cliente con este email',
           field: 'email',
@@ -192,7 +190,6 @@ export async function POST(request: NextRequest) {
       });
 
       if (existingClientByPhone) {
-        console.log('Duplicate phone number found:', { phoneNumber: phoneNumberTrimmed, existingId: existingClientByPhone.id });
         return NextResponse.json({ 
           error: 'Ya existe un cliente con este número de teléfono',
           field: 'phoneNumber',
@@ -232,11 +229,16 @@ export async function POST(request: NextRequest) {
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
         
+        // Detectar el tipo de archivo para usar el resource_type correcto
+        const fileExtension = file.name.toLowerCase().split('.').pop();
+        const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension || '');
+        const resourceType = isImage ? 'image' : 'raw'; // PDFs y otros archivos usan 'raw'
+        
         const result = await new Promise<any>((resolve, reject) => {
           cloudinary.uploader.upload_stream(
             {
               folder: 'gibravotravel/clients/documents',
-              resource_type: 'auto', // Permite imágenes y PDFs
+              resource_type: resourceType, // Usar 'raw' para PDFs, 'image' para imágenes
             },
             (error, result) => {
               if (error) reject(error);
@@ -308,15 +310,6 @@ export async function POST(request: NextRequest) {
       createdBy: userId
     };
 
-    // Log de los datos que se intentan crear (para debugging)
-    console.log('Creating client with data:', {
-      firstName: clientData.firstName,
-      lastName: clientData.lastName,
-      fiscalCode: fiscalCodeTrimmed || '(empty)',
-      email: emailTrimmed !== '' ? emailTrimmed : '(temp email)',
-      phoneNumber: phoneNumberTrimmed,
-    });
-    
     const newClient = await prisma.client.create({
       data: clientData
     });

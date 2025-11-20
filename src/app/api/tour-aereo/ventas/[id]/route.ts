@@ -215,7 +215,6 @@ export async function PUT(
         
         attachedFileUrl = result.secure_url;
         attachedFileName = file.name;
-        console.log('📎 Archivo principal actualizado:', attachedFileName);
       } catch (error) {
         console.error('Error uploading main file:', error);
       }
@@ -266,14 +265,12 @@ export async function PUT(
             
             cuotaAttachedFile = result.secure_url;
             cuotaAttachedFileName = cuotaFile.name;
-            console.log(`📎 Archivo de cuota ${i + 1} NUEVO subido:`, cuotaAttachedFileName);
           } catch (error) {
             console.error(`Error uploading cuota file ${i}:`, error);
           }
         } else {
           // Si no hay archivo nuevo, mantener el existente
           if (cuotaAttachedFile) {
-            console.log(`📎 Manteniendo archivo existente de cuota ${i + 1}:`, cuotaAttachedFileName);
           }
         }
         

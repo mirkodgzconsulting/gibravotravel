@@ -448,7 +448,6 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
         dataToExport.push({
           'Tipo Stanza': habitacion.tipo,
           'Passeggero': '(Vuota)',
-          'Email': '',
           'Telefono': '',
         });
       } else {
@@ -457,7 +456,6 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
           dataToExport.push({
             'Tipo Stanza': pasajeroIndex === 0 ? habitacion.tipo : '', // Solo mostrar tipo en la primera fila
             'Passeggero': pasajero.nombre,
-            'Email': pasajero.email,
             'Telefono': pasajero.telefono,
           });
         });
@@ -469,20 +467,17 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
       dataToExport.push({
         'Tipo Stanza': '---',
         'Passeggero': '---',
-        'Email': '---',
         'Telefono': '---',
       });
       dataToExport.push({
         'Tipo Stanza': 'SENZA STANZA',
         'Passeggero': '',
-        'Email': '',
         'Telefono': '',
       });
       pasajerosDisponibles.forEach((pasajero) => {
         dataToExport.push({
           'Tipo Stanza': '',
           'Passeggero': pasajero.nombre,
-          'Email': pasajero.email,
           'Telefono': pasajero.telefono,
         });
       });

@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 // GET - Obtener las habitaciones y asignaciones de un tour
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -13,7 +13,7 @@ export async function GET(
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const tourId = params.id;
+    const { id: tourId } = await params;
 
     // Obtener todas las habitaciones del tour con sus asignaciones
     const stanze = await prisma.stanzaTourAereo.findMany({
@@ -56,7 +56,7 @@ export async function GET(
 // POST - Guardar las habitaciones y asignaciones de un tour
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -64,7 +64,7 @@ export async function POST(
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const tourId = params.id;
+    const { id: tourId } = await params;
     const body = await request.json();
     const { habitaciones } = body;
 

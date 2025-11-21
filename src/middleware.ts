@@ -1,11 +1,13 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
-
-const isPublicRoute = createRouteMatcher(['/api/download-file']);
+import { clerkMiddleware } from '@clerk/nextjs/server';
 
 export default clerkMiddleware(async (auth, req) => {
-  if (!isPublicRoute(req)) {
-    await auth.protect();
+  // Excluir /api/download-file de la protección - retornar temprano sin hacer nada
+  if (req.nextUrl.pathname.startsWith('/api/download-file')) {
+    return;
   }
+  
+  // Proteger todas las demás rutas
+  await auth.protect();
 });
 
 export const config = {

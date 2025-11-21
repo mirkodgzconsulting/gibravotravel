@@ -701,3 +701,24 @@ model AsignacionStanza {
   @@index([ventaTourAereoId], map: "idx_asignaciones_stanza_venta")
   @@map("asignaciones_stanza")
 }
+
+model AuditoriaEliminacion {
+  id              String   @id @default(cuid())
+  tipoVenta       String   // 'biglietteria', 'tour_aereo', 'tour_bus'
+  registroId      String   // ID del registro eliminado
+  nombreCliente   String   // Nombre del cliente de la venta
+  datosRegistro   Json     // Datos completos del registro antes de eliminar
+  usuarioId       String   // ID del usuario que eliminó (clerkId)
+  usuarioNombre   String?  // Nombre del usuario que eliminó
+  usuarioEmail    String?  // Email del usuario que eliminó
+  fechaEliminacion DateTime @default(now())
+  ipAddress       String?  // IP desde donde se hizo la eliminación
+  userAgent       String?  // User agent del navegador
+
+  @@index([tipoVenta], map: "idx_auditoria_tipo_venta")
+  @@index([registroId], map: "idx_auditoria_registro_id")
+  @@index([usuarioId], map: "idx_auditoria_usuario_id")
+  @@index([fechaEliminacion], map: "idx_auditoria_fecha")
+  @@index([nombreCliente], map: "idx_auditoria_cliente")
+  @@map("auditoria_eliminaciones")
+}

@@ -320,6 +320,60 @@ export async function DELETE(
       return NextResponse.json({ error: 'Tour no encontrado' }, { status: 404 });
     }
 
+    // Obtener información del usuario que elimina
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true
+      }
+    });
+
+    // Obtener datos completos de la venta para auditoría
+    const ventaCompleta = await prisma.ventaTourBus.findUnique({
+      where: { id },
+      include: {
+        acompanantes: true,
+        cuotas: true
+      }
+    });
+
+    if (!ventaCompleta) {
+      return NextResponse.json({ error: 'Venta no encontrada' }, { status: 404 });
+    }
+
+    // Obtener IP y User Agent
+    const ipAddress = request.headers.get('x-forwarded-for') || 
+                     request.headers.get('x-real-ip') || 
+                     'unknown';
+    const userAgent = request.headers.get('user-agent') || 'unknown';
+
+    // Registrar en auditoría ANTES de eliminar (si la tabla existe)
+    try {
+      await prisma.auditoriaEliminacion.create({
+        data: {
+          tipoVenta: 'tour_bus',
+          registroId: id,
+          nombreCliente: ventaCompleta.clienteNombre,
+          datosRegistro: {
+            ...ventaCompleta,
+            acompanantes: ventaCompleta.acompanantes,
+            cuotas: ventaCompleta.cuotas
+          } as any,
+          usuarioId: userId,
+          usuarioNombre: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : null,
+          usuarioEmail: user?.email || null,
+          ipAddress,
+          userAgent
+        }
+      });
+    } catch (auditError: any) {
+      // Si la tabla de auditoría no existe, solo registrar warning pero continuar con la eliminación
+      console.warn('⚠️ No se pudo registrar en auditoría (tabla puede no existir):', auditError?.message);
+    }
+
     // Eliminar con transacción
     await prisma.$transaction(async (tx) => {
       // 1. Liberar asiento principal

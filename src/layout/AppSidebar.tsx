@@ -227,6 +227,11 @@ const utentiItems: NavItem[] = [
     name: "Limpiar Conexiones BD",
     path: "/limpiar-conexiones",
   },
+  {
+    icon: <TableIcon />,
+    name: "Auditoría",
+    path: "/auditoria",
+  },
 ];
 
 

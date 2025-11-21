@@ -454,13 +454,58 @@ export async function DELETE(
 
     const { id } = await params;
 
-    // Verificar que el registro existe
+    // Verificar que el registro existe y obtener datos completos
     const existingRecord = await prisma.biglietteria.findUnique({
-      where: { id }
+      where: { id },
+      include: {
+        pasajeros: true,
+        cuotas: true
+      }
     });
 
     if (!existingRecord) {
       return NextResponse.json({ error: 'Registro no encontrado' }, { status: 404 });
+    }
+
+    // Obtener información del usuario que elimina
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true
+      }
+    });
+
+    // Obtener IP y User Agent
+    const ipAddress = request.headers.get('x-forwarded-for') || 
+                     request.headers.get('x-real-ip') || 
+                     'unknown';
+    const userAgent = request.headers.get('user-agent') || 'unknown';
+
+    // Registrar en auditoría ANTES de eliminar (si la tabla existe)
+    try {
+      await prisma.auditoriaEliminacion.create({
+        data: {
+          tipoVenta: 'biglietteria',
+          registroId: id,
+          nombreCliente: existingRecord.cliente,
+          datosRegistro: {
+            ...existingRecord,
+            pasajeros: existingRecord.pasajeros,
+            cuotas: existingRecord.cuotas
+          } as any,
+          usuarioId: userId,
+          usuarioNombre: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : null,
+          usuarioEmail: user?.email || null,
+          ipAddress,
+          userAgent
+        }
+      });
+    } catch (auditError: any) {
+      // Si la tabla de auditoría no existe, solo registrar warning pero continuar con la eliminación
+      console.warn('⚠️ No se pudo registrar en auditoría (tabla puede no existir):', auditError?.message);
     }
 
     // Eliminar el registro de la base de datos

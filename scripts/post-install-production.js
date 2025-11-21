@@ -15,20 +15,23 @@ async function postInstallProduction() {
     }
 
     console.log('🌍 Entorno de producción detectado');
-    console.log('🔄 Ejecutando migración rápida (no bloquea el build)...\n');
+    // COMENTADO: Migraciones automáticas deshabilitadas - ejecutar manualmente solo cuando haya cambios en el schema
+    // console.log('🔄 Ejecutando migración rápida (no bloquea el build)...\n');
 
     // Ejecutar migración rápida con timeout
-    try {
-      execSync('node scripts/migrate-production-fast.js', { 
-        stdio: 'inherit',
-        timeout: 15000, // 15 segundos máximo
-        killSignal: 'SIGTERM'
-      });
-      console.log('✅ Migración rápida completada\n');
-    } catch (error) {
-      // No fallar el build si hay timeout o error
-      console.log('⚠️  Migración rápida con advertencias, continuando...\n');
-    }
+    // try {
+    //   execSync('node scripts/migrate-production-fast.js', { 
+    //     stdio: 'inherit',
+    //     timeout: 15000, // 15 segundos máximo
+    //     killSignal: 'SIGTERM'
+    //   });
+    //   console.log('✅ Migración rápida completada\n');
+    // } catch (error) {
+    //   // No fallar el build si hay timeout o error
+    //   console.log('⚠️  Migración rápida con advertencias, continuando...\n');
+    // }
+    
+    console.log('⏭️  Migraciones automáticas deshabilitadas - ejecutar manualmente cuando haya cambios en el schema\n');
 
     console.log('✅ Post-install completado exitosamente!');
 

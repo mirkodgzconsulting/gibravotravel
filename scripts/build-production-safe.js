@@ -15,14 +15,15 @@ async function buildProductionSafe() {
       console.log('🔒 Usando build SEGURO (NO borra datos)\n');
       
       try {
+        // COMENTADO: Migraciones automáticas deshabilitadas - ejecutar manualmente solo cuando haya cambios en el schema
         // Solo aplicar cambios de esquema SIN borrar datos
-        console.log('📊 Aplicando cambios de esquema (SIN borrar datos)...');
-        try {
-          execSync('npx prisma db push', { stdio: 'inherit' });
-          console.log('   ✅ Esquema aplicado exitosamente');
-        } catch (schemaError) {
-          console.log('   ⚠️  Error aplicando esquema, continuando...');
-        }
+        // console.log('📊 Aplicando cambios de esquema (SIN borrar datos)...');
+        // try {
+        //   execSync('npx prisma db push', { stdio: 'inherit' });
+        //   console.log('   ✅ Esquema aplicado exitosamente');
+        // } catch (schemaError) {
+        //   console.log('   ⚠️  Error aplicando esquema, continuando...');
+        // }
 
         // Corregir archivos de subida
         console.log('\n🔧 Corrigiendo archivos de subida...');

@@ -6,6 +6,7 @@ import { useSearch } from "@/context/SearchContext";
 import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import { CopyNotification } from "@/components/ui/notification/CopyNotification";
+import { Modal } from "@/components/ui/modal";
 import Image from "next/image";
 
 interface TourBus {
@@ -68,6 +69,8 @@ export default function PartenzeNotePage() {
   const [expandedTour, setExpandedTour] = useState<string | null>(null);
   const [showCopyNotification, setShowCopyNotification] = useState(false);
   const [copiedTours, setCopiedTours] = useState<Set<string>>(new Set());
+  const [isFileModalOpen, setIsFileModalOpen] = useState(false);
+  const [selectedTour, setSelectedTour] = useState<TourUnified | null>(null);
 
   const fetchTours = useCallback(async () => {
     try {
@@ -339,29 +342,35 @@ export default function PartenzeNotePage() {
                   )}
 
                   {/* Archivos */}
-                  <div className="space-y-2 mb-3">
+                  <div className="flex items-center gap-3 mb-3">
                     {tour.pdfFile && (
-                      <div className="text-sm">
-                        <span className="text-gray-500 dark:text-gray-400">PDF: </span>
-                        <button
-                          onClick={() => handleDownload(tour.pdfFile!, tour.pdfFileName || 'documento.pdf')}
-                          className="text-brand-600 dark:text-brand-400 hover:underline cursor-pointer"
-                        >
-                          {tour.pdfFileName || 'documento.pdf'}
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => {
+                          setSelectedTour(tour);
+                          setIsFileModalOpen(true);
+                        }}
+                        className="p-2.5 rounded-xl bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/30 dark:to-red-800/20 text-red-600 dark:text-red-400 hover:from-red-100 hover:to-red-200 dark:hover:from-red-800/40 dark:hover:to-red-900/30 transition-all duration-200 shadow-sm hover:shadow-md"
+                        title="Ver archivos PDF"
+                      >
+                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
+                        </svg>
+                      </button>
                     )}
                     
                     {tour.coverImage && (
-                      <div className="text-sm">
-                        <span className="text-gray-500 dark:text-gray-400">Immagine: </span>
-                        <button
-                          onClick={() => handleDownload(tour.coverImage!, tour.coverImageName || 'imagen.jpg')}
-                          className="text-brand-600 dark:text-brand-400 hover:underline cursor-pointer"
-                        >
-                          {tour.coverImageName || 'imagen.jpg'}
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => {
+                          setSelectedTour(tour);
+                          setIsFileModalOpen(true);
+                        }}
+                        className="p-2.5 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/20 text-blue-600 dark:text-blue-400 hover:from-blue-100 hover:to-blue-200 dark:hover:from-blue-800/40 dark:hover:to-blue-900/30 transition-all duration-200 shadow-sm hover:shadow-md"
+                        title="Ver archivos de imagen"
+                      >
+                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M21,19V5C21,3.89 20.1,3 19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19M8.5,13.5L11,16.5L14.5,12L19,18H5L8.5,13.5Z" />
+                        </svg>
+                      </button>
                     )}
                   </div>
 
@@ -445,6 +454,78 @@ export default function PartenzeNotePage() {
         show={showCopyNotification}
         onHide={() => setShowCopyNotification(false)}
       />
+
+      {/* Modal de archivos */}
+      <Modal
+        isOpen={isFileModalOpen}
+        onClose={() => {
+          setIsFileModalOpen(false);
+          setSelectedTour(null);
+        }}
+        className="max-w-md mx-4"
+      >
+        <div className="p-6">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+            Archivos - {selectedTour?.titulo}
+          </h2>
+          
+          <div className="space-y-3">
+            {selectedTour?.pdfFile && (
+              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-red-50 to-red-100/50 dark:from-red-900/20 dark:to-red-800/10 rounded-xl border border-red-200/50 dark:border-red-800/50 shadow-sm">
+                <div className="flex items-center gap-4">
+                  <div className="p-2.5 rounded-lg bg-red-100 dark:bg-red-900/40">
+                    <svg className="w-7 h-7 text-red-600 dark:text-red-400" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                      {selectedTour.pdfFileName || 'documento.pdf'}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Documento PDF</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleDownload(selectedTour.pdfFile!, selectedTour.pdfFileName || 'documento.pdf')}
+                  className="ml-3 px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md"
+                >
+                  Descargar
+                </button>
+              </div>
+            )}
+            
+            {selectedTour?.coverImage && (
+              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 rounded-xl border border-blue-200/50 dark:border-blue-800/50 shadow-sm">
+                <div className="flex items-center gap-4">
+                  <div className="p-2.5 rounded-lg bg-blue-100 dark:bg-blue-900/40">
+                    <svg className="w-7 h-7 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M21,19V5C21,3.89 20.1,3 19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19M8.5,13.5L11,16.5L14.5,12L19,18H5L8.5,13.5Z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                      {selectedTour.coverImageName || 'imagen.jpg'}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Archivo de imagen</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleDownload(selectedTour.coverImage!, selectedTour.coverImageName || 'imagen.jpg')}
+                  className="ml-3 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md"
+                >
+                  Descargar
+                </button>
+              </div>
+            )}
+          </div>
+          
+          {!selectedTour?.pdfFile && !selectedTour?.coverImage && (
+            <p className="text-center text-gray-500 dark:text-gray-400 py-4">
+              No hay archivos disponibles
+            </p>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 }

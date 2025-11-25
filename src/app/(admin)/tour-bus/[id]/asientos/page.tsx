@@ -1314,12 +1314,119 @@ export default function AsientosTourBusPage() {
             }
             
             @media print {
-              body { 
-                padding: 10px; 
-                background: white;
+              @page {
+                size: A4 portrait;
+                margin: 0.5cm;
               }
+              
+              * {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+              
+              body { 
+                padding: 0; 
+                margin: 0;
+                background: white;
+                font-size: 10px;
+              }
+              
               .container {
                 box-shadow: none;
+                max-width: 100%;
+                margin: 0;
+                padding: 0;
+                border-radius: 0;
+              }
+              
+              .header {
+                padding: 8px;
+                font-size: 14px;
+                background: transparent !important;
+                color: #000 !important;
+              }
+              
+              .stats-section {
+                padding: 8px;
+                gap: 15px;
+                flex-wrap: wrap;
+                background: transparent !important;
+              }
+              
+              .stats-column {
+                flex: 1 1 auto;
+                min-width: 120px;
+              }
+              
+              .stats-column h3 {
+                font-size: 11px;
+                margin-bottom: 4px;
+              }
+              
+              .stat-item {
+                font-size: 9px;
+                margin-bottom: 2px;
+              }
+              
+              .bus-layout {
+                padding: 8px;
+                gap: 8px;
+                flex-wrap: nowrap;
+              }
+              
+              .seat-list {
+                width: 140px;
+                padding: 8px;
+                font-size: 9px;
+                background: transparent !important;
+                color: #000 !important;
+              }
+              
+              .seat-item {
+                padding: 2px 0;
+                font-size: 9px;
+              }
+              
+              .seat-number {
+                font-size: 9px;
+              }
+              
+              .seat-name {
+                font-size: 8px;
+                color: #000 !important;
+              }
+              
+              .bus-center {
+                padding: 8px;
+                gap: 4px;
+                background: transparent !important;
+              }
+              
+              .seat-button {
+                width: 28px;
+                height: 28px;
+                font-size: 10px;
+              }
+              
+              .aisle {
+                width: 28px;
+                height: 28px;
+              }
+              
+              .legend {
+                padding: 8px;
+                gap: 12px;
+                font-size: 9px;
+              }
+              
+              .legend-item {
+                font-size: 9px;
+                gap: 4px;
+              }
+              
+              .legend-color {
+                width: 12px;
+                height: 12px;
               }
             }
           </style>

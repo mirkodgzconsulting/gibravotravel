@@ -325,10 +325,10 @@ export default function AsientosTourBusPage() {
         const data = await response.json();
         setTour(data.tour);
       } else {
-        setError('Error al cargar el tour');
+        setError('Errore durante il caricamento del tour');
       }
     } catch {
-      setError('Error de conexión');
+      setError('Errore di connessione');
     } finally {
       setLoading(false);
     }
@@ -359,11 +359,11 @@ export default function AsientosTourBusPage() {
         const errorData = await response.json();
         const errorMessage = errorData.details 
           ? `${errorData.error}\n\nDetalles: ${errorData.details}` 
-          : errorData.error || 'Error al crear la venta';
+          : errorData.error || 'Errore durante la creazione della vendita';
         alert(errorMessage);
       }
     } catch (error: any) {
-      alert(`Error de conexión: ${error.message}`);
+      alert(`Errore di connessione: ${error.message}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -487,24 +487,24 @@ export default function AsientosTourBusPage() {
           </style>
         </head>
         <body>
-          <h1>Información de Venta - Tour Bus</h1>
-          <h2>Cliente Principal (Capo Gruppo)</h2>
-          <div class="info-row"><div class="label">Nombre Completo:</div><div class="value">${venta.clienteNombre}</div></div>
-          <div class="info-row"><div class="label">Mascotas:</div><div class="value">${venta.tieneMascotas ? `Sí (${venta.numeroMascotas})` : 'No'}</div></div>
-          <div class="info-row"><div class="label">Total a Pagar:</div><div class="value">€${venta.totalAPagar.toFixed(2)}</div></div>
-          <div class="info-row"><div class="label">Monto Pagado (Acconto):</div><div class="value">€${venta.acconto.toFixed(2)}</div></div>
-          <div class="info-row"><div class="label">Saldo Pendiente:</div><div class="value">€${venta.daPagare.toFixed(2)}</div></div>
+          <h1>Informazioni Vendita - Tour Bus</h1>
+          <h2>Cliente Principale (Capo Gruppo)</h2>
+          <div class="info-row"><div class="label">Nome Completo:</div><div class="value">${venta.clienteNombre}</div></div>
+          <div class="info-row"><div class="label">Mascotte:</div><div class="value">${venta.tieneMascotas ? `Sì (${venta.numeroMascotas})` : 'No'}</div></div>
+          <div class="info-row"><div class="label">Totale da Pagare:</div><div class="value">€${venta.totalAPagar.toFixed(2)}</div></div>
+          <div class="info-row"><div class="label">Importo Pagato (Acconto):</div><div class="value">€${venta.acconto.toFixed(2)}</div></div>
+          <div class="info-row"><div class="label">Saldo Pendente:</div><div class="value">€${venta.daPagare.toFixed(2)}</div></div>
           <div class="info-row"><div class="label">Fermata:</div><div class="value">${venta.fermata}</div></div>
-          <div class="info-row"><div class="label">Número Telefónico:</div><div class="value">${venta.numeroTelefono}</div></div>
-          <div class="info-row"><div class="label">Usuario que Registró:</div><div class="value">${userName}</div></div>
+          <div class="info-row"><div class="label">Numero Telefonico:</div><div class="value">${venta.numeroTelefono}</div></div>
+          <div class="info-row"><div class="label">Utente che ha Registrato:</div><div class="value">${userName}</div></div>
           
           ${venta.acompanantes.length > 0 ? `
-            <h2>Acompañantes</h2>
+            <h2>Accompagnatori</h2>
             ${venta.acompanantes.map(acomp => `
               <div class="acompanante">
-                <div class="info-row"><div class="label">Nombre Completo:</div><div class="value">${acomp.nombreCompleto}</div></div>
+                <div class="info-row"><div class="label">Nome Completo:</div><div class="value">${acomp.nombreCompleto}</div></div>
                 <div class="info-row"><div class="label">Fermata:</div><div class="value">${acomp.fermata}</div></div>
-                <div class="info-row"><div class="label">Número de Contacto:</div><div class="value">${acomp.telefono || 'N/A'}</div></div>
+                <div class="info-row"><div class="label">Numero di Contatto:</div><div class="value">${acomp.telefono || 'N/A'}</div></div>
               </div>
             `).join('')}
           ` : ''}
@@ -546,7 +546,7 @@ export default function AsientosTourBusPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al actualizar la venta');
+        throw new Error(errorData.error || 'Errore durante l\'aggiornamento della vendita');
       }
 
       // Recargar los datos del tour
@@ -558,17 +558,17 @@ export default function AsientosTourBusPage() {
       setTimeout(() => setShowNotification(false), 3000);
       
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Error al actualizar la venta');
-      alert(error instanceof Error ? error.message : 'Error al actualizar la venta');
+      setError(error instanceof Error ? error.message : 'Errore durante l\'aggiornamento della vendita');
+      alert(error instanceof Error ? error.message : 'Errore durante l\'aggiornamento della vendita');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDeleteVenta = async (ventaId: string) => {
-    if (!confirm('¿Estás seguro de eliminar esta venta? Esta acción no se puede deshacer.')) {
-      return;
-    }
+      if (!confirm('Sei sicuro di voler eliminare questa vendita? Questa azione non può essere annullata.')) {
+        return;
+      }
 
     try {
       setIsSubmitting(true);
@@ -579,7 +579,7 @@ export default function AsientosTourBusPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al eliminar la venta');
+        throw new Error(errorData.error || 'Errore durante l\'eliminazione della vendita');
       }
 
       // Recargar los datos del tour
@@ -589,7 +589,7 @@ export default function AsientosTourBusPage() {
       setTimeout(() => setShowNotification(false), 3000);
       
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Error al eliminar la venta');
+      alert(error instanceof Error ? error.message : 'Errore durante l\'eliminazione della vendita');
     } finally {
       setIsSubmitting(false);
     }
@@ -775,7 +775,7 @@ export default function AsientosTourBusPage() {
   const handleExportPassengers = async () => {
     try {
       if (passengers.length === 0) {
-        alert('No hay pasajeros para exportar');
+        alert('Non ci sono passeggeri da esportare');
         return;
       }
 
@@ -799,9 +799,9 @@ export default function AsientosTourBusPage() {
       // Descargar archivo
       XLSX.writeFile(wb, fileName);
       
-    } catch (error) {
-      alert('Error al exportar el archivo Excel');
-    }
+      } catch (error) {
+        alert('Errore durante l\'esportazione del file Excel');
+      }
   };
 
   // Función para exportar tabla de costos a Excel
@@ -966,7 +966,7 @@ export default function AsientosTourBusPage() {
             }
             
             .seat-button {
-              background: #f97316;
+              background: #0366D6;
               color: white;
               padding: 4px 8px;
               border-radius: 4px;
@@ -1038,7 +1038,7 @@ export default function AsientosTourBusPage() {
             }
             
             .total-payment {
-              background: #3b82f6;
+              background: #0366D6;
               color: white;
             }
             
@@ -1095,33 +1095,33 @@ export default function AsientosTourBusPage() {
             
             <div class="stats-section">
               <div class="stats-column">
-                <h3>Estadísticas Generales</h3>
+                <h3>Statistiche Generali</h3>
                 <div class="stat-item">Totale posti: ${tour?.cantidadAsientos}</div>
                 <div class="stat-item">Posti occupati: ${asientosVendidos}</div>
                 <div class="stat-item">Posti disponibili: ${asientosDisponibles}</div>
               </div>
               
               <div class="stats-column">
-                <h3>Por Fermata</h3>
+                <h3>Per Fermata</h3>
                 ${Object.entries(fermateStats).map(([fermata, count]) => 
                   `<div class="stat-item">${fermata}: ${count}</div>`
                 ).join('')}
               </div>
               
               <div class="stats-column">
-                <h3>Tipos de Pasajero</h3>
-                <div class="stat-item">Total Pax Pets: ${totalPets}</div>
-                <div class="stat-item">Total Infantes: ${totalInfantes}</div>
+                <h3>Tipi di Passeggero</h3>
+                <div class="stat-item">Totale Pets: ${totalPets}</div>
+                <div class="stat-item">Totale Infanti: ${totalInfantes}</div>
                 <div class="stat-item">Totale Adulti: ${totalAdultos}</div>
                 <div class="stat-item">Totale Bambini: ${totalNinos}</div>
               </div>
               
               <div class="stats-column">
-                <h3>Totales Monetarios</h3>
-                <div class="stat-item">Total General: €${totalGeneral.toFixed(2)}</div>
-                <div class="stat-item">Total Pagos: €${totalPagos.toFixed(2)}</div>
-                <div class="stat-item">Total Saldo: €${totalSaldo.toFixed(2)}</div>
-                <button class="print-button" onclick="window.print()">📄 Imprimir Lista</button>
+                <h3>Totali Monetari</h3>
+                <div class="stat-item">Totale Generale: €${totalGeneral.toFixed(2)}</div>
+                <div class="stat-item">Totale Pagato: €${totalPagos.toFixed(2)}</div>
+                <div class="stat-item">Totale Saldo: €${totalSaldo.toFixed(2)}</div>
+                <button class="print-button" onclick="window.print()">📄 Stampa Lista</button>
               </div>
             </div>
             
@@ -1129,13 +1129,13 @@ export default function AsientosTourBusPage() {
               <table>
                 <thead class="table-header">
                   <tr>
-                    <th>Asiento</th>
-                    <th>Pasajero</th>
+                    <th>Posto</th>
+                    <th>Passeggero</th>
                     <th>Tipo</th>
-                    <th>Pagos</th>
+                    <th>Pagamenti</th>
                     <th>Fermata</th>
                     <th>Agente</th>
-                    <th>Teléfono</th>
+                    <th>Telefono</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1154,15 +1154,15 @@ export default function AsientosTourBusPage() {
                         </td>
                         <td>
                           <div class="capo-gruppo-name">${venta.clienteNombre}</div>
-                          <div class="group-info">Adultos: ${totalAdultos} | Niños: ${totalNinos}</div>
+                          <div class="group-info">Adulti: ${totalAdultos} | Bambini: ${totalNinos}</div>
                         </td>
                         <td>
                           <span class="capo-gruppo-badge">Capo Gruppo</span>
                         </td>
                         <td>
                           <div class="payment-buttons">
-                            <div class="payment-button total-payment">Total: €${venta.totalAPagar.toFixed(0)}</div>
-                            <div class="payment-button pagos-payment">Pagos: €${venta.acconto.toFixed(0)}</div>
+                            <div class="payment-button total-payment">Totale: €${venta.totalAPagar.toFixed(0)}</div>
+                            <div class="payment-button pagos-payment">Pagato: €${venta.acconto.toFixed(0)}</div>
                             <div class="payment-button saldo-payment">Saldo: €${venta.daPagare.toFixed(0)}</div>
                           </div>
                         </td>
@@ -1177,7 +1177,7 @@ export default function AsientosTourBusPage() {
                         </td>
                       </tr>
                       
-                      <!-- Acompañantes -->
+                      <!-- Accompagnatori -->
                       ${venta.acompanantes.map(acomp => `
                         <tr class="acompanante-row">
                           <td class="acompanante-indent">
@@ -1502,25 +1502,25 @@ export default function AsientosTourBusPage() {
             
             <div class="stats-section">
               <div class="stats-column">
-                <h3>Estadísticas Generales</h3>
+                <h3>Statistiche Generali</h3>
                 <div class="stat-item">Totale posti: ${tour?.cantidadAsientos}</div>
                 <div class="stat-item">Posti occupati: ${asientosVendidos}</div>
                 <div class="stat-item">Posti disponibili: ${asientosDisponibles}</div>
               </div>
               
               <div class="stats-column">
-                <h3>Tipos de Pasajero</h3>
+                <h3>Tipi di Passeggero</h3>
                 <div class="stat-item">Totale Adulti: ${totalAdultos}</div>
                 <div class="stat-item">Totale Bambini: ${totalNinos}</div>
-                <div class="stat-item">Total Pax Pets: ${totalPets}</div>
-                <div class="stat-item">Total Infantes: ${totalInfantes}</div>
+                <div class="stat-item">Totale Pets: ${totalPets}</div>
+                <div class="stat-item">Totale Infanti: ${totalInfantes}</div>
               </div>
               
               <div class="stats-column">
-                <h3>Información del Tour</h3>
-                <div class="stat-item">Precio Adulto: €${tour?.precioAdulto}</div>
-                <div class="stat-item">Precio Niño: €${tour?.precioNino}</div>
-                ${tour?.fechaViaje ? `<div class="stat-item">Fecha Viaje: ${new Date(tour.fechaViaje).toLocaleDateString()}</div>` : ''}
+                <h3>Informazioni del Tour</h3>
+                <div class="stat-item">Prezzo Adulto: €${tour?.precioAdulto}</div>
+                <div class="stat-item">Prezzo Bambino: €${tour?.precioNino}</div>
+                ${tour?.fechaViaje ? `<div class="stat-item">Data Viaggio: ${new Date(tour.fechaViaje).toLocaleDateString()}</div>` : ''}
               </div>
             </div>
             
@@ -1922,7 +1922,7 @@ export default function AsientosTourBusPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Cargando...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Caricamento...</p>
         </div>
       </div>
     );
@@ -1979,7 +1979,7 @@ export default function AsientosTourBusPage() {
             onClick={() => router.back()}
             className="bg-brand-500 hover:bg-brand-600 text-white px-6 py-3 rounded-lg"
           >
-            Volver
+            Indietro
           </button>
         </div>
       </div>
@@ -1991,13 +1991,13 @@ export default function AsientosTourBusPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-red-600 mb-4">
-            {error || 'Tour no encontrado'}
+            {error || 'Tour non trovato'}
           </h1>
           <button
             onClick={() => router.back()}
             className="bg-brand-500 hover:bg-brand-600 text-white px-6 py-3 rounded-lg"
           >
-            Volver
+            Indietro
           </button>
         </div>
       </div>
@@ -2007,12 +2007,12 @@ export default function AsientosTourBusPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Botones de navegación flotantes */}
+        {/* Pulsanti di navigazione fluttuanti */}
         <div className="fixed right-3 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-2">
           <button
             onClick={() => scrollToSection(busLayoutRef)}
             className="bg-blue-500 hover:bg-blue-600 text-white w-8 h-8 rounded-md shadow-md transition-all duration-200 hover:shadow-lg hover:scale-110 flex items-center justify-center"
-            title="Ir a Bus"
+            title="Vai al Bus"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
@@ -2022,7 +2022,7 @@ export default function AsientosTourBusPage() {
           <button
             onClick={() => scrollToSection(ventasListRef)}
             className="bg-green-500 hover:bg-green-600 text-white w-8 h-8 rounded-md shadow-md transition-all duration-200 hover:shadow-lg hover:scale-110 flex items-center justify-center"
-            title="Ir a Ventas"
+            title="Vai alle Vendite"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -2032,7 +2032,7 @@ export default function AsientosTourBusPage() {
           <button
             onClick={() => scrollToSection(pasajeroTableRef)}
             className="bg-purple-500 hover:bg-purple-600 text-white w-8 h-8 rounded-md shadow-md transition-all duration-200 hover:shadow-lg hover:scale-110 flex items-center justify-center"
-            title="Ir a Polizza"
+            title="Vai alla Polizza"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -2040,10 +2040,10 @@ export default function AsientosTourBusPage() {
           </button>
         </div>
 
-        {/* Visualización del Bus */}
+        {/* Visualizzazione del Bus */}
         <div ref={busLayoutRef} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8">
           
-          {/* Título del tour centrado */}
+          {/* Titolo del tour centrato */}
           <div className="text-center mb-6">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
               {tour.titulo}
@@ -2213,19 +2213,19 @@ export default function AsientosTourBusPage() {
               </div>
             </div>
             
-            {/* Botón de Imprimir Layout del Bus */}
+            {/* Pulsante Stampa Layout del Bus */}
             <div className="flex justify-center mt-4">
               <button
                 onClick={() => handlePrintBusLayout()}
                 className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded font-medium transition-colors flex items-center gap-2"
-                title="Imprimir layout del bus"
+                title="Stampa layout del bus"
               >
                 📄
               </button>
             </div>
           </div>
 
-          {/* Tarjetas de Notas */}
+          {/* Card delle Note */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div className="bg-slate-50 dark:bg-slate-900/20 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
               <div className="flex items-center gap-2 mb-3">
@@ -2407,7 +2407,7 @@ export default function AsientosTourBusPage() {
             </div>
           </div>
           
-          {/* Leyenda */}
+          {/* Legenda */}
           <div className="flex justify-center mb-6">
             <div className="flex gap-4 flex-wrap justify-center">
               <div className="flex items-center gap-2">
@@ -2429,14 +2429,14 @@ export default function AsientosTourBusPage() {
             </div>
           </div>
 
-          {/* Botón Generar Venta */}
+          {/* Pulsante Genera Vendita */}
           <div className="flex justify-center mb-8">
             <button
               onClick={() => setIsVentaModalOpen(true)}
               className="px-8 py-3 bg-brand-500 hover:bg-brand-600 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2"
             >
               <PlusIcon className="w-5 h-5" />
-              Generar Venta
+              Genera Vendita
             </button>
           </div>
 
@@ -2450,9 +2450,9 @@ export default function AsientosTourBusPage() {
                 
                 {/* Layout del Bus con Listas de Pasajeros */}
                 <div className="flex gap-6">
-                  {/* Lista de Pasajeros Izquierda */}
+                  {/* Lista Passeggeri Sinistra */}
                   <div className="w-80 bg-gray-800 text-white p-4 rounded-lg">
-                    <h4 className="text-lg font-bold mb-4 text-center">Pasajeros - Lado Izquierdo</h4>
+                    <h4 className="text-lg font-bold mb-4 text-center">Passeggeri - Lato Sinistro</h4>
                     <div className="space-y-1 text-sm">
                       {tour.asientos
                         .filter(a => [1, 2, 5, 6, 9, 10, 13, 14, 17, 18, 21, 22, 25, 26, 27, 28, 31, 32, 35, 36, 39, 40, 43, 44, 49, 50, 51].includes(a.numeroAsiento))
@@ -2472,10 +2472,10 @@ export default function AsientosTourBusPage() {
                     </div>
                   </div>
 
-                  {/* Layout del Bus - Diseño Limpio */}
+                  {/* Layout del Bus - Design Pulito */}
                   <div className="flex-1 bg-white rounded-lg p-6 shadow-inner border border-gray-200">
                     <div className="bg-blue-100 rounded-lg p-4 mx-auto" style={{ width: 'fit-content', maxWidth: '480px' }}>
-                      {/* Fila Superior - Conductor, Guía y Puerta */}
+                      {/* Fila Superiore - Autista, Guida e Porta */}
                       <div className="flex justify-center items-start gap-8 mb-4">
                         <div className="flex flex-col items-center">
                           <div className="w-12 h-12 bg-gray-400 rounded border-2 border-gray-600 flex items-center justify-center text-white font-bold text-sm">
@@ -2493,14 +2493,14 @@ export default function AsientosTourBusPage() {
                           <div className="w-12 h-12 bg-gray-500 rounded border-2 border-gray-700 flex items-center justify-center">
                             <div className="text-white text-sm">🚪</div>
                           </div>
-                          <div className="text-xs text-center mt-1 text-gray-600">Puerta</div>
+                          <div className="text-xs text-center mt-1 text-gray-600">Porta</div>
                         </div>
                       </div>
 
-                      {/* Asientos 1-24 - Filas Regulares */}
+                      {/* Posti 1-24 - File Regolari */}
                       {[1, 5, 9, 13, 17, 21].map((inicioFila) => (
                         <div key={inicioFila} className="flex justify-center items-center gap-4 mb-3">
-                          {/* Asientos izquierdos */}
+                          {/* Posti sinistri */}
                           <div className="flex gap-2">
                             {tour.asientos.find(a => a.numeroAsiento === inicioFila) && (
                               <div
@@ -2528,10 +2528,10 @@ export default function AsientosTourBusPage() {
                             )}
                           </div>
                           
-                          {/* Pasillo */}
+                          {/* Corridoio */}
                           <div className="w-8"></div>
                           
-                          {/* Asientos derechos */}
+                          {/* Posti destri */}
                           <div className="flex gap-2">
                             {tour.asientos.find(a => a.numeroAsiento === inicioFila + 2) && (
                               <div
@@ -2561,17 +2561,17 @@ export default function AsientosTourBusPage() {
                         </div>
                       ))}
 
-                      {/* Puerta Central */}
+                      {/* Porta Centrale */}
                       <div className="flex justify-end mb-3">
                         <div className="w-24 h-12 bg-gray-500 rounded border-2 border-gray-700 flex items-center justify-center">
-                          <div className="text-white text-sm font-bold">🚪 PUERTA</div>
+                          <div className="text-white text-sm font-bold">🚪 PORTA</div>
                         </div>
                       </div>
 
-                      {/* Asientos 25-48 - Filas Traseras */}
+                      {/* Posti 25-48 - File Posteriori */}
                       {[25, 29, 33, 37, 41, 45].map((inicioFila) => (
                         <div key={inicioFila} className="flex justify-center items-center gap-4 mb-3">
-                          {/* Asientos izquierdos */}
+                          {/* Posti sinistri */}
                           <div className="flex gap-2">
                             {tour.asientos.find(a => a.numeroAsiento === inicioFila) && (
                               <div
@@ -2599,10 +2599,10 @@ export default function AsientosTourBusPage() {
                             )}
                           </div>
                           
-                          {/* Pasillo */}
+                          {/* Corridoio */}
                           <div className="w-8"></div>
                           
-                          {/* Asientos derechos */}
+                          {/* Posti destri */}
                           <div className="flex gap-2">
                             {tour.asientos.find(a => a.numeroAsiento === inicioFila + 2) && (
                               <div
@@ -2632,9 +2632,9 @@ export default function AsientosTourBusPage() {
                         </div>
                       ))}
 
-                      {/* Fila Trasera - Asientos 49-53 - Patrón correcto */}
+                      {/* Fila Posteriore - Posti 49-53 - Pattern Corretto */}
                       <div className="flex justify-center items-center gap-4 mb-3">
-                        {/* Asientos izquierdos */}
+                        {/* Posti sinistri */}
                         <div className="flex gap-2">
                           {tour.asientos.find(a => a.numeroAsiento === 49) && (
                             <div
@@ -2662,7 +2662,7 @@ export default function AsientosTourBusPage() {
                           )}
                         </div>
                         
-                        {/* Asiento 51 (nivel del pasillo) */}
+                        {/* Posto 51 (livello del corridoio) */}
                         {tour.asientos.find(a => a.numeroAsiento === 51) && (
                           <div
                             className="w-12 h-12 rounded border-2 flex items-center justify-center font-bold text-sm cursor-pointer hover:scale-105"
@@ -2676,7 +2676,7 @@ export default function AsientosTourBusPage() {
                           </div>
                         )}
                         
-                        {/* Asientos derechos */}
+                        {/* Posti destri */}
                         <div className="flex gap-2">
                           {tour.asientos.find(a => a.numeroAsiento === 52) && (
                             <div
@@ -2709,7 +2709,7 @@ export default function AsientosTourBusPage() {
 
                   {/* Lista de Pasajeros Derecha */}
                   <div className="w-80 bg-gray-800 text-white p-4 rounded-lg">
-                    <h4 className="text-lg font-bold mb-4 text-center">Pasajeros - Lado Derecho</h4>
+                    <h4 className="text-lg font-bold mb-4 text-center">Passeggeri - Lato Destro</h4>
                     <div className="space-y-1 text-sm">
                       {tour.asientos
                         .filter(a => [3, 4, 7, 8, 11, 12, 15, 16, 19, 20, 23, 24, 29, 30, 33, 34, 37, 38, 41, 42, 45, 46, 47, 48, 52, 53].includes(a.numeroAsiento))
@@ -2732,15 +2732,15 @@ export default function AsientosTourBusPage() {
               </div>
             </div>
 
-        {/* Tabla de Costos y Finanzas */}
+        {/* Tabella Costi e Finanze */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8 mt-8 w-full">
-          {/* Controles de búsqueda y filtros */}
+          {/* Controlli di ricerca e filtri */}
           <div className="bg-gray-50 dark:bg-gray-700 p-4 border-b border-gray-200 dark:border-gray-600">
             <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-              {/* Controles de paginación y exportación */}
+              {/* Controlli di paginazione e esportazione */}
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
-                  <label className="text-sm text-gray-700 dark:text-gray-300">Mostrar:</label>
+                  <label className="text-sm text-gray-700 dark:text-gray-300">Mostra:</label>
                   <select
                     value={itemsPerPage}
                     onChange={(e) => {
@@ -2756,23 +2756,23 @@ export default function AsientosTourBusPage() {
                   </select>
                 </div>
 
-                {/* Botón de exportar */}
+                {/* Pulsante di esportazione */}
                 <button
                   onClick={handleExportToExcel}
                   className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm"
                 >
                   <DownloadIcon className="w-4 h-4" />
-                  Exportar Excel
+                  Esporta Excel
                 </button>
               </div>
 
-              {/* Barra de búsqueda */}
+              {/* Barra di ricerca */}
               <div className="flex-1 max-w-md">
                 <div className="relative">
                   <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <input
                     type="text"
-                    placeholder="Buscar en tabla..."
+                    placeholder="Cerca nella tabella..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
@@ -2905,7 +2905,7 @@ export default function AsientosTourBusPage() {
               </h2>
             </div>
 
-            {/* Estadísticas Generales */}
+            {/* Statistiche Generali */}
             <div className="bg-gray-50 dark:bg-gray-700 p-4 flex justify-between items-start">
               <div className="flex-1">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -2925,10 +2925,10 @@ export default function AsientosTourBusPage() {
                   
                   <div className="space-y-1">
                     <div className="text-sm font-medium text-gray-900 dark:text-white">
-                      Total Pets: {totalPets}
+                      Totale Pets: {totalPets}
                     </div>
                     <div className="text-sm font-medium text-gray-900 dark:text-white">
-                      Total Infantes: {totalInfantes}
+                      Totale Infanti: {totalInfantes}
                     </div>
                     <div className="text-sm font-medium text-gray-900 dark:text-white">
                       Totale Adulti: {totalAdultos}
@@ -2940,12 +2940,12 @@ export default function AsientosTourBusPage() {
                 </div>
               </div>
               
-              {/* Botón de Imprimir Lista Completa */}
+              {/* Pulsante Stampa Lista Completa */}
               <div className="ml-4">
                 <button
                   onClick={() => handlePrintListaCompleta()}
                   className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded font-medium transition-colors flex items-center gap-2"
-                  title="Imprimir lista completa del bus"
+                  title="Stampa lista completa del bus"
                 >
                   📄
                 </button>
@@ -2957,14 +2957,14 @@ export default function AsientosTourBusPage() {
               <table className="w-full min-w-[1200px]">
                 <thead>
                   <tr className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16">Asiento</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-64">Pasajero</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16">Posto</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-64">Passeggero</th>
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32">Tipo</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-64">Pagos</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-64">Pagamenti</th>
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-40">Fermata</th>
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-40">Agente</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-40">Teléfono</th>
-                    <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-20">Editar</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-40">Telefono</th>
+                    <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-20">Azioni</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -2973,7 +2973,7 @@ export default function AsientosTourBusPage() {
                         {/* Cliente Principal (Capo Gruppo) */}
                         <tr className="bg-blue-100 dark:bg-blue-800/40">
                           <td className="px-4 py-2">
-                            <button className="bg-orange-500 text-white px-2 py-1 rounded font-semibold text-center text-xs">
+                            <button className="text-white px-2 py-1 rounded font-semibold text-center text-xs" style={{ backgroundColor: '#0366D6' }}>
                               {venta.numeroAsiento}
                             </button>
                           </td>
@@ -2983,7 +2983,7 @@ export default function AsientosTourBusPage() {
                                 {venta.clienteNombre}
                               </div>
                               <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                                Adultos: {totalAdultos} | Niños: {totalNinos}
+                                Adulti: {totalAdultos} | Bambini: {totalNinos}
                               </div>
                             </div>
                           </td>
@@ -2994,11 +2994,11 @@ export default function AsientosTourBusPage() {
                           </td>
                           <td className="px-4 py-2">
                             <div className="flex gap-1">
-                              <div className="bg-blue-500 text-white px-2 py-1 rounded text-[10px] text-center font-medium flex-1">
-                                Total: €{venta.totalAPagar.toFixed(0)}
+                              <div className="text-white px-2 py-1 rounded text-[10px] text-center font-medium flex-1" style={{ backgroundColor: '#0366D6' }}>
+                                Totale: €{venta.totalAPagar.toFixed(0)}
                               </div>
                               <div className="bg-green-500 text-white px-2 py-1 rounded text-[10px] text-center font-medium flex-1">
-                                Pagos: €{venta.acconto.toFixed(0)}
+                                Pagato: €{venta.acconto.toFixed(0)}
                               </div>
                               <div className="bg-orange-500 text-white px-2 py-1 rounded text-[10px] text-center font-medium flex-1">
                                 Saldo: €{venta.daPagare.toFixed(0)}
@@ -3024,24 +3024,30 @@ export default function AsientosTourBusPage() {
                             <div className="flex justify-center gap-2">
                               <button
                                 onClick={() => handleGenerateRicevuta(venta.id)}
-                                className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded transition-colors text-xs"
+                                className="p-1.5 bg-green-100 hover:bg-green-200 text-green-700 hover:text-green-800 dark:bg-green-900/20 dark:hover:bg-green-900/30 dark:text-green-400 dark:hover:text-green-300 rounded transition-all duration-200 transform hover:scale-105"
                                 title="Ricevuta"
                               >
-                                📄
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
                               </button>
                               <button
                                 onClick={() => handleEditVenta(venta)}
-                                className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded transition-colors text-xs"
-                                title="Editar"
+                                className="p-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 hover:text-blue-800 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-400 dark:hover:text-blue-300 rounded transition-all duration-200 transform hover:scale-105"
+                                title="Modifica"
                               >
-                                ✏️
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
                               </button>
                               <button
                                 onClick={() => handleDeleteVenta(venta.id)}
-                                className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded transition-colors text-xs"
-                                title="Eliminar"
+                                className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 hover:text-red-800 dark:bg-red-900/20 dark:hover:bg-red-900/30 dark:text-red-400 dark:hover:text-red-300 rounded transition-all duration-200 transform hover:scale-105"
+                                title="Elimina"
                               >
-                                🗑️
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
                               </button>
                             </div>
                           </td>
@@ -3051,7 +3057,7 @@ export default function AsientosTourBusPage() {
                         {venta.acompanantes.map((acomp) => (
                           <tr key={acomp.id} className="bg-green-50 dark:bg-green-900/20">
                             <td className="px-4 py-2 pl-8">
-                              <button className="bg-orange-500 text-white px-2 py-1 rounded font-semibold text-center text-xs">
+                              <button className="text-white px-2 py-1 rounded font-semibold text-center text-xs" style={{ backgroundColor: '#0366D6' }}>
                                 {acomp.numeroAsiento}
                               </button>
                             </td>
@@ -3068,7 +3074,7 @@ export default function AsientosTourBusPage() {
                                   ? 'bg-green-200 text-green-900 dark:bg-green-700 dark:text-green-100' 
                                   : 'bg-yellow-200 text-yellow-900 dark:bg-yellow-700 dark:text-yellow-100'
                               }`}>
-                                {acomp.esAdulto ? 'Adulto' : 'Niño'}
+                                {acomp.esAdulto ? 'Adulte' : 'Bambino'}
                               </span>
                             </td>
                             <td className="px-4 py-2">
@@ -3099,7 +3105,7 @@ export default function AsientosTourBusPage() {
                   <tr className="bg-gray-100 dark:bg-gray-600 border-t-2 border-gray-400">
                     <td className="px-4 py-2" colSpan={2}>
                       <div className="font-bold text-gray-900 dark:text-white">
-                        TOTALES
+                        TOTALI
                       </div>
                     </td>
                     <td className="px-4 py-2">
@@ -3107,17 +3113,17 @@ export default function AsientosTourBusPage() {
                     </td>
                     <td className="px-4 py-2">
                       <div className="flex gap-1">
-                        <div className="bg-blue-500 text-white px-2 py-1 rounded text-center font-bold text-xs flex-1">
-                          Total: €{totalGeneral.toFixed(2)}
+                        <div className="text-white px-2 py-1 rounded text-center font-bold text-xs flex-1" style={{ backgroundColor: '#0366D6' }}>
+                          Totale: €{totalGeneral.toFixed(2)}
                         </div>
                         <div className="bg-green-500 text-white px-2 py-1 rounded text-center font-bold text-xs flex-1">
-                          Pagos: €{totalPagos.toFixed(2)}
+                          Pagato: €{totalPagos.toFixed(2)}
                         </div>
                         <div className="bg-orange-500 text-white px-2 py-1 rounded text-center font-bold text-xs flex-1">
                           Saldo: €{totalSaldo.toFixed(2)}
                         </div>
                         <div className="bg-purple-500 text-white px-2 py-1 rounded text-center font-bold text-xs flex-1">
-                          Costos: €{totalCostos.toFixed(2)}
+                          Costi: €{totalCostos.toFixed(2)}
                         </div>
                       </div>
                     </td>
@@ -3131,20 +3137,20 @@ export default function AsientosTourBusPage() {
           </div>
         )}
 
-        {/* Sección de Lista de Pasajeros */}
+        {/* Sezione Lista Passeggeri */}
         {tour && tour.ventasTourBus.length > 0 && (
           <div ref={pasajeroTableRef} className="mt-8">
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
               <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    Lista de Pasajeros
+                    Lista Passeggeri
                   </h3>
                   <button
                     onClick={handleExportPassengers}
                     className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2"
                   >
-                    📊 Exportar Excel
+                    📊 Esporta Excel
                   </button>
                 </div>
               </div>
@@ -3192,7 +3198,7 @@ export default function AsientosTourBusPage() {
         )}
       </div>
 
-      {/* Modal de Edición de Venta */}
+      {/* Modal Modifica Vendita */}
       {isEditModalOpen && editingVenta && tour && (
         <EditVentaForm
           venta={editingVenta as any}
@@ -3210,11 +3216,11 @@ export default function AsientosTourBusPage() {
         />
       )}
 
-      {/* Modal de Venta */}
+      {/* Modal Vendita */}
       <Modal isOpen={isVentaModalOpen} onClose={() => setIsVentaModalOpen(false)}>
         <div className="p-6">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-            Generar Venta - {tour?.titulo}
+            Genera Vendita - {tour?.titulo}
           </h2>
           
           {tour && (
@@ -3236,7 +3242,7 @@ export default function AsientosTourBusPage() {
         </div>
       </Modal>
 
-      {/* Modal de Documento Viaggio */}
+      {/* Modal Documento Viaggio */}
       <Modal
         isOpen={isDocumentoViaggioModalOpen}
         onClose={() => setIsDocumentoViaggioModalOpen(false)}

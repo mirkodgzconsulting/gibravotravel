@@ -99,6 +99,7 @@ export default function VentaForm({
   const [stato, setStato] = useState('');
   const [notaEsternaRicevuta, setNotaEsternaRicevuta] = useState('');
   const [notaInterna, setNotaInterna] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   
   // Estados para cuotas
   const [numeroCuotas, setNumeroCuotas] = useState(0);
@@ -281,34 +282,50 @@ export default function VentaForm({
       }
     }
     
-    const ventaData = {
-      tourBusId: tourId,
-      clienteId: selectedClientId || null,
-      ...formData,
-      acompanantes: acompanantes.map((acomp) => ({
-        ...acomp,
-        telefono: acomp.telefono || '',
-        codiceFiscale: acomp.codiceFiscale || '',
-      })),
-      totalAPagar,
-      acconto: parseFloat(acconto) || 0,
-      daPagare,
-      metodoPagamento,
-      estadoPago: stato,
-      notaEsternaRicevuta: notaEsternaRicevuta || null,
-      notaInterna: notaInterna || null,
-      cuotas: numeroCuotas > 0 ? cuotas : [],
-    };
-
-    ventaData.codiceFiscale = formData.codiceFiscale || '';
-    ventaData.indirizzo = formData.indirizzo || '';
-    ventaData.email = formData.email || '';
-    ventaData.numeroTelefono = formData.numeroTelefono || '';
-    ventaData.fechaNacimiento = formData.fechaNacimiento || '';
+    // Crear FormData para enviar archivos
+    const formDataToSend = new FormData();
     
-    console.log('Datos a enviar:', ventaData);
+    // Datos básicos
+    formDataToSend.append('tourBusId', tourId);
+    if (selectedClientId) {
+      formDataToSend.append('clienteId', selectedClientId);
+    }
+    formDataToSend.append('clienteNombre', formData.clienteNombre);
+    formDataToSend.append('codiceFiscale', formData.codiceFiscale || '');
+    formDataToSend.append('indirizzo', formData.indirizzo || '');
+    formDataToSend.append('email', formData.email || '');
+    formDataToSend.append('numeroTelefono', formData.numeroTelefono || '');
+    formDataToSend.append('fechaNacimiento', formData.fechaNacimiento || '');
+    formDataToSend.append('fermata', formData.fermata);
+    formDataToSend.append('numeroAsiento', formData.numeroAsiento.toString());
+    formDataToSend.append('tieneMascotas', formData.tieneMascotas.toString());
+    formDataToSend.append('numeroMascotas', (formData.numeroMascotas || 0).toString());
+    formDataToSend.append('tieneInfantes', formData.tieneInfantes.toString());
+    formDataToSend.append('numeroInfantes', (formData.numeroInfantes || 0).toString());
+    formDataToSend.append('totalAPagar', totalAPagar.toString());
+    formDataToSend.append('acconto', (parseFloat(acconto) || 0).toString());
+    formDataToSend.append('daPagare', daPagare.toString());
+    formDataToSend.append('metodoPagamento', metodoPagamento);
+    formDataToSend.append('estadoPago', stato);
+    formDataToSend.append('notaEsternaRicevuta', notaEsternaRicevuta || '');
+    formDataToSend.append('notaInterna', notaInterna || '');
     
-    await onSubmit(ventaData);
+    // Acompañantes
+    formDataToSend.append('acompanantes', JSON.stringify(acompanantes.map((acomp) => ({
+      ...acomp,
+      telefono: acomp.telefono || '',
+      codiceFiscale: acomp.codiceFiscale || '',
+    }))));
+    
+    // Cuotas
+    formDataToSend.append('cuotas', JSON.stringify(numeroCuotas > 0 ? cuotas : []));
+    
+    // Archivo adjunto
+    if (selectedFile) {
+      formDataToSend.append('file', selectedFile);
+    }
+    
+    await onSubmit(formDataToSend);
   };
 
   const maxAcompanantes = Math.min(20, asientosDisponibles.length - 1);
@@ -854,6 +871,26 @@ export default function VentaForm({
                 <option key={index} value={st}>{st}</option>
               ))}
             </select>
+          </div>
+
+          {/* Sección: Archivo Adjunto */}
+          <div className="md:col-span-2">
+            <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Archivo Adjunto (opcional)</h3>
+              
+              <input
+                type="file"
+                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              />
+              
+              {selectedFile && (
+                <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                  Archivo seleccionado: {selectedFile.name}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="md:col-span-2">

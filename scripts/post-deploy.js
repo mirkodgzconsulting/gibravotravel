@@ -17,8 +17,17 @@ async function postDeploy() {
     console.log('🌍 Entorno de producción detectado');
     console.log('🔧 Ejecutando configuración post-deploy...\n');
 
-    // 1. Verificar usuarios de prueba
-    console.log('1. Verificando usuarios de prueba...');
+    // 1. Ejecutar migraciones de Prisma (seguras, no borran datos)
+    console.log('1. Ejecutando migraciones de Prisma...');
+    try {
+      execSync('npx prisma migrate deploy', { stdio: 'inherit', timeout: 60000 });
+      console.log('   ✅ Migraciones de Prisma aplicadas');
+    } catch (error) {
+      console.log('   ⚠️  Error en migraciones, continuando...');
+    }
+
+    // 2. Verificar usuarios de prueba
+    console.log('\n2. Verificando usuarios de prueba...');
     try {
       execSync('node scripts/check-test-users.js', { stdio: 'inherit' });
     } catch (error) {
@@ -26,8 +35,8 @@ async function postDeploy() {
       execSync('node scripts/create-test-users.js', { stdio: 'inherit' });
     }
 
-    // 2. Verificar configuración general
-    console.log('\n2. Verificando configuración general...');
+    // 3. Verificar configuración general
+    console.log('\n3. Verificando configuración general...');
     execSync('node scripts/verify-production-setup.js', { stdio: 'inherit' });
 
     console.log('\n✅ Post-deploy completado exitosamente!');

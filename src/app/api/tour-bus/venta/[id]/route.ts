@@ -1,6 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
+import { v2 as cloudinary } from 'cloudinary';
+import type { UploadApiResponse } from 'cloudinary';
+
+// Configurar Cloudinary
+if (process.env.CLOUDINARY_URL) {
+  cloudinary.config({
+    secure: true
+  });
+} else {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dskliu1ig',
+    api_key: process.env.CLOUDINARY_API_KEY || '538724966551851',
+    api_secret: process.env.CLOUDINARY_API_SECRET || 'Q1fP7-pH6iiltPbFNkqPn0d93no',
+  });
+}
 
 export async function PUT(
   request: NextRequest,
@@ -13,37 +28,76 @@ export async function PUT(
     }
 
     const { id } = await params;
-    const body = await request.json();
-
-    const {
-      // Datos del cliente principal
-      clienteId,
-      clienteNombre,
-      codiceFiscale,
-      indirizzo,
-      email,
-      numeroTelefono,
-      fechaNacimiento,
-      fermata,
-      numeroAsiento,
-      tieneMascotas,
-      numeroMascotas,
-      // Infantes (informativo)
-      tieneInfantes,
-      numeroInfantes,
-      // Acompañantes
-      acompanantes,
-      // Datos de pago
-      totalAPagar,
-      acconto,
-      daPagare,
-      metodoPagamento,
-      estadoPago,
-      notaEsternaRicevuta,
-      notaInterna,
-      // Cuotas
-      cuotas
-    } = body;
+    
+    // Leer FormData o JSON según el Content-Type
+    const contentType = request.headers.get('content-type') || '';
+    let clienteId, clienteNombre, codiceFiscale, indirizzo, email, numeroTelefono, fechaNacimiento;
+    let fermata, numeroAsiento, tieneMascotas, numeroMascotas, tieneInfantes, numeroInfantes;
+    let acompanantes, totalAPagar, acconto, daPagare, metodoPagamento, estadoPago;
+    let notaEsternaRicevuta, notaInterna, cuotas;
+    let file: File | null = null;
+    let removeFile = false;
+    
+    if (contentType.includes('multipart/form-data')) {
+      // FormData
+      const formData = await request.formData();
+      clienteId = formData.get('clienteId') as string | null;
+      clienteNombre = formData.get('clienteNombre') as string;
+      codiceFiscale = formData.get('codiceFiscale') as string;
+      indirizzo = formData.get('indirizzo') as string;
+      email = formData.get('email') as string;
+      numeroTelefono = formData.get('numeroTelefono') as string;
+      fechaNacimiento = formData.get('fechaNacimiento') as string;
+      fermata = formData.get('fermata') as string;
+      numeroAsiento = parseInt(formData.get('numeroAsiento') as string);
+      tieneMascotas = formData.get('tieneMascotas') === 'true';
+      numeroMascotas = parseInt(formData.get('numeroMascotas') as string) || null;
+      tieneInfantes = formData.get('tieneInfantes') === 'true';
+      numeroInfantes = parseInt(formData.get('numeroInfantes') as string) || null;
+      totalAPagar = parseFloat(formData.get('totalAPagar') as string);
+      acconto = parseFloat(formData.get('acconto') as string);
+      daPagare = parseFloat(formData.get('daPagare') as string);
+      metodoPagamento = formData.get('metodoPagamento') as string;
+      estadoPago = formData.get('estadoPago') as string;
+      notaEsternaRicevuta = formData.get('notaEsternaRicevuta') as string | null;
+      notaInterna = formData.get('notaInterna') as string | null;
+      const acompanantesJson = formData.get('acompanantes') as string;
+      acompanantes = acompanantesJson ? JSON.parse(acompanantesJson) : [];
+      const cuotasJson = formData.get('cuotas') as string;
+      cuotas = cuotasJson ? JSON.parse(cuotasJson) : [];
+      
+      // Obtener archivo si existe
+      const fileEntry = formData.get('file');
+      file = fileEntry instanceof File ? fileEntry : null;
+      
+      // Verificar si se debe eliminar el archivo existente
+      removeFile = formData.get('removeFile') === 'true';
+    } else {
+      // JSON (compatibilidad hacia atrás)
+      const body = await request.json();
+      clienteId = body.clienteId;
+      clienteNombre = body.clienteNombre;
+      codiceFiscale = body.codiceFiscale;
+      indirizzo = body.indirizzo;
+      email = body.email;
+      numeroTelefono = body.numeroTelefono;
+      fechaNacimiento = body.fechaNacimiento;
+      fermata = body.fermata;
+      numeroAsiento = body.numeroAsiento;
+      tieneMascotas = body.tieneMascotas;
+      numeroMascotas = body.numeroMascotas;
+      tieneInfantes = body.tieneInfantes;
+      numeroInfantes = body.numeroInfantes;
+      acompanantes = body.acompanantes;
+      totalAPagar = body.totalAPagar;
+      acconto = body.acconto;
+      daPagare = body.daPagare;
+      metodoPagamento = body.metodoPagamento;
+      estadoPago = body.estadoPago;
+      notaEsternaRicevuta = body.notaEsternaRicevuta;
+      notaInterna = body.notaInterna;
+      cuotas = body.cuotas;
+    }
 
     // Verificar que la venta existe
     const existingVenta = await prisma.ventaTourBus.findUnique({
@@ -101,6 +155,47 @@ export async function PUT(
           return NextResponse.json({ error: `Asiento ${acomp.numeroAsiento} ya está vendido` }, { status: 400 });
         }
       }
+    }
+
+    // Manejar archivo adjunto si se envía
+    let attachedFileUrl = existingVenta.attachedFile || null;
+    let attachedFileName = existingVenta.attachedFileName || null;
+    
+    // Verificar si se debe eliminar el archivo existente
+    if (removeFile && !file) {
+      attachedFileUrl = null;
+      attachedFileName = null;
+    }
+    
+    if (file && file.size > 0) {
+        try {
+          const bytes = await file.arrayBuffer();
+          const buffer = Buffer.from(bytes);
+          const fileExtension = file.name.toLowerCase().split('.').pop();
+          const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension ?? '');
+          const resourceType = isImage ? 'image' : 'raw';
+          
+          const result = await new Promise<UploadApiResponse>((resolve, reject) => {
+            cloudinary.uploader
+              .upload_stream(
+                {
+                  folder: 'gibravotravel/tour-bus/ventas',
+                  resource_type: resourceType,
+                },
+                (error, result) => {
+                  if (error) reject(error);
+                  else resolve(result as UploadApiResponse);
+                }
+              )
+              .end(buffer);
+          });
+          
+          attachedFileUrl = result.secure_url;
+          attachedFileName = file.name;
+        } catch (error) {
+          console.error('Error uploading file:', error);
+          // No fallar la actualización por error de archivo
+        }
     }
 
     // Actualizar la venta con transacción
@@ -178,6 +273,8 @@ export async function PUT(
           estadoPago,
           notaEsternaRicevuta: notaEsternaRicevuta || null,
           notaInterna: notaInterna || null,
+          attachedFile: attachedFileUrl,
+          attachedFileName: attachedFileName,
           numeroAcompanantes: acompanantes?.length || 0,
           numeroCuotas: cuotas?.length || null,
         }

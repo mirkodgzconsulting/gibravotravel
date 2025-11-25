@@ -1,6 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
+import { v2 as cloudinary } from 'cloudinary';
+import type { UploadApiResponse } from 'cloudinary';
+
+// Configurar Cloudinary
+if (process.env.CLOUDINARY_URL) {
+  cloudinary.config({
+    secure: true
+  });
+} else {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dskliu1ig',
+    api_key: process.env.CLOUDINARY_API_KEY || '538724966551851',
+    api_secret: process.env.CLOUDINARY_API_SECRET || 'Q1fP7-pH6iiltPbFNkqPn0d93no',
+  });
+}
 
 // Función para recalcular feeAgv de un tour
 async function recalcularFeeAgv(tourId: string) {
@@ -56,37 +71,79 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
     }
 
-    const body = await request.json();
-    const {
-      tourBusId,
-      // Datos del cliente principal
-      clienteId,
-      clienteNombre,
-      codiceFiscale,
-      indirizzo,
-      email,
-      numeroTelefono,
-      fechaNacimiento,
-      fermata,
-      numeroAsiento,
-      tieneMascotas,
-      numeroMascotas,
-      // Infantes (informativo)
-      tieneInfantes,
-      numeroInfantes,
-      // Acompañantes
-      acompanantes,
-      // Datos de pago
-      totalAPagar,
-      acconto,
-      daPagare,
-      metodoPagamento,
-      estadoPago,
-      notaEsternaRicevuta,
-      notaInterna,
-      // Cuotas
-      cuotas
-    } = body;
+    // Leer FormData
+    const formData = await request.formData();
+    
+    // Extraer datos del formulario
+    const tourBusId = formData.get('tourBusId') as string;
+    const clienteId = formData.get('clienteId') as string | null;
+    const clienteNombre = formData.get('clienteNombre') as string;
+    const codiceFiscale = formData.get('codiceFiscale') as string;
+    const indirizzo = formData.get('indirizzo') as string;
+    const email = formData.get('email') as string;
+    const numeroTelefono = formData.get('numeroTelefono') as string;
+    const fechaNacimiento = formData.get('fechaNacimiento') as string;
+    const fermata = formData.get('fermata') as string;
+    const numeroAsiento = parseInt(formData.get('numeroAsiento') as string);
+    const tieneMascotas = formData.get('tieneMascotas') === 'true';
+    const numeroMascotasRaw = formData.get('numeroMascotas') as string;
+    const numeroMascotas = numeroMascotasRaw ? parseInt(numeroMascotasRaw) : null;
+    const tieneInfantes = formData.get('tieneInfantes') === 'true';
+    const numeroInfantesRaw = formData.get('numeroInfantes') as string;
+    const numeroInfantes = numeroInfantesRaw ? parseInt(numeroInfantesRaw) : null;
+    const totalAPagarRaw = formData.get('totalAPagar') as string;
+    const totalAPagar = parseFloat(totalAPagarRaw);
+    const accontoRaw = formData.get('acconto') as string;
+    const acconto = parseFloat(accontoRaw);
+    const daPagareRaw = formData.get('daPagare') as string;
+    const daPagare = parseFloat(daPagareRaw);
+    const metodoPagamento = formData.get('metodoPagamento') as string;
+    const estadoPago = formData.get('estadoPago') as string;
+    const notaEsternaRicevuta = formData.get('notaEsternaRicevuta') as string | null;
+    const notaInterna = formData.get('notaInterna') as string | null;
+    
+    // Parsear acompañantes y cuotas desde JSON
+    const acompanantesJson = formData.get('acompanantes') as string;
+    const acompanantes = acompanantesJson ? JSON.parse(acompanantesJson) : [];
+    const cuotasJson = formData.get('cuotas') as string;
+    const cuotas = cuotasJson ? JSON.parse(cuotasJson) : [];
+    
+    // Manejar archivo adjunto
+    const fileEntry = formData.get('file');
+    const file = fileEntry instanceof File ? fileEntry : null;
+    let attachedFileUrl: string | null = null;
+    let attachedFileName: string | null = null;
+    
+    if (file && file.size > 0) {
+      try {
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+        const fileExtension = file.name.toLowerCase().split('.').pop();
+        const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension ?? '');
+        const resourceType = isImage ? 'image' : 'raw';
+        
+        const result = await new Promise<UploadApiResponse>((resolve, reject) => {
+          cloudinary.uploader
+            .upload_stream(
+              {
+                folder: 'gibravotravel/tour-bus/ventas',
+                resource_type: resourceType,
+              },
+              (error, result) => {
+                if (error) reject(error);
+                else resolve(result as UploadApiResponse);
+              }
+            )
+            .end(buffer);
+        });
+        
+        attachedFileUrl = result.secure_url;
+        attachedFileName = file.name;
+      } catch (error) {
+        console.error('Error uploading file:', error);
+        // No fallar la venta por error de archivo, solo registrar
+      }
+    }
 
     // Validaciones
     if (!tourBusId || !clienteNombre || !fermata || !numeroAsiento) {
@@ -159,20 +216,22 @@ export async function POST(request: NextRequest) {
           fermata,
           numeroAsiento,
           tieneMascotas: tieneMascotas || false,
-          numeroMascotas: tieneMascotas ? (parseInt(numeroMascotas) || null) : null,
+          numeroMascotas: tieneMascotas ? numeroMascotas : null,
           tieneInfantes: tieneInfantes || false,
-          numeroInfantes: tieneInfantes ? (parseInt(numeroInfantes) || null) : null,
-          totalAPagar: parseFloat(totalAPagar),
-          acconto: parseFloat(acconto),
-          daPagare: parseFloat(daPagare),
+          numeroInfantes: tieneInfantes ? numeroInfantes : null,
+          totalAPagar: totalAPagar,
+          acconto: acconto,
+          daPagare: daPagare,
           metodoPagamento,
           estadoPago,
           notaEsternaRicevuta: notaEsternaRicevuta || null,
           notaInterna: notaInterna || null,
+          attachedFile: attachedFileUrl,
+          attachedFileName: attachedFileName,
           numeroAcompanantes: acompanantes?.length || 0,
           numeroCuotas: cuotas?.length || null,
           createdBy: user.id
-        }
+        } as any
       });
 
       // 2. Marcar el asiento principal como vendido

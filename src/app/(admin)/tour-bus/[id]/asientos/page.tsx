@@ -337,10 +337,15 @@ export default function AsientosTourBusPage() {
   const handleVentaSubmit = async (ventaData: any) => {
     setIsSubmitting(true);
     try {
+      // Si es FormData, no agregar headers (el navegador lo hace automáticamente)
+      const isFormData = ventaData instanceof FormData;
       const response = await fetch('/api/tour-bus/venta', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(ventaData)
+        ...(isFormData ? {} : { 
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(ventaData)
+        }),
+        ...(isFormData ? { body: ventaData } : {})
       });
 
       if (response.ok) {
@@ -474,12 +479,17 @@ export default function AsientosTourBusPage() {
     try {
       setIsSubmitting(true);
       
-      const response = await fetch(`/api/tour-bus/venta/${ventaData.id}`, {
+      // Si es FormData, no agregar headers (el navegador lo hace automáticamente)
+      const isFormData = ventaData instanceof FormData;
+      const response = await fetch(`/api/tour-bus/venta/${isFormData ? ventaData.get('id') : ventaData.id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(ventaData),
+        ...(isFormData ? {} : { 
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(ventaData)
+        }),
+        ...(isFormData ? { body: ventaData } : {})
       });
 
       if (!response.ok) {

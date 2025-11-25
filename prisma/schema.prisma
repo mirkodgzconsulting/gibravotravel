@@ -456,6 +456,8 @@ model VentaTourBus {
   estadoPago         String
   notaEsternaRicevuta String?
   notaInterna        String?
+  attachedFile       String?
+  attachedFileName   String?
   numeroAcompanantes Int                  @default(0)
   numeroCuotas       Int?
   createdBy          String

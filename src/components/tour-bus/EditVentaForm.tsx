@@ -58,6 +58,8 @@ interface VentaTourBus {
   estadoPago: string;
   notaEsternaRicevuta?: string | null;
   notaInterna?: string | null;
+  attachedFile?: string | null;
+  attachedFileName?: string | null;
   numeroAcompanantes?: number;
   createdBy: string;
   createdAt: string;
@@ -149,6 +151,9 @@ export default function EditVentaForm({
   const [stato, setStato] = useState(venta.estadoPago);
   const [notaEsternaRicevuta, setNotaEsternaRicevuta] = useState(venta.notaEsternaRicevuta || '');
   const [notaInterna, setNotaInterna] = useState(venta.notaInterna || '');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [existingFileUrl, setExistingFileUrl] = useState<string | null>(venta.attachedFile || null);
+  const [existingFileName, setExistingFileName] = useState<string | null>(venta.attachedFileName || null);
   
   // Estados para cuotas - Inicializar con datos existentes
   const [numeroCuotas, setNumeroCuotas] = useState(venta.cuotas.length);
@@ -361,33 +366,53 @@ export default function EditVentaForm({
       }
     }
     
-    const ventaData = {
-      id: venta.id,
-      clienteId: selectedClientId || null,
-      ...formData,
-      codiceFiscale: formData.codiceFiscale || '',
-      indirizzo: formData.indirizzo || '',
-      email: formData.email || '',
-      numeroTelefono: formData.numeroTelefono || '',
-      fechaNacimiento: formData.fechaNacimiento || '',
-      acompanantes: acompanantes.map((acomp) => ({
-        ...acomp,
-        telefono: acomp.telefono || '',
-        codiceFiscale: acomp.codiceFiscale || '',
-      })),
-      totalAPagar,
-      acconto: parseFloat(acconto) || 0,
-      daPagare,
-      metodoPagamento,
-      estadoPago: stato,
-      notaEsternaRicevuta: notaEsternaRicevuta || null,
-      notaInterna: notaInterna || null,
-      cuotas: numeroCuotas > 0 ? cuotas : [],
-    };
+    // Crear FormData para enviar archivos
+    const formDataToSend = new FormData();
     
-    console.log('Datos de edición a enviar:', ventaData);
+    // Datos básicos
+    formDataToSend.append('id', venta.id);
+    if (selectedClientId) {
+      formDataToSend.append('clienteId', selectedClientId);
+    }
+    formDataToSend.append('clienteNombre', formData.clienteNombre);
+    formDataToSend.append('codiceFiscale', formData.codiceFiscale || '');
+    formDataToSend.append('indirizzo', formData.indirizzo || '');
+    formDataToSend.append('email', formData.email || '');
+    formDataToSend.append('numeroTelefono', formData.numeroTelefono || '');
+    formDataToSend.append('fechaNacimiento', formData.fechaNacimiento || '');
+    formDataToSend.append('fermata', formData.fermata);
+    formDataToSend.append('numeroAsiento', formData.numeroAsiento.toString());
+    formDataToSend.append('tieneMascotas', formData.tieneMascotas.toString());
+    formDataToSend.append('numeroMascotas', (formData.numeroMascotas || 0).toString());
+    formDataToSend.append('tieneInfantes', formData.tieneInfantes.toString());
+    formDataToSend.append('numeroInfantes', (formData.numeroInfantes || 0).toString());
+    formDataToSend.append('totalAPagar', totalAPagar.toString());
+    formDataToSend.append('acconto', (parseFloat(acconto) || 0).toString());
+    formDataToSend.append('daPagare', daPagare.toString());
+    formDataToSend.append('metodoPagamento', metodoPagamento);
+    formDataToSend.append('estadoPago', stato);
+    formDataToSend.append('notaEsternaRicevuta', notaEsternaRicevuta || '');
+    formDataToSend.append('notaInterna', notaInterna || '');
     
-    await onSubmit(ventaData);
+    // Acompañantes
+    formDataToSend.append('acompanantes', JSON.stringify(acompanantes.map((acomp) => ({
+      ...acomp,
+      telefono: acomp.telefono || '',
+      codiceFiscale: acomp.codiceFiscale || '',
+    }))));
+    
+    // Cuotas
+    formDataToSend.append('cuotas', JSON.stringify(numeroCuotas > 0 ? cuotas : []));
+    
+    // Archivo adjunto - solo si se seleccionó uno nuevo
+    if (selectedFile) {
+      formDataToSend.append('file', selectedFile);
+    } else if (!existingFileUrl) {
+      // Si no hay archivo existente y no se seleccionó uno nuevo, enviar señal para eliminar
+      formDataToSend.append('removeFile', 'true');
+    }
+    
+    await onSubmit(formDataToSend);
   };
 
   const maxAcompanantes = Math.min(20, asientosDisponiblesConActual.length - 1);
@@ -929,6 +954,55 @@ export default function EditVentaForm({
                     <option key={index} value={st}>{st}</option>
                   ))}
                 </select>
+              </div>
+
+              {/* Sección: Archivo Adjunto */}
+              <div className="md:col-span-2">
+                <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Archivo Adjunto (opcional)</h3>
+                  
+                  {/* Mostrar archivo existente si hay */}
+                  {existingFileUrl && !selectedFile && (
+                    <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-blue-700 dark:text-blue-300">Archivo actual:</span>
+                          <a
+                            href={existingFileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                          >
+                            {existingFileName || 'Ver archivo'}
+                          </a>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setExistingFileUrl(null);
+                            setExistingFileName(null);
+                          }}
+                          className="text-xs text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <input
+                    type="file"
+                    onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  />
+                  
+                  {selectedFile && (
+                    <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                      Nuevo archivo seleccionado: {selectedFile.name}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="md:col-span-2">

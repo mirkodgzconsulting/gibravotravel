@@ -20,8 +20,19 @@ export async function POST(request: NextRequest) {
 
     const results = [];
 
-    // 1. Verificar usuarios de prueba
-    console.log('1. Verificando usuarios de prueba...');
+    // 1. Ejecutar migraciones de Prisma (seguras, no borran datos)
+    console.log('1. Ejecutando migraciones de Prisma...');
+    try {
+      execSync('npx prisma migrate deploy', { stdio: 'pipe', timeout: 60000 });
+      results.push('✅ Migraciones de Prisma aplicadas');
+    } catch (error: any) {
+      const errorMsg = error.message || 'Error desconocido';
+      results.push(`⚠️  Migraciones de Prisma: ${errorMsg}`);
+      console.log('⚠️  Error en migraciones, continuando...');
+    }
+
+    // 2. Verificar usuarios de prueba
+    console.log('\n2. Verificando usuarios de prueba...');
     try {
       execSync('node scripts/check-test-users.js', { stdio: 'pipe' });
       results.push('✅ Usuarios de prueba verificados');
@@ -31,8 +42,8 @@ export async function POST(request: NextRequest) {
       results.push('✅ Usuarios de prueba creados');
     }
 
-    // 2. Verificar configuración general
-    console.log('\n2. Verificando configuración general...');
+    // 3. Verificar configuración general
+    console.log('\n3. Verificando configuración general...');
     try {
       execSync('node scripts/verify-production-setup.js', { stdio: 'pipe' });
       results.push('✅ Configuración general verificada');

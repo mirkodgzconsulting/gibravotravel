@@ -408,6 +408,58 @@ export default function AsientosTourBusPage() {
   };
 
 
+  // Handler para generar recibo
+  const handleGenerateRicevuta = async (ventaId: string) => {
+    try {
+      setMessage({
+        type: 'success',
+        text: 'Generando ricevuta...'
+      });
+
+      const response = await fetch('/api/tour-bus/generate-ricevuta', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ventaId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Error al generar ricevuta (${response.status})`);
+      }
+
+      // Descargar el archivo
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      
+      // Extraer el nombre del archivo del header Content-Disposition
+      const contentDisposition = response.headers.get('Content-Disposition');
+      const fileName = contentDisposition 
+        ? contentDisposition.split('filename=')[1].replace(/"/g, '')
+        : `Ricevuta_TourBus_${ventaId}_${new Date().getTime()}.pdf`;
+      
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      setMessage({
+        type: 'success',
+        text: 'Ricevuta generata con successo!'
+      });
+    } catch (error) {
+      console.error('Error generating ricevuta:', error);
+      setMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Errore durante la generazione della ricevuta'
+      });
+    }
+  };
+
   const handlePrintVenta = (venta: VentaTourBus) => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
@@ -2970,6 +3022,13 @@ export default function AsientosTourBusPage() {
                           </td>
                           <td className="px-4 py-2 text-center">
                             <div className="flex justify-center gap-2">
+                              <button
+                                onClick={() => handleGenerateRicevuta(venta.id)}
+                                className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded transition-colors text-xs"
+                                title="Ricevuta"
+                              >
+                                📄
+                              </button>
                               <button
                                 onClick={() => handleEditVenta(venta)}
                                 className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded transition-colors text-xs"

@@ -155,7 +155,7 @@ export default function TourBusPage() {
       const sortedTours = sortToursByFechaViaje(toursData);
       setTours(sortedTours);
     } catch {
-      setError('Error de conexión');
+      setError('Errore di connessione');
     } finally {
       setLoading(false);
     }
@@ -271,10 +271,10 @@ export default function TourBusPage() {
         setTimeout(() => setShowCopyNotification(false), 3000);
       } else {
         const errorData = await response.json();
-        setError(errorData.error || 'Error al crear tour');
+        setError(errorData.error || 'Errore durante la creazione del tour');
       }
     } catch (error) {
-      setError('Error de conexión');
+      setError('Errore di connessione');
     } finally {
       setIsSubmitting(false);
     }
@@ -355,17 +355,17 @@ export default function TourBusPage() {
         setTimeout(() => setShowCopyNotification(false), 3000);
       } else {
         const errorData = await response.json();
-        setError(errorData.error || 'Error al actualizar tour');
+        setError(errorData.error || 'Errore durante l\'aggiornamento del tour');
       }
     } catch (error) {
-      setError('Error de conexión');
+      setError('Errore di connessione');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDeleteTour = async (tourId: string) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar este tour?')) return;
+    if (!confirm('Sei sicuro di voler eliminare questo tour?')) return;
 
     try {
       const response = await fetch(`/api/tour-bus/${tourId}`, {
@@ -376,10 +376,10 @@ export default function TourBusPage() {
         setTours(prev => prev.filter(tour => tour.id !== tourId));
       } else {
         const errorData = await response.json();
-        setError(errorData.error || 'Error al eliminar tour');
+        setError(errorData.error || 'Errore durante l\'eliminazione del tour');
       }
     } catch (error) {
-      setError('Error de conexión');
+      setError('Errore di connessione');
     }
   };
 
@@ -446,7 +446,7 @@ export default function TourBusPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando...</p>
+          <p className="mt-4 text-gray-600">Caricamento...</p>
         </div>
       </div>
     );
@@ -456,8 +456,8 @@ export default function TourBusPage() {
   if (loading && tours.length === 0) {
     return (
       <div>
-        <PageBreadcrumb pageTitle="Tours Bus" />
-        <ComponentCard title="Tours de Bus Disponibles">
+        <PageBreadcrumb pageTitle="Tour Bus" />
+        <ComponentCard title="Tour Bus Disponibili">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 6 }).map((_, idx) => (
               <div key={idx} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 animate-pulse">
@@ -502,7 +502,7 @@ export default function TourBusPage() {
 
   return (
     <div>
-      <PageBreadcrumb pageTitle="Tours Bus" />
+      <PageBreadcrumb pageTitle="Tour Bus" />
       
       {error && (
         <div className="mb-6 p-4 rounded-lg bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-200">
@@ -513,7 +513,7 @@ export default function TourBusPage() {
             variant="outline"
             className="mt-2"
           >
-            Cerrar
+            Chiudi
           </Button>
         </div>
       )}
@@ -523,7 +523,7 @@ export default function TourBusPage() {
         <button
           onClick={openModal}
           className="p-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg transition-colors duration-200 flex items-center justify-center shadow-md hover:shadow-lg"
-          title="Crear Tour"
+          title="Crea Tour"
         >
           <BusIcon className="w-4 h-4" />
         </button>
@@ -539,7 +539,7 @@ export default function TourBusPage() {
           {/* Header fijo */}
           <div className="flex-shrink-0 p-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-              {editingTour ? "Editar Tour" : "Crear Nuevo Tour"}
+              {editingTour ? "Modifica Tour" : "Crea Nuovo Tour"}
             </h2>
           </div>
           
@@ -549,7 +549,7 @@ export default function TourBusPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="lg:col-span-3">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Título del Tour *
+                    Titolo del Tour *
                   </label>
                   <input
                     type="text"
@@ -562,7 +562,7 @@ export default function TourBusPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Precio Adulto (€) *
+                    Prezzo Adulto (€) *
                   </label>
                   <input
                     type="number"
@@ -577,7 +577,7 @@ export default function TourBusPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Precio Niño (€) *
+                    Prezzo Bambino (€) *
                   </label>
                   <input
                     type="number"
@@ -592,7 +592,7 @@ export default function TourBusPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Fecha de Viaje
+                    Data di Viaggio
                   </label>
                   <input
                     type="date"
@@ -604,7 +604,7 @@ export default function TourBusPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Fecha de Fin
+                    Data di Fine
                   </label>
                   <input
                     type="date"
@@ -613,7 +613,7 @@ export default function TourBusPage() {
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                   />
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    Todos los buses tienen 53 asientos por defecto
+                    Tutti i bus hanno 53 posti di default
                   </p>
                 </div>
 
@@ -626,7 +626,7 @@ export default function TourBusPage() {
                     value={formData.acc}
                     onChange={(e) => setFormData(prev => ({ ...prev, acc: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                    placeholder="Ingrese el valor ACC"
+                    placeholder="Inserisci il valore ACC"
                   />
                 </div>
 
@@ -639,7 +639,7 @@ export default function TourBusPage() {
                     value={formData.autoservicio}
                     onChange={(e) => setFormData(prev => ({ ...prev, autoservicio: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                    placeholder="Descripción del autoservicio"
+                    placeholder="Descrizione dell'autoservizio"
                   />
                 </div>
 
@@ -647,7 +647,7 @@ export default function TourBusPage() {
                 <div className="lg:col-span-3">
                   <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-                      Campos de Costos
+                      Campi di Costi
                     </h3>
                   </div>
                 </div>
@@ -790,8 +790,8 @@ export default function TourBusPage() {
                 {/* Separador antes de archivos */}
                 <div className="md:col-span-2">
                   <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-                      Archivos
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-300 mb-3">
+                      File
                     </h3>
                   </div>
                 </div>
@@ -808,7 +808,7 @@ export default function TourBusPage() {
                   />
                   {editingTour?.coverImage && (
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      Archivo actual: {editingTour.coverImageName || 'Imagen cargada'}
+                      File attuale: {editingTour.coverImageName || 'Immagine caricata'}
                     </p>
                   )}
                 </div>
@@ -825,7 +825,7 @@ export default function TourBusPage() {
                   />
                   {editingTour?.pdfFile && (
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      Archivo actual: {editingTour.pdfFileName || 'Documento cargado'}
+                      File attuale: {editingTour.pdfFileName || 'Documento caricato'}
                     </p>
                   )}
                 </div>
@@ -833,7 +833,7 @@ export default function TourBusPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Descripción
+                  Descrizione
                 </label>
                 <textarea
                   value={formData.descripcion}
@@ -849,14 +849,14 @@ export default function TourBusPage() {
                   onClick={handleCancelEdit}
                   className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
-                  Cancelar
+                  Annulla
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
                   className="px-6 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg disabled:opacity-50"
                 >
-                  {isSubmitting ? 'Guardando...' : (editingTour ? 'Actualizar' : 'Crear Tour')}
+                  {isSubmitting ? 'Salvataggio...' : (editingTour ? 'Aggiorna' : 'Crea Tour')}
                 </button>
               </div>
             </form>
@@ -864,7 +864,7 @@ export default function TourBusPage() {
         </div>
       </Modal>
 
-      <ComponentCard title="Tours de Bus Disponibles">
+      <ComponentCard title="Tour Bus Disponibili">
         {processedTours.length === 0 && !loading ? (
           <div className="text-center py-12">
             <BusIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
@@ -872,13 +872,13 @@ export default function TourBusPage() {
               Nessun tour creato ancora
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Crea tu primer tour de bus para comenzar
+              Crea il tuo primo tour bus per iniziare
             </p>
             <Button
               onClick={openModal}
               className="bg-brand-500 hover:bg-brand-600 text-white px-6 py-3 rounded-lg"
             >
-              Crear Tour
+              Crea Tour
             </Button>
           </div>
         ) : (
@@ -919,7 +919,7 @@ export default function TourBusPage() {
                     {/* Barra de progreso funcional - Parte superior */}
                     <div className="mb-4">
                       <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
-                        <span>Ventas: {asientosVendidos}/{tour.cantidadAsientos}</span>
+                        <span>Vendite: {asientosVendidos}/{tour.cantidadAsientos}</span>
                         <span className="font-semibold">{porcentaje}%</span>
                       </div>
                       <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
@@ -939,17 +939,17 @@ export default function TourBusPage() {
                         <div className="space-y-2 mb-4">
                           <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                             <DollarSignIcon className="w-4 h-4" />
-                            <span>Adulto: €{tour.precioAdulto}</span>
+                            <span>Adulte: €{tour.precioAdulto}</span>
                           </div>
                           
                           <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                             <DollarSignIcon className="w-4 h-4" />
-                            <span>Niño: €{tour.precioNino}</span>
+                            <span>Bambino: €{tour.precioNino}</span>
                           </div>
                           
                           <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                             <UsersIcon className="w-4 h-4" />
-                            <span>{tour.cantidadAsientos} asientos</span>
+                            <span>{tour.cantidadAsientos} posti</span>
                           </div>
                           
                           {tour.fechaViaje && (
@@ -979,7 +979,7 @@ export default function TourBusPage() {
                               {asientosVendidos}
                             </div>
                             <div className="text-green-500 dark:text-green-300">
-                              Vendidos
+                              Venduti
                             </div>
                           </div>
                           <div className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
@@ -987,7 +987,7 @@ export default function TourBusPage() {
                               {asientosDisponibles}
                             </div>
                             <div className="text-blue-500 dark:text-blue-300">
-                              Disponibles
+                              Disponibili
                             </div>
                           </div>
                         </div>
@@ -996,13 +996,13 @@ export default function TourBusPage() {
 
                     <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
                       <div className="text-sm text-gray-600 dark:text-gray-400">
-                        Ingresos: <span className="font-semibold text-green-600">€{ingresos.toFixed(2)}</span>
+                        Entrate: <span className="font-semibold text-green-600">€{ingresos.toFixed(2)}</span>
                       </div>
                       <div className="flex space-x-2">
                         <button
                           onClick={() => openSeatVisualizer(tour)}
                           className="p-2 bg-green-100 hover:bg-green-200 text-green-700 hover:text-green-800 dark:bg-green-900/20 dark:hover:bg-green-900/30 dark:text-green-400 dark:hover:text-green-300 rounded-lg transition-all duration-200"
-                          title="Ver asientos"
+                          title="Visualizza posti"
                         >
                           <EyeIcon className="w-4 h-4" />
                         </button>
@@ -1010,7 +1010,7 @@ export default function TourBusPage() {
                         <button
                           onClick={() => handleEditTour(tour)}
                           className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-700 hover:text-blue-800 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-400 dark:hover:text-blue-300 rounded-lg transition-all duration-200"
-                          title="Editar tour"
+                          title="Modifica tour"
                         >
                           <EditIcon className="w-4 h-4" />
                         </button>
@@ -1018,7 +1018,7 @@ export default function TourBusPage() {
                         <button
                           onClick={() => handleDeleteTour(tour.id)}
                           className="p-2 bg-red-100 hover:bg-red-200 text-red-700 hover:text-red-800 dark:bg-red-900/20 dark:hover:bg-red-900/30 dark:text-red-400 dark:hover:text-red-300 rounded-lg transition-all duration-200"
-                          title="Eliminar tour"
+                          title="Elimina tour"
                         >
                           <TrashIcon className="w-4 h-4" />
                         </button>
@@ -1026,7 +1026,7 @@ export default function TourBusPage() {
                     </div>
 
                     <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                      Creado por: {tour.creator.firstName} {tour.creator.lastName}
+                      Creato da: {tour.creator.firstName} {tour.creator.lastName}
                     </div>
                   </div>
                 </div>

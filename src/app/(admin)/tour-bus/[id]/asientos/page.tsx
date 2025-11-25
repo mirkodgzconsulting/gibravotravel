@@ -753,8 +753,8 @@ export default function AsientosTourBusPage() {
         'BUS': tour.bus || 0,
         'PASTI': tour.pasti || 0,
         'PARKING': tour.parking || 0,
-        'COORDINATORE 1': tour.coordinatore1 || 0,
-        'COORDINATORE 2': tour.coordinatore2 || 0,
+        'TC.1': tour.coordinatore1 || 0,
+        'TC.2': tour.coordinatore2 || 0,
         'ZTL': tour.ztl || 0,
         'HOTEL': tour.hotel || 0,
         'POLIZZA': tour.polizza || 0,
@@ -2614,7 +2614,7 @@ export default function AsientosTourBusPage() {
 
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-blue-600 text-white">
+              <thead className="bg-[#0366D6] text-white">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                     DESTINAZIONE
@@ -2632,10 +2632,10 @@ export default function AsientosTourBusPage() {
                     PARKING
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                    COORDINATORE 1
+                    TC.1
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                    COORDINATORE 2
+                    TC.2
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                     ZTL
@@ -2729,7 +2729,7 @@ export default function AsientosTourBusPage() {
         {/* Lista de Ventas - Tabla Ampliada */}
         {tour.ventasTourBus && tour.ventasTourBus.length > 0 && (
           <div ref={ventasListRef} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8 mt-8 w-full">
-            <div className="bg-brand-500 text-white px-4 py-3 rounded-t-lg mb-0">
+            <div className="bg-[#0366D6] text-white px-4 py-3 rounded-t-lg mb-0">
               <h2 className="text-lg font-semibold text-center">
                 INFORMAZIONI SUI PASSEGGERI
               </h2>

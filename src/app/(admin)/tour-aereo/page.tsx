@@ -806,7 +806,8 @@ export default function TourAereoPage() {
               />
             </div>
 
-            <div>
+            {/* Campo Documento Viaggio oculto visualmente - funcionalidad mantenida para uso futuro */}
+            {/* <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Documento Viaggio
               </label>
@@ -821,7 +822,7 @@ export default function TourAereoPage() {
                   Documento attuale: <a href={editingTour.documentoViaggio} target="_blank" rel="noopener noreferrer" className="underline">Scarica documento</a>
                 </p>
               )}
-            </div>
+            </div> */}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

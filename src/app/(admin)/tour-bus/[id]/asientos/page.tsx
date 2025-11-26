@@ -823,6 +823,7 @@ export default function AsientosTourBusPage() {
         'TKT': tour.tkt || 0,
         'SPESA TOTALE': totalCostos,
         'RICAVO TOTALE': totalIngresos,
+        'TOTALE': totalGeneral,
         'FEE TOTALE': feeTotal,
         'AGENTE': agentesTexto
       }
@@ -2826,6 +2827,9 @@ export default function AsientosTourBusPage() {
                     RICAVO TOTALE
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                    TOTALE
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                     FEE TOTALE
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
@@ -2868,7 +2872,7 @@ export default function AsientosTourBusPage() {
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     €{(tour.tkt || 0).toFixed(2)}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">
+                  <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white bg-yellow-200 dark:bg-yellow-900/40">
                     €{(
                       (tour.bus || 0) + 
                       (tour.pasti || 0) + 
@@ -2881,10 +2885,13 @@ export default function AsientosTourBusPage() {
                       (tour.tkt || 0)
                     ).toFixed(2)}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">
+                  <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white bg-blue-200 dark:bg-blue-900/40">
                     €{totalIngresos.toFixed(2)}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">
+                  <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white bg-green-200 dark:bg-green-900/40">
+                    €{totalGeneral.toFixed(2)}
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white bg-indigo-200 dark:bg-indigo-900/40">
                     €{feeTotal.toFixed(2)}
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">

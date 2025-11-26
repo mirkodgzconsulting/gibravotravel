@@ -430,9 +430,9 @@ export default function BiglietteriaPage() {
   // Estado para edición inline de Pagamento
   const [editingPagamentoId, setEditingPagamentoId] = useState<string | null>(null);
   
-  // Estados para filtro de fechas
-  const [fechaDesde, setFechaDesde] = useState<string>('');
-  const [fechaHasta, setFechaHasta] = useState<string>('');
+  // Estados para filtro de mes y año
+  const [mesSeleccionado, setMesSeleccionado] = useState<number>(new Date().getMonth());
+  const [añoSeleccionado, setAñoSeleccionado] = useState<number>(new Date().getFullYear());
   
   // Estado para filtro de usuario creador
   const [filtroCreador, setFiltroCreador] = useState<string>('');
@@ -1587,8 +1587,14 @@ const getEstadoVisual = (estado?: string | null) => {
   }, []);
 
   // OPTIMIZACIÓN: Memoizar fechas parseadas para evitar crear nuevos Date en cada render
-  const fechaDesdeDate = useMemo(() => fechaDesde ? new Date(fechaDesde) : null, [fechaDesde]);
-  const fechaHastaDate = useMemo(() => fechaHasta ? new Date(fechaHasta) : null, [fechaHasta]);
+  // Calcular primer y último día del mes seleccionado
+  const fechaDesdeDate = useMemo(() => {
+    return new Date(añoSeleccionado, mesSeleccionado, 1);
+  }, [añoSeleccionado, mesSeleccionado]);
+  
+  const fechaHastaDate = useMemo(() => {
+    return new Date(añoSeleccionado, mesSeleccionado + 1, 0, 23, 59, 59);
+  }, [añoSeleccionado, mesSeleccionado]);
 
   // Filtrado y paginación - OPTIMIZADO: useMemo y uso de datos pre-parseados
   const filteredRecords = useMemo(() => {
@@ -1626,16 +1632,9 @@ const getEstadoVisual = (estado?: string | null) => {
         if (!matchesSearch) return false;
       }
       
-      // Filtro por fechas - OPTIMIZADO: usar fechas memoizadas
-      if (fechaDesdeDate) {
-        const recordDate = new Date(record.data);
-        if (recordDate < fechaDesdeDate) return false;
-      }
-      
-      if (fechaHastaDate) {
-        const recordDate = new Date(record.data);
-        if (recordDate > fechaHastaDate) return false;
-      }
+      // Filtro por mes y año - OPTIMIZADO: usar fechas memoizadas
+      const recordDate = new Date(record.data);
+      if (recordDate < fechaDesdeDate || recordDate > fechaHastaDate) return false;
       
       // Filtro por creador - solo para TI/ADMIN
       if (canUseAgentFilter && filtroCreador) {
@@ -2414,81 +2413,48 @@ const getEstadoVisual = (estado?: string | null) => {
               </select>
             </div>
             
-            {/* Filtro de fechas */}
+            {/* Filtro de mes y año */}
             <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500 dark:text-gray-400">Dal</span>
-              <div 
-                className="relative cursor-pointer"
-                onClick={(e) => {
-                  const input = e.currentTarget.querySelector('input');
-                  if (input) {
-                    input.showPicker?.();
-                    input.focus();
-                  }
+              <span className="text-xs text-gray-500 dark:text-gray-400">Mese</span>
+              <select
+                value={mesSeleccionado}
+                onChange={(e) => {
+                  setMesSeleccionado(Number(e.target.value));
+                  setCurrentPage(1);
                 }}
+                className="py-2 pl-3 pr-8 text-xs text-gray-800 bg-transparent border border-gray-300 rounded-lg appearance-none dark:bg-dark-900 h-9 bg-none shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800 w-[140px]"
               >
-                <input
-                  type="date"
-                  value={fechaDesde}
-                  onChange={(e) => {
-                    setFechaDesde(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    e.currentTarget.showPicker?.();
-                  }}
-                  className="py-2 pl-9 pr-3 text-xs text-gray-800 bg-transparent border border-gray-300 rounded-lg dark:bg-dark-900 h-9 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800 cursor-pointer w-[130px]"
-                  style={{ colorScheme: 'light dark' }}
-                />
-                <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <span className="text-xs text-gray-500 dark:text-gray-400">Al</span>
-              <div 
-                className="relative cursor-pointer"
-                onClick={(e) => {
-                  const input = e.currentTarget.querySelector('input');
-                  if (input) {
-                    input.showPicker?.();
-                    input.focus();
-                  }
+                <option value={0}>Gennaio</option>
+                <option value={1}>Febbraio</option>
+                <option value={2}>Marzo</option>
+                <option value={3}>Aprile</option>
+                <option value={4}>Maggio</option>
+                <option value={5}>Giugno</option>
+                <option value={6}>Luglio</option>
+                <option value={7}>Agosto</option>
+                <option value={8}>Settembre</option>
+                <option value={9}>Ottobre</option>
+                <option value={10}>Novembre</option>
+                <option value={11}>Dicembre</option>
+              </select>
+              <span className="text-xs text-gray-500 dark:text-gray-400">Anno</span>
+              <select
+                value={añoSeleccionado}
+                onChange={(e) => {
+                  setAñoSeleccionado(Number(e.target.value));
+                  setCurrentPage(1);
                 }}
+                className="py-2 pl-3 pr-8 text-xs text-gray-800 bg-transparent border border-gray-300 rounded-lg appearance-none dark:bg-dark-900 h-9 bg-none shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800 w-[100px]"
               >
-                <input
-                  type="date"
-                  value={fechaHasta}
-                  onChange={(e) => {
-                    setFechaHasta(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    e.currentTarget.showPicker?.();
-                  }}
-                  className="py-2 pl-9 pr-3 text-xs text-gray-800 bg-transparent border border-gray-300 rounded-lg dark:bg-dark-900 h-9 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800 cursor-pointer w-[130px]"
-                  style={{ colorScheme: 'light dark' }}
-                />
-                <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              {(fechaDesde || fechaHasta) && (
-                <button
-                  onClick={() => {
-                    setFechaDesde('');
-                    setFechaHasta('');
-                    setCurrentPage(1);
-                  }}
-                  className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
-                  title="Cancella filtro"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
+                {Array.from({ length: 5 }, (_, i) => {
+                  const año = new Date().getFullYear() - 2 + i;
+                  return (
+                    <option key={año} value={año}>
+                      {año}
+                    </option>
+                  );
+                })}
+              </select>
             </div>
             
             {/* Filtro por Creador */}

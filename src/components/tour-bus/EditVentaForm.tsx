@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { Modal } from "@/components/ui/modal";
+import { Edit2Icon, CheckIcon, X as XCloseIcon } from "lucide-react";
 
 interface Client {
   id: string;
@@ -143,6 +144,58 @@ export default function EditVentaForm({
   );
   const acompananteDropdownRefs = useRef<(HTMLDivElement | null)[]>([]);
   
+  // Estados para precios personalizados
+  // Calcular precios personalizados basándose en el totalAPagar existente
+  const calcularPreciosPersonalizados = () => {
+    const numAdultos = 1 + venta.acompanantes.filter(a => a.esAdulto).length;
+    const numNinos = venta.acompanantes.filter(a => !a.esAdulto).length;
+    const totalEsperado = (numAdultos * precioAdulto) + (numNinos * precioNino);
+    
+    // Si el totalAPagar es diferente al esperado, hay precios personalizados
+    if (Math.abs(venta.totalAPagar - totalEsperado) > 0.01) {
+      // Calcular precios personalizados aproximados
+      if (numAdultos > 0 && numNinos > 0) {
+        // Si hay ambos, usar proporción
+        const ratio = venta.totalAPagar / totalEsperado;
+        return {
+          precioAdulto: precioAdulto * ratio,
+          precioNino: precioNino * ratio
+        };
+      } else if (numAdultos > 0) {
+        return {
+          precioAdulto: venta.totalAPagar / numAdultos,
+          precioNino: precioNino
+        };
+      } else {
+        return {
+          precioAdulto: precioAdulto,
+          precioNino: venta.totalAPagar / numNinos
+        };
+      }
+    }
+    return null;
+  };
+  
+  const preciosCalculados = calcularPreciosPersonalizados();
+  const [precioAdultoPersonalizado, setPrecioAdultoPersonalizado] = useState<number | null>(
+    preciosCalculados ? preciosCalculados.precioAdulto : null
+  );
+  const [precioNinoPersonalizado, setPrecioNinoPersonalizado] = useState<number | null>(
+    preciosCalculados ? preciosCalculados.precioNino : null
+  );
+  const [editandoPrecioAdulto, setEditandoPrecioAdulto] = useState(false);
+  const [editandoPrecioNino, setEditandoPrecioNino] = useState(false);
+  const [tempPrecioAdulto, setTempPrecioAdulto] = useState(
+    (precioAdultoPersonalizado ?? precioAdulto).toString()
+  );
+  const [tempPrecioNino, setTempPrecioNino] = useState(
+    (precioNinoPersonalizado ?? precioNino).toString()
+  );
+  
+  // Precios efectivos (personalizados si existen, sino los del tour)
+  const precioAdultoEfectivo = precioAdultoPersonalizado ?? precioAdulto;
+  const precioNinoEfectivo = precioNinoPersonalizado ?? precioNino;
+  
   // Estados para pagos - Inicializar con datos existentes
   const [totalAPagar, setTotalAPagar] = useState(venta.totalAPagar);
   const [acconto, setAcconto] = useState(venta.acconto.toString());
@@ -173,18 +226,31 @@ export default function EditVentaForm({
     ...asientosDisponibles
   ].filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => a - b);
 
-  // Calcular total a pagar cuando cambia el número de acompañantes o sus tipos
+  // Actualizar tempPrecios cuando cambian los precios efectivos
   useEffect(() => {
-    let total = precioAdulto; // Cliente principal siempre es adulto
+    if (!editandoPrecioAdulto) {
+      setTempPrecioAdulto(precioAdultoEfectivo.toString());
+    }
+  }, [precioAdultoEfectivo, editandoPrecioAdulto]);
+  
+  useEffect(() => {
+    if (!editandoPrecioNino) {
+      setTempPrecioNino(precioNinoEfectivo.toString());
+    }
+  }, [precioNinoEfectivo, editandoPrecioNino]);
+  
+  // Calcular total a pagar cuando cambia el número de acompañantes, sus tipos, o los precios
+  useEffect(() => {
+    let total = precioAdultoEfectivo; // Cliente principal siempre es adulto
     
     acompanantes.forEach(acomp => {
-      total += acomp.esAdulto ? precioAdulto : precioNino;
+      total += acomp.esAdulto ? precioAdultoEfectivo : precioNinoEfectivo;
     });
     
     setTotalAPagar(total);
     const accontoNum = parseFloat(acconto) || 0;
     setDaPagare(Math.max(0, total - accontoNum));
-  }, [acompanantes, precioAdulto, precioNino, acconto]);
+  }, [acompanantes, precioAdultoEfectivo, precioNinoEfectivo, acconto]);
 
   // Cerrar dropdowns al hacer click fuera
   useEffect(() => {
@@ -429,8 +495,181 @@ export default function EditVentaForm({
           <div className="bg-brand-50 dark:bg-brand-900/20 p-4 rounded-lg">
             <h3 className="font-semibold text-brand-900 dark:text-brand-100 mb-2">Tour: {tourTitulo}</h3>
             <div className="flex gap-4 text-sm text-brand-700 dark:text-brand-300">
-              <span>Adulto: €{precioAdulto}</span>
-              <span>Niño: €{precioNino}</span>
+              {/* Precio Adulto */}
+              <div className="flex items-center gap-2">
+                <span>Adulto:</span>
+                {editandoPrecioAdulto ? (
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={tempPrecioAdulto}
+                      onChange={(e) => setTempPrecioAdulto(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const nuevoPrecio = parseFloat(tempPrecioAdulto);
+                          if (!isNaN(nuevoPrecio) && nuevoPrecio >= 0) {
+                            setPrecioAdultoPersonalizado(nuevoPrecio);
+                            setEditandoPrecioAdulto(false);
+                          }
+                        } else if (e.key === 'Escape') {
+                          setTempPrecioAdulto(precioAdultoEfectivo.toString());
+                          setEditandoPrecioAdulto(false);
+                        }
+                      }}
+                      className="w-20 px-2 py-1 border border-brand-300 rounded text-sm focus:ring-2 focus:ring-brand-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const nuevoPrecio = parseFloat(tempPrecioAdulto);
+                        if (!isNaN(nuevoPrecio) && nuevoPrecio >= 0) {
+                          setPrecioAdultoPersonalizado(nuevoPrecio);
+                          setEditandoPrecioAdulto(false);
+                        }
+                      }}
+                      className="p-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded transition-colors"
+                      title="Confirmar"
+                    >
+                      <CheckIcon className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTempPrecioAdulto(precioAdultoEfectivo.toString());
+                        setEditandoPrecioAdulto(false);
+                      }}
+                      className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                      title="Cancelar"
+                    >
+                      <XCloseIcon className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1">
+                    <span className="font-medium">
+                      €{precioAdultoEfectivo.toFixed(2)}
+                      {precioAdultoPersonalizado !== null && precioAdultoPersonalizado !== precioAdulto && (
+                        <span className="text-xs text-orange-600 ml-1">(personalizado)</span>
+                      )}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTempPrecioAdulto(precioAdultoEfectivo.toString());
+                        setEditandoPrecioAdulto(true);
+                      }}
+                      className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-100 dark:hover:bg-brand-800 rounded transition-colors flex items-center justify-center border border-transparent hover:border-brand-300"
+                      title="Editar precio adulto"
+                    >
+                      <Edit2Icon className="w-4 h-4" strokeWidth={2} />
+                    </button>
+                    {precioAdultoPersonalizado !== null && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPrecioAdultoPersonalizado(null);
+                          setTempPrecioAdulto(precioAdulto.toString());
+                        }}
+                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors flex items-center justify-center"
+                        title="Restaurar precio original"
+                      >
+                        <XCloseIcon className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+              
+              {/* Precio Niño */}
+              <div className="flex items-center gap-2">
+                <span>Niño:</span>
+                {editandoPrecioNino ? (
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={tempPrecioNino}
+                      onChange={(e) => setTempPrecioNino(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const nuevoPrecio = parseFloat(tempPrecioNino);
+                          if (!isNaN(nuevoPrecio) && nuevoPrecio >= 0) {
+                            setPrecioNinoPersonalizado(nuevoPrecio);
+                            setEditandoPrecioNino(false);
+                          }
+                        } else if (e.key === 'Escape') {
+                          setTempPrecioNino(precioNinoEfectivo.toString());
+                          setEditandoPrecioNino(false);
+                        }
+                      }}
+                      className="w-20 px-2 py-1 border border-brand-300 rounded text-sm focus:ring-2 focus:ring-brand-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const nuevoPrecio = parseFloat(tempPrecioNino);
+                        if (!isNaN(nuevoPrecio) && nuevoPrecio >= 0) {
+                          setPrecioNinoPersonalizado(nuevoPrecio);
+                          setEditandoPrecioNino(false);
+                        }
+                      }}
+                      className="p-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded transition-colors"
+                      title="Confirmar"
+                    >
+                      <CheckIcon className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTempPrecioNino(precioNinoEfectivo.toString());
+                        setEditandoPrecioNino(false);
+                      }}
+                      className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                      title="Cancelar"
+                    >
+                      <XCloseIcon className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1">
+                    <span className="font-medium">
+                      €{precioNinoEfectivo.toFixed(2)}
+                      {precioNinoPersonalizado !== null && precioNinoPersonalizado !== precioNino && (
+                        <span className="text-xs text-orange-600 ml-1">(personalizado)</span>
+                      )}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTempPrecioNino(precioNinoEfectivo.toString());
+                        setEditandoPrecioNino(true);
+                      }}
+                      className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-100 dark:hover:bg-brand-800 rounded transition-colors flex items-center justify-center border border-transparent hover:border-brand-300"
+                      title="Editar precio niño"
+                    >
+                      <Edit2Icon className="w-4 h-4" strokeWidth={2} />
+                    </button>
+                    {precioNinoPersonalizado !== null && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPrecioNinoPersonalizado(null);
+                          setTempPrecioNino(precioNino.toString());
+                        }}
+                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors flex items-center justify-center"
+                        title="Restaurar precio original"
+                      >
+                        <XCloseIcon className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -890,7 +1129,7 @@ export default function EditVentaForm({
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-white font-semibold"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  {acompanantes.filter(a => a.esAdulto).length + 1} adulto/i × €{precioAdulto} + {acompanantes.filter(a => !a.esAdulto).length} niño/i × €{precioNino}
+                  {acompanantes.filter(a => a.esAdulto).length + 1} adulto/i × €{precioAdultoEfectivo.toFixed(2)} + {acompanantes.filter(a => !a.esAdulto).length} niño/i × €{precioNinoEfectivo.toFixed(2)}
                 </p>
               </div>
               

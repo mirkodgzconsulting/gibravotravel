@@ -2250,7 +2250,7 @@ export default function AsientosTourBusPage() {
                 <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Note del tour</span>
               </div>
               <div 
-                className="text-sm text-slate-600 dark:text-slate-400 p-2 rounded transition-colors"
+                className="text-sm text-slate-600 dark:text-slate-400 p-2 rounded transition-colors min-h-[80px]"
                 onDoubleClick={() => startEditingNotas('tour')}
                 title={expandedNotas.tour ? undefined : getNotePreview(tour.notas)}
               >
@@ -2305,29 +2305,40 @@ export default function AsientosTourBusPage() {
                         {hasHtml ? (
                           <div 
                             key={`tour-notas-${tour.id}-${tour.notas.length}`}
+                            className={`whitespace-pre-wrap break-words ${!expandedNotas.tour ? 'max-h-[120px] overflow-hidden' : ''}`}
                             dangerouslySetInnerHTML={{ 
                               __html: sanitizeEditorHtml(tour.notas)
                             }} 
                             suppressHydrationWarning
                           />
                         ) : (
-                          <div>{expandedNotas.tour ? tour.notas : getNotePreview(tour.notas)}</div>
+                          <div className={`whitespace-pre-wrap break-words ${!expandedNotas.tour ? 'max-h-[120px] overflow-hidden' : ''}`}>
+                            {expandedNotas.tour ? tour.notas : getNotePreview(tour.notas)}
+                          </div>
                         )}
                       </div>
                     );
                   })()
                 )}
-                {!editingNotas.tour && tour.notas && extractPlainText(tour.notas).length > 280 && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setExpandedNotas(prev => ({ ...prev, tour: !prev.tour }));
-                    }}
-                    className="mt-2 text-xs font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
-                  >
-                    {expandedNotas.tour ? 'Mostra meno' : 'Leggi di più'}
-                  </button>
+                {!editingNotas.tour && tour.notas && (
+                  (() => {
+                    const plainText = extractPlainText(tour.notas);
+                    // Mostrar botón si el texto es largo o tiene múltiples líneas
+                    const hasMultipleLines = tour.notas.includes('<br') || tour.notas.split('\n').length > 3;
+                    const shouldShowButton = plainText.length > 150 || hasMultipleLines;
+                    return shouldShowButton ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExpandedNotas(prev => ({ ...prev, tour: !prev.tour }));
+                        }}
+                        className="mt-2 text-xs font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
+                      >
+                        {expandedNotas.tour ? 'Mostra meno' : 'Leggi di più'}
+                      </button>
+                    ) : null;
+                  })()
                 )}
               </div>
             </div>
@@ -2338,7 +2349,7 @@ export default function AsientosTourBusPage() {
                 <span className="text-sm font-medium text-amber-700 dark:text-amber-300">Note del coordinatore</span>
               </div>
               <div 
-                className="text-sm text-amber-700 dark:text-amber-300 p-2 rounded transition-colors"
+                className="text-sm text-amber-700 dark:text-amber-300 p-2 rounded transition-colors min-h-[80px]"
                 onDoubleClick={() => startEditingNotas('coordinador')}
                 title={expandedNotas.coordinador ? undefined : getNotePreview(tour.notasCoordinador)}
               >
@@ -2392,29 +2403,40 @@ export default function AsientosTourBusPage() {
                             {hasHtml ? (
                               <div 
                                 key={`coordinador-notas-${tour.id}-${tour.notasCoordinador.length}`}
+                                className={`whitespace-pre-wrap break-words ${!expandedNotas.coordinador ? 'max-h-[120px] overflow-hidden' : ''}`}
                                 dangerouslySetInnerHTML={{ 
                                   __html: sanitizeEditorHtml(tour.notasCoordinador)
                                 }} 
                                 suppressHydrationWarning
                               />
                             ) : (
-                              <div>{expandedNotas.coordinador ? tour.notasCoordinador : getNotePreview(tour.notasCoordinador)}</div>
+                              <div className={`whitespace-pre-wrap break-words ${!expandedNotas.coordinador ? 'max-h-[120px] overflow-hidden' : ''}`}>
+                                {expandedNotas.coordinador ? tour.notasCoordinador : getNotePreview(tour.notasCoordinador)}
+                              </div>
                             )}
                           </div>
                         );
                       })()
                     )}
-                {!editingNotas.coordinador && tour.notasCoordinador && extractPlainText(tour.notasCoordinador).length > 280 && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setExpandedNotas(prev => ({ ...prev, coordinador: !prev.coordinador }));
-                    }}
-                    className="mt-2 text-xs font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
-                  >
-                    {expandedNotas.coordinador ? 'Mostra meno' : 'Leggi di più'}
-                  </button>
+                {!editingNotas.coordinador && tour.notasCoordinador && (
+                  (() => {
+                    const plainText = extractPlainText(tour.notasCoordinador);
+                    // Mostrar botón si el texto es largo o tiene múltiples líneas
+                    const hasMultipleLines = tour.notasCoordinador.includes('<br') || tour.notasCoordinador.split('\n').length > 3;
+                    const shouldShowButton = plainText.length > 150 || hasMultipleLines;
+                    return shouldShowButton ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExpandedNotas(prev => ({ ...prev, coordinador: !prev.coordinador }));
+                        }}
+                        className="mt-2 text-xs font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
+                      >
+                        {expandedNotas.coordinador ? 'Mostra meno' : 'Leggi di più'}
+                      </button>
+                    ) : null;
+                  })()
                 )}
               </div>
             </div>

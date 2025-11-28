@@ -74,9 +74,27 @@ const SimpleRichTextEditor: React.FC<SimpleRichTextEditorProps> = ({
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    // Interceptar Enter para insertar <br> en lugar de crear div/p
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      document.execCommand('insertLineBreak');
+      handleInput();
+    }
+  };
+
   const handleInput = () => {
     if (editorRef.current) {
-      const html = editorRef.current.innerHTML;
+      let html = editorRef.current.innerHTML;
+      
+      // Normalizar: convertir div y p vacíos a br, y preservar br existentes
+      // Reemplazar <div><br></div> o <p><br></p> por <br>
+      html = html.replace(/<(div|p)[^>]*>\s*<br\s*\/?>\s*<\/\1>/gi, '<br>');
+      // Reemplazar <div></div> o <p></p> vacíos por <br>
+      html = html.replace(/<(div|p)[^>]*>\s*<\/\1>/gi, '<br>');
+      // Convertir </div> y </p> seguidos de <div> o <p> a <br>
+      html = html.replace(/<\/(div|p)>\s*<(div|p)[^>]*>/gi, '<br>');
+      
       const text = editorRef.current.innerText || editorRef.current.textContent || '';
       setIsEmpty(text.trim() === '');
       onChange(html);
@@ -227,6 +245,7 @@ const SimpleRichTextEditor: React.FC<SimpleRichTextEditorProps> = ({
           ref={editorRef}
           contentEditable
           onInput={handleInput}
+          onKeyDown={handleKeyDown}
           className="w-full px-3 py-2 text-gray-900 dark:text-white focus:outline-none"
           style={{ 
             minHeight: `${rows * 1.5}rem`,

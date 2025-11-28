@@ -1985,7 +1985,10 @@ export default function AsientosTourBusPage() {
           </p>
           <button
             onClick={() => router.back()}
-            className="bg-brand-500 hover:bg-brand-600 text-white px-6 py-3 rounded-lg"
+            className="text-white px-6 py-3 rounded-lg"
+            style={{ backgroundColor: '#0366D6' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0255C4'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0366D6'}
           >
             Indietro
           </button>
@@ -2003,7 +2006,10 @@ export default function AsientosTourBusPage() {
           </h1>
           <button
             onClick={() => router.back()}
-            className="bg-brand-500 hover:bg-brand-600 text-white px-6 py-3 rounded-lg"
+            className="text-white px-6 py-3 rounded-lg"
+            style={{ backgroundColor: '#0366D6' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0255C4'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0366D6'}
           >
             Indietro
           </button>
@@ -2019,7 +2025,10 @@ export default function AsientosTourBusPage() {
         <div className="fixed right-3 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-2">
           <button
             onClick={() => scrollToSection(busLayoutRef)}
-            className="bg-blue-500 hover:bg-blue-600 text-white w-8 h-8 rounded-md shadow-md transition-all duration-200 hover:shadow-lg hover:scale-110 flex items-center justify-center"
+            className="text-white w-8 h-8 rounded-md shadow-md transition-all duration-200 hover:shadow-lg hover:scale-110 flex items-center justify-center"
+            style={{ backgroundColor: '#0366D6' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0255C4'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0366D6'}
             title="Vai al Bus"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2437,7 +2446,10 @@ export default function AsientosTourBusPage() {
           <div className="flex justify-center mb-8">
             <button
               onClick={() => setIsVentaModalOpen(true)}
-              className="px-8 py-3 bg-brand-500 hover:bg-brand-600 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2"
+              className="px-8 py-3 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2"
+              style={{ backgroundColor: '#0366D6' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0255C4'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0366D6'}
             >
               <PlusIcon className="w-5 h-5" />
               Genera Vendita
@@ -2954,7 +2966,10 @@ export default function AsientosTourBusPage() {
               <div className="ml-4">
                 <button
                   onClick={() => handlePrintListaCompleta()}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded font-medium transition-colors flex items-center gap-2"
+                  className="text-white px-4 py-2 rounded font-medium transition-colors flex items-center gap-2"
+                  style={{ backgroundColor: '#0366D6' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0255C4'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0366D6'}
                   title="Stampa lista completa del bus"
                 >
                   📄

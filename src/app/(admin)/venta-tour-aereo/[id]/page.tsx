@@ -3125,7 +3125,10 @@ export default function VentaTourAereoPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-6 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg disabled:opacity-50"
+                  className="px-6 py-2 text-white rounded-lg disabled:opacity-50"
+                  style={{ backgroundColor: isSubmitting ? '#0366D6' : '#0366D6' }}
+                  onMouseEnter={(e) => !isSubmitting && (e.currentTarget.style.backgroundColor = '#0255C4')}
+                  onMouseLeave={(e) => !isSubmitting && (e.currentTarget.style.backgroundColor = '#0366D6')}
                 >
                   {isSubmitting 
                     ? (isEditMode ? 'Aggiornamento...' : 'Salvataggio...') 
@@ -3164,7 +3167,7 @@ export default function VentaTourAereoPage() {
             {/* Botón Gestione Stanza - Visible para todos los usuarios */}
             <button
               onClick={() => setIsGestionesStanzaOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg whitespace-nowrap"
+              className="flex items-center gap-2 px-4 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg whitespace-nowrap"
               title="Gestione Stanza"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3187,7 +3190,10 @@ export default function VentaTourAereoPage() {
         {/* Botón para generar venta */}
           <button
             onClick={handleOpenCreateModal}
-              className="flex items-center gap-2 px-6 py-3 bg-brand-500 hover:bg-brand-600 text-white rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg whitespace-nowrap"
+              className="flex items-center gap-2 px-6 py-3 text-white rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg whitespace-nowrap"
+              style={{ backgroundColor: '#0366D6' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0255C4'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0366D6'}
           >
             <PlusIcon className="w-5 h-5" />
             Genera Vendita
@@ -3207,7 +3213,10 @@ export default function VentaTourAereoPage() {
             {!searchTerm.trim() && (
             <Button
               onClick={handleOpenCreateModal}
-              className="bg-brand-500 hover:bg-brand-600 text-white px-6 py-3 rounded-lg"
+              className="text-white px-6 py-3 rounded-lg"
+              style={{ backgroundColor: '#0366D6' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0255C4'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0366D6'}
             >
               Genera Vendita
             </Button>

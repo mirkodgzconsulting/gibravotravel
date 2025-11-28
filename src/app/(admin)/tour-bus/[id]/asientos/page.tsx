@@ -145,6 +145,12 @@ const sanitizeEditorHtml = (note?: string | null) => {
   // Usar solo regex para evitar manipulación del DOM
   let sanitized = note;
 
+  // Convertir tags <font> obsoletos a <span> antes de procesar
+  sanitized = sanitized.replace(/<font\s+color\s*=\s*["']([^"']+)["']([^>]*)>/gi, (match, color) => {
+    return `<span style="color: ${color}">`;
+  });
+  sanitized = sanitized.replace(/<\/font>/gi, '</span>');
+
   // Remover todos los tags excepto los permitidos
   sanitized = sanitized.replace(/<(\/?)([^>]+)>/gi, (match, closing, tagContent) => {
     const tagName = tagContent.split(/\s/)[0].toLowerCase();
@@ -184,7 +190,7 @@ const sanitizeEditorHtml = (note?: string | null) => {
   });
 
   // Limpiar atributos restantes que puedan haber quedado
-  sanitized = sanitized.replace(/\s+style\s*=\s*["'][^"']*["']/gi, (match) => {
+  sanitized = sanitized.replace(/\s+style\s*=\s*["']([^"']*)["']/gi, (match) => {
     const styles = match.match(/["']([^"']*)["']/)?.[1] || '';
     const allowedStylesList = styles
       .split(';')
@@ -822,7 +828,7 @@ export default function AsientosTourBusPage() {
         'POLIZZA': tour.polizza || 0,
         'TKT': tour.tkt || 0,
         'SPESA TOTALE': totalCostos,
-        'RICAVO TOTALE': totalIngresos,
+        // 'RICAVO TOTALE': totalIngresos,
         'TOTALE': totalGeneral,
         'FEE TOTALE': feeTotal,
         'AGENTE': agentesTexto
@@ -1664,9 +1670,10 @@ export default function AsientosTourBusPage() {
   const startEditingNotas = useCallback((type: 'tour' | 'coordinador') => {
     setEditingNotas(prev => ({ ...prev, [type]: true }));
     const currentValue = type === 'tour' ? tour?.notas : tour?.notasCoordinador;
+    // No sanitizar al inicializar el editor para preservar el formato guardado
     setTempNotas(prev => ({
       ...prev,
-      [type]: sanitizeEditorHtml(currentValue)
+      [type]: currentValue || ''
     }));
   }, [tour]);
 
@@ -2281,23 +2288,21 @@ export default function AsientosTourBusPage() {
                     }
 
                     const plain = extractPlainText(tour.notas);
-                    const content = expandedNotas.tour 
-                      ? sanitizeEditorHtml(tour.notas) 
-                      : getNotePreview(tour.notas);
-
                     // Solo usar dangerouslySetInnerHTML si hay HTML real
                     const hasHtml = /<[^>]+>/.test(tour.notas);
 
                     return (
                       <div className="leading-relaxed space-y-1">
-                        {expandedNotas.tour && hasHtml ? (
+                        {hasHtml ? (
                           <div 
                             key={`tour-notas-${tour.id}-${tour.notas.length}`}
-                            dangerouslySetInnerHTML={{ __html: sanitizeEditorHtml(tour.notas) }} 
+                            dangerouslySetInnerHTML={{ 
+                              __html: sanitizeEditorHtml(tour.notas)
+                            }} 
                             suppressHydrationWarning
                           />
                         ) : (
-                          <div>{content}</div>
+                          <div>{expandedNotas.tour ? tour.notas : getNotePreview(tour.notas)}</div>
                         )}
                       </div>
                     );
@@ -2370,23 +2375,21 @@ export default function AsientosTourBusPage() {
                           );
                         }
 
-                        const content = expandedNotas.coordinador
-                          ? sanitizeEditorHtml(tour.notasCoordinador)
-                          : getNotePreview(tour.notasCoordinador);
-
                         // Solo usar dangerouslySetInnerHTML si hay HTML real
                         const hasHtml = /<[^>]+>/.test(tour.notasCoordinador);
 
                         return (
                           <div className="leading-relaxed space-y-1">
-                            {expandedNotas.coordinador && hasHtml ? (
+                            {hasHtml ? (
                               <div 
                                 key={`coordinador-notas-${tour.id}-${tour.notasCoordinador.length}`}
-                                dangerouslySetInnerHTML={{ __html: sanitizeEditorHtml(tour.notasCoordinador) }} 
+                                dangerouslySetInnerHTML={{ 
+                                  __html: sanitizeEditorHtml(tour.notasCoordinador)
+                                }} 
                                 suppressHydrationWarning
                               />
                             ) : (
-                              <div>{content}</div>
+                              <div>{expandedNotas.coordinador ? tour.notasCoordinador : getNotePreview(tour.notasCoordinador)}</div>
                             )}
                           </div>
                         );
@@ -2823,9 +2826,9 @@ export default function AsientosTourBusPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                     SPESA TOTALE
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                  {/* <th className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                     RICAVO TOTALE
-                  </th>
+                  </th> */}
                   <th className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                     TOTALE
                   </th>
@@ -2885,9 +2888,9 @@ export default function AsientosTourBusPage() {
                       (tour.tkt || 0)
                     ).toFixed(2)}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white bg-blue-200 dark:bg-blue-900/40">
+                  {/* <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white bg-blue-200 dark:bg-blue-900/40">
                     €{totalIngresos.toFixed(2)}
-                  </td>
+                  </td> */}
                   <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white bg-green-200 dark:bg-green-900/40">
                     €{totalGeneral.toFixed(2)}
                   </td>
@@ -3081,7 +3084,7 @@ export default function AsientosTourBusPage() {
                                   ? 'bg-green-200 text-green-900 dark:bg-green-700 dark:text-green-100' 
                                   : 'bg-yellow-200 text-yellow-900 dark:bg-yellow-700 dark:text-yellow-100'
                               }`}>
-                                {acomp.esAdulto ? 'Adulte' : 'Bambino'}
+                                {acomp.esAdulto ? 'Adulto' : 'Bambino'}
                               </span>
                             </td>
                             <td className="px-4 py-2">

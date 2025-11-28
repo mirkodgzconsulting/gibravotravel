@@ -3211,7 +3211,7 @@ export default function VentaTourAereoPage() {
               {searchTerm.trim() ? 'Prova con altri termini di ricerca' : 'Genera la tua prima vendita per iniziare'}
             </p>
             {!searchTerm.trim() && (
-            <Button
+            <button
               onClick={handleOpenCreateModal}
               className="text-white px-6 py-3 rounded-lg"
               style={{ backgroundColor: '#0366D6' }}
@@ -3219,7 +3219,7 @@ export default function VentaTourAereoPage() {
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0366D6'}
             >
               Genera Vendita
-            </Button>
+            </button>
             )}
           </div>
         ) : (

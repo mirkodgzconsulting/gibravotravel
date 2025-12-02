@@ -127,6 +127,7 @@ export default function TourBusPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingTour, setEditingTour] = useState<TourBus | null>(null);
+  const [filtroViaje, setFiltroViaje] = useState<'proximos' | 'realizados' | 'todos'>('proximos');
 
   // Función para ordenar tours por fecha de inicio (más próximo primero - ascendente)
   const sortToursByFechaViaje = (toursToSort: TourBus[]): TourBus[] => {
@@ -167,16 +168,49 @@ export default function TourBusPage() {
     }
   }, [roleLoading, fetchTours]);
 
+  // Función para filtrar tours por estado de viaje
+  const filtrarToursPorEstado = (toursToFilter: TourBus[]): TourBus[] => {
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0); // Resetear horas para comparar solo fechas
+
+    switch (filtroViaje) {
+      case 'proximos':
+        // Mostrar tours con fechaViaje >= hoy o sin fecha
+        return toursToFilter.filter(tour => {
+          if (!tour.fechaViaje) return true; // Sin fecha = próximo
+          const fechaViaje = new Date(tour.fechaViaje);
+          fechaViaje.setHours(0, 0, 0, 0);
+          return fechaViaje >= hoy;
+        });
+      case 'realizados':
+        // Mostrar tours con fechaViaje < hoy
+        return toursToFilter.filter(tour => {
+          if (!tour.fechaViaje) return false; // Sin fecha no se considera realizado
+          const fechaViaje = new Date(tour.fechaViaje);
+          fechaViaje.setHours(0, 0, 0, 0);
+          return fechaViaje < hoy;
+        });
+      case 'todos':
+        return toursToFilter;
+      default:
+        return toursToFilter;
+    }
+  };
+
   const filteredTours = useMemo<TourBus[]>(() => {
     if (!tours || tours.length === 0) return [];
     
-    if (searchTerm && searchResults.length > 0) {
-      // Ordenar también los tours filtrados
-      return sortToursByFechaViaje(searchResults as TourBus[]);
-    }
+    // Aplicar primero la búsqueda si existe
+    const toursFiltradosPorBusqueda = searchTerm && searchResults.length > 0
+      ? (searchResults as TourBus[])
+      : tours;
     
-    return tours;
-  }, [tours, searchTerm, searchResults]);
+    // Luego aplicar el filtro de estado
+    const toursFiltradosPorEstado = filtrarToursPorEstado(toursFiltradosPorBusqueda);
+    
+    // Finalmente ordenar por fecha
+    return sortToursByFechaViaje(toursFiltradosPorEstado);
+  }, [tours, searchTerm, searchResults, filtroViaje]);
 
   const processedTours = useMemo(() => {
     return filteredTours.map((tour) => {
@@ -519,14 +553,60 @@ export default function TourBusPage() {
       )}
 
       {/* Botones principales */}
-      <div className="flex justify-center gap-4 mb-8">
+      <div className="flex justify-center gap-4 mb-2">
         <button
           onClick={openModal}
-          className="p-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg transition-colors duration-200 flex items-center justify-center shadow-md hover:shadow-lg"
+          className="p-2 text-white rounded-lg transition-colors duration-200 flex items-center justify-center shadow-md hover:shadow-lg"
+          style={{ backgroundColor: '#0366D6' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#0252b3';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '#0366D6';
+          }}
           title="Crea Tour"
         >
           <BusIcon className="w-4 h-4" />
         </button>
+      </div>
+
+      {/* Filtro de viajes */}
+      <div className="flex justify-center mb-4">
+        <div className="inline-flex rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-0.5">
+          <button
+            onClick={() => setFiltroViaje('proximos')}
+            className={`px-3 py-1 text-xs font-normal rounded transition-colors ${
+              filtroViaje === 'proximos'
+                ? 'text-white'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+            }`}
+            style={filtroViaje === 'proximos' ? { backgroundColor: '#0366D6' } : {}}
+          >
+            Próximos Viajes
+          </button>
+          <button
+            onClick={() => setFiltroViaje('realizados')}
+            className={`px-3 py-1 text-xs font-normal rounded transition-colors ${
+              filtroViaje === 'realizados'
+                ? 'text-white'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+            }`}
+            style={filtroViaje === 'realizados' ? { backgroundColor: '#0366D6' } : {}}
+          >
+            Viajes Realizados
+          </button>
+          <button
+            onClick={() => setFiltroViaje('todos')}
+            className={`px-3 py-1 text-xs font-normal rounded transition-colors ${
+              filtroViaje === 'todos'
+                ? 'text-white'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+            }`}
+            style={filtroViaje === 'todos' ? { backgroundColor: '#0366D6' } : {}}
+          >
+            Todos
+          </button>
+        </div>
       </div>
 
       {/* Modal para agregar tour */}

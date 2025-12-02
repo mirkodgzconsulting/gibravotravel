@@ -71,6 +71,7 @@ export default function PartenzeNotePage() {
   const [copiedTours, setCopiedTours] = useState<Set<string>>(new Set());
   const [isFileModalOpen, setIsFileModalOpen] = useState(false);
   const [selectedTour, setSelectedTour] = useState<TourUnified | null>(null);
+  const [filtroViaje, setFiltroViaje] = useState<'proximos' | 'realizados' | 'todos'>('proximos');
 
   const fetchTours = useCallback(async () => {
     try {
@@ -176,8 +177,41 @@ export default function PartenzeNotePage() {
     }).format(amount);
   };
 
-  // Usar directamente los resultados de búsqueda o todos los tours
-  const filteredTours: TourUnified[] = searchTerm && searchResults.length > 0 ? (searchResults as unknown as TourUnified[]) : tours;
+  // Función para filtrar tours por estado de viaje
+  const filtrarToursPorEstado = (toursToFilter: TourUnified[]): TourUnified[] => {
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0); // Resetear horas para comparar solo fechas
+
+    switch (filtroViaje) {
+      case 'proximos':
+        // Mostrar tours con fechaViaje >= hoy o sin fecha
+        return toursToFilter.filter(tour => {
+          if (!tour.fechaViaje) return true; // Sin fecha = próximo
+          const fechaViaje = new Date(tour.fechaViaje);
+          fechaViaje.setHours(0, 0, 0, 0);
+          return fechaViaje >= hoy;
+        });
+      case 'realizados':
+        // Mostrar tours con fechaViaje < hoy
+        return toursToFilter.filter(tour => {
+          if (!tour.fechaViaje) return false; // Sin fecha no se considera realizado
+          const fechaViaje = new Date(tour.fechaViaje);
+          fechaViaje.setHours(0, 0, 0, 0);
+          return fechaViaje < hoy;
+        });
+      case 'todos':
+        return toursToFilter;
+      default:
+        return toursToFilter;
+    }
+  };
+
+  // Aplicar filtros: primero búsqueda, luego filtro de estado
+  const toursFiltradosPorBusqueda = searchTerm && searchResults.length > 0 
+    ? (searchResults as unknown as TourUnified[])
+    : tours;
+  
+  const filteredTours = filtrarToursPorEstado(toursFiltradosPorBusqueda);
 
   if (roleLoading) {
     return (
@@ -217,6 +251,45 @@ export default function PartenzeNotePage() {
           </button>
         </div>
       )}
+
+      {/* Filtro de viajes */}
+      <div className="flex justify-center mb-4">
+        <div className="inline-flex rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-0.5">
+          <button
+            onClick={() => setFiltroViaje('proximos')}
+            className={`px-3 py-1 text-xs font-normal rounded transition-colors ${
+              filtroViaje === 'proximos'
+                ? 'text-white'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+            }`}
+            style={filtroViaje === 'proximos' ? { backgroundColor: '#0366D6' } : {}}
+          >
+            Próximos Viajes
+          </button>
+          <button
+            onClick={() => setFiltroViaje('realizados')}
+            className={`px-3 py-1 text-xs font-normal rounded transition-colors ${
+              filtroViaje === 'realizados'
+                ? 'text-white'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+            }`}
+            style={filtroViaje === 'realizados' ? { backgroundColor: '#0366D6' } : {}}
+          >
+            Viajes Realizados
+          </button>
+          <button
+            onClick={() => setFiltroViaje('todos')}
+            className={`px-3 py-1 text-xs font-normal rounded transition-colors ${
+              filtroViaje === 'todos'
+                ? 'text-white'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+            }`}
+            style={filtroViaje === 'todos' ? { backgroundColor: '#0366D6' } : {}}
+          >
+            Todos
+          </button>
+        </div>
+      </div>
 
       {/* Información de resultados de búsqueda */}
       {searchTerm && searchResults.length > 0 && (

@@ -68,7 +68,7 @@ export default function ToursFeeCard({ dateRange, userId }: ToursFeeCardProps) {
           }
         });
 
-        // Calculate TOUR AEREO fees
+        // Calculate TOUR AEREO fees - EXACT same logic as TotalFeeCard
         tourAereoTours.forEach((tour: any) => {
           const tourFechaViaje = new Date(tour.fechaViaje);
           if (tourFechaViaje >= startDate && tourFechaViaje <= endDate) {
@@ -76,16 +76,24 @@ export default function ToursFeeCard({ dateRange, userId }: ToursFeeCardProps) {
             if (userId && tour.ventas && tour.ventas.length > 0) {
               // Sum fees from user's filtered ventas (API already filtered them)
               const userVentasFee = tour.ventas.reduce((sum: number, venta: any) => {
-                const costosTotales = (venta.transfer || 0) + (venta.hotel || 0) + 
-                                      (tour.guidaLocale || 0) + (tour.coordinatore || 0) + (tour.transporte || 0);
+                const costosTotales = (venta.transfer || 0) + (tour.guidaLocale || 0) + 
+                                      (tour.coordinatore || 0) + (tour.transporte || 0) + (venta.hotel || 0);
                 const fee = (venta.venduto || 0) - costosTotales;
                 return sum + fee;
               }, 0);
               
               tourAereoFee += userVentasFee;
             } else {
-              // For ADMIN/TI, use total tour fee
-              tourAereoFee += tour.feeAgv || 0;
+              // For ADMIN/TI, calculate fee manually from all ventas (same as TotalFeeCard)
+              if (tour.ventas && tour.ventas.length > 0) {
+                const totalTourFee = tour.ventas.reduce((ventaSum: number, venta: any) => {
+                  const costosTotales = (venta.transfer || 0) + (tour.guidaLocale || 0) + 
+                                      (tour.coordinatore || 0) + (tour.transporte || 0) + (venta.hotel || 0);
+                  const fee = (venta.venduto || 0) - costosTotales;
+                  return ventaSum + fee;
+                }, 0);
+                tourAereoFee += totalTourFee;
+              }
             }
           }
         });

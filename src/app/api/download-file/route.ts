@@ -131,6 +131,14 @@ export async function GET(request: NextRequest) {
       const arrayBuffer = await response.arrayBuffer();
       buffer = Buffer.from(arrayBuffer);
 
+      // Verificar que el buffer no esté vacío
+      if (!buffer || buffer.length === 0) {
+        return NextResponse.json(
+          { error: 'El archivo descargado está vacío' },
+          { status: 500 }
+        );
+      }
+
       // Determinar el tipo de contenido basado en la extensión del archivo
       const extension = filename.split('.').pop()?.toLowerCase();
       let contentType = 'application/octet-stream';

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Modal } from "@/components/ui/modal";
 import { Edit2Icon, CheckIcon, X as XCloseIcon } from "lucide-react";
 
@@ -482,6 +482,101 @@ export default function EditVentaForm({
   };
 
   const maxAcompanantes = Math.min(20, asientosDisponiblesConActual.length - 1);
+
+  // Función para descargar archivos (igual que en TOUR AEREO)
+  const handleDownload = useCallback(async (url: string, filename: string) => {
+    try {
+      // Detectar si es un archivo no-imagen (PDF, DOCX, etc.)
+      const fileExtension = filename.toLowerCase().split('.').pop();
+      const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension || '');
+      const isCloudinary = url.includes('cloudinary.com') || url.includes('res.cloudinary.com');
+      
+      // Función auxiliar para descargar usando el proxy
+      const downloadViaProxy = async () => {
+        const downloadUrl = `/api/download-file?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
+        const proxyResponse = await fetch(downloadUrl);
+        
+        if (!proxyResponse.ok) {
+          try {
+            const errorData = await proxyResponse.json();
+            throw new Error(errorData.error || `Proxy error: ${proxyResponse.status}`);
+          } catch {
+            throw new Error(`Proxy error: ${proxyResponse.status} ${proxyResponse.statusText}`);
+          }
+        }
+
+        const contentType = proxyResponse.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const errorData = await proxyResponse.json();
+          throw new Error(errorData.error || 'Error al descargar el archivo');
+        }
+
+        const blob = await proxyResponse.blob();
+        if (blob.size === 0) {
+          throw new Error('El archivo descargado está vacío');
+        }
+
+        const downloadUrl2 = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl2;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(downloadUrl2);
+      };
+      
+      // Si es un archivo no-imagen de Cloudinary, usar el proxy directamente
+      if (!isImage && isCloudinary) {
+        await downloadViaProxy();
+        return;
+      }
+      
+      // Para imágenes, intentar descarga directa primero
+      try {
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          if (response.status === 401 || response.status >= 400) {
+            await downloadViaProxy();
+            return;
+          }
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('text/html')) {
+          await downloadViaProxy();
+          return;
+        }
+        
+        if (isImage && !contentType.startsWith('image/')) {
+          await downloadViaProxy();
+          return;
+        }
+        
+        const blob = await response.blob();
+        if (blob.size === 0) {
+          throw new Error('El archivo descargado está vacío');
+        }
+        
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(downloadUrl);
+      } catch (directError) {
+        await downloadViaProxy();
+      }
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      alert(error instanceof Error ? error.message : 'Errore durante il download del file');
+      window.open(url, '_blank');
+    }
+  }, []);
 
   return (
     <Modal isOpen={true} onClose={onCancel}>
@@ -1206,14 +1301,13 @@ export default function EditVentaForm({
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-blue-700 dark:text-blue-300">Archivo actual:</span>
-                          <a
-                            href={existingFileUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
+                            type="button"
+                            onClick={() => handleDownload(existingFileUrl, existingFileName || 'archivo')}
                             className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
                           >
                             {existingFileName || 'Ver archivo'}
-                          </a>
+                          </button>
                         </div>
                         <button
                           type="button"

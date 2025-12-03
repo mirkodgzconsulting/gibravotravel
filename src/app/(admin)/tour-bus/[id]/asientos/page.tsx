@@ -830,8 +830,7 @@ export default function AsientosTourBusPage() {
         'SPESA TOTALE': totalCostos,
         // 'RICAVO TOTALE': totalIngresos,
         'TOTALE': totalGeneral,
-        'FEE TOTALE': feeTotal,
-        'AGENTE': agentesTexto
+        'FEE TOTALE': feeTotal
       }
     ];
 
@@ -1849,6 +1848,100 @@ export default function AsientosTourBusPage() {
       event.target.value = '';
     }
   }, [tour]);
+
+  // Función para descargar archivos (PDFs e imágenes) - EXACTA de TOUR AEREO
+  const handleDownload = useCallback(async (url: string, filename: string) => {
+    try {
+      // Detectar si es un archivo no-imagen (PDF, DOCX, etc.)
+      const fileExtension = filename.toLowerCase().split('.').pop();
+      const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension || '');
+      const isCloudinary = url.includes('cloudinary.com') || url.includes('res.cloudinary.com');
+      
+      // Función auxiliar para descargar usando el proxy
+      const downloadViaProxy = async () => {
+        const downloadUrl = `/api/download-file?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
+        const proxyResponse = await fetch(downloadUrl);
+        
+        if (!proxyResponse.ok) {
+          throw new Error(`Proxy error: ${proxyResponse.status}`);
+        }
+        
+        const blob = await proxyResponse.blob();
+        
+        if (blob.size === 0) {
+          throw new Error('El archivo descargado está vacío');
+        }
+        
+        const downloadUrl2 = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl2;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(downloadUrl2);
+      };
+      
+      // Si es un archivo no-imagen de Cloudinary, usar el proxy directamente
+      // Esto maneja mejor los PDFs que pueden estar en /image/upload/ pero necesitan resource_type: 'raw'
+      if (!isImage && isCloudinary) {
+        await downloadViaProxy();
+        return;
+      }
+      
+      // Para imágenes, intentar descarga directa primero
+      try {
+        const response = await fetch(url);
+        
+        // Si Cloudinary devuelve 401 o error, usar el proxy
+        if (!response.ok) {
+          if (response.status === 401 || response.status >= 400) {
+            await downloadViaProxy();
+            return;
+          }
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // Verificar el content-type para asegurarnos de que no sea HTML
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('text/html')) {
+          // Es HTML, probablemente un error de Cloudinary, usar el proxy
+          await downloadViaProxy();
+          return;
+        }
+        
+        // Para imágenes, verificar que el content-type sea correcto
+        if (isImage && !contentType.startsWith('image/')) {
+          // Content-type incorrecto, usar el proxy
+          await downloadViaProxy();
+          return;
+        }
+        
+        const blob = await response.blob();
+        
+        // Verificar que el blob no esté vacío
+        if (blob.size === 0) {
+          throw new Error('El archivo descargado está vacío');
+        }
+        
+        // Descargar normalmente
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(downloadUrl);
+      } catch (directError) {
+        // Si falla la descarga directa, intentar con el proxy
+        await downloadViaProxy();
+      }
+    } catch (error) {
+      // Fallback: abrir en nueva pestaña
+      window.open(url, '_blank');
+    }
+  }, []);
 
   // Función para eliminar un archivo del documento viaggio
   const handleDeleteDocumentoViaggio = useCallback(async (indexToDelete: number) => {
@@ -2869,9 +2962,6 @@ export default function AsientosTourBusPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                     FEE TOTALE
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                    AGENTE
-                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -2930,9 +3020,6 @@ export default function AsientosTourBusPage() {
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white bg-indigo-200 dark:bg-indigo-900/40">
                     €{feeTotal.toFixed(2)}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    {agentesTexto}
                   </td>
                 </tr>
               </tbody>
@@ -3317,15 +3404,31 @@ export default function AsientosTourBusPage() {
                 >
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <Icon icon="mdi:file-document" width="24" height="24" style={{ color: '#0284c7' }} />
-                    <a
-                      href={doc.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 text-sm font-medium text-sky-700 dark:text-sky-200 hover:text-sky-900 dark:hover:text-sky-100 underline truncate"
-                      title={doc.name || `Documento ${index + 1}`}
-                    >
-                      {doc.name || `Documento ${index + 1}`}
-                    </a>
+                    {(() => {
+                      const isImage = doc.url.includes('/image/') || doc.name?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+                      
+                      if (isImage) {
+                        return (
+                          <img
+                            src={doc.url}
+                            alt={doc.name || `Documento ${index + 1}`}
+                            className="w-16 h-16 object-cover rounded cursor-pointer hover:opacity-90 transition-opacity"
+                            onClick={() => handleDownload(doc.url, doc.name || `documento_${index + 1}.jpg`)}
+                            title={doc.name || `Documento ${index + 1}`}
+                          />
+                        );
+                      } else {
+                        return (
+                          <button
+                            onClick={() => handleDownload(doc.url, doc.name || `documento_${index + 1}.pdf`)}
+                            className="flex-1 text-sm font-medium text-sky-700 dark:text-sky-200 hover:text-sky-900 dark:hover:text-sky-100 underline truncate text-left"
+                            title={doc.name || `Documento ${index + 1}`}
+                          >
+                            {doc.name || `Documento ${index + 1}`}
+                          </button>
+                        );
+                      }
+                    })()}
                   </div>
                   <button
                     type="button"

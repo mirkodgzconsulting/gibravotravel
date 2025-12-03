@@ -382,6 +382,19 @@ export async function DELETE(
 
     // Permitir eliminación (soft delete) a cualquier rol autenticado
 
+    // Verificar si hay ventas asociadas
+    const ventasAsociadas = await prisma.ventaTourAereo.findMany({
+      where: {
+        tourAereoId: id
+      }
+    });
+
+    if (ventasAsociadas.length > 0) {
+      return NextResponse.json({ 
+        error: 'No se puede eliminar un tour con ventas registradas' 
+      }, { status: 400 });
+    }
+
     // Eliminación lógica (marcar como inactivo)
     await prisma.tourAereo.update({
       where: { id },

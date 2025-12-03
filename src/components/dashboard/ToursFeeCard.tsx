@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ApexOptions } from "apexcharts";
 import dynamic from "next/dynamic";
+import { useDashboardData } from '@/contexts/DashboardDataContext';
 
 const ReactApexChart = dynamic(() => import("react-apexcharts"), {
   ssr: false,
@@ -13,6 +14,7 @@ interface ToursFeeCardProps {
     endDate: Date;
   };
   userId?: string;
+  isUser?: boolean;
 }
 
 interface ToursFeeData {
@@ -21,129 +23,97 @@ interface ToursFeeData {
   total: number;
 }
 
-export default function ToursFeeCard({ dateRange, userId }: ToursFeeCardProps) {
+export default function ToursFeeCard({ dateRange, userId, isUser = false }: ToursFeeCardProps) {
+  const dashboardData = useDashboardData();
   const [feeData, setFeeData] = useState<ToursFeeData>({ toursBus: 0, tourAereo: 0, total: 0 });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
+  // Calcular fees usando datos del Context (mismo enfoque que TotalFeeCard)
   useEffect(() => {
-    const fetchToursFeeData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+    if (dashboardData.loading) return;
 
-        const startDate = dateRange.startDate;
-        const endDate = dateRange.endDate;
+    const startDate = dateRange.startDate;
+    const endDate = dateRange.endDate;
 
-        // Fetch TOUR BUS data
-        const userIdParam = userId ? `?userId=${userId}` : '';
-        const tourBusResponse = await fetch(`/api/tour-bus${userIdParam}`);
-        const tourBusData = await tourBusResponse.json();
-        const tourBusTours = tourBusData.tours || [];
+    const { tourBus, tourAereo } = dashboardData;
 
-        // Fetch TOUR AEREO data
-        const tourAereoResponse = await fetch(`/api/tour-aereo${userIdParam}`);
-        const tourAereoData = await tourAereoResponse.json();
-        const tourAereoTours = tourAereoData.tours || [];
+    // Calculate TOUR BUS fees - EXACT same logic as TotalFeeCard
+    const toursBusFee = tourBus
+      .filter((tour: any) => {
+        const tourFechaViaje = new Date(tour.fechaViaje);
+        return tourFechaViaje >= startDate && tourFechaViaje <= endDate;
+      })
+      .reduce((sum: number, tour: any) => {
+        const spesaTotale = (tour.bus || 0) + (tour.pasti || 0) + (tour.parking || 0) + 
+                           (tour.coordinatore1 || 0) + (tour.coordinatore2 || 0) + 
+                           (tour.ztl || 0) + (tour.hotel || 0) + (tour.polizza || 0) + (tour.tkt || 0);
+        const ricavoTotale = tour.ventasTourBus?.reduce((ventaSum: number, venta: any) => {
+          return ventaSum + (venta.acconto || 0);
+        }, 0) || 0;
+        return sum + (ricavoTotale - spesaTotale);
+      }, 0);
 
-        let toursBusFee = 0;
-        let tourAereoFee = 0;
-
-        // Calculate TOUR BUS fees - EXACT same logic as FEE/AGV Statistics chart
-        tourBusTours.forEach((tour: any) => {
-          const tourFechaViaje = new Date(tour.fechaViaje);
-          if (tourFechaViaje >= startDate && tourFechaViaje <= endDate) {
-            // Calcular costos totales del tour (una sola vez por tour)
-            const spesaTotale = (tour.bus || 0) + (tour.pasti || 0) + (tour.parking || 0) + 
-                               (tour.coordinatore1 || 0) + (tour.coordinatore2 || 0) + 
-                               (tour.ztl || 0) + (tour.hotel || 0) + (tour.polizza || 0) + (tour.tkt || 0);
-            
-            // Calcular ingresos totales de todas las ventas del tour
-            const ricavoTotale = tour.ventasTourBus?.reduce((ventaSum: number, venta: any) => {
-              return ventaSum + (venta.acconto || 0);
-            }, 0) || 0;
-            
-            // FEE/AGV = Ingresos totales - Costos totales (por tour)
-            toursBusFee += (ricavoTotale - spesaTotale);
-          }
-        });
-
-        // Calculate TOUR AEREO fees - EXACT same logic as TotalFeeCard
-        tourAereoTours.forEach((tour: any) => {
-          const tourFechaViaje = new Date(tour.fechaViaje);
-          if (tourFechaViaje >= startDate && tourFechaViaje <= endDate) {
-            // If userId is provided, calculate fee from user's ventas only
-            if (userId && tour.ventas && tour.ventas.length > 0) {
-              // Sum fees from user's filtered ventas (API already filtered them)
-              const userVentasFee = tour.ventas.reduce((sum: number, venta: any) => {
-                const costosTotales = (venta.transfer || 0) + (tour.guidaLocale || 0) + 
-                                      (tour.coordinatore || 0) + (tour.transporte || 0) + (venta.hotel || 0);
-                const fee = (venta.venduto || 0) - costosTotales;
-                return sum + fee;
-              }, 0);
-              
-              tourAereoFee += userVentasFee;
-            } else {
-              // For ADMIN/TI, calculate fee manually from all ventas (same as TotalFeeCard)
-              if (tour.ventas && tour.ventas.length > 0) {
-                const totalTourFee = tour.ventas.reduce((ventaSum: number, venta: any) => {
-                  const costosTotales = (venta.transfer || 0) + (tour.guidaLocale || 0) + 
-                                      (tour.coordinatore || 0) + (tour.transporte || 0) + (venta.hotel || 0);
-                  const fee = (venta.venduto || 0) - costosTotales;
-                  return ventaSum + fee;
-                }, 0);
-                tourAereoFee += totalTourFee;
-              }
-            }
-          }
-        });
-
-        const total = toursBusFee + tourAereoFee;
-
-        setFeeData({ toursBus: toursBusFee, tourAereo: tourAereoFee, total });
-      } catch (error) {
-        console.error('Error fetching tours fee data:', error);
-        setError('Error al cargar datos de fees');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchToursFeeData();
-  }, [dateRange, userId]);
-
-  const chartOptions: ApexOptions = useMemo(() => ({
-    chart: {
-      type: 'donut',
-      height: 200,
-      fontFamily: "Outfit, sans-serif",
-    },
-    colors: ["#2a31d8", "#465fff"], // Azul progresivo
-    plotOptions: {
-      pie: {
-        donut: {
-          size: '70%',
-          background: 'transparent',
+    // Calculate TOUR AEREO fees - EXACT same logic as TotalFeeCard
+    const tourAereoFee = tourAereo
+      .filter((tour: any) => {
+        const tourFechaViaje = new Date(tour.fechaViaje);
+        return tourFechaViaje >= startDate && tourFechaViaje <= endDate;
+      })
+      .reduce((sum: number, tour: any) => {
+        if (tour.ventas?.length > 0) {
+          return sum + tour.ventas.reduce((ventaSum: number, venta: any) => {
+            const costosTotales = (venta.transfer || 0) + (tour.guidaLocale || 0) + 
+                                (tour.coordinatore || 0) + (tour.transporte || 0) + (venta.hotel || 0);
+            const fee = (venta.venduto || 0) - costosTotales;
+            return ventaSum + fee;
+          }, 0);
         }
-      }
-    },
-    dataLabels: {
-      enabled: false,
-    },
-    legend: {
-      show: false,
-    },
-    tooltip: {
-      enabled: false,
-    },
-    stroke: {
-      show: false,
-    },
-    series: [feeData.toursBus, feeData.tourAereo],
-    labels: ['TOURS BUS', 'TOUR AEREO'],
-  }), [feeData]);
+        return sum;
+      }, 0);
 
-  if (loading) {
+    const total = toursBusFee + tourAereoFee;
+
+    setFeeData({ toursBus: toursBusFee, tourAereo: tourAereoFee, total });
+  }, [dateRange, dashboardData]);
+
+  const chartOptions: ApexOptions = useMemo(() => {
+    // Para USER: solo mostrar AEREO, para ADMIN/TI: mostrar ambos
+    const series = isUser ? [feeData.tourAereo] : [feeData.toursBus, feeData.tourAereo];
+    const labels = isUser ? ['TOUR AEREO'] : ['TOURS BUS', 'TOUR AEREO'];
+    const colors = isUser ? ["#465fff"] : ["#2a31d8", "#465fff"];
+
+    return {
+      chart: {
+        type: 'donut',
+        height: 200,
+        fontFamily: "Outfit, sans-serif",
+      },
+      colors: colors,
+      plotOptions: {
+        pie: {
+          donut: {
+            size: '70%',
+            background: 'transparent',
+          }
+        }
+      },
+      dataLabels: {
+        enabled: false,
+      },
+      legend: {
+        show: false,
+      },
+      tooltip: {
+        enabled: false,
+      },
+      stroke: {
+        show: false,
+      },
+      series: series,
+      labels: labels,
+    };
+  }, [feeData, isUser]);
+
+  if (dashboardData.loading) {
     return (
       <div className="rounded-2xl border border-gray-200 bg-white px-6 py-6 dark:border-gray-800 dark:bg-white/[0.03]">
         {/* Header skeleton */}
@@ -171,11 +141,11 @@ export default function ToursFeeCard({ dateRange, userId }: ToursFeeCardProps) {
     );
   }
 
-  if (error) {
+  if (dashboardData.error) {
     return (
       <div className="rounded-2xl border border-gray-200 bg-white px-6 py-6 dark:border-gray-800 dark:bg-white/[0.03]">
         <div className="text-center text-red-500">
-          <p>{error}</p>
+          <p>{dashboardData.error}</p>
         </div>
       </div>
     );
@@ -195,11 +165,13 @@ export default function ToursFeeCard({ dateRange, userId }: ToursFeeCardProps) {
       </div>
 
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-2">
-          <div className="w-4 h-4 rounded-full" style={{backgroundColor: '#2a31d8'}}></div>
-          <span className="text-sm text-gray-600 dark:text-gray-400">BUS: {feeData.toursBus.toLocaleString()}€</span>
-        </div>
-        <div className="flex items-center space-x-2">
+        {!isUser && (
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-4 rounded-full" style={{backgroundColor: '#2a31d8'}}></div>
+            <span className="text-sm text-gray-600 dark:text-gray-400">BUS: {feeData.toursBus.toLocaleString()}€</span>
+          </div>
+        )}
+        <div className={`flex items-center space-x-2 ${isUser ? 'mx-auto' : ''}`}>
           <div className="w-4 h-4 rounded-full" style={{backgroundColor: '#465fff'}}></div>
           <span className="text-sm text-gray-600 dark:text-gray-400">AEREO: {feeData.tourAereo.toLocaleString()}€</span>
         </div>
@@ -222,7 +194,7 @@ export default function ToursFeeCard({ dateRange, userId }: ToursFeeCardProps) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
           </svg>
           <span className="text-2xl font-bold text-gray-800 dark:text-white">
-            {feeData.total.toLocaleString()}€
+            {isUser ? feeData.tourAereo.toLocaleString() : feeData.total.toLocaleString()}€
           </span>
         </div>
       </div>

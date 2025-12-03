@@ -66,17 +66,31 @@ function DashboardViajesContent({ currentUserId }: DashboardViajesContentProps) 
   
   // Date range filters for first 6 charts + percentage chart
   // Por defecto: todo el mes actual (desde el primer día hasta el último día del mes)
-  const currentDate = new Date();
-  const currentYear = currentDate.getFullYear();
-  const currentMonth = currentDate.getMonth();
+  const getCurrentMonthDates = () => {
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth();
+    
+    // Primer día del mes actual
+    const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+    // Último día del mes actual
+    const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
+    
+    // Formatear fechas en formato YYYY-MM-DD sin problemas de zona horaria
+    const formatDate = (date: Date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+    
+    return {
+      start: formatDate(firstDayOfMonth),
+      end: formatDate(lastDayOfMonth)
+    };
+  };
   
-  // Primer día del mes actual
-  const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
-  // Último día del mes actual
-  const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
-  
-  const startOfCurrentMonth = firstDayOfMonth.toISOString().split('T')[0];
-  const endOfCurrentMonth = lastDayOfMonth.toISOString().split('T')[0];
+  const { start: startOfCurrentMonth, end: endOfCurrentMonth } = getCurrentMonthDates();
   
   const [startDate, setStartDate] = useState<string>(startOfCurrentMonth);
   const [endDate, setEndDate] = useState<string>(endOfCurrentMonth);
@@ -363,19 +377,22 @@ function DashboardViajesContent({ currentUserId }: DashboardViajesContentProps) 
             </h3>
           </div>
 
-          {/* Grid de tres tarjetas en una fila */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Grid de tres tarjetas en una fila (solo 2 para USER) */}
+          <div className={`grid grid-cols-1 ${isUser ? 'lg:grid-cols-2' : 'lg:grid-cols-3'} gap-6`}>
             <ToursFeeCard 
               dateRange={dateRange}
               userId={currentUserId}
+              isUser={isUser}
             />
             <BiglietteriaFeeCard 
               dateRange={dateRange}
               userId={currentUserId}
             />
-            <TotalFeeCard 
-              dateRange={dateRange}
-            />
+            {!isUser && (
+              <TotalFeeCard 
+                dateRange={dateRange}
+              />
+            )}
           </div>
         </div>
 
@@ -383,23 +400,23 @@ function DashboardViajesContent({ currentUserId }: DashboardViajesContentProps) 
         <div className="mb-8">
           <div className="mb-6 text-center">
             <h3 className="text-base font-medium text-gray-800 dark:text-white/90 mb-3">
-              {isUser ? "Mis Ventas" : "Ventas por Usuario"}
+              Ventas por Usuario
             </h3>
           </div>
 
-          {/* Grid de tres gráficos en una fila */}
+          {/* Grid de tres gráficos en una fila - Todos los usuarios ven los mismos datos */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <BiglietteriaUserSalesChart 
               dateRange={dateRange}
-              userId={currentUserId}
+              userId={undefined}
             />
             <TourAereoUserSalesChart 
               dateRange={dateRange}
-              userId={currentUserId}
+              userId={undefined}
             />
             <TourBusUserSalesChart 
               dateRange={dateRange}
-              userId={currentUserId}
+              userId={undefined}
             />
           </div>
         </div>
@@ -438,14 +455,15 @@ function DashboardViajesContent({ currentUserId }: DashboardViajesContentProps) 
           />
         </div>
 
-        {/* Gráfico Principal - AL FINAL */}
-        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-6 pt-6 dark:border-gray-800 dark:bg-white/[0.03] sm:px-8 sm:pt-8">
-          {/* Header con título */}
-          <div className="flex items-center justify-center mb-6">
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-              {isUser ? "Mis Estadísticas FEE/AGV" : "FEE/AGV Statistics"}
-            </h3>
-          </div>
+        {/* Gráfico Principal - AL FINAL - Solo visible para ADMIN y TI */}
+        {!isUser && (
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-6 pt-6 dark:border-gray-800 dark:bg-white/[0.03] sm:px-8 sm:pt-8">
+            {/* Header con título */}
+            <div className="flex items-center justify-center mb-6">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+                FEE/AGV Statistics
+              </h3>
+            </div>
 
           {/* Tarjetas minimalistas */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
@@ -604,7 +622,8 @@ function DashboardViajesContent({ currentUserId }: DashboardViajesContentProps) 
               </div>
             </div>
           )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

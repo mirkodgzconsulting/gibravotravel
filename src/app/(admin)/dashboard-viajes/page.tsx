@@ -65,13 +65,21 @@ function DashboardViajesContent({ currentUserId }: DashboardViajesContentProps) 
   const [error, setError] = useState<string | null>(null);
   
   // Date range filters for first 6 charts + percentage chart
+  // Por defecto: todo el mes actual (desde el primer día hasta el último día del mes)
   const currentDate = new Date();
   const currentYear = currentDate.getFullYear();
-  const startOfCurrentYear = new Date(currentYear, 0, 1).toISOString().split('T')[0];
-  const endOfToday = new Date().toISOString().split('T')[0];
+  const currentMonth = currentDate.getMonth();
   
-  const [startDate, setStartDate] = useState<string>(startOfCurrentYear);
-  const [endDate, setEndDate] = useState<string>(endOfToday);
+  // Primer día del mes actual
+  const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+  // Último día del mes actual
+  const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
+  
+  const startOfCurrentMonth = firstDayOfMonth.toISOString().split('T')[0];
+  const endOfCurrentMonth = lastDayOfMonth.toISOString().split('T')[0];
+  
+  const [startDate, setStartDate] = useState<string>(startOfCurrentMonth);
+  const [endDate, setEndDate] = useState<string>(endOfCurrentMonth);
   
   // Month/Year filters for other charts
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());

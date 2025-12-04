@@ -228,7 +228,9 @@ export async function POST(request: NextRequest) {
         }
         return nota;
       })(),
-      tieneNotaRicevuta: !!(record.notaDiRicevuta && record.notaDiRicevuta.trim() !== '')
+      tieneNotaRicevuta: !!(record.notaDiRicevuta && record.notaDiRicevuta.trim() !== ''),
+      isTourAereo: false,
+      isBiglietteria: true,
     };
 
     // Leer la plantilla HTML
@@ -330,6 +332,24 @@ export async function POST(request: NextRequest) {
       } else if (key === 'notaDiRicevuta') {
         // Ya procesado arriba, saltar
         return;
+      } else if (key === 'isTourAereo') {
+        if (value) {
+          html = html.replace(/\{\{#isTourAereo\}\}/g, '');
+          html = html.replace(/\{\{\/isTourAereo\}\}/g, '');
+          // Ocultar bloque de BIGLIETTERIA
+          html = html.replace(/\{\{#isBiglietteria\}\}[\s\S]*?\{\{\/isBiglietteria\}\}/g, '');
+        } else {
+          html = html.replace(/\{\{#isTourAereo\}\}[\s\S]*?\{\{\/isTourAereo\}\}/g, '');
+        }
+      } else if (key === 'isBiglietteria') {
+        if (value) {
+          html = html.replace(/\{\{#isBiglietteria\}\}/g, '');
+          html = html.replace(/\{\{\/isBiglietteria\}\}/g, '');
+          // Ocultar bloque de TOUR AEREO
+          html = html.replace(/\{\{#isTourAereo\}\}[\s\S]*?\{\{\/isTourAereo\}\}/g, '');
+        } else {
+          html = html.replace(/\{\{#isBiglietteria\}\}[\s\S]*?\{\{\/isBiglietteria\}\}/g, '');
+        }
       } else {
         html = html.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), String(value || ''));
       }

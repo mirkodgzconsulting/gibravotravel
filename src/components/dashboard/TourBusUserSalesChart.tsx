@@ -61,15 +61,19 @@ export default function TourBusUserSalesChart({ dateRange, userId }: TourBusUser
                   ? `${venta.creator.firstName}${venta.creator.lastName ? ` ${venta.creator.lastName}` : ''}`.trim()
                   : venta.creator?.email || 'Usuario';
                 
+                // Contar cliente principal (1) + número de acompañantes
+                const numeroAcompanantes = venta.acompanantes?.length || 0;
+                const totalPersonas = 1 + numeroAcompanantes; // 1 cliente principal + acompañantes
+                
                 if (userSalesMap.has(userName)) {
                   const current = userSalesMap.get(userName)!;
                   userSalesMap.set(userName, {
-                    count: current.count + 1,
+                    count: current.count + totalPersonas,
                     revenue: current.revenue + (venta.acconto || 0)
                   });
                 } else {
                   userSalesMap.set(userName, {
-                    count: 1,
+                    count: totalPersonas,
                     revenue: venta.acconto || 0
                   });
                 }

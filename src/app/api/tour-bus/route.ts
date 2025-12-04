@@ -137,6 +137,11 @@ export async function GET(request: NextRequest) {
                 lastName: true,
                 email: true
               }
+            },
+            acompanantes: {
+              select: {
+                id: true
+              }
             }
           }
         },

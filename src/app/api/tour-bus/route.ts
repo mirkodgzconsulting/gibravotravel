@@ -97,6 +97,9 @@ export async function GET(request: NextRequest) {
         precioNino: true,
         cantidadAsientos: true,
         fechaViaje: true,
+        fechaFin: true,
+        acc: true,
+        // Campos de costos
         bus: true,
         pasti: true,
         parking: true,
@@ -106,8 +109,16 @@ export async function GET(request: NextRequest) {
         hotel: true,
         polizza: true,
         tkt: true,
+        autoservicio: true,
         feeAgv: true,
+        // Archivos y descripciones
         coverImage: true,
+        coverImageName: true,
+        pdfFile: true,
+        pdfFileName: true,
+        descripcion: true,
+        notas: true,
+        notasCoordinador: true,
         createdAt: true,
         creator: {
           select: {

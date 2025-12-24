@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useUserRole } from "@/hooks/useUserRole";
 
-export default function AdminLayout({
+function AdminLayoutContent({
   children,
 }: {
   children: React.ReactNode;
@@ -20,7 +20,7 @@ export default function AdminLayout({
   const pathname = usePathname();
   const { isSignedIn, isLoaded } = useUser();
   const router = useRouter();
-  
+
   // Solo cargar useUserRole si el usuario está autenticado para evitar errores
   const { userRole, isLoading: roleLoading } = useUserRole();
 
@@ -98,7 +98,7 @@ export default function AdminLayout({
     if (pathname.startsWith("/biglietteria")) {
       return "p-4 w-full md:p-6"; // Ancho completo como TOUR AEREO
     }
-    
+
     switch (pathname) {
       case "/text-generator":
         return "";
@@ -148,5 +148,22 @@ export default function AdminLayout({
         <div className={getRouteSpecificStyles()}>{children}</div>
       </div>
     </div>
+  );
+}
+
+import { SidebarProvider } from "@/context/SidebarContext";
+import { SearchProvider } from "@/context/SearchContext";
+
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <SearchProvider>
+      <SidebarProvider>
+        <AdminLayoutContent>{children}</AdminLayoutContent>
+      </SidebarProvider>
+    </SearchProvider>
   );
 }

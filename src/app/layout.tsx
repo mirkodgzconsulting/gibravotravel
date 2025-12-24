@@ -1,15 +1,19 @@
-import { Outfit } from "next/font/google";
+import { Outfit, Montserrat } from "next/font/google";
 import "./globals.css";
 import "swiper/swiper-bundle.css";
 import "simplebar-react/dist/simplebar.min.css";
-import { SidebarProvider } from "@/context/SidebarContext";
 import { ThemeProvider } from "@/context/ThemeContext";
-import { SearchProvider } from "@/context/SearchContext";
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 
 const outfit = Outfit({
   subsets: ["latin"],
+  variable: "--font-outfit",
+});
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  variable: "--font-montserrat",
 });
 
 export const metadata: Metadata = {
@@ -25,7 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="it" suppressHydrationWarning>
-      <body className={`${outfit.className} dark:bg-gray-900`}>
+      <body className={`${outfit.className} ${montserrat.variable} dark:bg-gray-900`}>
         <ClerkProvider
           signInUrl="/signin"
           signUpUrl="/signin"
@@ -33,9 +37,7 @@ export default function RootLayout({
           afterSignOutUrl="/signin"
         >
           <ThemeProvider>
-            <SearchProvider>
-              <SidebarProvider>{children}</SidebarProvider>
-            </SearchProvider>
+            {children}
           </ThemeProvider>
         </ClerkProvider>
       </body>

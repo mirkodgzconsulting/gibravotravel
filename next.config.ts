@@ -19,9 +19,33 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.weroad.io',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'strapi-imaginary.weroad.it',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'gibravo.it',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
-  
+
   // Configuración de webpack simplificada
   webpack: (config) => {
     config.module.rules.push({
@@ -30,12 +54,12 @@ const nextConfig: NextConfig = {
     });
     return config;
   },
-  
+
   // Deshabilitar ESLint durante el build
   eslint: {
     ignoreDuringBuilds: true,
   },
-  
+
   // Headers de seguridad básicos
   async headers() {
     return [

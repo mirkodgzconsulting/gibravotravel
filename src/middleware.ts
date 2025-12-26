@@ -5,22 +5,33 @@ export default clerkMiddleware(async (auth, req) => {
   const pathname = req.nextUrl.pathname;
   const hostname = req.nextUrl.hostname;
 
-  // Lógica Multi-dominio:
-  // Si el usuario entra por "systems.gibravo.it" a la raíz, redirigir al Dashboard
-  if ((hostname === 'systems.gibravo.it' || hostname === 'www.systems.gibravo.it') && pathname === '/') {
+  const isSystemsDomain = hostname === 'systems.gibravo.it' || hostname === 'www.systems.gibravo.it';
+
+  // 1. PROTECCIÓN DE DOMINIO PÚBLICO (gibravo.it)
+  // Si NO es el dominio de sistemas y NO es la raíz (landing) ni una API pública,
+  // Bloquear acceso a rutas internas (/signin, /dashboard, etc.) redirigiendo a Home.
+  if (!isSystemsDomain && pathname !== '/' && !pathname.startsWith('/api')) {
+    const url = req.nextUrl.clone();
+    url.pathname = '/';
+    return NextResponse.redirect(url);
+  }
+
+  // 2. Lógica para Dominio de Sistemas (systems.gibravo.it)
+  // Si entran a la raíz, redirigir al Dashboard
+  if (isSystemsDomain && pathname === '/') {
     const url = req.nextUrl.clone();
     url.pathname = '/dashboard-viajes';
     return NextResponse.redirect(url);
   }
 
-  // Rutas públicas que NO requieren autenticación
+  // Rutas públicas que NO requieren autenticación (Para systems.gibravo.it)
   const publicPaths = [
     '/api/download-file',
     '/signin',
     '/sign-up',
     '/reset-password',
     '/two-step-verification',
-    '/',
+    // '/' ya está manejado arriba
   ];
 
   // Verificar si la ruta es pública (exacta o subruta)

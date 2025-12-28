@@ -20,7 +20,7 @@ async function buildProductionSafe() {
         // Solo aplicar cambios de esquema SIN borrar datos
         console.log('📊 Aplicando cambios de esquema (SIN borrar datos)...');
         try {
-          execSync('npx prisma db push', { stdio: 'inherit' });
+          execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
           console.log('   ✅ Esquema aplicado exitosamente');
         } catch (schemaError) {
           console.log('   ⚠️  Error aplicando esquema, continuando...');

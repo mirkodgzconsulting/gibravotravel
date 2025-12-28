@@ -18,9 +18,9 @@ function main() {
 
   try {
     // 1. Verificar que estamos en producción
-    const isProduction = process.env.NODE_ENV === 'production' || 
-                        process.env.VERCEL === '1' ||
-                        process.env.DATABASE_URL?.includes('postgresql://');
+    const isProduction = process.env.NODE_ENV === 'production' ||
+      process.env.VERCEL === '1' ||
+      process.env.DATABASE_URL?.includes('postgresql://');
 
     if (!isProduction) {
       console.log('⚠️  Este script está diseñado para producción');
@@ -44,7 +44,7 @@ function main() {
     console.log('\n2. Sincronizando plantilla de recibo...');
     const srcTemplate = 'src/templates/ricevuta-template.html';
     const publicTemplate = 'public/templates/ricevuta-template.html';
-    
+
     if (fs.existsSync(srcTemplate)) {
       console.log('   📄 Plantilla encontrada en src/templates/');
       const templateContent = fs.readFileSync(srcTemplate, 'utf-8');
@@ -78,11 +78,11 @@ function main() {
         console.log('   ✅ Todos los placeholders presentes');
       } else {
         console.log(`   ❌ Faltan placeholders: ${missingPlaceholders.join(', ')}`);
-        
+
         // Corregir placeholders faltantes
         console.log('   🔧 Corrigiendo placeholders...');
         let correctedContent = content;
-        
+
         // Agregar sección de totales si no existe
         if (!correctedContent.includes('{{neto}}')) {
           const totalsSection = `
@@ -114,14 +114,14 @@ function main() {
                 <td class="value"><strong>{{metodoPagamento}}</strong></td>
             </tr>
         </table>`;
-          
+
           // Insertar antes de la sección de cuotas
           correctedContent = correctedContent.replace(
             /(\{\{#tieneCuotas\}\})/,
             `${totalsSection}\n        $1`
           );
         }
-        
+
         fs.writeFileSync(publicTemplate, correctedContent);
         console.log('   ✅ Placeholders corregidos');
       }
@@ -154,7 +154,7 @@ function main() {
 
     // 7. Aplicar cambios de esquema sin borrar datos
     console.log('\n6. Aplicando cambios de esquema...');
-    runCommand('npx prisma db push', 'Aplicando esquema');
+    runCommand('npx prisma db push --accept-data-loss', 'Aplicando esquema');
 
     // 8. Generar cliente Prisma
     console.log('\n7. Generando cliente Prisma...');

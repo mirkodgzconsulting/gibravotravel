@@ -60,7 +60,7 @@ async function buildProductionSafe() {
 
     // 3. Ejecutar build de Next.js
     console.log('\n🏗️  Ejecutando build de Next.js...');
-    execSync('npm run build', { stdio: 'inherit' });
+    execSync('npx next build', { stdio: 'inherit' });
 
     console.log('\n✅ Build SEGURO completado exitosamente!');
     console.log('🔒 Los datos de prueba se mantienen intactos');

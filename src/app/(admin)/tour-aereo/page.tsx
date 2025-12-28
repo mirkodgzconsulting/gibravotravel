@@ -9,8 +9,9 @@ import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import Button from "@/components/ui/button/Button";
 import { CopyNotification } from "@/components/ui/notification/CopyNotification";
-import { PlaneIcon, TrashIcon, EditIcon, PlusIcon } from "lucide-react";
+import { PlaneIcon, TrashIcon, EditIcon, PlusIcon, GlobeIcon, EyeIcon } from "lucide-react";
 import Image from "next/image";
+import WebContentModal from "@/components/tour/WebContentModal";
 
 interface TourAereo {
   id: string;
@@ -35,6 +36,7 @@ interface TourAereo {
   documentoViaggio: string | null;
   documentoViaggioName: string | null;
   descripcion: string | null;
+  isPublic?: boolean; // Added by Agent
   isActive: boolean;
   createdBy: string;
   createdAt: string;
@@ -98,6 +100,8 @@ export default function TourAereoPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingTour, setEditingTour] = useState<TourAereo | null>(null);
+  const [webContentModalOpen, setWebContentModalOpen] = useState(false);
+  const [selectedTourForWeb, setSelectedTourForWeb] = useState<TourAereo | null>(null);
   const [filtroViaje, setFiltroViaje] = useState<'proximos' | 'realizados' | 'todos'>('proximos');
 
   // Función para ordenar tours por fecha de inicio (más próximo primero - ascendente)
@@ -121,7 +125,7 @@ export default function TourAereoPage() {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Todos los usuarios ven todos los tours para poder realizar ventas
       const response = await fetch('/api/tour-aereo');
       if (response.ok) {
@@ -175,10 +179,10 @@ export default function TourAereoPage() {
   };
 
   // Aplicar filtros: primero búsqueda, luego filtro de estado, luego ordenar
-  const toursFiltradosPorBusqueda = searchTerm && searchResults.length > 0 
+  const toursFiltradosPorBusqueda = searchTerm && searchResults.length > 0
     ? (searchResults as TourAereo[])
     : tours;
-  
+
   const toursFiltradosPorEstado = filtrarToursPorEstado(toursFiltradosPorBusqueda);
   const filteredTours = sortToursByFechaViaje(toursFiltradosPorEstado);
 
@@ -203,7 +207,7 @@ export default function TourAereoPage() {
       formDataToSend.append('notas', formData.notas);
       formDataToSend.append('notasCoordinador', formData.notasCoordinador);
       formDataToSend.append('descripcion', formData.descripcion);
-      
+
       if (formData.coverImage) {
         formDataToSend.append('coverImage', formData.coverImage);
       }
@@ -278,7 +282,7 @@ export default function TourAereoPage() {
       formDataToSend.append('notas', formData.notas);
       formDataToSend.append('notasCoordinador', formData.notasCoordinador);
       formDataToSend.append('descripcion', formData.descripcion);
-      
+
       if (formData.coverImage) {
         formDataToSend.append('coverImage', formData.coverImage);
       }
@@ -298,7 +302,7 @@ export default function TourAereoPage() {
         const data = await response.json();
         // Actualizar el tour y reordenar por fecha
         setTours(prev => {
-          const updatedTours = prev.map(tour => 
+          const updatedTours = prev.map(tour =>
             tour.id === editingTour.id ? data.tour : tour
           );
           return sortToursByFechaViaje(updatedTours);
@@ -405,6 +409,11 @@ export default function TourAereoPage() {
     closeModal();
   };
 
+  const handleOpenWebContent = (tour: TourAereo) => {
+    setSelectedTourForWeb(tour);
+    setWebContentModalOpen(true);
+  };
+
 
   // Calcular porcentaje de progreso basado en ventas reales vs meta
   const getProgressPercentage = (tour: TourAereo) => {
@@ -421,7 +430,7 @@ export default function TourAereoPage() {
       </div>
     );
   }
-  
+
   // Carga progresiva: Mostrar skeleton mientras cargan los datos
   if (loading && tours.length === 0) {
     return (
@@ -458,11 +467,11 @@ export default function TourAereoPage() {
   return (
     <div>
       <PageBreadcrumb pageTitle="Tour Aereo" />
-      
+
       {error && (
         <div className="mb-6 p-4 rounded-lg bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-200">
           <p>{error}</p>
-          <button 
+          <button
             onClick={() => setError(null)}
             className="mt-2 px-3 py-1 text-sm border border-red-300 rounded hover:bg-red-200 transition-colors"
           >
@@ -494,33 +503,30 @@ export default function TourAereoPage() {
         <div className="inline-flex rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-0.5">
           <button
             onClick={() => setFiltroViaje('proximos')}
-            className={`px-3 py-1 text-xs font-normal rounded transition-colors ${
-              filtroViaje === 'proximos'
-                ? 'text-white'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-            }`}
+            className={`px-3 py-1 text-xs font-normal rounded transition-colors ${filtroViaje === 'proximos'
+              ? 'text-white'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+              }`}
             style={filtroViaje === 'proximos' ? { backgroundColor: '#0366D6' } : {}}
           >
             Próximos Viajes
           </button>
           <button
             onClick={() => setFiltroViaje('realizados')}
-            className={`px-3 py-1 text-xs font-normal rounded transition-colors ${
-              filtroViaje === 'realizados'
-                ? 'text-white'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-            }`}
+            className={`px-3 py-1 text-xs font-normal rounded transition-colors ${filtroViaje === 'realizados'
+              ? 'text-white'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+              }`}
             style={filtroViaje === 'realizados' ? { backgroundColor: '#0366D6' } : {}}
           >
             Viajes Realizados
           </button>
           <button
             onClick={() => setFiltroViaje('todos')}
-            className={`px-3 py-1 text-xs font-normal rounded transition-colors ${
-              filtroViaje === 'todos'
-                ? 'text-white'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-            }`}
+            className={`px-3 py-1 text-xs font-normal rounded transition-colors ${filtroViaje === 'todos'
+              ? 'text-white'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+              }`}
             style={filtroViaje === 'todos' ? { backgroundColor: '#0366D6' } : {}}
           >
             Todos
@@ -531,134 +537,155 @@ export default function TourAereoPage() {
       <ComponentCard title="">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTours.map((tour) => {
-              const progressPercentage = getProgressPercentage(tour);
-              const vendidos = tour._count?.ventas || 0;
-              const disponibles = tour.meta - vendidos;
-              
-              return (
-                <div
-                  key={tour.id}
-                  className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-shadow"
-                >
-                  {/* Imagen de portada */}
-                  <div className="h-48 bg-gray-200 dark:bg-gray-700 relative">
-                    {tour.coverImage ? (
-                      <Image
-                        src={tour.coverImage}
-                        alt={tour.titulo}
-                        fill
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center h-full text-gray-400">
-                        <svg className="w-16 h-16" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                    )}
+            const progressPercentage = getProgressPercentage(tour);
+            const vendidos = tour._count?.ventas || 0;
+            const disponibles = tour.meta - vendidos;
+
+            return (
+              <div
+                key={tour.id}
+                className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-shadow"
+              >
+                {/* Imagen de portada */}
+                <div className="h-48 bg-gray-200 dark:bg-gray-700 relative">
+                  {/* Public Badge */}
+                  {tour.isPublic && (
+                    <div className="absolute top-2 right-2 z-10 bg-green-500 text-white p-1 rounded-full shadow-md" title="Tour Público">
+                      <EyeIcon className="w-4 h-4" />
+                    </div>
+                  )}
+                  {!tour.isPublic && (
+                    <div className="absolute top-2 right-2 z-10 bg-gray-500/80 text-white p-1 rounded-full shadow-md" title="No Público">
+                      <EyeIcon className="w-4 h-4" style={{ opacity: 0.5 }} />
+                    </div>
+                  )}
+
+                  {tour.coverImage ? (
+                    <Image
+                      src={tour.coverImage}
+                      alt={tour.titulo}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-gray-400">
+                      <svg className="w-16 h-16" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+
+                {/* Contenido de la tarjeta */}
+                <div className="p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                    {tour.titulo}
+                  </h3>
+
+                  {/* Barra de progreso de ventas */}
+                  <div className="mb-4">
+                    <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
+                      <span>Vendite: {vendidos}/{tour.meta}</span>
+                      <span>({progressPercentage}%)</span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${progressPercentage}%` }}
+                      ></div>
+                    </div>
                   </div>
 
-                  {/* Contenido de la tarjeta */}
-                  <div className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-                      {tour.titulo}
-                    </h3>
-                    
-                    {/* Barra de progreso de ventas */}
-                    <div className="mb-4">
-                      <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
-                        <span>Vendite: {vendidos}/{tour.meta}</span>
-                        <span>({progressPercentage}%)</span>
-                      </div>
-                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                        <div
-                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${progressPercentage}%` }}
-                        ></div>
-                      </div>
+                  {/* Precios */}
+                  <div className="space-y-2 mb-4">
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      <span className="font-medium">Adulto:</span> €{tour.precioAdulto}
                     </div>
-
-                    {/* Precios */}
-                    <div className="space-y-2 mb-4">
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
-                        <span className="font-medium">Adulto:</span> €{tour.precioAdulto}
-                      </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
-                        <span className="font-medium">Bambino:</span> €{tour.precioNino}
-                      </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      <span className="font-medium">Bambino:</span> €{tour.precioNino}
                     </div>
+                  </div>
 
-                    {/* Capacidad/Meta */}
+                  {/* Capacidad/Meta */}
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    <span className="font-medium">Obiettivo:</span> {tour.meta} iscrizioni
+                  </div>
+
+                  {/* Fechas de viaje */}
+                  {(tour.fechaViaje || tour.fechaFin) && (
                     <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                      <span className="font-medium">Obiettivo:</span> {tour.meta} iscrizioni
+                      {tour.fechaViaje && (
+                        <div>
+                          <span className="font-medium">Data Inizio:</span>{' '}
+                          <span>{new Date(tour.fechaViaje).toLocaleDateString('it-IT')}</span>
+                        </div>
+                      )}
+                      {tour.fechaFin && (
+                        <div>
+                          <span className="font-medium">Data Fine:</span>{' '}
+                          <span>{new Date(tour.fechaFin).toLocaleDateString('it-IT')}</span>
+                        </div>
+                      )}
                     </div>
+                  )}
 
-                    {/* Fechas de viaje */}
-                    {(tour.fechaViaje || tour.fechaFin) && (
-                      <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                        {tour.fechaViaje && (
-                          <div>
-                            <span className="font-medium">Data Inizio:</span>{' '}
-                            <span>{new Date(tour.fechaViaje).toLocaleDateString('it-IT')}</span>
-                          </div>
-                        )}
-                        {tour.fechaFin && (
-                          <div>
-                            <span className="font-medium">Data Fine:</span>{' '}
-                            <span>{new Date(tour.fechaFin).toLocaleDateString('it-IT')}</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Resumen de ventas */}
-                    <div className="grid grid-cols-2 gap-3 mb-4">
-                      <div className="bg-green-100 dark:bg-green-900/20 p-3 rounded-lg text-center">
-                        <div className="text-lg font-bold text-green-700 dark:text-green-400">{vendidos}</div>
-                        <div className="text-xs text-green-600 dark:text-green-400">Iscritti</div>
-                      </div>
-                      <div className="bg-blue-100 dark:bg-blue-900/20 p-3 rounded-lg text-center">
-                        <div className="text-lg font-bold text-blue-700 dark:text-blue-400">{disponibles}</div>
-                        <div className="text-xs text-blue-600 dark:text-blue-400">Disponibili</div>
-                      </div>
+                  {/* Resumen de ventas */}
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="bg-green-100 dark:bg-green-900/20 p-3 rounded-lg text-center">
+                      <div className="text-lg font-bold text-green-700 dark:text-green-400">{vendidos}</div>
+                      <div className="text-xs text-green-600 dark:text-green-400">Iscritti</div>
                     </div>
+                    <div className="bg-blue-100 dark:bg-blue-900/20 p-3 rounded-lg text-center">
+                      <div className="text-lg font-bold text-blue-700 dark:text-blue-400">{disponibles}</div>
+                      <div className="text-xs text-blue-600 dark:text-blue-400">Disponibili</div>
+                    </div>
+                  </div>
 
 
-                    {/* Acciones y creador */}
-                    <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        Creato da: {tour.creator.firstName} {tour.creator.lastName}
-                      </span>
-                      
-                      <div className="flex gap-2">
+                  {/* Acciones y creador */}
+                  <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      Creato da: {tour.creator.firstName} {tour.creator.lastName}
+                    </span>
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => window.location.href = `/venta-tour-aereo/${tour.id}`}
+                        className="p-2 text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                        title="Aggiungi pax"
+                      >
+                        <PlusIcon className="w-4 h-4" />
+                      </button>
+                      {(userRole === 'ADMIN' || userRole === 'TI') && (
                         <button
-                          onClick={() => window.location.href = `/venta-tour-aereo/${tour.id}`}
-                          className="p-2 text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                          title="Aggiungi pax"
+                          onClick={() => handleOpenWebContent(tour)}
+                          className="p-2 text-purple-600 hover:bg-purple-100 dark:text-purple-400 dark:hover:bg-purple-900/20 rounded-lg transition-colors"
+                          title="Gestisci Contenuti Web"
                         >
-                          <PlusIcon className="w-4 h-4" />
+                          <GlobeIcon className="w-4 h-4" />
                         </button>
-                        <button
-                          onClick={() => handleEditTour(tour)}
-                          className="p-2 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                          title="Modifica"
-                        >
-                          <EditIcon className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteTour(tour.id)}
-                          className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                          title="Elimina"
-                        >
-                          <TrashIcon className="w-4 h-4" />
-                        </button>
-                      </div>
+                      )}
+                      <button
+                        onClick={() => handleEditTour(tour)}
+                        className="p-2 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                        title="Modifica"
+                      >
+                        <EditIcon className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTour(tour.id)}
+                        className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                        title="Elimina"
+                      >
+                        <TrashIcon className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            );
+          })}
+        </div>
 
         {filteredTours.length === 0 && !loading && (
           <div className="text-center py-12">
@@ -669,6 +696,23 @@ export default function TourAereoPage() {
           </div>
         )}
       </ComponentCard>
+
+      {selectedTourForWeb && (
+        <WebContentModal
+          isOpen={webContentModalOpen}
+          onClose={() => {
+            setWebContentModalOpen(false);
+            setSelectedTourForWeb(null);
+          }}
+          tour={selectedTourForWeb}
+          type="AEREO"
+          onSuccess={() => {
+            fetchTours();
+            setWebContentModalOpen(false);
+            setSelectedTourForWeb(null);
+          }}
+        />
+      )}
 
       {/* Modal de formulario */}
       <Modal
@@ -683,210 +727,210 @@ export default function TourAereoPage() {
               {editingTour ? "Modifica Tour Aereo" : "Crea Nuovo Tour Aereo"}
             </h2>
           </div>
-          
+
           {/* Contenido scrolleable */}
           <div className="flex-1 overflow-y-auto p-4">
             <form onSubmit={editingTour ? handleUpdateTour : handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="lg:col-span-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="lg:col-span-3">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Titolo del Tour *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.titulo}
+                    onChange={(e) => setFormData(prev => ({ ...prev, titulo: e.target.value }))}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Data di Partenza
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.fechaViaje}
+                    onChange={(e) => setFormData(prev => ({ ...prev, fechaViaje: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Data di Fine
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.fechaFin}
+                    onChange={(e) => setFormData(prev => ({ ...prev, fechaFin: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Prezzo Adulto (€) *
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.precioAdulto}
+                    onChange={(e) => setFormData(prev => ({ ...prev, precioAdulto: e.target.value }))}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Prezzo Bambino (€)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.precioNino}
+                    onChange={(e) => setFormData(prev => ({ ...prev, precioNino: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Obiettivo (numero)
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.meta}
+                    onChange={(e) => setFormData(prev => ({ ...prev, meta: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Coordinatore (ACC)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.acc}
+                    onChange={(e) => setFormData(prev => ({ ...prev, acc: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Guida Locale (€)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.guidaLocale}
+                    onChange={(e) => setFormData(prev => ({ ...prev, guidaLocale: e.target.value }))}
+                    placeholder="0.00"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Coordinatore (€)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.coordinatore}
+                    onChange={(e) => setFormData(prev => ({ ...prev, coordinatore: e.target.value }))}
+                    placeholder="0.00"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Transfer (€)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.transporte}
+                    onChange={(e) => setFormData(prev => ({ ...prev, transporte: e.target.value }))}
+                    placeholder="0.00"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Hotel (€)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.hotel}
+                    onChange={(e) => setFormData(prev => ({ ...prev, hotel: e.target.value }))}
+                    placeholder="0.00"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Titolo del Tour *
+                  Note del Tour
                 </label>
-                <input
-                  type="text"
-                  value={formData.titulo}
-                  onChange={(e) => setFormData(prev => ({ ...prev, titulo: e.target.value }))}
-                  required
+                <textarea
+                  value={formData.notas}
+                  onChange={(e) => setFormData(prev => ({ ...prev, notas: e.target.value }))}
+                  rows={3}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Data di Partenza
+                  Note del Coordinatore
                 </label>
-                <input
-                  type="date"
-                  value={formData.fechaViaje}
-                  onChange={(e) => setFormData(prev => ({ ...prev, fechaViaje: e.target.value }))}
+                <textarea
+                  value={formData.notasCoordinador}
+                  onChange={(e) => setFormData(prev => ({ ...prev, notasCoordinador: e.target.value }))}
+                  rows={3}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Data di Fine
+                  Immagine di copertina
                 </label>
                 <input
-                  type="date"
-                  value={formData.fechaFin}
-                  onChange={(e) => setFormData(prev => ({ ...prev, fechaFin: e.target.value }))}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setFormData(prev => ({ ...prev, coverImage: e.target.files?.[0] || null }))}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Prezzo Adulto (€) *
+                  File PDF
                 </label>
                 <input
-                  type="number"
-                  step="0.01"
-                  value={formData.precioAdulto}
-                  onChange={(e) => setFormData(prev => ({ ...prev, precioAdulto: e.target.value }))}
-                  required
+                  type="file"
+                  accept=".pdf"
+                  onChange={(e) => setFormData(prev => ({ ...prev, pdfFile: e.target.files?.[0] || null }))}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Prezzo Bambino (€)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={formData.precioNino}
-                  onChange={(e) => setFormData(prev => ({ ...prev, precioNino: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Obiettivo (numero)
-                </label>
-                <input
-                  type="number"
-                  value={formData.meta}
-                  onChange={(e) => setFormData(prev => ({ ...prev, meta: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Coordinatore (ACC)
-                </label>
-                <input
-                  type="text"
-                  value={formData.acc}
-                  onChange={(e) => setFormData(prev => ({ ...prev, acc: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Guida Locale (€)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.guidaLocale}
-                  onChange={(e) => setFormData(prev => ({ ...prev, guidaLocale: e.target.value }))}
-                  placeholder="0.00"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Coordinatore (€)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.coordinatore}
-                  onChange={(e) => setFormData(prev => ({ ...prev, coordinatore: e.target.value }))}
-                  placeholder="0.00"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Transfer (€)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.transporte}
-                  onChange={(e) => setFormData(prev => ({ ...prev, transporte: e.target.value }))}
-                  placeholder="0.00"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Hotel (€)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.hotel}
-                  onChange={(e) => setFormData(prev => ({ ...prev, hotel: e.target.value }))}
-                  placeholder="0.00"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Note del Tour
-              </label>
-              <textarea
-                value={formData.notas}
-                onChange={(e) => setFormData(prev => ({ ...prev, notas: e.target.value }))}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Note del Coordinatore
-              </label>
-              <textarea
-                value={formData.notasCoordinador}
-                onChange={(e) => setFormData(prev => ({ ...prev, notasCoordinador: e.target.value }))}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Immagine di copertina
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setFormData(prev => ({ ...prev, coverImage: e.target.files?.[0] || null }))}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                File PDF
-              </label>
-              <input
-                type="file"
-                accept=".pdf"
-                onChange={(e) => setFormData(prev => ({ ...prev, pdfFile: e.target.files?.[0] || null }))}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-              />
-            </div>
-
-            {/* Campo Documento Viaggio oculto visualmente - funcionalidad mantenida para uso futuro */}
-            {/* <div>
+              {/* Campo Documento Viaggio oculto visualmente - funcionalidad mantenida para uso futuro */}
+              {/* <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Documento Viaggio
               </label>
@@ -903,33 +947,33 @@ export default function TourAereoPage() {
               )}
             </div> */}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Descrizione
-              </label>
-              <textarea
-                value={formData.descripcion}
-                onChange={(e) => setFormData(prev => ({ ...prev, descripcion: e.target.value }))}
-                rows={4}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-              />
-            </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Descrizione
+                </label>
+                <textarea
+                  value={formData.descripcion}
+                  onChange={(e) => setFormData(prev => ({ ...prev, descripcion: e.target.value }))}
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                />
+              </div>
 
-            <div className="flex justify-end gap-3 pt-4">
-              <Button
-                onClick={handleCancelEdit}
-                className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
-              >
-                Annulla
-              </Button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="px-6 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg disabled:opacity-50"
-              >
-                {isSubmitting ? 'Salvataggio...' : (editingTour ? 'Aggiorna' : 'Crea Tour')}
-              </button>
-            </div>
+              <div className="flex justify-end gap-3 pt-4">
+                <Button
+                  onClick={handleCancelEdit}
+                  className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  Annulla
+                </Button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-6 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg disabled:opacity-50"
+                >
+                  {isSubmitting ? 'Salvataggio...' : (editingTour ? 'Aggiorna' : 'Crea Tour')}
+                </button>
+              </div>
             </form>
           </div>
         </div>

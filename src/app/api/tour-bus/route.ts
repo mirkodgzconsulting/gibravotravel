@@ -16,9 +16,9 @@ async function recalcularFeeAgv(tourId: string) {
     if (!tour) return;
 
     // Calcular SPESA TOTALE (suma de todos los costos)
-    const spesaTotale = (tour.bus || 0) + (tour.pasti || 0) + (tour.parking || 0) + 
-                       (tour.coordinatore1 || 0) + (tour.coordinatore2 || 0) + 
-                       (tour.ztl || 0) + (tour.hotel || 0) + (tour.polizza || 0) + (tour.tkt || 0);
+    const spesaTotale = (tour.bus || 0) + (tour.pasti || 0) + (tour.parking || 0) +
+      (tour.coordinatore1 || 0) + (tour.coordinatore2 || 0) +
+      (tour.ztl || 0) + (tour.hotel || 0) + (tour.polizza || 0) + (tour.tkt || 0);
 
     // Calcular RICAVO TOTALE (suma de todos los accontos)
     const ricavoTotale = tour.ventasTourBus.reduce((sum, venta) => sum + (venta.acconto || 0), 0);
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
     }
 
     let whereCondition: any = { isActive: true };
-    
+
     // Agregar filtros de fecha si se proporcionan
     if (fechaDesde && fechaHasta) {
       whereCondition.fechaViaje = {
@@ -114,6 +114,7 @@ export async function GET(request: NextRequest) {
         // Archivos y descripciones
         coverImage: true,
         coverImageName: true,
+        isPublic: true, // Added by Agent
         pdfFile: true,
         pdfFileName: true,
         descripcion: true,
@@ -207,7 +208,7 @@ export async function POST(request: NextRequest) {
     const fechaViaje = formData.get('fechaViaje') as string;
     const fechaFin = formData.get('fechaFin') as string;
     const acc = formData.get('acc') as string;
-    
+
     // Campos de costos
     const bus = formData.get('bus') as string;
     const pasti = formData.get('pasti') as string;
@@ -259,7 +260,7 @@ export async function POST(request: NextRequest) {
         try {
           const bytes = await coverImage.arrayBuffer();
           const buffer = Buffer.from(bytes);
-          
+
           const result = await new Promise((resolve, reject) => {
             cloudinary.uploader.upload_stream(
               {
@@ -285,7 +286,7 @@ export async function POST(request: NextRequest) {
           throw new Error(`Error uploading image: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
       })();
-      
+
       uploadPromises.push(imageUploadPromise);
     }
 
@@ -295,7 +296,7 @@ export async function POST(request: NextRequest) {
         try {
           const bytes = await pdfFile.arrayBuffer();
           const buffer = Buffer.from(bytes);
-          
+
           const result = await new Promise((resolve, reject) => {
             cloudinary.uploader.upload_stream(
               {
@@ -318,32 +319,104 @@ export async function POST(request: NextRequest) {
           throw new Error(`Error uploading PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
       })();
-      
+
       uploadPromises.push(pdfUploadPromise);
     }
 
+    // --- Extract Web Fields ---
+    const slug = formData.get('slug') as string;
+    const isPublic = formData.get('isPublic') === 'true';
+    const subtitulo = formData.get('subtitulo') as string;
+    const duracionTexto = formData.get('duracionTexto') as string;
+    // Removed: nivelDificultad, rangoEdad, minGrupo, maxGrupo, tipoAlojamiento
+
+    // Arrays must be parsed if sent as JSON, but here they might be sent as string? 
+    // Usually formData.get() returns string for text inputs. 
+    // In WEB modal we send JSON.stringify for everything complex.
+
+    let requisitosDocumentacion: string[] = [];
+    try { requisitosDocumentacion = JSON.parse(formData.get('requisitosDocumentacion') as string || '[]'); } catch { }
+
+    const infoGeneral = formData.get('infoGeneral') as string;
+    // Removed: programa
+    let itinerario: any = undefined;
+    try { itinerario = JSON.parse(formData.get('itinerario') as string || '[]'); } catch { }
+
+    const mapaEmbed = formData.get('mapaEmbed') as string;
+    const coordinadorNombre = formData.get('coordinadorNombre') as string;
+    const coordinadorDescripcion = formData.get('coordinadorDescripcion') as string;
+
+    // Arrays: etiquetas, incluye, noIncluye, galeria (URLs)
+    let etiquetas: string[] = [];
+    try { etiquetas = JSON.parse(formData.get('etiquetas') as string || '[]'); } catch { }
+
+    let incluye: string[] = [];
+    try { incluye = JSON.parse(formData.get('incluye') as string || '[]'); } catch { }
+
+    let noIncluye: string[] = [];
+    try { noIncluye = JSON.parse(formData.get('noIncluye') as string || '[]'); } catch { }
+
+    let galeria: string[] = [];
+    try { galeria = JSON.parse(formData.get('galeria') as string || '[]'); } catch { }
+
+    // FAQ (JSON)
+    let faq = null;
+    try { faq = JSON.parse(formData.get('faq') as string || 'null'); } catch { }
+
+    // Coordinador Foto
+    const coordinadorFotoFile = formData.get('coordinadorFoto') as File | string;
+    let coordinadorFotoUrl = null;
+    if (typeof coordinadorFotoFile === 'string') {
+      coordinadorFotoUrl = coordinadorFotoFile;
+    }
+
+    // Add request to uploadPromises for CoordinadorFoto if it is a File
+    if (coordinadorFotoFile instanceof File && coordinadorFotoFile.size > 0) {
+      const coordFotoPromise = (async () => {
+        try {
+          const bytes = await coordinadorFotoFile.arrayBuffer();
+          const buffer = Buffer.from(bytes);
+          const result = await new Promise((resolve, reject) => {
+            cloudinary.uploader.upload_stream(
+              {
+                folder: 'gibravotravel/coordinadores',
+                resource_type: 'image',
+                transformation: [{ width: 400, height: 400, crop: 'fill', gravity: 'face' }]
+              },
+              (error, result) => { if (error) reject(error); else resolve(result); }
+            ).end(buffer);
+          });
+          return { type: 'coordFoto', url: (result as any).secure_url };
+        } catch (e) { console.error(e); return { type: 'error' }; }
+      })();
+      uploadPromises.push(coordFotoPromise);
+    }
+
     // Ejecutar todos los uploads en paralelo
-    let coverImageUrl = null;
-    let coverImageName = null;
-    let pdfFileUrl = null;
-    let pdfFileName = null;
+    let coverImageUrl: string | null = null;
+    let coverImageName: string | null = null;
+    let pdfFileUrl: string | null = null;
+    let pdfFileName: string | null = null;
+    let finalCoordinadorFotoUrl: string | null = coordinadorFotoUrl;
 
     if (uploadPromises.length > 0) {
       try {
         const uploadResults = await Promise.all(uploadPromises);
-        
-        uploadResults.forEach(result => {
+
+        uploadResults.forEach((result: any) => {
           if (result.type === 'image') {
             coverImageUrl = result.url;
             coverImageName = result.name;
           } else if (result.type === 'pdf') {
             pdfFileUrl = result.url;
             pdfFileName = result.name;
+          } else if (result.type === 'coordFoto') {
+            finalCoordinadorFotoUrl = result.url;
           }
         });
       } catch (uploadError) {
         return NextResponse.json(
-          { 
+          {
             error: 'Error subiendo archivos a Cloudinary',
             details: uploadError instanceof Error ? uploadError.message : 'Unknown error'
           },
@@ -355,8 +428,6 @@ export async function POST(request: NextRequest) {
     // Cantidad de asientos fija: 53
     const cantidadAsientos = 53;
 
-    // Debug: mostrar datos antes de crear
-    
     // Crear el tour de bus
     const tourBus = await prisma.tourBus.create({
       data: {
@@ -384,18 +455,39 @@ export async function POST(request: NextRequest) {
         pdfFile: pdfFileUrl,
         pdfFileName,
         descripcion,
+
+        // --- WEB FIELDS ---
+        slug: slug && slug.trim() !== '' ? slug : undefined,
+        isPublic,
+        subtitulo,
+        etiquetas,
+        duracionTexto,
+        // Removed: nivelDificultad, rangoEdad, minGrupo, maxGrupo, tipoAlojamiento
+        requisitosDocumentacion,
+        infoGeneral,
+        // Removed: programa
+        itinerario, // JSON
+        mapaEmbed,
+        galeria,
+        incluye,
+        noIncluye,
+        coordinadorNombre,
+        coordinadorDescripcion,
+        coordinadorFoto: finalCoordinadorFotoUrl,
+        faq: faq ? (faq as any) : undefined,
+
         createdBy: userId
       }
     });
 
     // Generar los 53 asientos automáticamente
     const asientos = [];
-    
+
     for (let i = 1; i <= cantidadAsientos; i++) {
       const fila = Math.ceil(i / 4);
       const posicionEnFila = ((i - 1) % 4) + 1;
       let columna = '';
-      
+
       // Distribución 2+2: A, B, C, D
       switch (posicionEnFila) {
         case 1: columna = 'A'; break;
@@ -442,9 +534,9 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       tour: tourCreado,
-      message: 'Tour de bus creado exitosamente' 
+      message: 'Tour de bus creado exitosamente'
     });
 
   } catch (error) {
@@ -452,6 +544,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }
-
-
-

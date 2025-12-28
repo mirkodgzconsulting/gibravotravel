@@ -1,78 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
-import { v2 as cloudinary } from 'cloudinary';
 import { prisma } from '@/lib/prisma';
+import { v2 as cloudinary } from 'cloudinary';
+import { auth } from '@clerk/nextjs/server';
 
-// Configurar Cloudinary
-if (process.env.CLOUDINARY_URL) {
-  cloudinary.config({
-    secure: true
-  });
-} else {
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dskliu1ig',
-    api_key: process.env.CLOUDINARY_API_KEY || '538724966551851',
-    api_secret: process.env.CLOUDINARY_API_SECRET || 'Q1fP7-pH6iiltPbFNkqPn0d93no',
-  });
-}
+// Config Cloudinary
+cloudinary.config({
+  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_CLOUD_NAME || 'dskliu1ig',
+  api_key: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY || process.env.CLOUDINARY_API_KEY || '538724966551851',
+  api_secret: process.env.CLOUDINARY_API_SECRET || 'Q1fP7-pH6iiltPbFNkqPn0d93no',
+});
 
-// GET - Obtener un tour aéreo específico
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    const { id } = await params;
-
-    const tour = await prisma.tourAereo.findUnique({
-      where: { id },
-      include: {
-        creator: {
-          select: {
-            firstName: true,
-            lastName: true,
-            email: true,
-          },
-        },
-      },
-    });
-
-    if (!tour) {
-      return NextResponse.json({ error: 'Tour no encontrado' }, { status: 404 });
-    }
-
-    // Los usuarios USER pueden acceder a todos los tours para realizar ventas
-
-    // Normalizar documentoViaggio: convertir formato legacy (string) a array
-    const tourAny = tour as any;
-    if (tourAny.documentoViaggio) {
-      if (typeof tourAny.documentoViaggio === 'string') {
-        // Formato legacy: convertir a array
-        tourAny.documentoViaggio = [{
-          url: tourAny.documentoViaggio,
-          name: tourAny.documentoViaggioName || 'documento'
-        }];
-        delete tourAny.documentoViaggioName;
-      }
-      // Si ya es array, dejarlo como está
-    }
-
-    return NextResponse.json({ tour: tourAny });
-  } catch (error) {
-    console.error('Error fetching tour aereo:', error);
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    );
-  }
-}
-
-// PUT - Actualizar un tour aéreo existente
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -85,256 +22,297 @@ export async function PUT(
 
     const { id } = await params;
 
-    // Verificar que el tour existe
-    const existingTour = await prisma.tourAereo.findUnique({
-      where: { id }
+    // Verificar existencia
+    const currentTour = await prisma.tourAereo.findUnique({
+      where: { id },
+      select: {
+        coverImage: true,
+        pdfFile: true,
+        coordinadorFoto: true,
+        galeria: true, // Existing gallery URLs
+      }
     });
 
-    if (!existingTour) {
+    if (!currentTour) {
       return NextResponse.json({ error: 'Tour no encontrado' }, { status: 404 });
     }
 
-    // Permitir edición a cualquier rol autenticado
-
     const formData = await request.formData();
 
-    // Extraer campos del formulario
-    const titulo = formData.get('titulo') as string;
-    const precioAdulto = parseFloat(formData.get('precioAdulto') as string);
-    const precioNino = parseFloat(formData.get('precioNino') as string);
-    const fechaViaje = formData.get('fechaViaje') as string;
-    const fechaFin = formData.get('fechaFin') as string;
-    const meta = parseInt(formData.get('meta') as string) || 0;
-    const acc = formData.get('acc') as string;
-    const guidaLocale = parseFloat(formData.get('guidaLocale') as string) || 0;
-    const coordinatore = parseFloat(formData.get('coordinatore') as string) || 0;
-    const transporte = parseFloat(formData.get('transporte') as string) || 0;
-    const hotelRaw = formData.get('hotel');
-    const hotelParsed = hotelRaw !== null && `${hotelRaw}`.trim() !== ''
-      ? parseFloat(`${hotelRaw}`.replace(',', '.'))
-      : null;
-    const hotel = hotelParsed !== null && !Number.isNaN(hotelParsed) ? hotelParsed : null;
-    const notas = formData.get('notas') as string;
-    const notasCoordinador = formData.get('notasCoordinador') as string;
-    const descripcion = formData.get('descripcion') as string;
+    // Archivos
     const coverImage = formData.get('coverImage') as File | null;
     const pdfFile = formData.get('pdfFile') as File | null;
-    const documentoViaggioFile = formData.get('documentoViaggio') as File | null;
+    const coordinadorFoto = formData.get('coordinadorFoto') as File | string | null;
+    const webCoverImage = formData.get('webCoverImage') as File | null;
+    // New: multiple gallery images
+    const newGalleryImages = formData.getAll('galleryImages') as File[]; // New files
 
-    // Validar campos requeridos
-    if (!titulo || !precioAdulto) {
-      return NextResponse.json(
-        { error: 'Título y precio adulto son requeridos' },
-        { status: 400 }
-      );
-    }
+    // INIT PARALLEL UPLOADS
+    const uploadPromises: Promise<any>[] = [];
 
-    // Procesar fecha de viaje
-    let fechaViajeDate = null;
-    if (fechaViaje) {
-      try {
-        fechaViajeDate = new Date(fechaViaje);
-        if (isNaN(fechaViajeDate.getTime())) {
-          fechaViajeDate = null;
-        }
-      } catch (error) {
-        fechaViajeDate = null;
-      }
-    }
-
-    // Procesar fecha de fin
-    let fechaFinDate = null;
-    if (fechaFin) {
-      try {
-        fechaFinDate = new Date(fechaFin);
-        if (isNaN(fechaFinDate.getTime())) {
-          fechaFinDate = null;
-        }
-      } catch (error) {
-        fechaFinDate = null;
-      }
-    }
-
-    // Mantener archivos existentes o subir nuevos
-    let coverImageUrl = existingTour.coverImage;
-    let coverImageName = existingTour.coverImageName;
-    
+    // 1. Cover Image
     if (coverImage && coverImage.size > 0) {
-      try {
+      uploadPromises.push((async () => {
         const bytes = await coverImage.arrayBuffer();
         const buffer = Buffer.from(bytes);
-        
-        const result = await new Promise<any>((resolve, reject) => {
-          cloudinary.uploader.upload_stream(
-            {
-              folder: 'gibravotravel/tour_aereo/covers',
-              resource_type: 'image'
-            },
-            (error, result) => {
-              if (error) reject(error);
-              else resolve(result);
-            }
-          ).end(buffer);
+        const res: any = await new Promise((resolve, reject) => {
+          cloudinary.uploader.upload_stream({ folder: 'gibravotravel/tour_aereo/covers', resource_type: 'image' },
+            (err, res) => { if (err) reject(err); else resolve(res); }).end(buffer);
         });
-        
-        coverImageUrl = result.secure_url;
-        coverImageName = coverImage.name;
-      } catch (error) {
-        console.error('Error uploading cover image:', error);
-      }
+        return { type: 'cover', url: res.secure_url, name: coverImage.name };
+      })());
     }
 
-    let pdfFileUrl = existingTour.pdfFile;
-    let pdfFileName = existingTour.pdfFileName;
-    
+    // 1.5 Web Cover Image (New)
+    if (webCoverImage && webCoverImage.size > 0) {
+      uploadPromises.push((async () => {
+        const bytes = await webCoverImage.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+        const res: any = await new Promise((resolve, reject) => {
+          cloudinary.uploader.upload_stream({ folder: 'gibravotravel/tour_aereo/web_covers', resource_type: 'image' },
+            (err, res) => { if (err) reject(err); else resolve(res); }).end(buffer);
+        });
+        return { type: 'webCover', url: res.secure_url, name: webCoverImage.name };
+      })());
+    }
+
+    // ... (rest of uploads)
+
+    // ...
+
+    // 1.5 Web Cover Image Result
+    // ...
+
+    // 2. PDF
     if (pdfFile && pdfFile.size > 0) {
-      try {
+      uploadPromises.push((async () => {
         const bytes = await pdfFile.arrayBuffer();
         const buffer = Buffer.from(bytes);
-        
-        const result = await new Promise<any>((resolve, reject) => {
-          cloudinary.uploader.upload_stream(
-            {
-              folder: 'gibravotravel/tour_aereo/pdf',
-              resource_type: 'raw'
-            },
-            (error, result) => {
-              if (error) reject(error);
-              else resolve(result);
-            }
-          ).end(buffer);
+        const res: any = await new Promise((resolve, reject) => {
+          cloudinary.uploader.upload_stream({ folder: 'gibravotravel/tour_aereo/pdfs', resource_type: 'raw' },
+            (err, res) => { if (err) reject(err); else resolve(res); }).end(buffer);
         });
-        
-        pdfFileUrl = result.secure_url;
-        pdfFileName = pdfFile.name;
-      } catch (error) {
-        console.error('Error uploading PDF file:', error);
+        return { type: 'pdf', url: res.secure_url, name: pdfFile.name };
+      })());
+    }
+
+    // 3. Coordinator Photo
+    // Check if it's a new file (File object)
+    if (coordinadorFoto && typeof coordinadorFoto === 'object' && coordinadorFoto.size > 0) {
+      uploadPromises.push((async () => {
+        const bytes = await coordinadorFoto.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+        const res: any = await new Promise((resolve, reject) => {
+          cloudinary.uploader.upload_stream({ folder: 'gibravotravel/tour_aereo/coordinators', resource_type: 'image' },
+            (err, res) => { if (err) reject(err); else resolve(res); }).end(buffer);
+        });
+        return { type: 'coordinator', url: res.secure_url };
+      })());
+    }
+
+    // 4. Gallery Images (Multiple)
+    if (newGalleryImages.length > 0) {
+      newGalleryImages.forEach((file) => {
+        if (file.size > 0) {
+          uploadPromises.push((async () => {
+            const bytes = await file.arrayBuffer();
+            const buffer = Buffer.from(bytes);
+            const res: any = await new Promise((resolve, reject) => {
+              cloudinary.uploader.upload_stream({ folder: 'gibravotravel/tour_aereo/gallery', resource_type: 'image' },
+                (err, res) => { if (err) reject(err); else resolve(res); }).end(buffer);
+            });
+            return { type: 'gallery', url: res.secure_url };
+          })());
+        }
+      });
+    }
+
+    // WAIT FOR ALL
+    const results = await Promise.all(uploadPromises);
+
+
+    // BUILD DYNAMIC UPDATE OBJECT
+    const dataToUpdate: any = {};
+
+    // --- INTERNAL FIELDS (Update only if present in formData) ---
+    if (formData.has('titulo')) dataToUpdate.titulo = formData.get('titulo') as string;
+    if (formData.has('precioAdulto')) dataToUpdate.precioAdulto = parseFloat(formData.get('precioAdulto') as string) || 0;
+    if (formData.has('precioNino')) dataToUpdate.precioNino = parseFloat(formData.get('precioNino') as string) || 0;
+
+    if (formData.has('fechaViaje')) {
+      const fv = formData.get('fechaViaje') as string;
+      if (fv) {
+        const d = new Date(fv);
+        dataToUpdate.fechaViaje = isNaN(d.getTime()) ? null : d;
+      } else {
+        // If empty string sent explicitly, user might want to clear it? 
+        // Usually 'internal edit' sends the current value. 
+        // If web edit doesn't send it, it won't be in formData.
+        // If we clear it, we send empty string.
+        // Safe assumption: empty string = null. Missing key = ignore.
+        dataToUpdate.fechaViaje = null;
       }
     }
 
-    // Manejar múltiples documentos de viaje
-    let documentoViaggioArray: Array<{ url: string; name: string }> = [];
-    
-    // Obtener archivos existentes si se proporcionan
-    const documentoViaggioExisting = formData.get('documentoViaggioExisting') as string | null;
-    if (documentoViaggioExisting) {
-      try {
-        documentoViaggioArray = JSON.parse(documentoViaggioExisting);
-      } catch (error) {
-        console.error('Error parsing existing documents:', error);
-        // Si hay un documento antiguo (formato legacy), convertirlo
-        if ((existingTour as any).documentoViaggio && typeof (existingTour as any).documentoViaggio === 'string') {
-          documentoViaggioArray = [{
-            url: (existingTour as any).documentoViaggio,
-            name: (existingTour as any).documentoViaggioName || 'documento'
-          }];
-        }
+    if (formData.has('fechaFin')) {
+      const ff = formData.get('fechaFin') as string;
+      if (ff) {
+        const d = new Date(ff);
+        dataToUpdate.fechaFin = isNaN(d.getTime()) ? null : d;
+      } else {
+        dataToUpdate.fechaFin = null;
       }
+    }
+
+    if (formData.has('meta')) dataToUpdate.meta = parseInt(formData.get('meta') as string) || 0;
+    if (formData.has('acc')) dataToUpdate.acc = formData.get('acc') as string;
+    if (formData.has('guidaLocale')) dataToUpdate.guidaLocale = parseFloat(formData.get('guidaLocale') as string) || 0;
+    if (formData.has('coordinatore')) dataToUpdate.coordinatore = parseFloat(formData.get('coordinatore') as string) || 0;
+    if (formData.has('transporte')) dataToUpdate.transporte = parseFloat(formData.get('transporte') as string) || 0;
+    if (formData.has('notas')) dataToUpdate.notas = formData.get('notas') as string;
+    if (formData.has('notasCoordinador')) {
+      const nc = formData.get('notasCoordinador') as string;
+      dataToUpdate.notasCoordinador = nc && nc.trim() !== '' ? nc : null;
+    }
+    if (formData.has('feeAgv')) dataToUpdate.feeAgv = parseFloat(formData.get('feeAgv') as string) || 0;
+    if (formData.has('descripcion')) dataToUpdate.descripcion = formData.get('descripcion') as string;
+
+    // --- WEB FIELDS (Update only if present) ---
+    if (formData.has('slug')) {
+      const sl = formData.get('slug') as string;
+      dataToUpdate.slug = sl && sl.trim() !== '' ? sl : null;
+    }
+
+    if (formData.has('isPublic')) dataToUpdate.isPublic = formData.get('isPublic') === 'true';
+
+    if (formData.has('subtitulo')) {
+      const sub = formData.get('subtitulo') as string;
+      dataToUpdate.subtitulo = sub || null;
+    }
+
+    if (formData.has('duracionTexto')) {
+      const dt = formData.get('duracionTexto') as string;
+      dataToUpdate.duracionTexto = dt || null;
+    }
+
+    if (formData.has('infoGeneral')) {
+      const ig = formData.get('infoGeneral') as string;
+      dataToUpdate.infoGeneral = ig || null;
+    }
+
+    if (formData.has('mapaEmbed')) {
+      const me = formData.get('mapaEmbed') as string;
+      dataToUpdate.mapaEmbed = me || null;
+    }
+
+    if (formData.has('coordinadorNombre')) {
+      const cn = formData.get('coordinadorNombre') as string;
+      dataToUpdate.coordinadorNombre = cn || null;
+    }
+
+    if (formData.has('coordinadorDescripcion')) {
+      const cd = formData.get('coordinadorDescripcion') as string;
+      dataToUpdate.coordinadorDescripcion = cd || null;
+    }
+
+    // JSON Fields
+    if (formData.has('requisitosDocumentacion')) {
+      try { dataToUpdate.requisitosDocumentacion = JSON.parse(formData.get('requisitosDocumentacion') as string || '[]'); } catch { }
+    }
+    if (formData.has('itinerario')) {
+      try { dataToUpdate.itinerario = JSON.parse(formData.get('itinerario') as string); } catch { }
+    }
+    if (formData.has('incluye')) {
+      try { dataToUpdate.incluye = JSON.parse(formData.get('incluye') as string || '[]'); } catch { }
+    }
+    if (formData.has('noIncluye')) {
+      try { dataToUpdate.noIncluye = JSON.parse(formData.get('noIncluye') as string || '[]'); } catch { }
+    }
+    if (formData.has('etiquetas')) {
+      try { dataToUpdate.etiquetas = JSON.parse(formData.get('etiquetas') as string || '[]'); } catch { }
+    }
+    if (formData.has('faq')) {
+      try { dataToUpdate.faq = JSON.parse(formData.get('faq') as string || '[]'); } catch { }
+    }
+
+
+    // --- FILES (Only update if uploaded OR explicit clear) ---
+    // 1. Cover Image
+    const coverResult = results.find(r => r.type === 'cover');
+    if (coverResult) {
+      dataToUpdate.coverImage = coverResult.url;
+      dataToUpdate.coverImageName = coverResult.name;
+    }
+
+    // 1.5 Web Cover Image
+    const webCoverUpdateResult = results.find(r => r.type === 'webCover');
+    if (webCoverUpdateResult) {
+      dataToUpdate.webCoverImage = webCoverUpdateResult.url;
+      dataToUpdate.webCoverImageName = webCoverUpdateResult.name;
+    }
+
+    // 2. PDF
+    const pdfResult = results.find(r => r.type === 'pdf');
+    if (pdfResult) {
+      dataToUpdate.pdfFile = pdfResult.url;
+      dataToUpdate.pdfFileName = pdfResult.name;
+    }
+
+    // 3. Coordinator Photo
+    // Case A: New file uploaded -> Use it
+    const coordResult = results.find(r => r.type === 'coordinator');
+    if (coordResult) {
+      dataToUpdate.coordinadorFoto = coordResult.url;
     } else {
-      // Si no se proporcionan archivos existentes, verificar si hay formato legacy
-      if ((existingTour as any).documentoViaggio) {
-        if (typeof (existingTour as any).documentoViaggio === 'string') {
-          // Formato legacy: convertir a array
-          documentoViaggioArray = [{
-            url: (existingTour as any).documentoViaggio,
-            name: (existingTour as any).documentoViaggioName || 'documento'
-          }];
-        } else if (Array.isArray((existingTour as any).documentoViaggio)) {
-          // Ya es un array
-          documentoViaggioArray = (existingTour as any).documentoViaggio;
+      // Case B: No new file. Check if we should clear it.
+      // If formData has 'coordinadorFoto' and it's an empty string, user cleared it.
+      // If formData doesn't have it (e.g. Internal Edit), ignore it.
+      if (formData.has('coordinadorFoto')) {
+        const cfVal = formData.get('coordinadorFoto');
+        if (typeof cfVal === 'string' && cfVal === '') {
+          dataToUpdate.coordinadorFoto = null;
         }
       }
     }
 
-    // Procesar nuevos archivos
-    const documentoViaggioFiles = formData.getAll('documentoViaggio') as File[];
-    const validFiles = documentoViaggioFiles.filter(file => file && file.size > 0);
+    // 4. Gallery (Merge with existing)
+    // Only touch gallery if we have new images OR we have a 'galeria' JSON (meaning deletion/reorder happened)
+    // If Internal Edit -> no 'galeria' field, and no 'galleryImages' -> Do Nothing.
+    const hasGalleryField = formData.has('galeria');
+    const hasNewGalleryImages = newGalleryImages.length > 0;
 
-    if (validFiles.length > 0) {
-      // Validar máximo de 5 archivos
-      if (documentoViaggioArray.length + validFiles.length > 5) {
-        return NextResponse.json(
-          { error: 'Massimo 5 file consentiti per Documento Viaggio' },
-          { status: 400 }
-        );
-      }
+    if (hasGalleryField || hasNewGalleryImages) {
+      // Start with kept images (if field sent) OR empty (if field sent as empty) OR current DB (if field NOT sent?? No, if field not sent we shouldn't be here unless new images).
+      // Actually:
+      // Internal Edit: hasGalleryField=false. hasNewGalleryImages=false. -> Block skipped. Safe.
+      // Web Edit: hasGalleryField=true (kept images). hasNewGalleryImages=maybe. -> Block entered.
 
-      // Subir nuevos archivos a Cloudinary
-      for (const file of validFiles) {
+      // Get kept images from FormData (if present)
+      let keptImages: string[] = [];
+      if (hasGalleryField) {
         try {
-          const bytes = await file.arrayBuffer();
-          const buffer = Buffer.from(bytes);
-
-          // Detectar el tipo de archivo para usar el resource_type correcto
-          const fileExtension = file.name.toLowerCase().split('.').pop();
-          const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension || '');
-          const resourceType = isImage ? 'image' : 'raw'; // PDFs y otros archivos usan 'raw'
-
-          const result = await new Promise<any>((resolve, reject) => {
-            cloudinary.uploader.upload_stream(
-              {
-                folder: 'gibravotravel/tour_aereo/documenti',
-                resource_type: resourceType // Usar 'raw' para PDFs, 'image' para imágenes
-              },
-              (error, result) => {
-                if (error) reject(error);
-                else resolve(result);
-              }
-            ).end(buffer);
-          });
-
-          documentoViaggioArray.push({
-            url: result.secure_url,
-            name: file.name
-          });
-        } catch (error) {
-          console.error('Error uploading travel document:', error);
-        }
+          const s = formData.get('galeria');
+          if (typeof s === 'string') keptImages = JSON.parse(s);
+        } catch { }
+      } else {
+        // If we are here because of new images but no 'galeria' field provided... 
+        // This is edge case. Assume we append to CURRENT DB gallery if 'galeria' param is missing?
+        // Or better: Web Edit always sends 'galeria' JSON.
+        // If we rely on currentTour:
+        keptImages = (currentTour.galeria as string[]) || [];
       }
+
+      const newUrls = results.filter(r => r.type === 'gallery').map(r => r.url);
+      dataToUpdate.galeria = [...keptImages, ...newUrls];
     }
 
-    // Si no hay archivos, dejar como array vacío o null
-    // Convertir a Prisma.JsonValue para que Prisma lo acepte
-    const documentoViaggioFinal = documentoViaggioArray.length > 0 
-      ? (documentoViaggioArray as any) 
-      : null;
- 
-    const updateData: any = {
-      titulo,
-      precioAdulto,
-      precioNino,
-      fechaViaje: fechaViajeDate,
-      fechaFin: fechaFinDate,
-      meta,
-      acc: acc || null,
-      guidaLocale: (guidaLocale > 0 ? guidaLocale : null) as any,
-      coordinatore: (coordinatore > 0 ? coordinatore : null) as any,
-      transporte: (transporte > 0 ? transporte : null) as any,
-      hotel: hotel !== null ? hotel : null,
-      notas: notas || null,
-      notasCoordinador: notasCoordinador || null,
-      descripcion: descripcion || null,
-      coverImage: coverImageUrl,
-      coverImageName,
-      pdfFile: pdfFileUrl,
-      pdfFileName,
-      updatedAt: new Date(),
-    };
 
-    // Solo agregar documentoViaggio si hay datos
-    // Usar cast explícito a any para evitar problemas de tipo con Prisma
-    if (documentoViaggioFinal !== null) {
-      updateData.documentoViaggio = documentoViaggioFinal as any;
-    } else {
-      updateData.documentoViaggio = null;
-    }
-
-    // Actualizar el tour aéreo en la base de datos
-    // Usar cast a any para el data completo para evitar problemas de tipo
+    // UPDATE DB
     const tour = await prisma.tourAereo.update({
       where: { id },
-      data: updateData as any,
+      data: dataToUpdate,
       include: {
+        ventas: true,
         creator: {
           select: {
             firstName: true,
@@ -357,62 +335,3 @@ export async function PUT(
     );
   }
 }
-
-// DELETE - Eliminar un tour aéreo (eliminación lógica)
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    const { id } = await params;
-
-    // Verificar que el tour existe
-    const existingTour = await prisma.tourAereo.findUnique({
-      where: { id }
-    });
-
-    if (!existingTour) {
-      return NextResponse.json({ error: 'Tour no encontrado' }, { status: 404 });
-    }
-
-    // Permitir eliminación (soft delete) a cualquier rol autenticado
-
-    // Verificar si hay ventas asociadas
-    const ventasAsociadas = await prisma.ventaTourAereo.findMany({
-      where: {
-        tourAereoId: id
-      }
-    });
-
-    if (ventasAsociadas.length > 0) {
-      return NextResponse.json({ 
-        error: 'No se puede eliminar un tour con ventas registradas' 
-      }, { status: 400 });
-    }
-
-    // Eliminación lógica (marcar como inactivo)
-    await prisma.tourAereo.update({
-      where: { id },
-      data: {
-        isActive: false,
-        updatedAt: new Date(),
-      },
-    });
-
-    return NextResponse.json({
-      message: 'Tour aéreo eliminado exitosamente'
-    });
-  } catch (error) {
-    console.error('Error deleting tour aereo:', error);
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    );
-  }
-}
-

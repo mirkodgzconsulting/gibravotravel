@@ -6,54 +6,74 @@ export default clerkMiddleware(async (auth, req) => {
   const hostname = req.nextUrl.hostname;
 
   const isSystemsDomain = hostname === 'systems.gibravo.it' || hostname === 'www.systems.gibravo.it';
+  const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
 
-  // 1. PROTECCIÓN DE DOMINIO PÚBLICO (gibravo.it)
-  // Si NO es el dominio de sistemas y NO es la raíz (landing) ni una API pública,
-  // Bloquear acceso a rutas internas (/signin, /dashboard, etc.) redirigiendo a Home.
-  if (!isSystemsDomain && pathname !== '/' && !pathname.startsWith('/api')) {
+  // 1. PUBLIC WEBSITE ROUTES (Always allowed on main domain/localhost)
+  const isWebsitePublicRoute =
+    pathname === '/' ||
+    pathname.startsWith('/chi-siamo') ||
+    pathname.startsWith('/partenze') ||
+    pathname.startsWith('/destinazioni') ||
+    pathname.startsWith('/tipi-di-viaggio') ||
+    pathname.startsWith('/contatti') ||
+    pathname.startsWith('/tour') ||
+    pathname.startsWith('/prenotazione') ||
+    pathname.startsWith('/dashboard') || // Dashboard is guarded by Page Logic, but route must be accessible for redirection
+    pathname.startsWith('/sign-in') ||
+    pathname.startsWith('/sign-up') ||
+    pathname.startsWith('/api')
+
+  // 2. SYSTEMS DOMAIN LOGIC
+  if (isSystemsDomain) {
+    // If root, redirect to specific internal dashboard
+    if (pathname === '/') {
+      const url = req.nextUrl.clone();
+      url.pathname = '/dashboard-viajes';
+      return NextResponse.redirect(url);
+    }
+
+    // Public paths within Systems
+    const publicPaths = [
+      '/api/download-file',
+      '/signin', // Legacy path?
+      '/sign-in',
+      '/sign-up',
+      '/reset-password',
+      '/two-step-verification',
+    ];
+
+    const isPublic = publicPaths.some(path => pathname.startsWith(path));
+    if (isPublic) return;
+
+    // Everything else on systems is protected
+    await auth.protect();
+    return;
+  }
+
+  // 3. MAIN DOMAIN / LOCALHOST LOGIC
+  // If it is a known Main Website Route, allow access (return empty)
+  if (isWebsitePublicRoute) {
+    return;
+  }
+
+  // 4. FALLBACK PROTECTION
+  // If we are here, it's a route not explicitly defined as public on the main site.
+  // For safety, we protect it, OR we redirect to home if it's an internal route accessed from public domain.
+
+  if (!isSystemsDomain && !isLocalhost) {
+    // If trying to access unknown/internal routes from public domain, redirect to home
     const url = req.nextUrl.clone();
     url.pathname = '/';
     return NextResponse.redirect(url);
   }
 
-  // 2. Lógica para Dominio de Sistemas (systems.gibravo.it)
-  // Si entran a la raíz, redirigir al Dashboard
-  if (isSystemsDomain && pathname === '/') {
-    const url = req.nextUrl.clone();
-    url.pathname = '/dashboard-viajes';
-    return NextResponse.redirect(url);
-  }
-
-  // Rutas públicas que NO requieren autenticación (Para systems.gibravo.it)
-  const publicPaths = [
-    '/api/download-file',
-    '/signin',
-    '/sign-up',
-    '/reset-password',
-    '/two-step-verification',
-    // '/' ya está manejado arriba
-  ];
-
-  // Verificar si la ruta es pública (exacta o subruta)
-  const isPublic = publicPaths.some(path =>
-    pathname === path || pathname.startsWith(path + '/')
-  );
-
-  // Si es pública, retornar inmediatamente sin ejecutar protección
-  // Esto evita cualquier redirección
-  if (isPublic) {
-    return;
-  }
-
-  // Solo proteger rutas que NO son públicas
+  // If localhost and not public route (e.g. testing admin pages locally), require auth
   await auth.protect();
 });
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files
     '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    // Always run for API routes (el middleware verificará si es pública)
     '/(api|trpc)(.*)',
   ],
 };

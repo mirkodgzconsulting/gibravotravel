@@ -24,7 +24,7 @@ const stories = [
 export function VideoStories() {
     return (
         <section className="py-16 bg-[#111111] text-white">
-            <div className="container px-4 mx-auto max-w-6xl">
+            <div className="container px-4 mx-auto max-w-7xl">
                 <h2 className="text-3xl font-[900] tracking-tight text-center mb-12">
                     Cosa succede durante un viaggio WeRoad?
                 </h2>

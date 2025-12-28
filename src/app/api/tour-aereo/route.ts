@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     }
 
     let whereCondition: any = { isActive: true };
-    
+
     // Agregar filtros de fecha si se proporcionan
     if (fechaDesde && fechaHasta) {
       whereCondition.fechaViaje = {
@@ -58,186 +58,120 @@ export async function GET(request: NextRequest) {
     }
 
     // Si userIdParam está presente, solo mostrar tours que tienen ventas de ese usuario
-    // Nota: userIdParam es el user.id (UUID/CUID), no clerkId
-    // VentaTourAereo.createdBy referencia User.id
-    // Usamos SQL directo cuando userIdParam está presente para evitar problemas con el filtro 'some' en Prisma
     let useSqlDirect = !!userIdParam;
 
     // Usar consulta SQL directa para evitar problemas con campos que pueden no existir
-    // Esto es más tolerante a diferencias entre schema y BD
     let tours: any[] = [];
-    
+
     if (!useSqlDirect) {
-      // Solo intentar con Prisma si no hay userIdParam
       try {
-        // Intentar con Prisma normal primero
         tours = await prisma.tourAereo.findMany({
           where: whereCondition,
-        include: {
-          creator: {
-            select: {
-              firstName: true,
-              lastName: true,
-              email: true,
+          include: {
+            creator: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true,
+              },
             },
-          },
-          ventas: {
-            where: userIdParam ? { createdBy: userIdParam } : undefined,
-            select: {
-              id: true,
-              venduto: true,
-              transfer: true,
-              hotel: true,
-              createdAt: true,
-              creator: {
-                select: {
-                  id: true,
-                  firstName: true,
-                  lastName: true,
-                  email: true
+            ventas: {
+              where: userIdParam ? { createdBy: userIdParam } : undefined,
+              select: {
+                id: true,
+                venduto: true,
+                transfer: true,
+                hotel: true,
+                createdAt: true,
+                creator: {
+                  select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                    email: true
+                  }
                 }
               }
-            }
-          },
-          _count: {
-            select: {
-              ventas: true,
+            },
+            _count: {
+              select: {
+                ventas: true,
+              },
             },
           },
-        },
-        orderBy: [
-          {
-            fechaViaje: 'asc',
-          },
-          {
-            createdAt: 'desc',
-          },
-        ],
-      });
+          orderBy: [
+            {
+              fechaViaje: 'asc',
+            },
+            {
+              createdAt: 'desc',
+            },
+          ],
+        });
       } catch (prismaError: any) {
-      // Log detallado del error para debugging
-      console.error('❌ Error en Prisma tour-aereo:', {
-        message: prismaError?.message,
-        code: prismaError?.code,
-        meta: prismaError?.meta,
-        stack: prismaError?.stack?.substring(0, 500)
-      });
-      
-      // Si falla por campos faltantes, error de parsing JSON, o cualquier error de Prisma,
-      // usar SQL directo como fallback
-      const isSchemaError = prismaError?.message?.includes('Unknown field') || 
-                           prismaError?.message?.includes('documentoViaggioName') || 
-                           prismaError?.code === 'P2022' ||
-                           prismaError?.message?.includes('does not exist') ||
-                           prismaError?.message?.includes('column') ||
-                           prismaError?.message?.includes('is not valid JSON') ||
-                           prismaError?.message?.includes('Unexpected token') ||
-                           prismaError?.name === 'SyntaxError' ||
-                           prismaError?.code === 'P2009' || // Query parsing error
-                           prismaError?.code === 'P2010' || // Raw query failed
-                           prismaError?.code === 'P2011' || // Null constraint violation
-                           prismaError?.code === 'P2012' || // Missing required value
-                           prismaError?.code === 'P2013' || // Missing required argument
-                           prismaError?.code === 'P2014' || // Relation violation
-                           prismaError?.code === 'P2015' || // Related record not found
-                           prismaError?.code === 'P2016' || // Query interpretation error
-                           prismaError?.code === 'P2017' || // Records for relation not connected
-                           prismaError?.code === 'P2018' || // Required connected records not found
-                           prismaError?.code === 'P2019' || // Input error
-                           prismaError?.code === 'P2020' || // Value out of range
-                           prismaError?.code === 'P2021' || // Table does not exist
-                           prismaError?.code === 'P2025'; // Record not found
-      
-        // Si es un error de Prisma o schema, usar SQL directo como fallback
-        if (isSchemaError || prismaError?.code?.startsWith('P')) {
-          useSqlDirect = true; // Forzar uso de SQL directo
+        console.error('❌ Error en Prisma tour-aereo:', {
+          message: prismaError?.message,
+          code: prismaError?.code
+        });
+
+        const isSchemaError = prismaError?.message?.includes('Unknown field') ||
+          prismaError?.message?.includes('documentoViaggioName') ||
+          prismaError?.code?.startsWith('P');
+
+        if (isSchemaError) {
+          useSqlDirect = true;
         } else {
-          // Si no es un error de schema, lanzar el error original
           throw prismaError;
         }
       }
     }
-    
-    // Si necesitamos usar SQL directo (por userIdParam o error de Prisma)
+
     if (useSqlDirect) {
       try {
-          // Primero intentar agregar las columnas si no existen
-          try {
-            await prisma.$executeRawUnsafe(`
+        try {
+          await prisma.$executeRawUnsafe(`
               ALTER TABLE "tour_aereo" 
               ADD COLUMN IF NOT EXISTS "documentoViaggioName" TEXT,
               ADD COLUMN IF NOT EXISTS "documentoViaggioName_old" TEXT,
               ADD COLUMN IF NOT EXISTS "documentoViaggio_old" TEXT
             `);
-          } catch (alterError: any) {
-          }
-          
-          // Construir WHERE clause para SQL directo
-          let whereClause = 'WHERE t."isActive" = true';
-          const params: any[] = [];
-          let paramIndex = 1;
-          
-          if (fechaDesde && fechaHasta) {
-            whereClause += ` AND t."fechaViaje" >= $${paramIndex} AND t."fechaViaje" <= $${paramIndex + 1}`;
-            params.push(new Date(fechaDesde), new Date(fechaHasta));
-            paramIndex += 2;
-          }
-          
-          if (userOnly && user.role === 'USER') {
-            whereClause += ` AND t."createdBy" = $${paramIndex}`;
-            params.push(userId);
-            paramIndex++;
-          }
-          
-          // Si userIdParam está presente, solo mostrar tours que tienen ventas de ese usuario
-          // Nota: El nombre de la tabla es "ventas_tour_aereo" (con "s")
-          if (userIdParam) {
-            whereClause += ` AND EXISTS (
+        } catch (alterError: any) {
+        }
+
+        let whereClause = 'WHERE t."isActive" = true';
+        const params: any[] = [];
+        let paramIndex = 1;
+
+        if (fechaDesde && fechaHasta) {
+          whereClause += ` AND t."fechaViaje" >= $${paramIndex} AND t."fechaViaje" <= $${paramIndex + 1}`;
+          params.push(new Date(fechaDesde), new Date(fechaHasta));
+          paramIndex += 2;
+        }
+
+        if (userOnly && user.role === 'USER') {
+          whereClause += ` AND t."createdBy" = $${paramIndex}`;
+          params.push(userId);
+          paramIndex++;
+        }
+
+        if (userIdParam) {
+          whereClause += ` AND EXISTS (
               SELECT 1 FROM "ventas_tour_aereo" v 
               WHERE v."tourAereoId" = t."id" 
               AND v."createdBy" = $${paramIndex}
             )`;
-            params.push(userIdParam);
-            paramIndex++;
-          }
-          
-          // Usar SQL directo que maneja columnas que pueden no existir
-          // También maneja documentoViaggio que puede ser JSONB o TEXT (legacy)
-          const sqlQuery = `
+          params.push(userIdParam);
+          paramIndex++;
+        }
+
+        const sqlQuery = `
             SELECT 
-              t."id",
-              t."titulo",
-              t."precioAdulto",
-              t."precioNino",
-              t."fechaViaje",
-              t."fechaFin",
-              t."meta",
-              t."acc",
-              t."guidaLocale",
-              t."coordinatore",
-              t."transporte",
-              t."hotel",
-              COALESCE(t."notas", NULL) as "notas",
-              COALESCE(t."notasCoordinador", NULL) as "notasCoordinador",
-              t."feeAgv",
-              t."coverImage",
-              COALESCE(t."coverImageName", NULL) as "coverImageName",
-              t."pdfFile",
-              COALESCE(t."pdfFileName", NULL) as "pdfFileName",
-              -- Manejar documentoViaggio que puede ser JSONB o TEXT
+              t.*,
               CASE 
                 WHEN pg_typeof(t."documentoViaggio") = 'jsonb'::regtype THEN t."documentoViaggio"::text
                 WHEN pg_typeof(t."documentoViaggio") = 'text'::regtype THEN t."documentoViaggio"::text
                 ELSE NULL
               END as "documentoViaggio",
-              COALESCE(t."documentoViaggioName", NULL) as "documentoViaggioName",
-              COALESCE(t."documentoViaggio_old", NULL) as "documentoViaggio_old",
-              COALESCE(t."documentoViaggioName_old", NULL) as "documentoViaggioName_old",
-              COALESCE(t."descripcion", NULL) as "descripcion",
-              t."isActive",
-              t."createdBy",
-              t."createdAt",
-              t."updatedAt",
               json_build_object(
                 'firstName', u."firstName",
                 'lastName', u."lastName",
@@ -248,91 +182,78 @@ export async function GET(request: NextRequest) {
             ${whereClause}
             ORDER BY t."fechaViaje" ASC NULLS LAST, t."createdAt" DESC
           `;
-          
-          const rawTours = await prisma.$queryRawUnsafe(sqlQuery, ...params) as any[];
-          
-          // Cargar ventas por separado
-          const tourIds = rawTours.map((t: any) => t.id);
-          let ventasMap: any = {};
-          
-          if (tourIds.length > 0) {
-            try {
-              const ventas = await prisma.ventaTourAereo.findMany({
-                where: {
-                  tourAereoId: { in: tourIds },
-                  ...(userIdParam ? { createdBy: userIdParam } : {})
-                },
-                select: {
-                  id: true,
-                  tourAereoId: true,
-                  venduto: true,
-                  transfer: true,
-                  hotel: true,
-                  createdAt: true,
-                  creator: {
-                    select: {
-                      id: true,
-                      firstName: true,
-                      lastName: true,
-                      email: true
-                    }
+
+        const rawTours = await prisma.$queryRawUnsafe(sqlQuery, ...params) as any[];
+
+        const tourIds = rawTours.map((t: any) => t.id);
+        let ventasMap: any = {};
+
+        if (tourIds.length > 0) {
+          try {
+            const ventas = await prisma.ventaTourAereo.findMany({
+              where: {
+                tourAereoId: { in: tourIds },
+                ...(userIdParam ? { createdBy: userIdParam } : {})
+              },
+              select: {
+                id: true,
+                tourAereoId: true,
+                venduto: true,
+                transfer: true,
+                hotel: true,
+                createdAt: true,
+                creator: {
+                  select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                    email: true
                   }
                 }
-              });
-              
-              ventasMap = ventas.reduce((acc: any, venta: any) => {
-                if (!acc[venta.tourAereoId]) acc[venta.tourAereoId] = [];
-                acc[venta.tourAereoId].push(venta);
-                return acc;
-              }, {});
-            } catch (e) {
-            }
+              }
+            });
+
+            ventasMap = ventas.reduce((acc: any, venta: any) => {
+              if (!acc[venta.tourAereoId]) acc[venta.tourAereoId] = [];
+              acc[venta.tourAereoId].push(venta);
+              return acc;
+            }, {});
+          } catch (e) {
           }
-          
-          tours = rawTours.map((tour: any) => ({
-            ...tour,
-            creator: tour.creator || { firstName: null, lastName: null, email: '' },
-            ventas: ventasMap[tour.id] || [],
-            _count: { ventas: ventasMap[tour.id]?.length || 0 }
-          }));
-          
-        } catch (sqlError: any) {
-        console.error('❌ Error en SQL directo:', {
-          message: sqlError?.message,
-          code: sqlError?.code,
-          stack: sqlError?.stack?.substring(0, 500)
-        });
+        }
+
+        tours = rawTours.map((tour: any) => ({
+          ...tour,
+          creator: tour.creator || { firstName: null, lastName: null, email: '' },
+          ventas: ventasMap[tour.id] || [],
+          _count: { ventas: ventasMap[tour.id]?.length || 0 }
+        }));
+
+      } catch (sqlError: any) {
+        console.error('❌ Error en SQL directo:', sqlError);
         throw sqlError;
       }
     }
 
-    // Normalizar documentoViaggio: convertir formato legacy (string) a array
     const normalizedTours = tours.map(tour => {
       const tourAny = tour as any;
       if (tourAny.documentoViaggio) {
-        // Si es string (formato legacy), convertir a array
         if (typeof tourAny.documentoViaggio === 'string') {
           try {
-            // Intentar parsear como JSON primero
             const parsed = JSON.parse(tourAny.documentoViaggio);
             if (Array.isArray(parsed)) {
               tourAny.documentoViaggio = parsed;
             } else {
-              // Si es un objeto JSON pero no array, convertirlo a array
               tourAny.documentoViaggio = [parsed];
             }
           } catch (e) {
-            // Si no es JSON válido, es una URL string (formato legacy)
             tourAny.documentoViaggio = [{
               url: tourAny.documentoViaggio,
               name: tourAny.documentoViaggioName || 'documento'
             }];
           }
           delete tourAny.documentoViaggioName;
-        } else if (Array.isArray(tourAny.documentoViaggio)) {
-          // Ya es array, dejarlo como está
-        } else if (typeof tourAny.documentoViaggio === 'object') {
-          // Si es objeto, convertirlo a array
+        } else if (typeof tourAny.documentoViaggio === 'object' && !Array.isArray(tourAny.documentoViaggio)) {
           tourAny.documentoViaggio = [tourAny.documentoViaggio];
         }
       }
@@ -342,25 +263,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ tours: normalizedTours });
   } catch (error: any) {
     console.error('❌ Error fetching tours aereo:', error);
-    console.error('❌ Error details:', {
-      message: error?.message,
-      code: error?.code,
-      meta: error?.meta,
-      stack: error?.stack?.substring(0, 1000),
-      name: error?.name
-    });
-    
-    // Si es un error de Prisma relacionado con tipos de datos, intentar manejar
-    if (error?.code === 'P2022' || error?.message?.includes('column') || error?.message?.includes('does not exist') || error?.message?.includes('Unknown field')) {
-      console.error('⚠️ Posible problema de schema: campo faltante o tipo incorrecto');
-      console.error('⚠️ La migración lazy debería haber manejado esto. Revisar logs anteriores.');
-    }
-    
     return NextResponse.json(
-      { 
-        error: 'Error interno del servidor',
-        details: process.env.NODE_ENV === 'development' ? error?.message : 'Revisar logs del servidor para más detalles'
-      },
+      { error: 'Error interno del servidor' },
       { status: 500 }
     );
   }
@@ -392,7 +296,7 @@ export async function POST(request: NextRequest) {
     const fechaViaje = formData.get('fechaViaje') as string;
     const fechaFin = formData.get('fechaFin') as string;
     const meta = parseInt(formData.get('meta') as string) || 0;
-    
+
     const acc = formData.get('acc') as string;
     const guidaLocale = parseFloat(formData.get('guidaLocale') as string) || 0;
     const coordinatore = parseFloat(formData.get('coordinatore') as string) || 0;
@@ -407,7 +311,6 @@ export async function POST(request: NextRequest) {
     const descripcion = formData.get('descripcion') as string;
     const coverImage = formData.get('coverImage') as File | null;
     const pdfFile = formData.get('pdfFile') as File | null;
-    const documentoViaggioFile = formData.get('documentoViaggio') as File | null;
 
     // Validar campos requeridos
     if (!titulo || !precioAdulto) {
@@ -417,17 +320,56 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // --- WEB FIELDS ---
+    const slug = formData.get('slug') as string;
+    const isPublic = formData.get('isPublic') === 'true';
+    const subtitulo = formData.get('subtitulo') as string;
+    const duracionTexto = formData.get('duracionTexto') as string;
+    // Removed: nivelDificultad, rangoEdad, minGrupo, maxGrupo, tipoAlojamiento
+
+    let requisitosDocumentacion: string[] = [];
+    try { requisitosDocumentacion = JSON.parse(formData.get('requisitosDocumentacion') as string || '[]'); } catch { }
+
+    const infoGeneral = formData.get('infoGeneral') as string;
+    // Removed: programa
+    let itinerario: any = undefined;
+    try { itinerario = JSON.parse(formData.get('itinerario') as string || '[]'); } catch { }
+
+    const mapaEmbed = formData.get('mapaEmbed') as string;
+    const coordinadorNombre = formData.get('coordinadorNombre') as string;
+    const coordinadorDescripcion = formData.get('coordinadorDescripcion') as string;
+
+    // Arrays: etiquetas, incluye, noIncluye, galeria (URLs)
+    let etiquetas: string[] = [];
+    try { etiquetas = JSON.parse(formData.get('etiquetas') as string || '[]'); } catch { }
+
+    let incluye: string[] = [];
+    try { incluye = JSON.parse(formData.get('incluye') as string || '[]'); } catch { }
+
+    let noIncluye: string[] = [];
+    try { noIncluye = JSON.parse(formData.get('noIncluye') as string || '[]'); } catch { }
+
+    let galeria: string[] = [];
+    try { galeria = JSON.parse(formData.get('galeria') as string || '[]'); } catch { }
+
+    // FAQ (JSON)
+    let faq = null;
+    try { faq = JSON.parse(formData.get('faq') as string || 'null'); } catch { }
+
+    // Coordinador Foto
+    const coordinadorFotoFile = formData.get('coordinadorFoto') as File | string;
+    let coordinadorFotoUrl = null;
+    if (typeof coordinadorFotoFile === 'string') {
+      coordinadorFotoUrl = coordinadorFotoFile;
+    }
+
     // Procesar fecha de viaje
     let fechaViajeDate = null;
     if (fechaViaje) {
       try {
         fechaViajeDate = new Date(fechaViaje);
-        if (isNaN(fechaViajeDate.getTime())) {
-          fechaViajeDate = null;
-        }
-      } catch (error) {
-        fechaViajeDate = null;
-      }
+        if (isNaN(fechaViajeDate.getTime())) fechaViajeDate = null;
+      } catch (error) { fechaViajeDate = null; }
     }
 
     // Procesar fecha de fin
@@ -435,131 +377,109 @@ export async function POST(request: NextRequest) {
     if (fechaFin) {
       try {
         fechaFinDate = new Date(fechaFin);
-        if (isNaN(fechaFinDate.getTime())) {
-          fechaFinDate = null;
-        }
-      } catch (error) {
-        fechaFinDate = null;
-      }
+        if (isNaN(fechaFinDate.getTime())) fechaFinDate = null;
+      } catch (error) { fechaFinDate = null; }
     }
 
-    // Subir imagen de portada a Cloudinary
-    let coverImageUrl = null;
-    let coverImageName = null;
-    
+    // Prepare Upload Promises
+    const uploadPromises: Promise<any>[] = [];
+
+    // 1. Cover Image
     if (coverImage && coverImage.size > 0) {
-      try {
+      uploadPromises.push((async () => {
         const bytes = await coverImage.arrayBuffer();
         const buffer = Buffer.from(bytes);
-        
-        const result = await new Promise<any>((resolve, reject) => {
-          cloudinary.uploader.upload_stream(
-            {
-              folder: 'gibravotravel/tour_aereo/covers',
-              resource_type: 'image'
-            },
-            (error, result) => {
-              if (error) reject(error);
-              else resolve(result);
-            }
-          ).end(buffer);
+        const res: any = await new Promise((resolve, reject) => {
+          cloudinary.uploader.upload_stream({ folder: 'gibravotravel/tour_aereo/covers', resource_type: 'image' },
+            (err, res) => { if (err) reject(err); else resolve(res); }).end(buffer);
         });
-        
-        coverImageUrl = result.secure_url;
-        coverImageName = coverImage.name;
-      } catch (error) {
-        console.error('Error uploading cover image:', error);
-      }
+        return { type: 'image', url: res.secure_url, name: coverImage.name };
+      })());
     }
 
-    // Subir archivo PDF a Cloudinary
-    let pdfFileUrl = null;
-    let pdfFileName = null;
-    
+    // 2. PDF
     if (pdfFile && pdfFile.size > 0) {
-      try {
+      uploadPromises.push((async () => {
         const bytes = await pdfFile.arrayBuffer();
         const buffer = Buffer.from(bytes);
-        
-        const result = await new Promise<any>((resolve, reject) => {
-          cloudinary.uploader.upload_stream(
-            {
-              folder: 'gibravotravel/tour_aereo/pdf',
-              resource_type: 'raw'
-            },
-            (error, result) => {
-              if (error) reject(error);
-              else resolve(result);
-            }
-          ).end(buffer);
+        const res: any = await new Promise((resolve, reject) => {
+          cloudinary.uploader.upload_stream({ folder: 'gibravotravel/tour_aereo/pdf', resource_type: 'raw' },
+            (err, res) => { if (err) reject(err); else resolve(res); }).end(buffer);
         });
-        
-        pdfFileUrl = result.secure_url;
-        pdfFileName = pdfFile.name;
-      } catch (error) {
-        console.error('Error uploading PDF file:', error);
-      }
+        return { type: 'pdf', url: res.secure_url, name: pdfFile.name };
+      })());
     }
 
-    // Manejar múltiples documentos de viaje
-    let documentoViaggioArray: Array<{ url: string; name: string }> = [];
-    
-    // Procesar archivos (puede ser uno o múltiples)
+    // 3. Coordinator Photo
+    if (coordinadorFotoFile instanceof File && coordinadorFotoFile.size > 0) {
+      uploadPromises.push((async () => {
+        const bytes = await coordinadorFotoFile.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+        const res: any = await new Promise((resolve, reject) => {
+          cloudinary.uploader.upload_stream({ folder: 'gibravotravel/coordinadores', resource_type: 'image', transformation: [{ width: 400, height: 400, crop: 'fill', gravity: 'face' }] },
+            (err, res) => { if (err) reject(err); else resolve(res); }).end(buffer);
+        });
+        return { type: 'coordFoto', url: res.secure_url };
+      })());
+    }
+
+    // 4. Documento Viaggio Files (Max 5)
+    // Extract files from formData
     const documentoViaggioFiles = formData.getAll('documentoViaggio') as File[];
-    const validFiles = documentoViaggioFiles.filter(file => file && file.size > 0);
+    const validDocFiles = documentoViaggioFiles.filter(file => file && file.size > 0);
 
-    // También verificar el formato antiguo (un solo archivo)
-    if (validFiles.length === 0 && documentoViaggioFile && documentoViaggioFile.size > 0) {
-      validFiles.push(documentoViaggioFile);
+    // Also check single file input fallback
+    const singleDocFile = formData.get('documentoViaggio') as File | null;
+    if (validDocFiles.length === 0 && singleDocFile && singleDocFile.size > 0) {
+      validDocFiles.push(singleDocFile);
     }
 
-    if (validFiles.length > 0) {
-      // Validar máximo de 5 archivos
-      if (validFiles.length > 5) {
-        return NextResponse.json(
-          { error: 'Massimo 5 file consentiti per Documento Viaggio' },
-          { status: 400 }
-        );
-      }
+    if (validDocFiles.length > 5) {
+      return NextResponse.json({ error: 'Massimo 5 file consentiti per Documento Viaggio' }, { status: 400 });
+    }
 
-      // Subir archivos a Cloudinary
-      for (const file of validFiles) {
-        try {
-          const bytes = await file.arrayBuffer();
-          const buffer = Buffer.from(bytes);
+    validDocFiles.forEach(file => {
+      uploadPromises.push((async () => {
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+        const fileExtension = file.name.toLowerCase().split('.').pop();
+        const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension || '');
+        const resourceType = isImage ? 'image' : 'raw';
 
-          // Detectar el tipo de archivo para usar el resource_type correcto
-          const fileExtension = file.name.toLowerCase().split('.').pop();
-          const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension || '');
-          const resourceType = isImage ? 'image' : 'raw'; // PDFs y otros archivos usan 'raw'
+        const res: any = await new Promise((resolve, reject) => {
+          cloudinary.uploader.upload_stream({ folder: 'gibravotravel/tour_aereo/documenti', resource_type: resourceType },
+            (err, res) => { if (err) reject(err); else resolve(res); }).end(buffer);
+        });
+        return { type: 'doc', url: res.secure_url, name: file.name };
+      })());
+    });
 
-          const result = await new Promise<any>((resolve, reject) => {
-            cloudinary.uploader.upload_stream(
-              {
-                folder: 'gibravotravel/tour_aereo/documenti',
-                resource_type: resourceType // Usar 'raw' para PDFs, 'image' para imágenes
-              },
-              (error, result) => {
-                if (error) reject(error);
-                else resolve(result);
-              }
-            ).end(buffer);
-          });
+    // Execute all uploads
+    let coverImageUrl: string | null = null;
+    let coverImageName: string | null = null;
+    let pdfFileUrl: string | null = null;
+    let pdfFileName: string | null = null;
+    let finalCoordinadorFotoUrl: string | null = coordinadorFotoUrl;
+    let documentoViaggioArray: Array<{ url: string; name: string }> = [];
 
-          documentoViaggioArray.push({
-            url: result.secure_url,
-            name: file.name
-          });
-        } catch (error) {
-          console.error('Error uploading travel document:', error);
-        }
+    if (uploadPromises.length > 0) {
+      try {
+        const results = await Promise.all(uploadPromises);
+        results.forEach((res: any) => {
+          if (res.type === 'image') { coverImageUrl = res.url; coverImageName = res.name; }
+          else if (res.type === 'pdf') { pdfFileUrl = res.url; pdfFileName = res.name; }
+          else if (res.type === 'coordFoto') { finalCoordinadorFotoUrl = res.url; }
+          else if (res.type === 'doc') { documentoViaggioArray.push({ url: res.url, name: res.name }); }
+        });
+      } catch (e) {
+        console.error('Error uploading files', e);
+        // Non-blocking? Or throw? better throw/return error
+        return NextResponse.json({ error: 'Error subiendo archivos' }, { status: 500 });
       }
     }
 
-    const documentoViaggioFinal = documentoViaggioArray.length > 0 
-      ? (documentoViaggioArray as any) 
-      : null;
- 
+    const documentoViaggioFinal = documentoViaggioArray.length > 0 ? documentoViaggioArray : null;
+
     // Crear el tour aéreo en la base de datos
     const createData: any = {
       titulo,
@@ -580,6 +500,27 @@ export async function POST(request: NextRequest) {
       coverImageName,
       pdfFile: pdfFileUrl,
       pdfFileName,
+
+      // Web Fields
+      slug: slug && slug.trim() !== '' ? slug : undefined,
+      isPublic,
+      subtitulo,
+      etiquetas,
+      duracionTexto,
+      // Removed: nivelDificultad, rangoEdad, minGrupo, maxGrupo, tipoAlojamiento
+      requisitosDocumentacion,
+      infoGeneral,
+      // Removed: programa
+      itinerario, // JSON
+      mapaEmbed,
+      galeria,
+      incluye,
+      noIncluye,
+      coordinadorNombre,
+      coordinadorDescripcion,
+      coordinadorFoto: finalCoordinadorFotoUrl,
+      faq: faq ? (faq as any) : undefined,
+
       createdBy: userId,
     };
 
@@ -613,4 +554,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

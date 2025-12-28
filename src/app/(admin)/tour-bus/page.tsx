@@ -9,9 +9,10 @@ import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import Button from "@/components/ui/button/Button";
 import { CopyNotification } from "@/components/ui/notification/CopyNotification";
-import { BusIcon, CalendarIcon, UsersIcon, DollarSignIcon, TrashIcon, EditIcon, EyeIcon } from "lucide-react";
+import { BusIcon, CalendarIcon, UsersIcon, DollarSignIcon, TrashIcon, EditIcon, EyeIcon, GlobeIcon } from "lucide-react";
 import Image from "next/image";
 import { cachedFetch, invalidateCacheByPrefix } from "@/utils/cachedFetch";
+import WebContentModal from "@/components/tour/WebContentModal";
 
 interface TourBus {
   id: string;
@@ -40,6 +41,7 @@ interface TourBus {
   pdfFile: string | null;
   pdfFileName: string | null;
   descripcion: string | null;
+  isPublic?: boolean; // Added by Agent
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -127,6 +129,8 @@ export default function TourBusPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingTour, setEditingTour] = useState<TourBus | null>(null);
+  const [webContentModalOpen, setWebContentModalOpen] = useState(false);
+  const [selectedTourForWeb, setSelectedTourForWeb] = useState<TourBus | null>(null);
   const [filtroViaje, setFiltroViaje] = useState<'proximos' | 'realizados' | 'todos'>('proximos');
 
   // Función para ordenar tours por fecha de inicio (más próximo primero - ascendente)
@@ -150,7 +154,7 @@ export default function TourBusPage() {
     try {
       setLoading(true);
       setError(null);
-      
+
       const data = await cachedFetch<{ tours: any[] }>(`/api/tour-bus`, { ttlMs: 30000 });
       const toursData = data.tours || [];
       const sortedTours = sortToursByFechaViaje(toursData);
@@ -199,15 +203,15 @@ export default function TourBusPage() {
 
   const filteredTours = useMemo<TourBus[]>(() => {
     if (!tours || tours.length === 0) return [];
-    
+
     // Aplicar primero la búsqueda si existe
     const toursFiltradosPorBusqueda = searchTerm && searchResults.length > 0
       ? (searchResults as TourBus[])
       : tours;
-    
+
     // Luego aplicar el filtro de estado
     const toursFiltradosPorEstado = filtrarToursPorEstado(toursFiltradosPorBusqueda);
-    
+
     // Finalmente ordenar por fecha
     return sortToursByFechaViaje(toursFiltradosPorEstado);
   }, [tours, searchTerm, searchResults, filtroViaje]);
@@ -248,7 +252,7 @@ export default function TourBusPage() {
       formDataToSend.append('fechaViaje', formData.fechaViaje);
       formDataToSend.append('fechaFin', formData.fechaFin);
       formDataToSend.append('acc', formData.acc);
-      
+
       // Campos de costos
       formDataToSend.append('bus', formData.bus);
       formDataToSend.append('pasti', formData.pasti);
@@ -260,9 +264,9 @@ export default function TourBusPage() {
       formDataToSend.append('polizza', formData.polizza);
       formDataToSend.append('tkt', formData.tkt);
       formDataToSend.append('autoservicio', formData.autoservicio);
-      
+
       formDataToSend.append('descripcion', formData.descripcion);
-      
+
       if (formData.coverImage) {
         formDataToSend.append('coverImage', formData.coverImage);
       }
@@ -327,7 +331,7 @@ export default function TourBusPage() {
       formDataToSend.append('fechaViaje', formData.fechaViaje);
       formDataToSend.append('fechaFin', formData.fechaFin);
       formDataToSend.append('acc', formData.acc);
-      
+
       // Campos de costos
       formDataToSend.append('bus', formData.bus);
       formDataToSend.append('pasti', formData.pasti);
@@ -339,9 +343,9 @@ export default function TourBusPage() {
       formDataToSend.append('polizza', formData.polizza);
       formDataToSend.append('tkt', formData.tkt);
       formDataToSend.append('autoservicio', formData.autoservicio);
-      
+
       formDataToSend.append('descripcion', formData.descripcion);
-      
+
       if (formData.coverImage) {
         formDataToSend.append('coverImage', formData.coverImage);
       }
@@ -357,7 +361,7 @@ export default function TourBusPage() {
       if (response.ok) {
         const data = await response.json();
         setTours(prev => {
-          const updatedTours = prev.map(tour => 
+          const updatedTours = prev.map(tour =>
             tour.id === editingTour.id ? data.tour : tour
           );
           return sortToursByFechaViaje(updatedTours);
@@ -475,6 +479,11 @@ export default function TourBusPage() {
     window.open(`/tour-bus/${tour.id}/asientos`, '_blank');
   };
 
+  const handleOpenWebContent = (tour: TourBus) => {
+    setSelectedTourForWeb(tour);
+    setWebContentModalOpen(true);
+  };
+
   if (roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -485,7 +494,7 @@ export default function TourBusPage() {
       </div>
     );
   }
-  
+
   // Carga progresiva: Mostrar skeleton mientras cargan los datos
   if (loading && tours.length === 0) {
     return (
@@ -537,11 +546,11 @@ export default function TourBusPage() {
   return (
     <div>
       <PageBreadcrumb pageTitle="Tour Bus" />
-      
+
       {error && (
         <div className="mb-6 p-4 rounded-lg bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-200">
           <p>{error}</p>
-          <Button 
+          <Button
             onClick={() => setError(null)}
             size="sm"
             variant="outline"
@@ -575,33 +584,30 @@ export default function TourBusPage() {
         <div className="inline-flex rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-0.5">
           <button
             onClick={() => setFiltroViaje('proximos')}
-            className={`px-3 py-1 text-xs font-normal rounded transition-colors ${
-              filtroViaje === 'proximos'
-                ? 'text-white'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-            }`}
+            className={`px-3 py-1 text-xs font-normal rounded transition-colors ${filtroViaje === 'proximos'
+              ? 'text-white'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+              }`}
             style={filtroViaje === 'proximos' ? { backgroundColor: '#0366D6' } : {}}
           >
             Próximos Viajes
           </button>
           <button
             onClick={() => setFiltroViaje('realizados')}
-            className={`px-3 py-1 text-xs font-normal rounded transition-colors ${
-              filtroViaje === 'realizados'
-                ? 'text-white'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-            }`}
+            className={`px-3 py-1 text-xs font-normal rounded transition-colors ${filtroViaje === 'realizados'
+              ? 'text-white'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+              }`}
             style={filtroViaje === 'realizados' ? { backgroundColor: '#0366D6' } : {}}
           >
             Viajes Realizados
           </button>
           <button
             onClick={() => setFiltroViaje('todos')}
-            className={`px-3 py-1 text-xs font-normal rounded transition-colors ${
-              filtroViaje === 'todos'
-                ? 'text-white'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-            }`}
+            className={`px-3 py-1 text-xs font-normal rounded transition-colors ${filtroViaje === 'todos'
+              ? 'text-white'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+              }`}
             style={filtroViaje === 'todos' ? { backgroundColor: '#0366D6' } : {}}
           >
             Todos
@@ -622,7 +628,7 @@ export default function TourBusPage() {
               {editingTour ? "Modifica Tour" : "Crea Nuovo Tour"}
             </h2>
           </div>
-          
+
           {/* Contenido scrolleable */}
           <div className="flex-1 overflow-y-auto p-4">
             <form onSubmit={editingTour ? handleUpdateTour : handleSubmit} className="space-y-6">
@@ -978,6 +984,17 @@ export default function TourBusPage() {
                 >
                   {/* Imagen de portada */}
                   <div className="h-48 bg-gray-200 dark:bg-gray-700 relative">
+                    {/* Public Badge */}
+                    {tour.isPublic && (
+                      <div className="absolute top-2 right-2 z-10 bg-green-500 text-white p-1 rounded-full shadow-md" title="Tour Público">
+                        <EyeIcon className="w-4 h-4" />
+                      </div>
+                    )}
+                    {!tour.isPublic && (
+                      <div className="absolute top-2 right-2 z-10 bg-gray-500/80 text-white p-1 rounded-full shadow-md" title="No Público">
+                        <EyeIcon className="w-4 h-4" style={{ opacity: 0.5 }} />
+                      </div>
+                    )}
                     {tour.coverImage ? (
                       <Image
                         src={tour.coverImage}
@@ -1003,7 +1020,7 @@ export default function TourBusPage() {
                         <span className="font-semibold">{porcentaje}%</span>
                       </div>
                       <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                        <div 
+                        <div
                           className="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full transition-all duration-300"
                           style={{ width: `${porcentaje}%` }}
                         ></div>
@@ -1015,23 +1032,23 @@ export default function TourBusPage() {
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
                           {tour.titulo}
                         </h3>
-                        
+
                         <div className="space-y-2 mb-4">
                           <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                             <DollarSignIcon className="w-4 h-4" />
                             <span>Adulte: €{tour.precioAdulto}</span>
                           </div>
-                          
+
                           <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                             <DollarSignIcon className="w-4 h-4" />
                             <span>Bambino: €{tour.precioNino}</span>
                           </div>
-                          
+
                           <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                             <UsersIcon className="w-4 h-4" />
                             <span>{tour.cantidadAsientos} posti</span>
                           </div>
-                          
+
                           {tour.fechaViaje && (
                             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                               <CalendarIcon className="w-4 h-4" />
@@ -1086,7 +1103,7 @@ export default function TourBusPage() {
                         >
                           <EyeIcon className="w-4 h-4" />
                         </button>
-                        
+
                         <button
                           onClick={() => handleEditTour(tour)}
                           className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-700 hover:text-blue-800 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-400 dark:hover:text-blue-300 rounded-lg transition-all duration-200"
@@ -1094,7 +1111,17 @@ export default function TourBusPage() {
                         >
                           <EditIcon className="w-4 h-4" />
                         </button>
-                        
+
+                        {(userRole === 'ADMIN' || userRole === 'TI') && (
+                          <button
+                            onClick={() => handleOpenWebContent(tour)}
+                            className="p-2 bg-purple-100 hover:bg-purple-200 text-purple-700 hover:text-purple-800 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 dark:text-purple-400 dark:hover:text-purple-300 rounded-lg transition-all duration-200"
+                            title="Gestisci Contenuti Web"
+                          >
+                            <GlobeIcon className="w-4 h-4" />
+                          </button>
+                        )}
+
                         <button
                           onClick={() => handleDeleteTour(tour.id)}
                           className="p-2 bg-red-100 hover:bg-red-200 text-red-700 hover:text-red-800 dark:bg-red-900/20 dark:hover:bg-red-900/30 dark:text-red-400 dark:hover:text-red-300 rounded-lg transition-all duration-200"
@@ -1121,6 +1148,24 @@ export default function TourBusPage() {
         show={showCopyNotification}
         onHide={() => setShowCopyNotification(false)}
       />
+
+      {selectedTourForWeb && (
+        <WebContentModal
+          isOpen={webContentModalOpen}
+          onClose={() => {
+            setWebContentModalOpen(false);
+            setSelectedTourForWeb(null);
+          }}
+          tour={selectedTourForWeb}
+          type="BUS"
+          onSuccess={() => {
+            invalidateCacheByPrefix('/api/tour-bus');
+            fetchTours();
+            setWebContentModalOpen(false);
+            setSelectedTourForWeb(null);
+          }}
+        />
+      )}
     </div>
   );
 }

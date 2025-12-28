@@ -6,24 +6,25 @@ console.log('🏗️  Iniciando build SEGURO para producción...\n');
 async function buildProductionSafe() {
   try {
     // 1. Verificar si estamos en producción
-    const isProduction = process.env.NODE_ENV === 'production' || 
-                        process.env.VERCEL === '1' ||
-                        process.env.DATABASE_URL?.includes('postgresql://');
+    const isProduction = process.env.NODE_ENV === 'production' ||
+      process.env.VERCEL === '1' ||
+      process.env.DATABASE_URL?.includes('postgresql://');
 
     if (isProduction) {
       console.log('🌍 Detectado entorno de producción');
       console.log('🔒 Usando build SEGURO (NO borra datos)\n');
-      
+
       try {
         // COMENTADO: Migraciones automáticas deshabilitadas - ejecutar manualmente solo cuando haya cambios en el schema
         // Solo aplicar cambios de esquema SIN borrar datos
-        // console.log('📊 Aplicando cambios de esquema (SIN borrar datos)...');
-        // try {
-        //   execSync('npx prisma db push', { stdio: 'inherit' });
-        //   console.log('   ✅ Esquema aplicado exitosamente');
-        // } catch (schemaError) {
-        //   console.log('   ⚠️  Error aplicando esquema, continuando...');
-        // }
+        // Solo aplicar cambios de esquema SIN borrar datos
+        console.log('📊 Aplicando cambios de esquema (SIN borrar datos)...');
+        try {
+          execSync('npx prisma db push', { stdio: 'inherit' });
+          console.log('   ✅ Esquema aplicado exitosamente');
+        } catch (schemaError) {
+          console.log('   ⚠️  Error aplicando esquema, continuando...');
+        }
 
         // Corregir archivos de subida
         console.log('\n🔧 Corrigiendo archivos de subida...');

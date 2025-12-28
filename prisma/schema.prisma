@@ -331,6 +331,42 @@ model TourBus {
   documentoViaggio         Json?
   documentoViaggioName     String?
   isActive         Boolean        @default(true)
+  
+  // --- CAMPOS WEB (NUEVOS) ---
+  slug             String?   @unique // URL amigable
+  isPublic         Boolean   @default(false)
+  webCoverImage    String?   // Imagen de portada para la web (Alta calidad)
+  webCoverImageName String?
+  
+  // Marketing y Cabecera
+  subtitulo        String?
+  etiquetas        String[]  // Array de strings para tags
+  duracionTexto    String?
+  
+  // Detalles Logísticos
+  requisitosDocumentacion String[]
+
+  // Contenido Rico
+  infoGeneral      String?   // Text/RichText
+
+  itinerario       Json?     // [{ title: string, description: string }]
+  mapaEmbed        String?   // URL/Iframe code
+  
+  // Multimedia
+  galeria          String[]  // Array de URLs
+  
+  // Listas
+  incluye          String[]
+  noIncluye        String[]
+  
+  // Coordinador Público
+  coordinadorNombre      String?
+  coordinadorFoto        String?
+  coordinadorDescripcion String?
+  
+  // FAQ
+  faq              Json?
+
   createdBy        String
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
@@ -344,6 +380,7 @@ model TourBus {
   @@index([createdBy], map: "idx_tour_bus_created_by")
   @@index([isActive], map: "idx_tour_bus_is_active")
   @@index([isActive, fechaViaje], map: "idx_tour_bus_active_fecha")
+  @@index([slug], map: "idx_tour_bus_slug")
   @@map("tour_bus")
 }
 
@@ -367,6 +404,42 @@ model TourAereo {
   pdfFile                  String?
   pdfFileName              String?
   descripcion              String?
+  
+  // --- CAMPOS WEB (NUEVOS) ---
+  slug             String?   @unique
+  isPublic         Boolean   @default(false)
+  webCoverImage    String?
+  webCoverImageName String?
+  
+  // Marketing
+  subtitulo        String?
+  etiquetas        String[]
+  duracionTexto    String?
+  
+  // Logística
+  requisitosDocumentacion String[]
+
+  // Contenido
+  infoGeneral      String?
+
+  itinerario       Json?
+  mapaEmbed        String?
+  
+  // Multimedia
+  galeria          String[]
+  
+  // Listas
+  incluye          String[]
+  noIncluye        String[]
+  
+  // Coordinador
+  coordinadorNombre      String?
+  coordinadorFoto        String?
+  coordinadorDescripcion String?
+  
+  // FAQ
+  faq              Json?
+
   isActive                 Boolean          @default(true)
   createdBy                String
   createdAt                DateTime         @default(now())
@@ -384,6 +457,7 @@ model TourAereo {
   @@index([fechaFin], map: "idx_tour_aereo_fecha_fin")
   @@index([createdBy], map: "idx_tour_aereo_created_by")
   @@index([isActive, fechaViaje], map: "idx_tour_aereo_active_fecha")
+  @@index([slug], map: "idx_tour_aereo_slug")
   @@map("tour_aereo")
 }
 
@@ -664,6 +738,7 @@ enum UserRole {
   USER
   ADMIN
   TI
+  CLIENT
 }
 
 enum TipoStanza {
@@ -723,4 +798,39 @@ model AuditoriaEliminacion {
   @@index([fechaEliminacion], map: "idx_auditoria_fecha")
   @@index([nombreCliente], map: "idx_auditoria_cliente")
   @@map("auditoria_eliminaciones")
+}
+
+// --- WEB BOOKING SYSTEM (SEPARATE FROM INTERNAL AGENT SYSTEM) ---
+
+model WebBooking {
+  id              String   @id @default(cuid())
+  
+  // Client Data (Snapshot)
+  userId          String?  // Clerk ID (optional, if logged in)
+  guestName       String
+  guestSurname    String?
+  guestEmail      String
+  guestPhone      String?
+  
+  // Trip Data
+  tourType        String   // "AEREO" | "BUS"
+  tourId          String   // ID of the tour
+  tourTitle       String
+  departureDate   DateTime?
+  
+  // Payment Data (Stripe)
+  stripeSessionId String?  @unique
+  amountPaid      Float    @default(0)
+  currency        String   @default("EUR")
+  paymentStatus   String   @default("PENDING") // PENDING, PAID, FAILED
+  paymentMethod   String?  // STRIPE, CASH, TRANSFER
+  
+  // Management Status
+  status          String   @default("NEW") // NEW, CONTACTED, PROCESSED, CANCELLED
+  adminNotes      String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("web_bookings")
 }

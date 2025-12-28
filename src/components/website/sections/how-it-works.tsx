@@ -26,7 +26,7 @@ const features = [
 export function HowItWorks() {
     return (
         <section className="py-16 bg-white">
-            <div className="container px-4 mx-auto max-w-6xl">
+            <div className="container px-4 mx-auto max-w-7xl">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {features.map((feature, index) => (
                         <div key={index} className="flex flex-col bg-[#F5F8FA] rounded-2xl overflow-hidden h-full">

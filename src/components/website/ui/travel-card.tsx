@@ -34,7 +34,7 @@ export function TravelCard({
     const isCompact = size === 'compact'
 
     return (
-        <Link href={`/viaggi/${slug}`} className="group relative flex flex-col w-full h-full bg-transparent overflow-visible">
+        <Link href={`/tour/${slug}`} className="group relative flex flex-col w-full h-full bg-transparent overflow-visible">
             {/* Image Container */}
             <div className="relative aspect-[0.9/1] w-full overflow-hidden rounded-[12px]">
                 <Image

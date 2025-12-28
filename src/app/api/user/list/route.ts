@@ -4,6 +4,12 @@ import { prisma } from '@/lib/prisma';
 export async function GET() {
   try {
     const users = await prisma.user.findMany({
+      // SYSTEM SAFETY: Filter out Web Users (CLIENT) to keep Admin List clean
+      where: {
+        role: {
+          not: 'CLIENT'
+        }
+      },
       select: {
         id: true,
         clerkId: true,

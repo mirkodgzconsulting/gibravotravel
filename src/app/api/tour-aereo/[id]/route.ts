@@ -10,6 +10,122 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET || 'Q1fP7-pH6iiltPbFNkqPn0d93no',
 });
 
+// GET - Obtener un tour aéreo específico
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    const { id } = await params;
+
+    // Obtener tour con todas las relaciones necesarias
+    const tour = await prisma.tourAereo.findUnique({
+      where: { id },
+      include: {
+        creator: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        },
+        stanze: {
+          include: {
+            asignaciones: {
+              include: {
+                ventaTourAereo: true
+              }
+            }
+          }
+        },
+        ventas: {
+          include: {
+            cuotas: true,
+            creator: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'desc'
+          }
+        }
+      }
+    });
+
+    if (!tour) {
+      return NextResponse.json({ error: 'Tour no encontrado' }, { status: 404 });
+    }
+
+    // Normalizar documentoViaggio (Legacy support)
+    const tourAny = tour as any;
+    if (tourAny.documentoViaggio) {
+      if (typeof tourAny.documentoViaggio === 'string') {
+        tourAny.documentoViaggio = [{
+          url: tourAny.documentoViaggio,
+          name: tourAny.documentoViaggioName || 'documento'
+        }];
+      } else if (Array.isArray(tourAny.documentoViaggio)) {
+        // ok
+      } else if (typeof tourAny.documentoViaggio === 'object') {
+        tourAny.documentoViaggio = [tourAny.documentoViaggio];
+      }
+    }
+
+    return NextResponse.json({ tour: tourAny });
+
+  } catch (error) {
+    console.error('Error fetching tour aereo:', error);
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+  }
+}
+
+// DELETE - Eliminar un tour aéreo (soft delete)
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+
+    const { id } = await params;
+
+    // Verificar existencia
+    const tour = await prisma.tourAereo.findUnique({
+      where: { id },
+      include: { ventas: true }
+    });
+
+    if (!tour) return NextResponse.json({ error: 'Tour no encontrado' }, { status: 404 });
+
+    // Verificar ventas activas
+    if (tour.ventas.length > 0) {
+      return NextResponse.json({ error: 'No se puede eliminar un tour con ventas activas' }, { status: 400 });
+    }
+
+    // Soft delete
+    await prisma.tourAereo.update({
+      where: { id },
+      data: { isActive: false }
+    });
+
+    return NextResponse.json({ message: 'Tour eliminado exitosamente' });
+
+  } catch (error) {
+    console.error('Error deleting tour aereo:', error);
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+  }
+}
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

@@ -119,6 +119,7 @@ export async function GET(request: NextRequest) {
               biglietteria: {
                 select: {
                   id: true,
+                  data: true,
                   cliente: true,
                   pnr: true,
                   itinerario: true,
@@ -174,7 +175,7 @@ export async function GET(request: NextRequest) {
           if (isVolo) return formatDateToISO(pasajero.ritorno);
           return null;
         })(),
-        dataRegistro: formatDateToISO(biglietteria.createdAt),
+        dataRegistro: formatDateToISO(biglietteria.data),
         iata: detalle.iata,
         neto: detalle.neto,
         venduto: detalle.venduto,
@@ -219,7 +220,7 @@ export async function GET(request: NextRequest) {
         })(),
         creador: biglietteria.creator
           ? `${biglietteria.creator.firstName || ''} ${biglietteria.creator.lastName || ''}`.trim() ||
-            biglietteria.creator.email
+          biglietteria.creator.email
           : biglietteria.id,
       };
     });

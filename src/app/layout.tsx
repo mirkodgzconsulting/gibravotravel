@@ -17,9 +17,13 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "GiBravo Travel -- Dashboard di Gestione",
+  title: "GiBravo Travel",
   description: "Sistema di gestione integrale per servizi di viaggi e turismo",
   keywords: "viaggi, turismo, gestione, dashboard, GiBravo Travel",
+  icons: {
+    icon: "/images/logo/cropped-faviconWeb.png",
+    apple: "/images/logo/cropped-faviconWeb.png",
+  },
 };
 
 export default function RootLayout({
@@ -29,7 +33,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="it" suppressHydrationWarning>
-      <body className={`${outfit.className} ${montserrat.variable} dark:bg-gray-900`}>
+      <body className={`${outfit.className} ${montserrat.variable} bg-white`}>
         <ClerkProvider
           signInUrl="/signin"
           signUpUrl="/signin"
@@ -40,6 +44,8 @@ export default function RootLayout({
             {children}
           </ThemeProvider>
         </ClerkProvider>
+        {/* Global GoHighLevel Form Script */}
+        <script src="https://link.msgsndr.com/js/form_embed.js" defer></script>
       </body>
     </html>
   );

@@ -2,6 +2,7 @@ import { headers } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { prisma } from "@/lib/prisma"
 import Stripe from 'stripe'
+import { sendOrderConfirmationEmail } from "@/lib/email"
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -57,6 +58,20 @@ export async function POST(req: Request) {
                     }
                 })
                 console.log(`✅ Booking ${booking.id} confirmed via Webhook`)
+
+                // SEND EMAIL
+                try {
+                    await sendOrderConfirmationEmail({
+                        email: booking.guestEmail,
+                        name: booking.guestName,
+                        bookingId: booking.id,
+                        tourTitle: booking.tourTitle,
+                        amount: session.amount_total ? session.amount_total / 100 : 0,
+                        date: new Date().toLocaleDateString('it-IT')
+                    })
+                } catch (emailErr) {
+                    console.error("❌ Failed to send email:", emailErr)
+                }
             } else {
                 console.error(`❌ Booking not found for Session ${session.id}`)
             }

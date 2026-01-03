@@ -1,37 +1,65 @@
 import { RevealOnScroll } from "@/components/website/ui/reveal-on-scroll"
 import { Button } from "@/components/website/ui/button"
-import { MapPin, Phone, Mail, Clock, MessageCircle } from "lucide-react"
+import { MapPin, Phone, Mail, Clock } from "lucide-react"
+import Image from "next/image"
+import Script from "next/script"
 
 export default function ContactsPage() {
     return (
-        <main className="min-h-screen bg-slate-50 pt-32 pb-24">
-            <div className="container mx-auto px-4 max-w-7xl">
+        <main className="min-h-screen bg-slate-50 pb-24">
+            {/* 1. HERO SECTION - Premium Split Design */}
+            <section className="relative h-[60vh] min-h-[500px] w-full flex items-center overflow-hidden bg-black mb-16">
+                <div className="absolute inset-0 z-0">
+                    <Image
+                        src="https://res.cloudinary.com/dskliu1ig/image/upload/v1767393764/contattaci_ezcfzw.jpg"
+                        alt="Contatti Hero"
+                        fill
+                        className="object-cover opacity-80"
+                        priority
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent z-10" />
+                </div>
 
-                {/* Header */}
+                <div className="container mx-auto px-4 z-20 relative">
+                    <RevealOnScroll>
+                        <div className="max-w-3xl">
+                            <h1 className="text-5xl md:text-7xl font-[700] text-white tracking-tighter leading-[1.1] mb-8">
+                                Parliamo del tuo <br />
+                                <span className="text-[#FE8008]">Prossimo Viaggio</span>
+                            </h1>
+                            <p className="text-xl md:text-2xl text-white/90 font-medium leading-relaxed max-w-2xl">
+                                Organizza il tuo viaggio ideale con GiBravo Travel. Siamo qui per trasformare i tuoi sogni in realtà.
+                            </p>
+                        </div>
+                    </RevealOnScroll>
+                </div>
+            </section>
+
+            <div className="container mx-auto px-4 max-w-7xl">
+                {/* Intro Text */}
                 <RevealOnScroll>
                     <div className="text-center mb-16">
-                        <span className="text-[#FE8008] font-bold tracking-wider text-sm uppercase mb-2 block">
+                        <span className="text-[#FE8008] font-bold tracking-wider text-sm uppercase mb-2 block font-outfit">
                             Siamo qui per te
                         </span>
-                        <h1 className="text-4xl md:text-5xl font-extrabold text-[#004BA5] mb-6 tracking-tight">
-                            Parliamo del tuo prossimo viaggio
-                        </h1>
-                        <p className="text-xl text-slate-600 max-w-3xl mx-auto font-medium leading-relaxed">
-                            Organizza il tuo viaggio ideale con GiBravo Travel.
-                            Non hai trovato la data o la destinazione che cercavi?
-                            Non preoccuparti! Il nostro team ti aiuterà a creare un viaggio 100% personalizzato.
+                        <h2 className="section-title text-3xl md:text-4xl text-[#004BA5] mb-6">
+                            Non hai trovato quello che cercavi?
+                        </h2>
+                        <p className="section-subtitle max-w-3xl mx-auto">
+                            Non preoccuparti! Il nostro team ti aiuterà a creare un viaggio 100% personalizzato,
+                            curando ogni dettaglio dalla A alla Z.
                         </p>
                     </div>
                 </RevealOnScroll>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-start">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-center mt-6">
 
                     {/* Left Col: Contact Info */}
                     <RevealOnScroll delay={100}>
                         <div className="flex flex-col gap-10">
                             <div>
                                 <h3 className="text-2xl font-bold text-[#323232] mb-6">Contatti Diretti</h3>
-                                <p className="text-slate-600 mb-8 leading-relaxed">
+                                <p className="body-text mb-8">
                                     Puoi contattarci direttamente via WhatsApp, telefono o email.
                                     Siamo a tua disposizione per qualsiasi dubbio o richiesta.
                                 </p>
@@ -56,7 +84,7 @@ export default function ContactsPage() {
                                     </div>
                                     <div>
                                         <h4 className="font-bold text-lg text-[#323232]">Sede</h4>
-                                        <p className="text-slate-600 mt-1">Via Bartolomeo Eustachi, 30<br />Milano (MI)</p>
+                                        <p className="body-text mt-1">Via Bartolomeo Eustachi, 30<br />Milano (MI)</p>
                                     </div>
                                 </div>
 
@@ -67,7 +95,7 @@ export default function ContactsPage() {
                                     </div>
                                     <div>
                                         <h4 className="font-bold text-lg text-[#323232]">Orari di Apertura</h4>
-                                        <div className="text-slate-600 mt-1 space-y-1">
+                                        <div className="body-text mt-1 space-y-1">
                                             <p><span className="font-semibold text-slate-800">Lun - Ven:</span> 10:00 - 13:00 | 14:00 - 19:00</p>
                                             <p><span className="font-semibold text-slate-800">Sabato:</span> 10:00 - 13:00 | 14:00 - 18:00</p>
                                         </div>
@@ -90,60 +118,29 @@ export default function ContactsPage() {
 
                     {/* Right Col: Form */}
                     <RevealOnScroll delay={200}>
-                        <div className="bg-white p-8 md:p-10 rounded-3xl shadow-lg border border-slate-100">
-                            <h3 className="text-2xl font-bold text-[#323232] mb-2">Scrivici un messaggio</h3>
-                            <p className="text-slate-500 mb-8">Compila il modulo per richiedere un viaggio su misura.</p>
-
-                            <form className="space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <label htmlFor="name" className="text-sm font-bold text-slate-700">Nome</label>
-                                        <input
-                                            type="text"
-                                            id="name"
-                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#004BA5] focus:ring-2 focus:ring-blue-100 outline-none transition-all"
-                                            placeholder="Il tuo nome"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label htmlFor="email" className="text-sm font-bold text-slate-700">Email</label>
-                                        <input
-                                            type="email"
-                                            id="email"
-                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#004BA5] focus:ring-2 focus:ring-blue-100 outline-none transition-all"
-                                            placeholder="tua@email.com"
-                                        />
-                                    </div>
+                        <div className="p-0 overflow-hidden w-full max-w-full">
+                            <div className="w-full overflow-hidden">
+                                <div className="w-full relative" style={{ minHeight: "550px" }}>
+                                    <iframe
+                                        src="https://api.leadconnectorhq.com/widget/form/72A42sQgiiHmw4cwtZSf"
+                                        style={{ width: "100%", height: "100%", minHeight: "550px", border: "none", borderRadius: "0px", overflow: "hidden" }}
+                                        id="inline-72A42sQgiiHmw4cwtZSf"
+                                        data-layout="{'id':'INLINE'}"
+                                        data-trigger-type="alwaysShow"
+                                        data-trigger-value=""
+                                        data-activation-type="alwaysActivated"
+                                        data-activation-value=""
+                                        data-deactivation-type="neverDeactivate"
+                                        data-deactivation-value=""
+                                        data-form-name="Contact - pagina gibravo.it"
+                                        data-height="550"
+                                        data-layout-iframe-id="inline-72A42sQgiiHmw4cwtZSf"
+                                        data-form-id="72A42sQgiiHmw4cwtZSf"
+                                        title="Contact - pagina gibravo.it"
+                                        scrolling="no"
+                                    ></iframe>
                                 </div>
-
-                                <div className="space-y-2">
-                                    <label htmlFor="phone" className="text-sm font-bold text-slate-700">Telefono</label>
-                                    <input
-                                        type="tel"
-                                        id="phone"
-                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#004BA5] focus:ring-2 focus:ring-blue-100 outline-none transition-all"
-                                        placeholder="+39 000 000 0000"
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label htmlFor="message" className="text-sm font-bold text-slate-700">Come possiamo aiutarti?</label>
-                                    <textarea
-                                        id="message"
-                                        rows={4}
-                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#004BA5] focus:ring-2 focus:ring-blue-100 outline-none transition-all resize-none"
-                                        placeholder="Raccontaci la tua idea di viaggio ideale..."
-                                    />
-                                </div>
-
-                                <Button className="w-full bg-[#FE8008] hover:bg-[#e67300] text-white font-[800] py-6 rounded-xl text-lg shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]">
-                                    Invia Richiesta
-                                </Button>
-
-                                <p className="text-xs text-slate-400 text-center">
-                                    Cliccando su Invia accetti la nostra Privacy Policy.
-                                </p>
-                            </form>
+                            </div>
                         </div>
                     </RevealOnScroll>
 

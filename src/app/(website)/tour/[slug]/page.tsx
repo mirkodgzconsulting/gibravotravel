@@ -372,7 +372,7 @@ export default async function TourPage({ params }: TourPageProps) {
                                     </div>
                                     <p className="text-gray-500 text-sm mt-2 mb-6">Tasse incluse • Cancellazione flessibile</p>
 
-                                    <Link href={`/prenotazione/${tour.id}`}>
+                                    <Link href={`/prenotazione/${tour.slug || tour.id}`}>
                                         <button className="w-full py-4 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-lg shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 mb-3 text-lg cursor-pointer">
                                             Prenota Ora
                                         </button>

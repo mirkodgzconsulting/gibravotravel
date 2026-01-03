@@ -26,7 +26,7 @@ export function VideoStories() {
         <section className="py-16 bg-[#111111] text-white">
             <div className="container px-4 mx-auto max-w-7xl">
                 <h2 className="text-3xl font-[900] tracking-tight text-center mb-12">
-                    Cosa succede durante un viaggio WeRoad?
+                    Cosa succede durante un viaggio GiBravo?
                 </h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

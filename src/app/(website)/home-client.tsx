@@ -5,12 +5,12 @@ import { Button } from "@/components/website/ui/button"
 import { TravelCard } from "@/components/website/ui/travel-card"
 import { Search } from "lucide-react"
 import Image from "next/image"
-import { useLanguage } from "@/context/website/language-context"
 import Link from "next/link"
 import Autoplay from "embla-carousel-autoplay"
 
 import { CollectionsGrid } from "@/components/website/sections/collections-grid"
 import { HowItWorks } from "@/components/website/sections/how-it-works"
+import { Features } from "@/components/website/sections/features"
 import { VideoStories } from "@/components/website/sections/video-stories"
 import { RevealOnScroll } from "@/components/website/ui/reveal-on-scroll"
 import {
@@ -20,6 +20,8 @@ import {
     CarouselNext,
     CarouselPrevious,
 } from "@/components/website/ui/carousel"
+import { DraggableCardsSection } from "@/components/website/sections/draggable-cards-section"
+import TestimonialsComponent from "@/components/shadcn-studio/blocks/testimonials-component-06/testimonials-component-06"
 
 interface TourData {
     id: string
@@ -40,20 +42,83 @@ interface HomeClientProps {
     busTours: TourData[]
 }
 
-export function HomeClient({ flightTours, busTours }: HomeClientProps) {
-    const { t } = useLanguage()
 
-    // Combine all tours for the Featured Carousel
-    const allTours = [...flightTours, ...busTours]
+
+const testimonialsData = [
+    {
+        name: 'Elizabeth Rodriguez',
+        role: 'Viaggiatrice',
+        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Elizabeth',
+        content: 'Agenzia di viaggi seria, ragazzi gentilissimi e disponibili per ogni richiesta. Io e mia figlia ci siamo trovate molto bene e ci siamo divertite, super consigliato! 😍✈️'
+    },
+    {
+        name: 'Elida Rubio Escobar',
+        role: 'Viaggiatrice',
+        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Elida',
+        content: 'Si, sono stati molto bravi!!! Bella giornata a Firenze!!! Consigliatissimo!! 👏🇮🇹'
+    },
+    {
+        name: 'Penny Jordan',
+        role: 'Frequent Traveler',
+        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Penny',
+        content: 'Ottima esperienza. Precisione, cortesia e puntualità sono le parole chiave di questa agenzia. Molto consigliata per chi cerca serietà.'
+    },
+    {
+        name: 'Aleida Padilla',
+        role: 'Viaggiatrice',
+        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aleida',
+        content: 'Puntualità e responsabilità. Le ragazze dello staff sono simpatiche e amichevoli. È stato un viaggio meraviglioso, brave guide!'
+    },
+    {
+        name: 'Blerina Kola',
+        role: 'Viaggiatrice',
+        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Blerina',
+        content: 'È stato un viaggio meraviglioso! Grazie GiBravo per l\'organizzazione impeccabile! ❤️✨'
+    },
+    {
+        name: 'Andrea Zoccali',
+        role: 'Viaggiatore',
+        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Andrea',
+        content: 'Bellissimo giro, guide in gamba e sempre molto disponibili. Un\'esperienza che rifarei sicuramente. Consigliatissimo. 🙌🌍'
+    },
+    {
+        name: 'Anna Tarricone',
+        role: 'Viaggiatrice',
+        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Anna',
+        content: 'Organizzazione perfetta e precisa. I ragazzi sono veramente gentili e molto informati sui luoghi da visitare... Super consigliato!'
+    },
+    {
+        name: 'Jennifer Garini',
+        role: 'Viaggiatrice Seriale',
+        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jennifer',
+        content: 'Agenzia organizzata molto bene. È il secondo viaggio che faccio con loro e non ci sono mai stati problemi di nessun tipo. Staff cordiale e simpatico. 😊'
+    },
+    {
+        name: 'Rossana Pelizzari',
+        role: 'Viaggiatrice',
+        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Rossana',
+        content: 'Bellissima giornata organizzata con lo staff di GiBravo Travel. Ragazzi simpaticissimi e sempre disponibili a dare ottimi consigli. Alla prossima! 😀✌️💪'
+    },
+    {
+        name: 'Fer Quispe Lazarte',
+        role: 'Viaggiatore Premium',
+        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Fer',
+        content: 'Una volta ancora confido in questa agenzia perché mi trovo molto bene con lo staff di GiBravo. Amo ogni luogo che ho conosciuto grazie a voi.'
+    }
+]
+
+export function HomeClient({ flightTours, busTours }: HomeClientProps) {
+    // Only show Flight Tours in the Featured Carousel as requested
+    const allTours = [...flightTours]
 
     return (
         <div className="flex flex-col min-h-screen">
-            {/* Hero Section - Exact WeRoad Replication */}
+            {/* Hero Section - GiBravo Design */}
             <section className="relative h-[650px] w-full flex items-center justify-center">
                 {/* Background */}
                 <div className="absolute inset-0 z-0">
                     <Image
-                        src="https://images.unsplash.com/photo-1513581166391-887a96ddeafd?q=80&w=2070&auto=format&fit=crop"
+                        src="https://res.cloudinary.com/dskliu1ig/image/upload/v1767357683/hero-homepage_obrvuk.webp"
                         alt="Hero Background"
                         fill
                         className="object-cover"
@@ -66,45 +131,20 @@ export function HomeClient({ flightTours, busTours }: HomeClientProps) {
                 {/* Content */}
                 <div className="relative z-10 container flex flex-col items-center text-center px-4 mt-0 md:mt-[-60px]">
                     <RevealOnScroll>
-                        <h1 className="text-4xl md:text-[52px] font-[900] tracking-tight text-white leading-[1.1] mb-2 drop-shadow-lg">
-                            {t("heroTitle1")}
+                        <h1 className="text-4xl md:text-[52px] font-[700] tracking-tight text-white leading-[1.1] mb-2 drop-shadow-lg">
+                            Viaggia sicuro,
                         </h1>
-                        <h2 className="text-3xl md:text-[52px] font-[900] tracking-tight text-white leading-[1.1] mb-4 drop-shadow-md">
-                            {t("heroTitle2")}
+                        <h2 className="text-3xl md:text-[52px] font-[700] tracking-tight text-white leading-[1.1] mb-4 drop-shadow-md">
+                            viaggia con GiBravo
                         </h2>
-                        <p className="text-lg md:text-xl font-medium text-white/90 mb-12 drop-shadow-sm tracking-wide">
-                            {t("heroSubtitle")}
+
+                        <p className="text-xl md:text-2xl font-medium text-white/90 mb-12 drop-shadow-sm tracking-wide">
+                            Scopri il mondo viaggiando in piccoli gruppi
                         </p>
                     </RevealOnScroll>
                 </div>
 
-                {/* Search Pill Component - Overlapping Bottom Edge */}
-                <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 z-30 w-full max-w-4xl px-4">
-                    <RevealOnScroll delay={200}>
-                        <div className="bg-white rounded-xl p-2 shadow-[0px_8px_30px_rgba(0,0,0,0.12)] flex flex-col md:flex-row items-center h-auto md:h-[80px] gap-2 md:gap-0">
 
-                            {/* Section 1: Destination */}
-                            <div className="w-full md:flex-1 flex flex-col justify-center items-start text-left md:border-r border-gray-100 px-6 h-full cursor-pointer hover:bg-gray-50 rounded-xl md:rounded-l-xl md:rounded-r-none group transition-colors py-3 md:py-0">
-                                <span className="text-[14px] font-[800] text-gray-400 mb-0.5 group-hover:text-[#FE8008] transition-colors">{t("where")}</span>
-                                <span className="text-[18px] font-[800] text-slate-900 truncate w-full">{t("anyDestination")}</span>
-                            </div>
-
-                            {/* Section 2: Date */}
-                            <div className="w-full md:flex-1 flex flex-col justify-center items-start text-left md:border-r border-gray-100 px-6 h-full cursor-pointer hover:bg-gray-50 group transition-colors py-3 md:py-0">
-                                <span className="text-[14px] font-[800] text-gray-400 mb-0.5 group-hover:text-[#FE8008] transition-colors">{t("when")}</span>
-                                <span className="text-[18px] font-[800] text-slate-900 truncate w-full">{t("allYear")}</span>
-                            </div>
-
-                            {/* Section 3: Search Button */}
-                            <div className="w-full md:w-auto p-1 md:px-2">
-                                <Button className="w-full md:w-auto rounded-lg h-[60px] md:h-[64px] px-10 bg-[#004BA5] hover:bg-[#FE8008] text-white font-[800] text-[18px] shadow-lg flex items-center gap-2 transition-colors duration-300">
-                                    <Search className="h-5 w-5 stroke-[3px]" />
-                                    {t("searchBtn")}
-                                </Button>
-                            </div>
-                        </div>
-                    </RevealOnScroll>
-                </div>
             </section>
 
             {/* Featured Section (Carousel) */}
@@ -112,7 +152,7 @@ export function HomeClient({ flightTours, busTours }: HomeClientProps) {
                 <div className="container px-4 max-w-7xl mx-auto">
                     <div className="flex flex-col items-center mb-[30px] text-center">
                         <RevealOnScroll>
-                            <h2 className="text-3xl font-[900] tracking-tight text-[#323232] mb-2">
+                            <h2 className="section-title mb-2">
                                 Scelti per te
                             </h2>
                         </RevealOnScroll>
@@ -156,139 +196,15 @@ export function HomeClient({ flightTours, busTours }: HomeClientProps) {
                 </div>
             </section>
 
+            <Features />
 
-            {/* NEW: Flight Trips Section (Dark Theme with Aurora Background) */}
-            <section className="relative w-full">
-                {/* 1. Background Image Layer (Absolute) - Acts as the "Sky" backdrop */}
-                <div className="absolute top-0 left-0 w-full h-[400px] z-0">
-                    <Image
-                        src="https://1000sitiosquever.com/public/images/supima-373-koh-phing-kan.51O.png"
-                        alt="Safari Landscape"
-                        fill
-                        quality={100}
-                        sizes="100vw"
-                        className="object-cover object-top opacity-100"
-                    />
-                    {/* Gradient to blend into the dark content below */}
-                    <div className="absolute bottom-0 left-0 w-full h-[300px] bg-gradient-to-t from-[#0e191a] via-[#0e191a]/60 to-transparent" />
-                </div>
+            <div className="hidden md:block">
+                <DraggableCardsSection />
+            </div>
 
-                {/* 2. Content Layer (Relative z-10) */}
-                <div className="relative z-10 flex flex-col w-full">
-
-                    {/* A. Title Block - Occupies the 'Sky' area (Matches Image Height) */}
-                    <div className="h-[400px] w-full flex flex-col items-center justify-start pt-2 md:pt-4 px-4 text-center text-white drop-shadow-md">
-                        <RevealOnScroll>
-                            <div className="max-w-4xl mx-auto">
-                                <h2 className="text-3xl lg:text-5xl font-[900] tracking-tight mb-4">
-                                    Viaggi in aereo
-                                </h2>
-                                <p className="font-medium text-lg lg:text-xl opacity-90 max-w-2xl mx-auto">
-                                    Scopri il mondo volando verso mete indimenticabili
-                                </p>
-                            </div>
-                        </RevealOnScroll>
-                    </div>
-
-                    {/* B. Cards Block - Separate Element below the sky area */}
-                    <div className="w-full bg-[#0e191a] pb-10 px-4 pt-4">
-                        <div className="container mx-auto max-w-7xl">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                                {/* REAL DATA from Database */}
-                                {flightTours.length > 0 ? (
-                                    flightTours.map((trip, idx) => (
-                                        <RevealOnScroll key={trip.slug} delay={idx * 50}>
-                                            <TravelCard {...trip} theme="dark" size="compact" />
-                                        </RevealOnScroll>
-                                    ))
-                                ) : (
-                                    <div className="col-span-full text-center text-white/50 py-10">
-                                        Nessun viaggio in aereo disponibile al momento.
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="flex justify-center mt-8">
-                                <Link href="/tipi-di-viaggio/aereo">
-                                    <RevealOnScroll delay={300}>
-                                        <Button className="bg-[#004BA5] hover:bg-[#FE8008] text-white font-[800] px-8 py-4 rounded-lg text-lg shadow-lg hover:scale-105 transition-transform">
-                                            Vedi tutti i voli
-                                        </Button>
-                                    </RevealOnScroll>
-                                </Link>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            </section>
-
-
-            {/* NEW: Bus Trips Section (Dark Theme with Safari Background) */}
-            <section className="relative w-full">
-                {/* 1. Background Image Layer (Absolute) - Acts as the "Sky" backdrop */}
-                <div className="absolute top-0 left-0 w-full h-[400px] z-0">
-                    <Image
-                        src="https://assets.voxcity.com/uploads/blog_images/What-is-the-first-place-to-visit-when-you-travel-to-Rome_original.jpg"
-                        alt="Bus Travel Landscape"
-                        fill
-                        quality={100}
-                        sizes="100vw"
-                        className="object-cover object-top opacity-100"
-                    />
-                    {/* Gradient to blend into the dark content below */}
-                    <div className="absolute bottom-0 left-0 w-full h-[300px] bg-gradient-to-t from-[#15110E] via-[#15110E]/60 to-transparent" />
-                </div>
-
-                {/* 2. Content Layer (Relative z-10) */}
-                <div className="relative z-10 flex flex-col w-full">
-
-                    {/* A. Title Block - Occupies the 'Sky' area (Matches Image Height) */}
-                    <div className="h-[400px] w-full flex flex-col items-center justify-start pt-2 md:pt-4 px-4 text-center text-white drop-shadow-md">
-                        <RevealOnScroll>
-                            <div className="max-w-4xl mx-auto">
-                                <h2 className="text-3xl lg:text-5xl font-[900] tracking-tight mb-4">
-                                    Viaggi in Autobus
-                                </h2>
-                                <p className="font-medium text-lg lg:text-xl opacity-90 max-w-2xl mx-auto">
-                                    Il comfort della strada, la bellezza del viaggio
-                                </p>
-                            </div>
-                        </RevealOnScroll>
-                    </div>
-
-                    {/* B. Cards Block - Separate Element below the sky area */}
-                    <div className="w-full bg-[#15110E] pb-10 px-4 pt-4">
-                        <div className="container mx-auto max-w-7xl">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                                {/* REAL DATA from Database */}
-                                {busTours.length > 0 ? (
-                                    busTours.map((trip, idx) => (
-                                        <RevealOnScroll key={trip.slug} delay={idx * 50}>
-                                            <TravelCard {...trip} theme="dark" size="compact" />
-                                        </RevealOnScroll>
-                                    ))
-                                ) : (
-                                    <div className="col-span-full text-center text-white/50 py-10">
-                                        Nessun viaggio in autobus disponibile al momento.
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="flex justify-center mt-8">
-                                <Link href="/tipi-di-viaggio/autobus">
-                                    <RevealOnScroll delay={300}>
-                                        <Button className="bg-[#004BA5] hover:bg-[#FE8008] text-white font-[800] px-8 py-4 rounded-lg text-lg shadow-lg hover:scale-105 transition-transform">
-                                            Vedi tutti i viaggi in bus
-                                        </Button>
-                                    </RevealOnScroll>
-                                </Link>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            </section>
+            <RevealOnScroll delay={100}>
+                <TestimonialsComponent testimonials={testimonialsData} />
+            </RevealOnScroll>
 
             {/* Other Sections */}
             < RevealOnScroll delay={100} >
@@ -297,9 +213,7 @@ export function HomeClient({ flightTours, busTours }: HomeClientProps) {
             <RevealOnScroll delay={100}>
                 <HowItWorks />
             </RevealOnScroll>
-            <RevealOnScroll delay={100}>
-                <VideoStories />
-            </RevealOnScroll>
         </div >
     )
 }
+

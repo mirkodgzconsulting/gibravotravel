@@ -58,7 +58,7 @@ export default function SignInPage() {
             className="mx-auto mb-6"
           />
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-            
+
           </h2>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
             Sistema di gestione
@@ -70,14 +70,14 @@ export default function SignInPage() {
           <SignIn
             appearance={{
               elements: {
-                formButtonPrimary: 
+                formButtonPrimary:
                   "bg-brand-500 hover:bg-brand-600 text-sm normal-case",
                 card: "shadow-theme-lg border border-gray-200 dark:border-gray-800",
                 headerTitle: "text-gray-900 dark:text-white",
                 headerSubtitle: "text-gray-600 dark:text-gray-400",
-                socialButtonsBlockButton: 
+                socialButtonsBlockButton:
                   "border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800",
-                formFieldInput: 
+                formFieldInput:
                   "border border-gray-200 dark:border-gray-700 focus:border-brand-500 focus:ring-brand-500",
                 footerActionLink: "text-brand-500 hover:text-brand-600",
               },
@@ -97,7 +97,7 @@ export default function SignInPage() {
 
         {/* Footer */}
         <div className="text-center text-xs text-gray-500 dark:text-gray-400">
-          <p>© 2024 GiBravo Travel. Tutti i diritti riservati.</p>
+          <p>© 2026 GiBravo Travel. Tutti i diritti riservati.</p>
         </div>
       </div>
     </div>

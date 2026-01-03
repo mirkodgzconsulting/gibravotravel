@@ -18,9 +18,10 @@ export default clerkMiddleware(async (auth, req) => {
     pathname.startsWith('/contatti') ||
     pathname.startsWith('/tour') ||
     pathname.startsWith('/prenotazione') ||
-    pathname.startsWith('/dashboard') || // Dashboard is guarded by Page Logic, but route must be accessible for redirection
+    pathname.startsWith('/area-riservata') ||
+    pathname.startsWith('/login') ||
     pathname.startsWith('/sign-in') ||
-    pathname.startsWith('/sign-up') ||
+    pathname.startsWith('/domande-frequenti') ||
     pathname.startsWith('/api')
 
   // 2. SYSTEMS DOMAIN LOGIC

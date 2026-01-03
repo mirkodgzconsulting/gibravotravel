@@ -34,7 +34,7 @@ export default async function BusTypesPage() {
                         <span className="text-[#FE8008] font-bold tracking-wider text-sm uppercase mb-2 block">
                             On The Road
                         </span>
-                        <h1 className="text-4xl md:text-5xl font-extrabold text-[#004BA5] mb-6 tracking-tight">
+                        <h1 className="text-4xl md:text-5xl font-bold text-[#004BA5] mb-6 tracking-tight">
                             Viaggi in Autobus
                         </h1>
                         <p className="text-xl text-slate-600 max-w-2xl mx-auto font-medium leading-relaxed">

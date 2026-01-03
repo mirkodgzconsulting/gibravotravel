@@ -19,27 +19,23 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    // This code will only run on the client side
-    const savedTheme = localStorage.getItem("theme") as Theme | null;
-    const initialTheme = savedTheme || "light"; // Default to light theme
-
-    setTheme(initialTheme);
+    // Force Light Mode Always
+    setTheme("light");
     setIsInitialized(true);
+    // Clear any legacy dark mode pref
+    localStorage.setItem("theme", "light");
+    document.documentElement.classList.remove("dark");
   }, []);
 
   useEffect(() => {
     if (isInitialized) {
-      localStorage.setItem("theme", theme);
-      if (theme === "dark") {
-        document.documentElement.classList.add("dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-      }
+      document.documentElement.classList.remove("dark");
     }
   }, [theme, isInitialized]);
 
   const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
+    // Disabled: Always stay light
+    setTheme("light");
   };
 
   return (

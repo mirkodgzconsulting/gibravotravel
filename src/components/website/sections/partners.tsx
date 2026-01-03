@@ -11,15 +11,15 @@ import { ChevronRight } from "lucide-react"
 
 const press = [
     {
-        quote: "10 Location Luxury nel mondo: quando l'alloggio impreziosisce il viaggio e il WeRoad diventa un itinerario Collection",
+        quote: "10 Location Luxury nel mondo: quando l'alloggio impreziosisce il viaggio e il GiBravo diventa un itinerario Collection",
         source: "STYLE MAGAZINE"
     },
     {
-        quote: "Carola Ludovica Farci, globetrotter e Coordinatrice WeRoad che viaggia per trasformare la plastica in alberi",
+        quote: "Carola Ludovica Farci, globetrotter e Coordinatrice GiBravo che viaggia per trasformare la plastica in alberi",
         source: "HUFFPOST"
     },
     {
-        quote: "Svezia \"on the road\", da Stoccolma a Luleå a caccia dell'aurora boreale: l'itinerario perfetto coi consigli di WeRoad",
+        quote: "Svezia \"on the road\", da Stoccolma a Luleå a caccia dell'aurora boreale: l'itinerario perfecto coi consigli di GiBravo",
         source: "SKY TG24"
     }
 ]

@@ -142,6 +142,8 @@ export async function PUT(
     const webCoverImage = formData.get('webCoverImage') as File; // New
     const pdfFile = formData.get('pdfFile') as File;
 
+    const updateData: any = {}; // Moved up to valid reference error
+
     // Verificar que el tour existe
     const tourExistente = await prisma.tourBus.findUnique({
       where: { id },
@@ -508,7 +510,7 @@ export async function PUT(
     const cantidadAsientos = 53;
 
     // PREPARAR DATOS DE ACTUALIZACIÓN (Differential Update)
-    const updateData: any = {};
+    // const updateData: any = {}; // Moved up
     if (formData.has('titulo')) updateData.titulo = titulo;
     if (formData.has('precioAdulto')) updateData.precioAdulto = parseFloat(precioAdulto);
     if (formData.has('precioNino')) updateData.precioNino = parseFloat(precioNino);

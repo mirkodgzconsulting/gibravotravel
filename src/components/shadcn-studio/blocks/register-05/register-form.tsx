@@ -24,10 +24,16 @@ const RegisterForm = () => {
 
     const [isPasswordVisible, setIsPasswordVisible] = useState(false)
     const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false)
+    const [privacyAccepted, setPrivacyAccepted] = useState(false)
 
     const handleSignUp = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!isLoaded) return
+
+        if (!privacyAccepted) {
+            setError('Devi accettare la Privacy Policy e i Termini del servizio per continuare.')
+            return
+        }
 
         if (password !== confirmPassword) {
             setError('Le password non coincidono.')
@@ -185,11 +191,25 @@ const RegisterForm = () => {
             </div>
 
             {/* Privacy policy */}
-            <div className='flex items-center gap-3'>
-                <Checkbox id='confirmPolicy' className='size-6' required />
-                <Label htmlFor='confirmPolicy'>
-                    <span className='text-muted-foreground'>Accetto la</span> <a href='/informativa-privacy' className='hover:underline'>privacy policy e i termini</a>
-                </Label>
+            <div className='flex items-start gap-3'>
+                <Checkbox
+                    id='confirmPolicy'
+                    className='size-5 mt-0.5'
+                    required
+                    checked={privacyAccepted}
+                    onCheckedChange={(checked) => setPrivacyAccepted(checked as boolean)}
+                />
+                <label htmlFor='confirmPolicy' className='text-sm leading-tight cursor-pointer'>
+                    <span className='text-muted-foreground'>Creando un account accetti i </span>
+                    <a href='/termini-e-condizioni' target='_blank' rel='noopener noreferrer' className='font-medium hover:underline text-primary'>
+                        Termini e Condizioni
+                    </a>
+                    <span className='text-muted-foreground'> e la </span>
+                    <a href='/informativa-privacy' target='_blank' rel='noopener noreferrer' className='font-medium hover:underline text-primary'>
+                        Informativa Privacy
+                    </a>
+                    .
+                </label>
             </div>
 
             {error && <p className="text-sm text-red-500">{error}</p>}

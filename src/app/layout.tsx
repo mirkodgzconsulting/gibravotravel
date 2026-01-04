@@ -17,9 +17,38 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "GiBravo Travel",
-  description: "Sistema di gestione integrale per servizi di viaggi e turismo",
-  keywords: "viaggi, turismo, gestione, dashboard, GiBravo Travel",
+  metadataBase: new URL("https://www.gibravo.it"),
+  title: {
+    default: "GiBravo Travel | Viaggi Organizzati in Bus e Aereo",
+    template: "%s | GiBravo Travel"
+  },
+  description: "Scopri le migliori destinazioni con GiBravo Travel. Viaggi organizzati in pullman e aereo, tour guidati e vacanze indimenticabili in Italia e Europa.",
+  keywords: ["viaggi organizzati", "tour in bus", "viaggi aereo", "agenzia viaggi milano", "gibravo travel", "vacanze gruppo"],
+  authors: [{ name: "GiBravo Travel" }],
+  creator: "GiBravo Travel",
+  publisher: "GiBravo Travel",
+  openGraph: {
+    title: "GiBravo Travel | Viaggi Organizzati in Bus e Aereo",
+    description: "Viaggi organizzati in pullman e aereo, tour guidati e vacanze indimenticabili.",
+    url: "https://www.gibravo.it",
+    siteName: "GiBravo Travel",
+    locale: "it_IT",
+    type: "website",
+    images: [
+      {
+        url: "/images/logo/logo-gibravo.png", // Fallback image (needs verification if exists, otherwise defaults to something else)
+        width: 1200,
+        height: 630,
+        alt: "GiBravo Travel",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "GiBravo Travel",
+    description: "Scopri le migliori destinazioni con GiBravo Travel.",
+    creator: "@gibravotravel", // Placeholder if they have one, safe to leave or generic
+  },
   icons: {
     icon: "/images/logo/cropped-faviconWeb.png",
     apple: "/images/logo/cropped-faviconWeb.png",

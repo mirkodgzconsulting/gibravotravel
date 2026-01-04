@@ -62,7 +62,7 @@ export async function sendOrderConfirmationEmail({
                     </div>
                 </div>
                 <div style="text-align: center; padding: 20px; font-size: 12px; color: #999;">
-                    &copy; ${new Date().getFullYear()} GiBravo Travel - Via Padova 22, Milano.
+                    &copy; ${new Date().getFullYear()} GiBravo Travel - Via Bartolomeo Eustachi, 30, 20129 Milano
                 </div>
             </div>
             `

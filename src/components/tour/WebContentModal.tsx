@@ -9,10 +9,12 @@ import {
     CalendarIcon
 } from "lucide-react";
 import Image from "next/image";
+import SimpleRichTextEditor from "@/components/form/SimpleRichTextEditor";
 
 interface WebContentModalProps {
     isOpen: boolean;
     onClose: () => void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tour: any; // TourBus | TourAereo
     type: 'BUS' | 'AEREO';
     onSuccess: () => void;
@@ -84,6 +86,7 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
                     const parsed = JSON.parse(tour.itinerario);
                     if (Array.isArray(parsed)) parsedItinerary = parsed;
                 } catch (e) {
+                    console.error('Legacy JSON parse:', e);
                     // If regular string, maybe put it as description of day 1?
                     // Or just leave empty to prompt migration
                 }
@@ -133,6 +136,7 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
     }, [newGalleryPreviews, coverImageFile, coverImagePreview]);
 
     // Handlers
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleInputChange = (field: string, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
@@ -197,17 +201,7 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
         multiple: false
     });
 
-    const onDropCover = useCallback((acceptedFiles: File[]) => {
-        const file = acceptedFiles[0];
-        if (file) {
-            setCoverImageFile(file);
-            setCoverImagePreview(URL.createObjectURL(file));
-        }
-    }, []);
 
-    const { getRootProps: getCoverRoot, getInputProps: getCoverInput } = useDropzone({
-        multiple: false
-    });
 
     const onDropWebCover = useCallback((acceptedFiles: File[]) => {
         const file = acceptedFiles[0];
@@ -306,13 +300,14 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
             }
 
         } catch (e) {
+            console.error(e);
             setError("Errore di connessione");
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const tabs: { id: TabType; label: string; icon: any }[] = [
+    const tabs: { id: TabType; label: string; icon: React.ElementType }[] = [
         { id: 'general', label: 'Generale', icon: GlobeIcon },
         { id: 'details', label: 'Dettagli', icon: FileTextIcon },
         { id: 'content', label: 'Contenuto', icon: MapIcon },
@@ -537,7 +532,12 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
                             <div className="space-y-8">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Info Generali (Introduzione)</label>
-                                    <textarea rows={4} value={formData.infoGeneral} onChange={(e) => handleInputChange('infoGeneral', e.target.value)} className="w-full p-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:text-white" placeholder="Riepilogo del viaggio..." />
+                                    <SimpleRichTextEditor
+                                        value={formData.infoGeneral}
+                                        onChange={(val) => handleInputChange('infoGeneral', val)}
+                                        placeholder="Riepilogo del viaggio..."
+                                        rows={4}
+                                    />
                                 </div>
 
                                 <div className="border-t pt-4">
@@ -564,17 +564,16 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
                                                 </div>
                                                 <div>
                                                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Descrizione</label>
-                                                    <textarea
-                                                        rows={3}
+                                                    <SimpleRichTextEditor
                                                         value={day.description}
-                                                        onChange={(e) => updateItineraryItem(i, 'description', e.target.value)}
-                                                        className="w-full p-2 border border-gray-300 rounded-md"
+                                                        onChange={(val) => updateItineraryItem(i, 'description', val)}
                                                         placeholder="Dettagli della giornata..."
+                                                        rows={3}
                                                     />
                                                 </div>
                                             </div>
                                         ))}
-                                        {formData.itinerario.length === 0 && <p className="text-center text-gray-500 py-6 italic">Nessun giorno registrato nell'itinerario.</p>}
+                                        {formData.itinerario.length === 0 && <p className="text-center text-gray-500 py-6 italic">Nessun giorno registrato nell&apos;itinerario.</p>}
                                     </div>
                                 </div>
 
@@ -597,7 +596,7 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
                                         className="w-full p-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:text-white"
                                         placeholder="https://google.com/maps/embed?..."
                                     />
-                                    <p className="text-xs text-gray-500 mt-1">Incolla pure l'intero codice &lt;iframe&gt; di Google Maps, estajóo il link automaticamente.</p>
+                                    <p className="text-xs text-gray-500 mt-1">Incolla pure l&apos;intero codice &lt;iframe&gt; di Google Maps, estraggo il link automaticamente.</p>
                                 </div>
                             </div>
                         )}

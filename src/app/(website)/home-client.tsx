@@ -108,7 +108,7 @@ const testimonialsData = [
 ]
 
 export function HomeClient({ flightTours, busTours }: HomeClientProps) {
-    // Combine both Flight and Bus tours for the Featured section
+    // Combine both Flight and Bus tours for the Featured Carousel
     const allTours = [...flightTours, ...busTours]
 
     return (
@@ -183,8 +183,8 @@ export function HomeClient({ flightTours, busTours }: HomeClientProps) {
                                         ))
                                     ) : (
                                         // Use Mock Data if no real tours are available, just for visual check
-                                        <div className="w-full text-center text-gray-400 py-10">
-                                            Nessuna offerta disponibile al momento.
+                                        <div className="w-full text-center text-gray-500 py-10 italic">
+                                            Al momento non ci sono offerte disponibili.
                                         </div>
                                     )}
                                 </CarouselContent>

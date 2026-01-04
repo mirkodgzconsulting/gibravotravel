@@ -35,16 +35,16 @@ const SimpleRichTextEditor: React.FC<SimpleRichTextEditorProps> = ({
   // Verificar el estado de formato cuando cambia la selección
   const checkFormat = () => {
     if (!editorRef.current) return;
-    
+
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) return;
 
     const range = selection.getRangeAt(0);
     const commonAncestor = range.commonAncestorContainer;
-    
+
     // Buscar el elemento padre más cercano
-    let element = commonAncestor.nodeType === Node.TEXT_NODE 
-      ? commonAncestor.parentElement 
+    let element = commonAncestor.nodeType === Node.TEXT_NODE
+      ? commonAncestor.parentElement
       : commonAncestor as Element;
 
     while (element && element !== editorRef.current) {
@@ -58,8 +58,8 @@ const SimpleRichTextEditor: React.FC<SimpleRichTextEditorProps> = ({
       setIsBold(false);
     }
 
-    element = commonAncestor.nodeType === Node.TEXT_NODE 
-      ? commonAncestor.parentElement 
+    element = commonAncestor.nodeType === Node.TEXT_NODE
+      ? commonAncestor.parentElement
       : commonAncestor as Element;
 
     while (element && element !== editorRef.current) {
@@ -86,7 +86,7 @@ const SimpleRichTextEditor: React.FC<SimpleRichTextEditorProps> = ({
   const handleInput = () => {
     if (editorRef.current) {
       let html = editorRef.current.innerHTML;
-      
+
       // Normalizar: convertir div y p vacíos a br, y preservar br existentes
       // Reemplazar <div><br></div> o <p><br></p> por <br>
       html = html.replace(/<(div|p)[^>]*>\s*<br\s*\/?>\s*<\/\1>/gi, '<br>');
@@ -94,7 +94,7 @@ const SimpleRichTextEditor: React.FC<SimpleRichTextEditorProps> = ({
       html = html.replace(/<(div|p)[^>]*>\s*<\/\1>/gi, '<br>');
       // Convertir </div> y </p> seguidos de <div> o <p> a <br>
       html = html.replace(/<\/(div|p)>\s*<(div|p)[^>]*>/gi, '<br>');
-      
+
       const text = editorRef.current.innerText || editorRef.current.textContent || '';
       setIsEmpty(text.trim() === '');
       onChange(html);
@@ -132,6 +132,14 @@ const SimpleRichTextEditor: React.FC<SimpleRichTextEditorProps> = ({
     setSelectedColor(color);
   };
 
+  const toggleBulletList = () => {
+    execCommand('insertUnorderedList');
+  };
+
+  const toggleOrderedList = () => {
+    execCommand('insertOrderedList');
+  };
+
   const colors = [
     { name: 'Negro', value: '#000000' },
     { name: 'Rojo', value: '#FF0000' },
@@ -153,6 +161,7 @@ const SimpleRichTextEditor: React.FC<SimpleRichTextEditorProps> = ({
       try {
         range.surroundContents(span);
       } catch (e) {
+        console.error('Font size apply error:', e);
         // Si falla, crear un nuevo span y envolver el contenido
         const contents = range.extractContents();
         span.appendChild(contents);
@@ -171,11 +180,10 @@ const SimpleRichTextEditor: React.FC<SimpleRichTextEditorProps> = ({
         <button
           type="button"
           onClick={toggleBold}
-          className={`px-3 py-1.5 rounded text-sm font-semibold transition-colors ${
-            isBold
-              ? 'bg-brand-500 text-white'
-              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-          }`}
+          className={`px-3 py-1.5 rounded text-sm font-semibold transition-colors ${isBold
+            ? 'bg-brand-500 text-white'
+            : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+            }`}
           title="Negrita"
         >
           <strong>B</strong>
@@ -185,14 +193,33 @@ const SimpleRichTextEditor: React.FC<SimpleRichTextEditorProps> = ({
         <button
           type="button"
           onClick={toggleItalic}
-          className={`px-3 py-1.5 rounded text-sm italic transition-colors ${
-            isItalic
-              ? 'bg-brand-500 text-white'
-              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-          }`}
+          className={`px-3 py-1.5 rounded text-sm italic transition-colors ${isItalic
+            ? 'bg-brand-500 text-white'
+            : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+            }`}
           title="Cursiva"
         >
           <em>I</em>
+        </button>
+
+        {/* Botón Lista Viñetas */}
+        <button
+          type="button"
+          onClick={toggleBulletList}
+          className="px-3 py-1.5 rounded text-sm transition-colors bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+          title="Lista con viñetas"
+        >
+          •
+        </button>
+
+        {/* Botón Lista Numerada */}
+        <button
+          type="button"
+          onClick={toggleOrderedList}
+          className="px-3 py-1.5 rounded text-sm transition-colors bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+          title="Lista numerada"
+        >
+          1.
         </button>
 
         {/* Selector de color */}
@@ -204,11 +231,10 @@ const SimpleRichTextEditor: React.FC<SimpleRichTextEditorProps> = ({
                 key={color.value}
                 type="button"
                 onClick={() => applyColor(color.value)}
-                className={`w-6 h-6 rounded border-2 transition-all ${
-                  selectedColor === color.value
-                    ? 'border-brand-500 scale-110'
-                    : 'border-gray-300 dark:border-gray-600 hover:scale-105'
-                }`}
+                className={`w-6 h-6 rounded border-2 transition-all ${selectedColor === color.value
+                  ? 'border-brand-500 scale-110'
+                  : 'border-gray-300 dark:border-gray-600 hover:scale-105'
+                  }`}
                 style={{ backgroundColor: color.value }}
                 title={color.name}
               />
@@ -247,7 +273,7 @@ const SimpleRichTextEditor: React.FC<SimpleRichTextEditorProps> = ({
           onInput={handleInput}
           onKeyDown={handleKeyDown}
           className="w-full px-3 py-2 text-gray-900 dark:text-white focus:outline-none"
-          style={{ 
+          style={{
             minHeight: `${rows * 1.5}rem`,
             whiteSpace: 'pre-wrap',
             wordWrap: 'break-word'
@@ -255,7 +281,7 @@ const SimpleRichTextEditor: React.FC<SimpleRichTextEditorProps> = ({
           suppressContentEditableWarning
         />
         {isEmpty && (
-          <div 
+          <div
             className="absolute top-2 left-3 text-gray-400 pointer-events-none"
             style={{ fontSize: '0.875rem' }}
           >
@@ -263,9 +289,10 @@ const SimpleRichTextEditor: React.FC<SimpleRichTextEditorProps> = ({
           </div>
         )}
       </div>
-      
+
       {/* Estilos globales para el editor */}
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         [contenteditable]:focus {
           outline: none;
         }

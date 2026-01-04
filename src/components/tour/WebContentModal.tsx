@@ -317,98 +317,8 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
         { id: 'faq', label: 'FAQ', icon: HelpCircleIcon },
     ];
 
-    // Emoji Picker Logic
-    const TRAVEL_EMOJIS = [
-        // Transport
-        "✈️", "🚌", "🚐", "🚗", "🚆", "🚢", "⛴️", "🚤", "🚲", "🛵", "🚠", "🚀", "🚁",
-        // Accommodation
-        "🏨", "🛏️", "⛺", "🛖", "🏠", "🏡", "🏯", "🏰",
-        // Food & Drink
-        "🍽️", "🥂", "🍺", "🍷", "🍸", "🍹", "☕", "🍵", "🥨", "🍔", "🍕", "🌮", "🍱", "🍦", "🍇", "🍉",
-        // Activities & Objects
-        "🎫", "🎟️", "🎒", "🗺️", "📍", "📸", "🛡️", "🚑", "🔦", "🕶️", "🧢", "👟", "👙", "🎵", "🎨",
-        // Nature
-        "🏔️", "🏖️", "🏝️", "🏜️", "🌋", "🌲", "🌳", "🌴", "🌵", "🌊", "☀️", "🌤️", "☁️", "❄️", "🔥", "🌅", "🌌",
-        // Animals
-        "🐒", "🐘", "🐅", "🐆", "🦓", "🦒", "🐫", "🐬", "🐋", "🦈", "🦅", "🦜", "🐢", "🐊", "🦋",
-        // People
-        "👨‍✈️", "👩‍✈️", "🧍", "🧍‍♀️", "🚶", "🚶‍♀️", "🏊", "🏄", "🚣", "🚵", "🧘",
-        // Symbols
-        "✅", "❌", "☑️", "⭐", "✨", "❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "⚠️", "ℹ️", "💲", "💶", "💵", "🕒", "📅"
-    ];
-
-    // State now holds position coordinates
-    const [emojiPickerState, setEmojiPickerState] = useState<{
-        type: 'incluye' | 'noIncluye' | 'tag';
-        position: { top: number; left: number };
-    } | null>(null);
-
-    const openEmojiPicker = (e: React.MouseEvent<HTMLButtonElement>, type: 'incluye' | 'noIncluye' | 'tag') => {
-        const rect = e.currentTarget.getBoundingClientRect();
-        // Calculate available space to decide if opening up or down (basic check)
-        const spaceBelow = window.innerHeight - rect.bottom;
-        const pickerHeight = 300; // Approx max-height
-
-        let top = rect.bottom + 5;
-        if (spaceBelow < pickerHeight) {
-            top = rect.top - pickerHeight - 5; // Open upwards if tight
-        }
-
-        setEmojiPickerState({
-            type,
-            position: { top, left: rect.left }
-        });
-    };
-
-    const EmojiPicker = ({ position, onSelect, onClose }: { position: { top: number, left: number }, onSelect: (emoji: string) => void, onClose: () => void }) => (
-        <>
-            {/* Invisible backdrop to close on click outside */}
-            <div className="fixed inset-0 z-[100]" onClick={onClose} />
-
-            {/* Floating Picker */}
-            <div
-                className="fixed z-[101] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl p-3 w-72 max-h-[300px] overflow-y-auto"
-                style={{ top: position.top, left: position.left }}
-            >
-                <div className="flex justify-between items-center mb-2 pb-2 border-b border-gray-100 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
-                    <span className="text-xs font-bold text-gray-500">Scegli Icona ({TRAVEL_EMOJIS.length})</span>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><XIcon className="w-3 h-3" /></button>
-                </div>
-                <div className="grid grid-cols-8 gap-1">
-                    {TRAVEL_EMOJIS.map(emoji => (
-                        <button
-                            key={emoji}
-                            onClick={() => { onSelect(emoji); onClose(); }}
-                            className="text-xl hover:bg-gray-100 dark:hover:bg-gray-700 rounded p-1 transition-colors"
-                        >
-                            {emoji}
-                        </button>
-                    ))}
-                </div>
-            </div>
-        </>
-    );
-
-    // Generic Insert Emoji Helper
-    const insertEmoji = (emoji: string, currentVal: string, setVal: (v: string) => void) => {
-        setVal(`${emoji} ${currentVal}`);
-    };
-
     return (
         <Modal isOpen={isOpen} onClose={onClose} className="max-w-5xl h-[90vh]">
-            {/* Global Picker Render */}
-            {emojiPickerState && (
-                <EmojiPicker
-                    position={emojiPickerState.position}
-                    onSelect={(emoji) => {
-                        if (emojiPickerState.type === 'incluye') insertEmoji(emoji, newIncluye, setNewIncluye);
-                        if (emojiPickerState.type === 'noIncluye') insertEmoji(emoji, newNoIncluye, setNewNoIncluye);
-                        if (emojiPickerState.type === 'tag') insertEmoji(emoji, newTag, setNewTag);
-                    }}
-                    onClose={() => setEmojiPickerState(null)}
-                />
-            )}
-
             <div className="flex flex-col h-full">
                 {/* Header */}
                 <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-white dark:bg-gray-800">
@@ -641,7 +551,7 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
                                 <div>
                                     <label className="block text-sm font-medium mb-1">Include</label>
                                     <div className="flex gap-2 mb-2">
-                                        <button onClick={(e) => openEmojiPicker(e, 'incluye')} className="p-2 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200">😊</button>
+
                                         <input type="text" value={newIncluye} onChange={(e) => setNewIncluye(e.target.value)} className="flex-1 p-2 border border-gray-300 rounded-md" placeholder="Es: Volo A/R" />
                                         <button onClick={() => addItem('incluye', newIncluye, setNewIncluye)} className="p-2 bg-brand-500 text-white rounded-md"><PlusIcon className="w-5 h-5" /></button>
                                     </div>
@@ -650,7 +560,7 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
                                 <div>
                                     <label className="block text-sm font-medium mb-1">Non Include</label>
                                     <div className="flex gap-2 mb-2">
-                                        <button onClick={(e) => openEmojiPicker(e, 'noIncluye')} className="p-2 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200">😊</button>
+
                                         <input type="text" value={newNoIncluye} onChange={(e) => setNewNoIncluye(e.target.value)} className="flex-1 p-2 border border-gray-300 rounded-md" placeholder="Es: Mance" />
                                         <button onClick={() => addItem('noIncluye', newNoIncluye, setNewNoIncluye)} className="p-2 bg-brand-500 text-white rounded-md"><PlusIcon className="w-5 h-5" /></button>
                                     </div>
@@ -659,7 +569,7 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
                                 <div>
                                     <label className="block text-sm font-medium mb-1">Perché viaggiare con noi</label>
                                     <div className="flex gap-2 mb-2">
-                                        <button onClick={(e) => openEmojiPicker(e, 'tag')} className="p-2 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200">😊</button>
+
                                         <input type="text" value={newTag} onChange={(e) => setNewTag(e.target.value)} className="flex-1 p-2 border border-gray-300 rounded-md" placeholder="Es: Piccoli gruppi, Guida esperta..." />
                                         <button onClick={() => addItem('etiquetas', newTag, setNewTag)} className="p-2 bg-brand-500 text-white rounded-md"><PlusIcon className="w-5 h-5" /></button>
                                     </div>
@@ -710,6 +620,6 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
                     <Button onClick={() => handleSubmit(true)} className="bg-green-600 text-white" disabled={isSubmitting}><SendIcon className="w-4 h-4 mr-2" /> PUBBLICA</Button>
                 </div>
             </div>
-        </Modal>
+        </Modal >
     );
 }

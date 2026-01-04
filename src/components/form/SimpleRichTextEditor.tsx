@@ -20,7 +20,6 @@ const SimpleRichTextEditor: React.FC<SimpleRichTextEditorProps> = ({
   const editorRef = useRef<HTMLDivElement>(null);
   const [isBold, setIsBold] = useState(false);
   const [isItalic, setIsItalic] = useState(false);
-  const [selectedColor, setSelectedColor] = useState('#000000');
   const [isEmpty, setIsEmpty] = useState(true);
 
   // Actualizar el contenido del editor cuando cambia el valor externo
@@ -127,11 +126,6 @@ const SimpleRichTextEditor: React.FC<SimpleRichTextEditorProps> = ({
     execCommand('italic');
   };
 
-  const applyColor = (color: string) => {
-    execCommand('foreColor', color);
-    setSelectedColor(color);
-  };
-
   const toggleBulletList = () => {
     execCommand('insertUnorderedList');
   };
@@ -139,12 +133,6 @@ const SimpleRichTextEditor: React.FC<SimpleRichTextEditorProps> = ({
   const toggleOrderedList = () => {
     execCommand('insertOrderedList');
   };
-
-  const colors = [
-    { name: 'Negro', value: '#000000' },
-    { name: 'Rojo', value: '#FF0000' },
-    { name: 'Azul', value: '#0000FF' },
-  ];
 
   const fontSizes = [
     { label: 'Pequeño', value: '12px' },
@@ -179,6 +167,7 @@ const SimpleRichTextEditor: React.FC<SimpleRichTextEditorProps> = ({
         {/* Botón Negrita */}
         <button
           type="button"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={toggleBold}
           className={`px-3 py-1.5 rounded text-sm font-semibold transition-colors ${isBold
             ? 'bg-brand-500 text-white'
@@ -192,6 +181,7 @@ const SimpleRichTextEditor: React.FC<SimpleRichTextEditorProps> = ({
         {/* Botón Cursiva */}
         <button
           type="button"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={toggleItalic}
           className={`px-3 py-1.5 rounded text-sm italic transition-colors ${isItalic
             ? 'bg-brand-500 text-white'
@@ -205,6 +195,7 @@ const SimpleRichTextEditor: React.FC<SimpleRichTextEditorProps> = ({
         {/* Botón Lista Viñetas */}
         <button
           type="button"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={toggleBulletList}
           className="px-3 py-1.5 rounded text-sm transition-colors bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
           title="Lista con viñetas"
@@ -215,6 +206,7 @@ const SimpleRichTextEditor: React.FC<SimpleRichTextEditorProps> = ({
         {/* Botón Lista Numerada */}
         <button
           type="button"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={toggleOrderedList}
           className="px-3 py-1.5 rounded text-sm transition-colors bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
           title="Lista numerada"
@@ -222,30 +214,11 @@ const SimpleRichTextEditor: React.FC<SimpleRichTextEditorProps> = ({
           1.
         </button>
 
-        {/* Selector de color */}
-        <div className="flex items-center gap-1 ml-2">
-          <label className="text-xs text-gray-600 dark:text-gray-400">Color:</label>
-          <div className="flex gap-1">
-            {colors.map((color) => (
-              <button
-                key={color.value}
-                type="button"
-                onClick={() => applyColor(color.value)}
-                className={`w-6 h-6 rounded border-2 transition-all ${selectedColor === color.value
-                  ? 'border-brand-500 scale-110'
-                  : 'border-gray-300 dark:border-gray-600 hover:scale-105'
-                  }`}
-                style={{ backgroundColor: color.value }}
-                title={color.name}
-              />
-            ))}
-          </div>
-        </div>
-
         {/* Selector de tamaño */}
         <div className="flex items-center gap-1 ml-2">
           <label className="text-xs text-gray-600 dark:text-gray-400">Tamaño:</label>
           <select
+            onMouseDown={(e) => e.stopPropagation()}
             onChange={(e) => {
               if (e.target.value) {
                 applyFontSize(e.target.value);
@@ -296,6 +269,8 @@ const SimpleRichTextEditor: React.FC<SimpleRichTextEditorProps> = ({
         [contenteditable]:focus {
           outline: none;
         }
+        ul { list-style-type: disc; margin-left: 20px; }
+        ol { list-style-type: decimal; margin-left: 20px; }
       `}} />
     </div>
   );

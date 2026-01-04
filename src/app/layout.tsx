@@ -64,10 +64,10 @@ export default function RootLayout({
     <html lang="it" suppressHydrationWarning>
       <body className={`${outfit.className} ${montserrat.variable} bg-white`}>
         <ClerkProvider
-          signInUrl="/signin"
-          signUpUrl="/signin"
+          signInUrl="/login"
+          signUpUrl="/register"
           afterSignInUrl="/"
-          afterSignOutUrl="/signin"
+          afterSignOutUrl="/login"
         >
           <ThemeProvider>
             {children}

@@ -183,8 +183,8 @@ export function Navbar() {
                                         className={cn(
                                             "rounded-full w-10 h-10 p-0 flex items-center justify-center transition-all",
                                             effectiveScrolled
-                                                ? "bg-gray-100 hover:bg-gray-200 text-slate-700"
-                                                : "bg-white/10 hover:bg-white/20 text-white"
+                                                ? "bg-gray-100/80 active:bg-gray-200 text-slate-700"
+                                                : "bg-white/10 active:bg-white/20 text-white"
                                         )}
                                     >
                                         <User className="h-5 w-5" />

@@ -20,6 +20,7 @@ export default clerkMiddleware(async (auth, req) => {
     pathname.startsWith('/prenotazione') ||
     pathname.startsWith('/area-riservata') ||
     pathname.startsWith('/login') ||
+    pathname.startsWith('/register') ||
     pathname.startsWith('/sign-in') ||
     pathname.startsWith('/domande-frequenti') ||
     pathname.startsWith('/informativa-privacy') ||

@@ -25,6 +25,8 @@ export default clerkMiddleware(async (auth, req) => {
     pathname.startsWith('/informativa-privacy') ||
     pathname.startsWith('/termini-e-condizioni') ||
     pathname.startsWith('/informativa-cookie') ||
+    pathname.startsWith('/sitemap.xml') ||
+    pathname.startsWith('/robots.txt') ||
     pathname.startsWith('/api')
 
   // 2. SYSTEMS DOMAIN LOGIC

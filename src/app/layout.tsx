@@ -19,7 +19,7 @@ const montserrat = Montserrat({
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.gibravo.it"),
   title: {
-    default: "GiBravo Travel | Viaggi Organizzati in Bus e Aereo",
+    default: "GiBravo Travel | Agenzia Viaggi a Milano - Viaggi Organizzati in Bus e Aereo",
     template: "%s | GiBravo Travel"
   },
   description: "Scopri le migliori destinazioni con GiBravo Travel. Viaggi organizzati in pullman e aereo, tour guidati e vacanze indimenticabili in Italia e Europa.",
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   creator: "GiBravo Travel",
   publisher: "GiBravo Travel",
   openGraph: {
-    title: "GiBravo Travel | Viaggi Organizzati in Bus e Aereo",
+    title: "GiBravo Travel | Agenzia Viaggi a Milano - Viaggi Organizzati in Bus e Aereo",
     description: "Viaggi organizzati in pullman e aereo, tour guidati e vacanze indimenticabili.",
     url: "https://www.gibravo.it",
     siteName: "GiBravo Travel",
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/images/logo/logo-gibravo.png", // Fallback image (needs verification if exists, otherwise defaults to something else)
+        url: "https://res.cloudinary.com/dskliu1ig/image/upload/v1767486148/Cover-Share-Logo-GiBravoTravel_dwbar6.webp",
         width: 1200,
         height: 630,
         alt: "GiBravo Travel",

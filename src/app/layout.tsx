@@ -50,8 +50,8 @@ export const metadata: Metadata = {
     creator: "@gibravotravel", // Placeholder if they have one, safe to leave or generic
   },
   icons: {
-    icon: "/images/logo/cropped-faviconWeb.png",
-    apple: "/images/logo/cropped-faviconWeb.png",
+    icon: "https://res.cloudinary.com/dskliu1ig/image/upload/v1767486493/cropped-faviconWeb_alcs4q.png",
+    apple: "https://res.cloudinary.com/dskliu1ig/image/upload/v1767486493/cropped-faviconWeb_alcs4q.png",
   },
 };
 

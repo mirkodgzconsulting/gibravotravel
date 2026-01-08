@@ -12,10 +12,10 @@ import Button from "@/components/ui/button/Button";
 import { CopyNotification } from "@/components/ui/notification/CopyNotification";
 import { cachedFetch } from "@/utils/cachedFetch";
 import * as XLSX from 'xlsx';
-import { 
-  PlaneIcon, 
-  PlusIcon, 
-  EditIcon, 
+import {
+  PlaneIcon,
+  PlusIcon,
+  EditIcon,
   TrashIcon,
   DollarSignIcon,
   UsersIcon,
@@ -222,12 +222,12 @@ const sanitizeEditorHtml = (note?: string | null) => {
   // Remover todos los tags excepto los permitidos
   sanitized = sanitized.replace(/<(\/?)([^>]+)>/gi, (match, closing, tagContent) => {
     const tagName = tagContent.split(/\s/)[0].toLowerCase();
-    
+
     // Si es un tag de cierre
     if (closing) {
       return allowedTags.includes(tagName) ? `</${tagName}>` : '';
     }
-    
+
     // Si es un tag de apertura
     if (allowedTags.includes(tagName)) {
       // Si es span, permitir solo atributos style con estilos permitidos
@@ -248,11 +248,11 @@ const sanitizeEditorHtml = (note?: string | null) => {
         }
         return '<span>';
       }
-      
+
       // Para otros tags permitidos, remover todos los atributos
       return `<${tagName}>`;
     }
-    
+
     // Si el tag no está permitido, removerlo
     return '';
   });
@@ -322,7 +322,7 @@ export default function VentaTourAereoPage() {
     setClientSearchTerm('');
     setShowClientDropdown(false);
   };
-  
+
   const [tour, setTour] = useState<TourAereo | null>(null);
   const [ventas, setVentas] = useState<VentaTourAereo[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
@@ -330,21 +330,21 @@ export default function VentaTourAereoPage() {
   const [metodosPagamento, setMetodosPagamento] = useState<MetodoPagamento[]>([]);
   const [pagamentos, setPagamentos] = useState<Pagamento[]>([]);
   const [acquisti, setAcquisti] = useState<Acquisto[]>([]);
-  
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCopyNotification, setShowCopyNotification] = useState(false);
   const [isUploadingDocumentoViaggio, setIsUploadingDocumentoViaggio] = useState(false);
   const [isDocumentoViaggioModalOpen, setIsDocumentoViaggioModalOpen] = useState(false);
   const [isGestionesStanzaOpen, setIsGestionesStanzaOpen] = useState(false);
-  const [editingNotas, setEditingNotas] = useState<{tour: boolean, coordinador: boolean}>({
+  const [editingNotas, setEditingNotas] = useState<{ tour: boolean, coordinador: boolean }>({
     tour: false,
     coordinador: false
   });
-  const [tempNotas, setTempNotas] = useState<{tour: string, coordinador: string}>(
+  const [tempNotas, setTempNotas] = useState<{ tour: string, coordinador: string }>(
     {
-    tour: '',
-    coordinador: ''
+      tour: '',
+      coordinador: ''
     }
   );
   const [expandedNotas, setExpandedNotas] = useState<{ tour: boolean; coordinador: boolean }>({
@@ -423,7 +423,7 @@ export default function VentaTourAereoPage() {
   // Función para manejar el cambio de tipo de pasajero
   const handleTipoPasajeroChange = useCallback(
     (tipo: 'adulto' | 'nino') => {
-    setTipoPasajero(tipo);
+      setTipoPasajero(tipo);
       const price = tipo === 'adulto' ? adultoPrice : bambinoPrice;
       setFormData(prev => ({
         ...prev,
@@ -438,7 +438,7 @@ export default function VentaTourAereoPage() {
     setFormData(prev => {
       const currentIatas = prev.iata || [];
       const isSelected = currentIatas.includes(iata);
-      
+
       if (isSelected) {
         return {
           ...prev,
@@ -459,7 +459,7 @@ export default function VentaTourAereoPage() {
     setFormData(prev => {
       const currentMetodos = prev.metodoPagamento || [];
       const isSelected = currentMetodos.includes(metodo);
-      
+
       if (isSelected) {
         return {
           ...prev,
@@ -479,7 +479,7 @@ export default function VentaTourAereoPage() {
   const filteredIatas = useMemo(() => {
     if (!iatas || !Array.isArray(iatas)) return [];
     const searchLower = iataSearchTerm.toLowerCase();
-    return iatas.filter(iata => 
+    return iatas.filter(iata =>
       iata.iata.toLowerCase().includes(searchLower)
     );
   }, [iatas, iataSearchTerm]);
@@ -488,7 +488,7 @@ export default function VentaTourAereoPage() {
   const filteredMetodoPagamento = useMemo(() => {
     if (!metodosPagamento || !Array.isArray(metodosPagamento)) return [];
     const searchLower = metodoPagamentoSearchTerm.toLowerCase();
-    return metodosPagamento.filter(metodo => 
+    return metodosPagamento.filter(metodo =>
       metodo.metodoPagamento.toLowerCase().includes(searchLower)
     );
   }, [metodosPagamento, metodoPagamentoSearchTerm]);
@@ -538,7 +538,7 @@ export default function VentaTourAereoPage() {
   // Función optimizada para cargar todos los datos iniciales en paralelo
   const fetchInitialData = useCallback(async () => {
     if (!tourId || roleLoading) return;
-    
+
     try {
       setLoading(true);
       setError(null);
@@ -624,7 +624,7 @@ export default function VentaTourAereoPage() {
     if (loadingClientes) {
       return clientes;
     }
-    
+
     setLoadingClientes(true);
     try {
       // Datos de referencia: 5 minutos
@@ -632,7 +632,7 @@ export default function VentaTourAereoPage() {
       const clientsArray = clientsData.clients || clientsData;
       const parsedClients = Array.isArray(clientsArray) ? clientsArray : [];
       setClientes(parsedClients);
-        setClientesLoaded(true);
+      setClientesLoaded(true);
       return parsedClients;
     } catch (error) {
       setClientes([]);
@@ -656,7 +656,7 @@ export default function VentaTourAereoPage() {
         setShowClientDropdown(false);
       }
     };
-    
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showClientDropdown]);
@@ -677,7 +677,7 @@ export default function VentaTourAereoPage() {
       setCuotas([]);
       return;
     }
-    
+
     setCuotas(prev => {
       const updated = [...prev];
 
@@ -692,11 +692,11 @@ export default function VentaTourAereoPage() {
         const next = [...updated];
         for (let i = updated.length; i < numeroCuotas; i += 1) {
           next.push({
-        numeroCuota: i + 1,
-        fechaPago: '',
-        monto: 0,
-        nota: '',
-        estado: 'Pendiente',
+            numeroCuota: i + 1,
+            fechaPago: '',
+            monto: 0,
+            nota: '',
+            estado: 'Pendiente',
             attachedFile: null,
             attachedFileName: null,
           });
@@ -783,7 +783,7 @@ export default function VentaTourAereoPage() {
     setFormData(prev => ({ ...prev, venduto: "" }));
     setAdultoPrice(tour?.precioAdulto != null ? tour.precioAdulto.toString() : '');
     setBambinoPrice(tour?.precioNino != null ? tour.precioNino.toString() : '');
-    
+
     const cliente = clientes.find(c => c.id === clienteId);
     if (cliente) {
       setFormData(prev => ({
@@ -822,7 +822,7 @@ export default function VentaTourAereoPage() {
   }, [clientes, tour]);
 
   // Handlers memoizados para los campos del formulario (para evitar re-renders innecesarios)
-  const handleInputChange = useCallback((field: keyof VentaFormData) => 
+  const handleInputChange = useCallback((field: keyof VentaFormData) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
       setFormData(prev => ({ ...prev, [field]: e.target.value }));
     }, []);
@@ -854,11 +854,11 @@ export default function VentaTourAereoPage() {
       const email = (client.email || '').toLowerCase();
       const phone = (client.phoneNumber || '').toLowerCase();
       const fiscalCode = (client.fiscalCode || '').toLowerCase();
-      
+
       return fullName.includes(searchLower) ||
-             email.includes(searchLower) ||
-             phone.includes(searchLower) ||
-             fiscalCode.includes(searchLower);
+        email.includes(searchLower) ||
+        phone.includes(searchLower) ||
+        fiscalCode.includes(searchLower);
     });
     // Limitar a 50 resultados para mejorar el rendimiento
     return filtered.slice(0, 50);
@@ -868,21 +868,21 @@ export default function VentaTourAereoPage() {
   const filteredVentas = useMemo(() => {
     if (!ventas || ventas.length === 0) return [];
     if (!searchTerm.trim()) return ventas;
-    
+
     const searchLower = searchTerm.toLowerCase().trim();
     return ventas.filter(venta => {
       // Buscar en Pasajero
       const pasajero = (venta.pasajero || '').toLowerCase();
       if (pasajero.includes(searchLower)) return true;
-      
+
       // Buscar en Stato
       const stato = (venta.stato || '').toLowerCase();
       if (stato.includes(searchLower)) return true;
-      
+
       // Buscar en Metodo di Acquisto
       const metodoCompra = (venta.metodoCompra || '').toLowerCase();
       if (metodoCompra.includes(searchLower)) return true;
-      
+
       return false;
     });
   }, [ventas, searchTerm]);
@@ -899,7 +899,7 @@ export default function VentaTourAereoPage() {
 
     setIsSubmitting(true);
     try {
-       
+
       // Validar que al menos un IATA esté seleccionado
       if (!formData.iata || formData.iata.length === 0) {
         setMessage({ type: 'error', text: 'Devi selezionare almeno un IATA' });
@@ -916,7 +916,7 @@ export default function VentaTourAereoPage() {
 
       // Preparar FormData para enviar archivos
       const formDataToSend = new FormData();
-      
+
       // Agregar campos del formulario (manejar arrays como JSON)
       formDataToSend.append('clienteId', formData.clienteId);
       formDataToSend.append('pasajero', formData.pasajero);
@@ -940,7 +940,7 @@ export default function VentaTourAereoPage() {
       if (attachedFile) {
         formDataToSend.append('file', attachedFile);
       }
-      
+
       // Agregar cuotas como JSON
       const cuotasParaEnviar = cuotas.map(c => ({
         numeroCuota: c.numeroCuota,
@@ -1003,12 +1003,12 @@ export default function VentaTourAereoPage() {
         } catch {
           if (errorText) errorMessage = errorText;
         }
-          setMessage({ type: 'error', text: errorMessage });
-          setTimeout(() => setMessage(null), 5000);
+        setMessage({ type: 'error', text: errorMessage });
+        setTimeout(() => setMessage(null), 5000);
       }
     } catch (error) {
-        setMessage({ type: 'error', text: 'Errore di connessione durante la creazione della vendita' });
-        setTimeout(() => setMessage(null), 5000);
+      setMessage({ type: 'error', text: 'Errore di connessione durante la creazione della vendita' });
+      setTimeout(() => setMessage(null), 5000);
     } finally {
       setIsSubmitting(false);
     }
@@ -1057,36 +1057,36 @@ export default function VentaTourAereoPage() {
 
       return {
         Passeggero: venta.pasajero || '',
-      'Codice Fiscale': venta.codiceFiscale || '',
+        'Codice Fiscale': venta.codiceFiscale || '',
         Indirizzo: venta.indirizzo || '',
         Email: venta.email || '',
         Telefono: venta.numeroTelefono || '',
         'Paese di origine': venta.paisOrigen || '',
         IATA: (() => {
-        try {
-          const parsed = typeof venta.iata === 'string' 
-            ? JSON.parse(venta.iata) 
-            : venta.iata;
-          return Array.isArray(parsed) ? parsed.join(', ') : venta.iata || '';
-        } catch {
-          return venta.iata || '';
-        }
-      })(),
+          try {
+            const parsed = typeof venta.iata === 'string'
+              ? JSON.parse(venta.iata)
+              : venta.iata;
+            return Array.isArray(parsed) ? parsed.join(', ') : venta.iata || '';
+          } catch {
+            return venta.iata || '';
+          }
+        })(),
         PNR: venta.pnr || '',
         'Trasporto (€)': venta.transfer || 0,
         'Hotel (€)': tour?.hotel || 0,
         'TKT (€)': venta.tkt !== null && venta.tkt !== undefined ? Number(venta.tkt.toFixed(2)) : 0,
         'Polizza (€)': venta.polizza !== null && venta.polizza !== undefined ? Number(venta.polizza.toFixed(2)) : 0,
         'Netto (€)': ((venta.transfer || 0) + (tour?.guidaLocale || 0) + (tour?.coordinatore || 0) + (tour?.transporte || 0) + (tour?.hotel || 0) + (venta.tkt || 0) + (venta.polizza || 0)).toFixed(2),
-      'Venduto (€)': venta.venduto || 0,
+        'Venduto (€)': venta.venduto || 0,
         'PAGATO/ACCONTO (€)': venta.acconto || 0,
-      'Da pagare (€)': venta.daPagare || 0,
+        'Da pagare (€)': venta.daPagare || 0,
         METODOPAG: plainMetodoPagamento,
         'Nota esterna ricevuta': venta.notaEsternaRicevuta || '',
         'Nota interna': venta.notaInterna || '',
         FEEAGV: (venta.venduto - ((venta.transfer || 0) + (tour?.guidaLocale || 0) + (tour?.coordinatore || 0) + (tour?.transporte || 0) + (tour?.hotel || 0) + (venta.tkt || 0) + (venta.polizza || 0))).toFixed(2),
         Agente: venta.creator?.firstName
-        ? `${venta.creator.firstName}${venta.creator.lastName ? ` ${venta.creator.lastName}` : ''}`.trim()
+          ? `${venta.creator.firstName}${venta.creator.lastName ? ` ${venta.creator.lastName}` : ''}`.trim()
           : venta.creator?.email || 'N/A',
         File: venta.attachedFile ? 'Sì' : 'No',
         Cuotas: venta.cuotas ? venta.cuotas.length : 0,
@@ -1096,7 +1096,7 @@ export default function VentaTourAereoPage() {
     const ws = XLSX.utils.json_to_sheet(dataToExport);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Vendite Tour Aereo');
-    
+
     const fileName = `vendite_tour_aereo_${new Date().toISOString().split('T')[0]}.xlsx`;
     XLSX.writeFile(wb, fileName);
   }, [filteredVentas, tour]);
@@ -1140,20 +1140,20 @@ export default function VentaTourAereoPage() {
       notaEsternaRicevuta: venta.notaEsternaRicevuta || "",
       notaInterna: venta.notaInterna || ""
     });
-    
+
     const vendutoValue = venta.venduto != null ? venta.venduto.toString() : '';
     setAdultoPrice(vendutoValue || (tour?.precioAdulto != null ? tour.precioAdulto.toString() : ''));
     setBambinoPrice(vendutoValue || (tour?.precioNino != null ? tour.precioNino.toString() : ''));
     setTipoPasajero('adulto');
-    
+
     // Manejar cuotas
     const ventaCuotas = venta.cuotas || [];
     if (ventaCuotas.length > 0) {
       setIsLoadingCuotas(true);
-      
+
       setTimeout(() => {
         setNumeroCuotas(ventaCuotas.length);
-        
+
         const cuotasFormato = ventaCuotas.map(cuota => ({
           id: cuota.id, // Mantener el ID de la cuota
           numeroCuota: cuota.numeroCuota,
@@ -1164,16 +1164,16 @@ export default function VentaTourAereoPage() {
           attachedFile: cuota.attachedFile || null, // Mantener el archivo existente
           attachedFileName: cuota.attachedFileName || null // Mantener el nombre del archivo
         }));
-        
+
         setCuotas(cuotasFormato);
-        
+
         setTimeout(() => setIsLoadingCuotas(false), 50);
       }, 0);
     } else {
       setNumeroCuotas(0);
       setCuotas([]);
     }
-    
+
     setIsEditMode(true);
     openModal();
   }, [loadClientesIfNeeded, openModal]);
@@ -1206,7 +1206,7 @@ export default function VentaTourAereoPage() {
 
       // Preparar FormData para enviar archivos
       const formDataToSend = new FormData();
-      
+
       // Agregar campos del formulario (manejar arrays como JSON)
       formDataToSend.append('clienteId', formData.clienteId);
       formDataToSend.append('pasajero', formData.pasajero);
@@ -1230,7 +1230,7 @@ export default function VentaTourAereoPage() {
       if (attachedFile) {
         formDataToSend.append('file', attachedFile);
       }
-      
+
       // Agregar cuotas como JSON (incluyendo archivos existentes)
       const cuotasParaEnviar = cuotas.map(c => ({
         id: c.id, // Incluir ID si existe (para actualizar cuotas existentes)
@@ -1356,7 +1356,7 @@ export default function VentaTourAereoPage() {
 
   const saveMetodoCompra = useCallback(async (ventaId: string) => {
     setEditingMetodoCompraId(null);
-    
+
     try {
       const response = await fetch(`/api/tour-aereo/ventas/${ventaId}`, {
         method: 'PATCH',
@@ -1367,7 +1367,7 @@ export default function VentaTourAereoPage() {
       });
 
       if (response.ok) {
-        setVentas(prev => prev.map(v => 
+        setVentas(prev => prev.map(v =>
           v.id === ventaId ? { ...v, metodoCompra: tempMetodoCompra } : v
         ));
         setMessage({
@@ -1556,7 +1556,7 @@ export default function VentaTourAereoPage() {
   }, []);
 
   const updateCuota = useCallback((index: number, field: string, value: string | number | File | null) => {
-    setCuotas(prev => prev.map((cuota, i) => 
+    setCuotas(prev => prev.map((cuota, i) =>
       i === index ? { ...cuota, [field]: value } : cuota
     ));
   }, []);
@@ -1795,22 +1795,22 @@ export default function VentaTourAereoPage() {
       const fileExtension = filename.toLowerCase().split('.').pop();
       const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension || '');
       const isCloudinary = url.includes('cloudinary.com') || url.includes('res.cloudinary.com');
-      
+
       // Función auxiliar para descargar usando el proxy
       const downloadViaProxy = async () => {
         const downloadUrl = `/api/download-file?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
         const proxyResponse = await fetch(downloadUrl);
-        
+
         if (!proxyResponse.ok) {
           throw new Error(`Proxy error: ${proxyResponse.status}`);
         }
-        
+
         const blob = await proxyResponse.blob();
-        
+
         if (blob.size === 0) {
           throw new Error('El archivo descargado está vacío');
         }
-        
+
         const downloadUrl2 = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = downloadUrl2;
@@ -1820,18 +1820,18 @@ export default function VentaTourAereoPage() {
         document.body.removeChild(link);
         window.URL.revokeObjectURL(downloadUrl2);
       };
-      
+
       // Si es un archivo no-imagen de Cloudinary, usar el proxy directamente
       // Esto maneja mejor los PDFs que pueden estar en /image/upload/ pero necesitan resource_type: 'raw'
       if (!isImage && isCloudinary) {
         await downloadViaProxy();
         return;
       }
-      
+
       // Para imágenes, intentar descarga directa primero
       try {
         const response = await fetch(url);
-        
+
         // Si Cloudinary devuelve 401 o error, usar el proxy
         if (!response.ok) {
           if (response.status === 401 || response.status >= 400) {
@@ -1840,7 +1840,7 @@ export default function VentaTourAereoPage() {
           }
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         // Verificar el content-type para asegurarnos de que no sea HTML
         const contentType = response.headers.get('content-type') || '';
         if (contentType.includes('text/html')) {
@@ -1848,21 +1848,21 @@ export default function VentaTourAereoPage() {
           await downloadViaProxy();
           return;
         }
-        
+
         // Para imágenes, verificar que el content-type sea correcto
         if (isImage && !contentType.startsWith('image/')) {
           // Content-type incorrecto, usar el proxy
           await downloadViaProxy();
           return;
         }
-        
+
         const blob = await response.blob();
-        
+
         // Verificar que el blob no esté vacío
         if (blob.size === 0) {
           throw new Error('El archivo descargado está vacío');
         }
-        
+
         // Descargar normalmente
         const downloadUrl = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -1918,7 +1918,7 @@ export default function VentaTourAereoPage() {
           // Error silencioso al buscar cliente por ID
         }
       }
-      
+
       if (cliente) {
         setSelectedClient(cliente);
         setIsClientModalOpen(true);
@@ -2005,10 +2005,10 @@ export default function VentaTourAereoPage() {
   // Fecha de viaje formateada (memoizada)
   const fechaViajeFormateada = useMemo(() => {
     if (!tour?.fechaViaje) return null;
-    return new Date(tour.fechaViaje).toLocaleDateString('es-ES', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    return new Date(tour.fechaViaje).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
     });
   }, [tour?.fechaViaje]);
 
@@ -2066,7 +2066,7 @@ export default function VentaTourAereoPage() {
       </div>
     );
   }
-  
+
   // Carga progresiva: Mostrar skeleton mientras cargan los datos
   if (loading) {
     return (
@@ -2079,7 +2079,7 @@ export default function VentaTourAereoPage() {
             <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>
           </div>
         </div>
-        
+
         {/* Info del tour skeleton */}
         <div className="bg-white dark:bg-gray-800 rounded-lg p-6 mb-6">
           <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-48 mb-4 animate-pulse"></div>
@@ -2090,7 +2090,7 @@ export default function VentaTourAereoPage() {
             <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3 animate-pulse"></div>
           </div>
         </div>
-        
+
         {/* Lista de ventas skeleton */}
         <div className="bg-white dark:bg-gray-800 rounded-lg p-6">
           <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-48 mb-4 animate-pulse"></div>
@@ -2137,11 +2137,11 @@ export default function VentaTourAereoPage() {
   return (
     <div>
       <PageBreadcrumb pageTitle={`Vendite - ${tour.titulo}`} />
-      
+
       {error && (
         <div className="mb-6 p-4 rounded-lg bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-200">
           <p>{error}</p>
-          <Button 
+          <Button
             onClick={() => setError(null)}
             size="sm"
             variant="outline"
@@ -2153,11 +2153,10 @@ export default function VentaTourAereoPage() {
       )}
 
       {message && (
-        <div className={`mb-6 p-4 rounded-lg ${
-          message.type === 'success' 
+        <div className={`mb-6 p-4 rounded-lg ${message.type === 'success'
             ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200'
             : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-200'
-        }`}>
+          }`}>
           <p>{message.text}</p>
         </div>
       )}
@@ -2225,7 +2224,7 @@ export default function VentaTourAereoPage() {
               </div>
             )}
 
-            {tour.guidaLocale && (
+            {tour.guidaLocale != null && (
               <div className="bg-teal-50 dark:bg-teal-900/20 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
                   <Icon icon="mdi:account-circle-outline" width="22" height="22" style={{ color: '#0d9488' }} />
@@ -2237,7 +2236,7 @@ export default function VentaTourAereoPage() {
               </div>
             )}
 
-            {tour.coordinatore && (
+            {tour.coordinatore != null && (
               <div className="bg-cyan-50 dark:bg-cyan-900/20 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
                   <Icon icon="mdi:cash-sync" width="22" height="22" style={{ color: '#0891b2' }} />
@@ -2249,7 +2248,7 @@ export default function VentaTourAereoPage() {
               </div>
             )}
 
-            {tour.hotel && (
+            {tour.hotel != null && (
               <div className="bg-pink-50 dark:bg-pink-900/20 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
                   <Icon icon="mdi:hotel" width="20" height="20" style={{ color: '#db2777' }} />
@@ -2261,7 +2260,7 @@ export default function VentaTourAereoPage() {
               </div>
             )}
 
-            {tour.transfer && (
+            {tour.transfer != null && (
               <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
                   <Icon icon="mdi:bus-side" width="24" height="24" style={{ color: '#ca8a04' }} />
@@ -2273,7 +2272,7 @@ export default function VentaTourAereoPage() {
               </div>
             )}
 
-            {tour.transporte && (
+            {tour.transporte != null && (
               <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
                   <Icon icon="mdi:bus-articulated-front" width="22" height="22" style={{ color: '#dc2626' }} />
@@ -2331,7 +2330,7 @@ export default function VentaTourAereoPage() {
                     <PlaneIcon className="w-5 h-5 text-slate-600" />
                     <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Note del tour</span>
                   </div>
-                  <div 
+                  <div
                     className="text-sm text-slate-600 dark:text-slate-400 p-2 rounded transition-colors min-h-[80px]"
                     onDoubleClick={() => startEditingNotas('tour')}
                     title={expandedNotas.tour ? undefined : getNotePreview(tour.notas)}
@@ -2385,12 +2384,12 @@ export default function VentaTourAereoPage() {
                         return (
                           <div className="leading-relaxed space-y-1">
                             {hasHtml ? (
-                              <div 
+                              <div
                                 key={`tour-notas-${tour.id}-${tour.notas.length}`}
                                 className={`whitespace-pre-wrap break-words ${!expandedNotas.tour ? 'max-h-[120px] overflow-hidden' : ''}`}
-                                dangerouslySetInnerHTML={{ 
+                                dangerouslySetInnerHTML={{
                                   __html: sanitizeEditorHtml(tour.notas)
-                                }} 
+                                }}
                                 suppressHydrationWarning
                               />
                             ) : (
@@ -2432,7 +2431,7 @@ export default function VentaTourAereoPage() {
                     <PlaneIcon className="w-5 h-5 text-amber-600" />
                     <span className="text-sm font-medium text-amber-700 dark:text-amber-300">Note del coordinatore</span>
                   </div>
-                  <div 
+                  <div
                     className="text-sm text-amber-700 dark:text-amber-300 p-2 rounded transition-colors min-h-[80px]"
                     onDoubleClick={() => startEditingNotas('coordinador')}
                     title={expandedNotas.coordinador ? undefined : getNotePreview(tour.notasCoordinador)}
@@ -2485,12 +2484,12 @@ export default function VentaTourAereoPage() {
                         return (
                           <div className="leading-relaxed space-y-1">
                             {hasHtml ? (
-                              <div 
+                              <div
                                 key={`coordinador-notas-${tour.id}-${tour.notasCoordinador.length}`}
                                 className={`whitespace-pre-wrap break-words ${!expandedNotas.coordinador ? 'max-h-[120px] overflow-hidden' : ''}`}
-                                dangerouslySetInnerHTML={{ 
+                                dangerouslySetInnerHTML={{
                                   __html: sanitizeEditorHtml(tour.notasCoordinador)
-                                }} 
+                                }}
                                 suppressHydrationWarning
                               />
                             ) : (
@@ -2530,15 +2529,15 @@ export default function VentaTourAereoPage() {
 
           <div className="flex flex-wrap items-center gap-4 mb-4 text-sm text-gray-600 dark:text-gray-400">
             <div>
-            Entrate totali: <span className="font-semibold text-green-600">€{ingresos.toFixed(2)}</span>
+              Entrate totali: <span className="font-semibold text-green-600">€{ingresos.toFixed(2)}</span>
             </div>
             {tour.fechaViaje && (
               <div>
-              Data del viaggio: <span className="text-gray-900 dark:text-white">
-                {new Date(tour.fechaViaje).toLocaleDateString('it-IT', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
+                Data del viaggio: <span className="text-gray-900 dark:text-white">
+                  {new Date(tour.fechaViaje).toLocaleDateString('it-IT', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
                   })}
                 </span>
               </div>
@@ -2555,615 +2554,615 @@ export default function VentaTourAereoPage() {
         className="max-w-4xl mx-4 max-h-[90vh] z-[99999]"
       >
         {isModalOpen && (
-        <div className="flex flex-col h-full max-h-[90vh]">
-          {/* Header fijo */}
-          <div className="flex-shrink-0 p-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-              {isEditMode ? "Modifica vendita" : "Nuovo inserimento"}
-            </h2>
-          </div>
-          
-          {/* Contenido scrolleable */}
-          <div className="flex-1 overflow-y-auto p-4" onClick={(e) => {
-            // Cerrar dropdowns al hacer clic fuera
-            if ((e.target as HTMLElement).closest('.iata-dropdown-container') === null) {
-              setShowIataDropdown(false);
-            }
-            if ((e.target as HTMLElement).closest('.metodo-pagamento-dropdown-container') === null) {
-              setShowMetodoPagamentoDropdown(false);
-            }
-          }}>
-            <form onSubmit={isEditMode ? handleUpdateVenta : handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Passeggero *
-                  </label>
-                  <div className="relative" ref={clientDropdownRef}>
-                    <input
-                      type="text"
-                      value={clientSearchTerm}
-                      onChange={(e) => {
-                        setClientSearchTerm(e.target.value);
-                        setShowClientDropdown(true);
-                        if (!e.target.value) {
-                          setFormData(prev => ({ ...prev, clienteId: '', pasajero: '' }));
-                        }
-                      }}
-                      onFocus={() => {
-                        if (filteredClients.length > 0) {
-                          setShowClientDropdown(true);
-                        }
-                      }}
-                      placeholder={loadingClientes ? 'Caricamento clienti...' : 'Cerca cliente...'}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                    required
-                    />
-                    
-                    {/* Dropdown de clientes */}
-                    {showClientDropdown && (
-                      <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                        {filteredClients.length > 0 ? (
-                          filteredClients.map((client) => (
-                            <div
-                              key={client.id}
-                              onClick={() => handleClientSelect(client.id)}
-                              className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-sm text-gray-900 dark:text-white"
-                            >
-                              {client.firstName} {client.lastName}
-                            </div>
-                          ))
-                        ) : (
-                          <div className="px-3 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
-                            {loadingClientes ? 'Caricamento clienti...' : 'Nessun cliente trovato'}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
+          <div className="flex flex-col h-full max-h-[90vh]">
+            {/* Header fijo */}
+            <div className="flex-shrink-0 p-4 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                {isEditMode ? "Modifica vendita" : "Nuovo inserimento"}
+              </h2>
+            </div>
 
-                {/* Checkboxes de tipo de pasajero - Solo se muestran si hay un pasajero seleccionado */}
-                {formData.clienteId && (
+            {/* Contenido scrolleable */}
+            <div className="flex-1 overflow-y-auto p-4" onClick={(e) => {
+              // Cerrar dropdowns al hacer clic fuera
+              if ((e.target as HTMLElement).closest('.iata-dropdown-container') === null) {
+                setShowIataDropdown(false);
+              }
+              if ((e.target as HTMLElement).closest('.metodo-pagamento-dropdown-container') === null) {
+                setShowMetodoPagamentoDropdown(false);
+              }
+            }}>
+              <form onSubmit={isEditMode ? handleUpdateVenta : handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                      Tipo di passeggero *
-                    </label>
-                    <div className="flex flex-col gap-3 sm:flex-row sm:gap-6">
-                      <label className="flex items-center gap-3">
-                        <input
-                          type="radio"
-                          name="tipoPasajero"
-                          value="adulto"
-                          checked={tipoPasajero === 'adulto'}
-                          onChange={() => handleTipoPasajeroChange('adulto')}
-                          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                        />
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-gray-900 dark:text-gray-300">
-                            Adulto
-                        </span>
-                          <div className="flex items-center gap-1">
-                            <span className="text-xs text-gray-500 dark:text-gray-400">€</span>
-                            <input
-                              type="text"
-                              inputMode="decimal"
-                              value={adultoPrice}
-                              onChange={(e) => handlePriceInputChange('adulto', e.target.value)}
-                              className="w-24 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                              placeholder="0.00"
-                            />
-                          </div>
-                        </div>
-                      </label>
-                      <label className="flex items-center gap-3">
-                        <input
-                          type="radio"
-                          name="tipoPasajero"
-                          value="nino"
-                          checked={tipoPasajero === 'nino'}
-                          onChange={() => handleTipoPasajeroChange('nino')}
-                          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                        />
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-gray-900 dark:text-gray-300">
-                            Bambino
-                        </span>
-                          <div className="flex items-center gap-1">
-                            <span className="text-xs text-gray-500 dark:text-gray-400">€</span>
-                            <input
-                              type="text"
-                              inputMode="decimal"
-                              value={bambinoPrice}
-                              onChange={(e) => handlePriceInputChange('nino', e.target.value)}
-                              className="w-24 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                              placeholder="0.00"
-                            />
-                          </div>
-                        </div>
-                      </label>
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Codice Fiscale
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.codiceFiscale}
-                    readOnly
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-800 cursor-not-allowed dark:text-gray-400"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Indirizzo
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.indirizzo}
-                    readOnly
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-800 cursor-not-allowed dark:text-gray-400"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    readOnly
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-800 cursor-not-allowed dark:text-gray-400"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Numero di Telefono
-                  </label>
-                  <input
-                    type="tel"
-                    value={formData.numeroTelefono}
-                    readOnly
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-800 cursor-not-allowed dark:text-gray-400"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Paese di origine
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.paisOrigen}
-                    readOnly
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-800 cursor-not-allowed dark:text-gray-400"
-                  />
-                </div>
-
-                {/* IATA Dropdown (selección múltiple) */}
-                <div className="relative iata-dropdown-container">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    IATA *
-                  </label>
-                  <div className="relative">
-                    <div className="min-h-[40px] px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 flex flex-wrap gap-1 items-center cursor-text"
-                         onClick={() => setShowIataDropdown(true)}>
-                      {formData.iata.map(iata => (
-                        <div key={iata} className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                          <span className="mr-1">{iata}</span>
-                          <button type="button" onClick={(e) => { e.stopPropagation(); handleIataToggle(iata); }} className="text-blue-600 hover:text-blue-800 focus:outline-none ml-1">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                          </button>
-                        </div>
-                      ))}
-                      <input type="text" value={iataSearchTerm} onChange={(e) => { setIataSearchTerm(e.target.value); setShowIataDropdown(true); }} onFocus={() => setShowIataDropdown(true)} placeholder={formData.iata.length === 0 ? "Cerca o seleziona IATA..." : "Cerca IATA..."} className="flex-1 min-w-[120px] outline-none bg-transparent text-sm text-gray-900 dark:text-white" onClick={(e) => e.stopPropagation()} />
-                    </div>
-                    {showIataDropdown && (
-                      <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                        {filteredIatas.filter(iata => !formData.iata.includes(iata.iata)).map(iata => (
-                          <div key={iata.id} onClick={() => { handleIataToggle(iata.iata); setShowIataDropdown(false); }} className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
-                            <div className="font-medium text-gray-900 dark:text-white">{iata.iata}</div>
-                          </div>
-                        ))}
-                        {filteredIatas.filter(iata => !formData.iata.includes(iata.iata)).length === 0 && (
-                          <div className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">Nessuna IATA disponibile</div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    PNR
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.pnr}
-                    onChange={handleInputChange('pnr')}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Trasporto (€)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.transfer}
-                    onChange={handleInputChange('transfer')}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                     Venduto (€)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.venduto}
-                    readOnly
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-800 cursor-not-allowed dark:text-gray-400"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Acconto (€)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.acconto}
-                    onChange={handleInputChange('acconto')}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Da pagare (€)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={daPagare}
-                    disabled
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 cursor-not-allowed"
-                  />
-                </div>
-
-                <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Nota esterna ricevuta
+                      Passeggero *
                     </label>
-                    <SimpleRichTextEditor
-                      value={formData.notaEsternaRicevuta}
-                      onChange={(value) => setFormData(prev => ({ ...prev, notaEsternaRicevuta: value }))}
-                      placeholder="Aggiungi note esterne..."
-                      rows={4}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Nota interna
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={formData.notaInterna}
-                      onChange={handleInputChange('notaInterna')}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                      placeholder="Aggiungi note interne..."
-                    />
-                  </div>
-                </div>
-
-              </div>
-
-              {/* Sección de Cuotas - Se muestra automáticamente si Da Pagare > 0 */}
-              {parseFloat(daPagare) > 0 && null}
-
-              {/* Campos Pagamento, Metodo di Acquisto y Stato al final */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                {/* MetodoPagamento Dropdown (selección múltiple) */}
-                <div className="relative metodo-pagamento-dropdown-container">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Pagamento * 
-                  </label>
-                  <div className="relative">
-                    <div className="min-h-[40px] px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 flex flex-wrap gap-1 items-center cursor-text"
-                         onClick={() => setShowMetodoPagamentoDropdown(true)}>
-                      {/* Chips de métodos de pago seleccionados */}
-                      {formData.metodoPagamento.map(metodo => (
-                        <div
-                          key={metodo}
-                          className="inline-flex items-center px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full"
-                        >
-                          <span className="mr-1">{metodo}</span>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleMetodoPagamentoToggle(metodo);
-                            }}
-                            className="text-green-600 hover:text-green-800 focus:outline-none ml-1"
-                          >
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        </div>
-                      ))}
-                      
-                      {/* Input de búsqueda */}
+                    <div className="relative" ref={clientDropdownRef}>
                       <input
                         type="text"
-                        value={metodoPagamentoSearchTerm}
+                        value={clientSearchTerm}
                         onChange={(e) => {
-                          setMetodoPagamentoSearchTerm(e.target.value);
-                          setShowMetodoPagamentoDropdown(true);
+                          setClientSearchTerm(e.target.value);
+                          setShowClientDropdown(true);
+                          if (!e.target.value) {
+                            setFormData(prev => ({ ...prev, clienteId: '', pasajero: '' }));
+                          }
                         }}
-                        onFocus={() => setShowMetodoPagamentoDropdown(true)}
-                        placeholder={formData.metodoPagamento.length === 0 ? "Cerca o seleziona metodo di pagamento..." : "Cerca metodo..."}
-                        className="flex-1 min-w-[120px] outline-none bg-transparent text-sm text-gray-900 dark:text-white"
-                        onClick={(e) => e.stopPropagation()}
+                        onFocus={() => {
+                          if (filteredClients.length > 0) {
+                            setShowClientDropdown(true);
+                          }
+                        }}
+                        placeholder={loadingClientes ? 'Caricamento clienti...' : 'Cerca cliente...'}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        required
                       />
-                    </div>
-                    
-                    {showMetodoPagamentoDropdown && (
-                      <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                        {filteredMetodoPagamento
-                          .filter(metodo => !formData.metodoPagamento.includes(metodo.metodoPagamento))
-                          .map(metodo => (
-                            <div
-                              key={metodo.id}
-                              onClick={() => {
-                                handleMetodoPagamentoToggle(metodo.metodoPagamento);
-                                setShowMetodoPagamentoDropdown(false);
-                              }}
-                              className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
-                            >
-                              <div className="font-medium text-gray-900 dark:text-white">
-                                {metodo.metodoPagamento}
+
+                      {/* Dropdown de clientes */}
+                      {showClientDropdown && (
+                        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                          {filteredClients.length > 0 ? (
+                            filteredClients.map((client) => (
+                              <div
+                                key={client.id}
+                                onClick={() => handleClientSelect(client.id)}
+                                className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-sm text-gray-900 dark:text-white"
+                              >
+                                {client.firstName} {client.lastName}
                               </div>
+                            ))
+                          ) : (
+                            <div className="px-3 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                              {loadingClientes ? 'Caricamento clienti...' : 'Nessun cliente trovato'}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Checkboxes de tipo de pasajero - Solo se muestran si hay un pasajero seleccionado */}
+                  {formData.clienteId && (
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                        Tipo di passeggero *
+                      </label>
+                      <div className="flex flex-col gap-3 sm:flex-row sm:gap-6">
+                        <label className="flex items-center gap-3">
+                          <input
+                            type="radio"
+                            name="tipoPasajero"
+                            value="adulto"
+                            checked={tipoPasajero === 'adulto'}
+                            onChange={() => handleTipoPasajeroChange('adulto')}
+                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                          />
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-gray-900 dark:text-gray-300">
+                              Adulto
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs text-gray-500 dark:text-gray-400">€</span>
+                              <input
+                                type="text"
+                                inputMode="decimal"
+                                value={adultoPrice}
+                                onChange={(e) => handlePriceInputChange('adulto', e.target.value)}
+                                className="w-24 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                                placeholder="0.00"
+                              />
+                            </div>
+                          </div>
+                        </label>
+                        <label className="flex items-center gap-3">
+                          <input
+                            type="radio"
+                            name="tipoPasajero"
+                            value="nino"
+                            checked={tipoPasajero === 'nino'}
+                            onChange={() => handleTipoPasajeroChange('nino')}
+                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                          />
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-gray-900 dark:text-gray-300">
+                              Bambino
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs text-gray-500 dark:text-gray-400">€</span>
+                              <input
+                                type="text"
+                                inputMode="decimal"
+                                value={bambinoPrice}
+                                onChange={(e) => handlePriceInputChange('nino', e.target.value)}
+                                className="w-24 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                                placeholder="0.00"
+                              />
+                            </div>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Codice Fiscale
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.codiceFiscale}
+                      readOnly
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-800 cursor-not-allowed dark:text-gray-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Indirizzo
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.indirizzo}
+                      readOnly
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-800 cursor-not-allowed dark:text-gray-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value={formData.email}
+                      readOnly
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-800 cursor-not-allowed dark:text-gray-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Numero di Telefono
+                    </label>
+                    <input
+                      type="tel"
+                      value={formData.numeroTelefono}
+                      readOnly
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-800 cursor-not-allowed dark:text-gray-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Paese di origine
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.paisOrigen}
+                      readOnly
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-800 cursor-not-allowed dark:text-gray-400"
+                    />
+                  </div>
+
+                  {/* IATA Dropdown (selección múltiple) */}
+                  <div className="relative iata-dropdown-container">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      IATA *
+                    </label>
+                    <div className="relative">
+                      <div className="min-h-[40px] px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 flex flex-wrap gap-1 items-center cursor-text"
+                        onClick={() => setShowIataDropdown(true)}>
+                        {formData.iata.map(iata => (
+                          <div key={iata} className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                            <span className="mr-1">{iata}</span>
+                            <button type="button" onClick={(e) => { e.stopPropagation(); handleIataToggle(iata); }} className="text-blue-600 hover:text-blue-800 focus:outline-none ml-1">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                          </div>
+                        ))}
+                        <input type="text" value={iataSearchTerm} onChange={(e) => { setIataSearchTerm(e.target.value); setShowIataDropdown(true); }} onFocus={() => setShowIataDropdown(true)} placeholder={formData.iata.length === 0 ? "Cerca o seleziona IATA..." : "Cerca IATA..."} className="flex-1 min-w-[120px] outline-none bg-transparent text-sm text-gray-900 dark:text-white" onClick={(e) => e.stopPropagation()} />
+                      </div>
+                      {showIataDropdown && (
+                        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                          {filteredIatas.filter(iata => !formData.iata.includes(iata.iata)).map(iata => (
+                            <div key={iata.id} onClick={() => { handleIataToggle(iata.iata); setShowIataDropdown(false); }} className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                              <div className="font-medium text-gray-900 dark:text-white">{iata.iata}</div>
                             </div>
                           ))}
-                        {filteredMetodoPagamento.filter(metodo => !formData.metodoPagamento.includes(metodo.metodoPagamento)).length === 0 && (
-                          <div className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">
-                            Nessun metodo di pagamento disponibile
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Metodo di Acquisto Dropdown */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Metodo di Acquisto
-                  </label>
-                  <select
-                    value={formData.metodoCompra}
-                    onChange={(e) => handleInputChange('metodoCompra')(e)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-gray-800 dark:text-white"
-                  >
-                    <option value="">Seleziona...</option>
-                    {acquisti.map((acquisto) => (
-                      <option key={acquisto.id} value={acquisto.acquisto}>
-                        {acquisto.acquisto}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Stato *
-                  </label>
-                  <select
-                    value={formData.stato}
-                    onChange={(e) => handleStatoSelectChange(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus-border-transparent dark:bg-gray-700 dark:text-white"
-                    required
-                  >
-                    <option value="">Seleziona stato...</option>
-                    {pagamentos && pagamentos.map((pagamento) => (
-                      <option key={pagamento.id} value={pagamento.pagamento}>
-                        {pagamento.pagamento}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Campo de archivo principal */}
-              <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    File allegato (opzionale)
-                  </label>
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf,.doc,.docx"
-                    onChange={(e) => setAttachedFile(e.target.files?.[0] || null)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 dark:file:bg-brand-900/20 dark:file:text-brand-400"
-                  />
-                </div>
-              </div>
-
-              {parseFloat(daPagare) > 0 && (
-                <div className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      Pagamento a rate
-                    </h3>
-                    <div className="flex items-center gap-3">
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Numero di rate:
-                      </label>
-                      <select
-                        value={numeroCuotas}
-                        onChange={(e) => {
-                          const numCuotas = parseInt(e.target.value);
-                          setNumeroCuotas(numCuotas);
-                        }}
-                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                      >
-                        <option value={0}>Senza rate</option>
-                        <option value={1}>1 rata</option>
-                        <option value={2}>2 rate</option>
-                        <option value={3}>3 rate</option>
-                      </select>
+                          {filteredIatas.filter(iata => !formData.iata.includes(iata.iata)).length === 0 && (
+                            <div className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">Nessuna IATA disponibile</div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  {cuotas.length > 0 && (
-                    <div className="space-y-4">
-                      {cuotas.map((cuota, index) => (
-                        <div
-                          key={index}
-                          className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700"
-                        >
-                          <div className="flex items-center justify-between mb-3">
-                            <h4 className="font-medium text-gray-900 dark:text-white">
-                              Rata {cuota.numeroCuota}
-                            </h4>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      PNR
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.pnr}
+                      onChange={handleInputChange('pnr')}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Trasporto (€)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.transfer}
+                      onChange={handleInputChange('transfer')}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Venduto (€)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.venduto}
+                      readOnly
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-800 cursor-not-allowed dark:text-gray-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Acconto (€)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.acconto}
+                      onChange={handleInputChange('acconto')}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Da pagare (€)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={daPagare}
+                      disabled
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 cursor-not-allowed"
+                    />
+                  </div>
+
+                  <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Nota esterna ricevuta
+                      </label>
+                      <SimpleRichTextEditor
+                        value={formData.notaEsternaRicevuta}
+                        onChange={(value) => setFormData(prev => ({ ...prev, notaEsternaRicevuta: value }))}
+                        placeholder="Aggiungi note esterne..."
+                        rows={4}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Nota interna
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={formData.notaInterna}
+                        onChange={handleInputChange('notaInterna')}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        placeholder="Aggiungi note interne..."
+                      />
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Sección de Cuotas - Se muestra automáticamente si Da Pagare > 0 */}
+                {parseFloat(daPagare) > 0 && null}
+
+                {/* Campos Pagamento, Metodo di Acquisto y Stato al final */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                  {/* MetodoPagamento Dropdown (selección múltiple) */}
+                  <div className="relative metodo-pagamento-dropdown-container">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Pagamento *
+                    </label>
+                    <div className="relative">
+                      <div className="min-h-[40px] px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 flex flex-wrap gap-1 items-center cursor-text"
+                        onClick={() => setShowMetodoPagamentoDropdown(true)}>
+                        {/* Chips de métodos de pago seleccionados */}
+                        {formData.metodoPagamento.map(metodo => (
+                          <div
+                            key={metodo}
+                            className="inline-flex items-center px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full"
+                          >
+                            <span className="mr-1">{metodo}</span>
                             <button
                               type="button"
-                              onClick={() => removeCuota(index)}
-                              className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleMetodoPagamentoToggle(metodo);
+                              }}
+                              className="text-green-600 hover:text-green-800 focus:outline-none ml-1"
                             >
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                               </svg>
                             </button>
                           </div>
+                        ))}
 
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Data di pagamento *
-                              </label>
-                              <input
-                                type="date"
-                                value={cuota.fechaPago}
-                                onChange={(e) => updateCuota(index, 'fechaPago', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                                required
-                              />
-                            </div>
+                        {/* Input de búsqueda */}
+                        <input
+                          type="text"
+                          value={metodoPagamentoSearchTerm}
+                          onChange={(e) => {
+                            setMetodoPagamentoSearchTerm(e.target.value);
+                            setShowMetodoPagamentoDropdown(true);
+                          }}
+                          onFocus={() => setShowMetodoPagamentoDropdown(true)}
+                          placeholder={formData.metodoPagamento.length === 0 ? "Cerca o seleziona metodo di pagamento..." : "Cerca metodo..."}
+                          className="flex-1 min-w-[120px] outline-none bg-transparent text-sm text-gray-900 dark:text-white"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
 
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Importo *
-                              </label>
-                              <input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={cuota.monto}
-                                onChange={(e) =>
-                                  updateCuota(index, 'monto', parseFloat(e.target.value) || 0)
-                                }
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                                required
-                              />
-                            </div>
-
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Nota (opzionale)
-                              </label>
-                              <input
-                                type="text"
-                                value={cuota.nota || ''}
-                                onChange={(e) => updateCuota(index, 'nota', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus-border-transparent dark:bg-gray-700 dark:text-white"
-                                placeholder="Nota opzionale..."
-                              />
-                            </div>
-                          </div>
-
-                          <div className="mt-3">
-                            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                              Ricevuta di pagamento (opzionale)
-                            </label>
-                            <input
-                              type="file"
-                              accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf"
-                              onChange={(e) => {
-                                updateCuota(index, 'attachedFile', e.target.files?.[0] || null);
-                              }}
-                              className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 dark:file:bg-brand-900/20 dark:file:text-brand-400"
-                            />
-                            {cuota.attachedFile && (
-                              <div className="mt-1 flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <span>
-                                  {typeof cuota.attachedFile === 'string'
-                                    ? 'File allegato'
-                                    : cuota.attachedFile.name}
-                                </span>
+                      {showMetodoPagamentoDropdown && (
+                        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                          {filteredMetodoPagamento
+                            .filter(metodo => !formData.metodoPagamento.includes(metodo.metodoPagamento))
+                            .map(metodo => (
+                              <div
+                                key={metodo.id}
+                                onClick={() => {
+                                  handleMetodoPagamentoToggle(metodo.metodoPagamento);
+                                  setShowMetodoPagamentoDropdown(false);
+                                }}
+                                className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+                              >
+                                <div className="font-medium text-gray-900 dark:text-white">
+                                  {metodo.metodoPagamento}
+                                </div>
                               </div>
-                            )}
-                          </div>
+                            ))}
+                          {filteredMetodoPagamento.filter(metodo => !formData.metodoPagamento.includes(metodo.metodoPagamento)).length === 0 && (
+                            <div className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">
+                              Nessun metodo di pagamento disponibile
+                            </div>
+                          )}
                         </div>
-                      ))}
+                      )}
                     </div>
-                  )}
+                  </div>
 
-                  {cuotas.length === 0 && (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
-                      Seleziona il numero di rate per configurare il piano di pagamenti.
-                    </p>
-                  )}
+                  {/* Metodo di Acquisto Dropdown */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Metodo di Acquisto
+                    </label>
+                    <select
+                      value={formData.metodoCompra}
+                      onChange={(e) => handleInputChange('metodoCompra')(e)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-gray-800 dark:text-white"
+                    >
+                      <option value="">Seleziona...</option>
+                      {acquisti.map((acquisto) => (
+                        <option key={acquisto.id} value={acquisto.acquisto}>
+                          {acquisto.acquisto}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Stato *
+                    </label>
+                    <select
+                      value={formData.stato}
+                      onChange={(e) => handleStatoSelectChange(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus-border-transparent dark:bg-gray-700 dark:text-white"
+                      required
+                    >
+                      <option value="">Seleziona stato...</option>
+                      {pagamentos && pagamentos.map((pagamento) => (
+                        <option key={pagamento.id} value={pagamento.pagamento}>
+                          {pagamento.pagamento}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-              )}
 
-              <div className="flex justify-end gap-3 pt-4">
-                <Button
-                  onClick={closeModal}
-                  className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  Annulla
-                </Button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="px-6 py-2 text-white rounded-lg disabled:opacity-50"
-                  style={{ backgroundColor: isSubmitting ? '#0366D6' : '#0366D6' }}
-                  onMouseEnter={(e) => !isSubmitting && (e.currentTarget.style.backgroundColor = '#0255C4')}
-                  onMouseLeave={(e) => !isSubmitting && (e.currentTarget.style.backgroundColor = '#0366D6')}
-                >
-                  {isSubmitting 
-                    ? (isEditMode ? 'Aggiornamento...' : 'Salvataggio...') 
-                    : (isEditMode ? 'Aggiorna Vendita' : 'Genera Vendita')}
-                </button>
-              </div>
-            </form>
+                {/* Campo de archivo principal */}
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      File allegato (opzionale)
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf,.doc,.docx"
+                      onChange={(e) => setAttachedFile(e.target.files?.[0] || null)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 dark:file:bg-brand-900/20 dark:file:text-brand-400"
+                    />
+                  </div>
+                </div>
+
+                {parseFloat(daPagare) > 0 && (
+                  <div className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        Pagamento a rate
+                      </h3>
+                      <div className="flex items-center gap-3">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Numero di rate:
+                        </label>
+                        <select
+                          value={numeroCuotas}
+                          onChange={(e) => {
+                            const numCuotas = parseInt(e.target.value);
+                            setNumeroCuotas(numCuotas);
+                          }}
+                          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        >
+                          <option value={0}>Senza rate</option>
+                          <option value={1}>1 rata</option>
+                          <option value={2}>2 rate</option>
+                          <option value={3}>3 rate</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {cuotas.length > 0 && (
+                      <div className="space-y-4">
+                        {cuotas.map((cuota, index) => (
+                          <div
+                            key={index}
+                            className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700"
+                          >
+                            <div className="flex items-center justify-between mb-3">
+                              <h4 className="font-medium text-gray-900 dark:text-white">
+                                Rata {cuota.numeroCuota}
+                              </h4>
+                              <button
+                                type="button"
+                                onClick={() => removeCuota(index)}
+                                className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                              >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                  Data di pagamento *
+                                </label>
+                                <input
+                                  type="date"
+                                  value={cuota.fechaPago}
+                                  onChange={(e) => updateCuota(index, 'fechaPago', e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                                  required
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                  Importo *
+                                </label>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  value={cuota.monto}
+                                  onChange={(e) =>
+                                    updateCuota(index, 'monto', parseFloat(e.target.value) || 0)
+                                  }
+                                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                                  required
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                  Nota (opzionale)
+                                </label>
+                                <input
+                                  type="text"
+                                  value={cuota.nota || ''}
+                                  onChange={(e) => updateCuota(index, 'nota', e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus-border-transparent dark:bg-gray-700 dark:text-white"
+                                  placeholder="Nota opzionale..."
+                                />
+                              </div>
+                            </div>
+
+                            <div className="mt-3">
+                              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Ricevuta di pagamento (opzionale)
+                              </label>
+                              <input
+                                type="file"
+                                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf"
+                                onChange={(e) => {
+                                  updateCuota(index, 'attachedFile', e.target.files?.[0] || null);
+                                }}
+                                className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 dark:file:bg-brand-900/20 dark:file:text-brand-400"
+                              />
+                              {cuota.attachedFile && (
+                                <div className="mt-1 flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                  <span>
+                                    {typeof cuota.attachedFile === 'string'
+                                      ? 'File allegato'
+                                      : cuota.attachedFile.name}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {cuotas.length === 0 && (
+                      <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+                        Seleziona il numero di rate per configurare il piano di pagamenti.
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button
+                    onClick={closeModal}
+                    className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    Annulla
+                  </Button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-6 py-2 text-white rounded-lg disabled:opacity-50"
+                    style={{ backgroundColor: isSubmitting ? '#0366D6' : '#0366D6' }}
+                    onMouseEnter={(e) => !isSubmitting && (e.currentTarget.style.backgroundColor = '#0255C4')}
+                    onMouseLeave={(e) => !isSubmitting && (e.currentTarget.style.backgroundColor = '#0366D6')}
+                  >
+                    {isSubmitting
+                      ? (isEditMode ? 'Aggiornamento...' : 'Salvataggio...')
+                      : (isEditMode ? 'Aggiorna Vendita' : 'Genera Vendita')}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
         )}
       </Modal>
 
-      
+
 
       {/* Tabla de ventas */}
       <ComponentCard title="">
@@ -3174,16 +3173,16 @@ export default function VentaTourAereoPage() {
             <div className="relative flex-1 max-w-md">
               <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                              </svg>
-                              <input
-                                type="text"
+              </svg>
+              <input
+                type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Cerca per passeggero, stato, metodo di acquisto..."
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                              />
-                            </div>
-                          </div>
+              />
+            </div>
+          </div>
 
           <div className="flex items-center gap-2">
             {/* Botón Gestione Stanza - Visible para todos los usuarios */}
@@ -3197,29 +3196,29 @@ export default function VentaTourAereoPage() {
               </svg>
               Gestione Stanza
             </button>
-            
+
             {/* Botón Exportar a Excel */}
-                          <button
+            <button
               onClick={handleExportToExcel}
               className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg whitespace-nowrap"
             >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
+              </svg>
               Esporta in Excel
-                </button>
-            
-        {/* Botón para generar venta */}
-          <button
-            onClick={handleOpenCreateModal}
+            </button>
+
+            {/* Botón para generar venta */}
+            <button
+              onClick={handleOpenCreateModal}
               className="flex items-center gap-2 px-6 py-3 text-white rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg whitespace-nowrap"
               style={{ backgroundColor: '#0366D6' }}
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0255C4'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0366D6'}
-          >
-            <PlusIcon className="w-5 h-5" />
-            Genera Vendita
-          </button>
+            >
+              <PlusIcon className="w-5 h-5" />
+              Genera Vendita
+            </button>
           </div>
         </div>
 
@@ -3233,15 +3232,15 @@ export default function VentaTourAereoPage() {
               {searchTerm.trim() ? 'Prova con altri termini di ricerca' : 'Genera la tua prima vendita per iniziare'}
             </p>
             {!searchTerm.trim() && (
-            <button
-              onClick={handleOpenCreateModal}
-              className="text-white px-6 py-3 rounded-lg"
-              style={{ backgroundColor: '#0366D6' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0255C4'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0366D6'}
-            >
-              Genera Vendita
-            </button>
+              <button
+                onClick={handleOpenCreateModal}
+                className="text-white px-6 py-3 rounded-lg"
+                style={{ backgroundColor: '#0366D6' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0255C4'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0366D6'}
+              >
+                Genera Vendita
+              </button>
             )}
           </div>
         ) : (
@@ -3342,7 +3341,7 @@ export default function VentaTourAereoPage() {
                               e.target.value = venta.stato;
                               return;
                             }
-                            
+
                             try {
                               const response = await fetch(`/api/tour-aereo/ventas/${venta.id}`, {
                                 method: 'PATCH',
@@ -3353,7 +3352,7 @@ export default function VentaTourAereoPage() {
                               });
 
                               if (response.ok) {
-                                setVentas(prev => prev.map(v => 
+                                setVentas(prev => prev.map(v =>
                                   v.id === venta.id ? { ...v, stato: newValue } : v
                                 ));
                                 setMessage({
@@ -3385,13 +3384,12 @@ export default function VentaTourAereoPage() {
                       ) : (
                         <div
                           onClick={() => setEditingStatoId(venta.id)}
-                          className={`text-xs truncate cursor-pointer px-2 py-1 rounded text-center font-medium ${
-                            venta.stato === 'Acconto' ? 'bg-gray-500 text-white' :
-                            venta.stato === 'Acconto V' ? 'bg-purple-400 text-white' :
-                            venta.stato === 'Ricevuto' ? 'bg-green-500 text-white' :
-                            venta.stato === 'Verificato' ? 'bg-purple-600 text-white' :
-                            'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
-                          }`}
+                          className={`text-xs truncate cursor-pointer px-2 py-1 rounded text-center font-medium ${venta.stato === 'Acconto' ? 'bg-gray-500 text-white' :
+                              venta.stato === 'Acconto V' ? 'bg-purple-400 text-white' :
+                                venta.stato === 'Ricevuto' ? 'bg-green-500 text-white' :
+                                  venta.stato === 'Verificato' ? 'bg-purple-600 text-white' :
+                                    'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                            }`}
                           title="Clicca per modificare"
                         >
                           {venta.stato}
@@ -3459,7 +3457,7 @@ export default function VentaTourAereoPage() {
                       €{((tour?.hotel ?? 0)).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                       €{(venta.transfer || 0).toFixed(2)}
+                      €{(venta.transfer || 0).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {editingTktId === venta.id ? (
@@ -3582,7 +3580,7 @@ export default function VentaTourAereoPage() {
                       ).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {venta.creator?.firstName 
+                      {venta.creator?.firstName
                         ? `${venta.creator.firstName}${venta.creator.lastName ? ` ${venta.creator.lastName}` : ''}`.trim()
                         : venta.creator?.email || 'N/A'}
                     </td>
@@ -3590,11 +3588,10 @@ export default function VentaTourAereoPage() {
                       <button
                         onClick={() => handleViewFiles(venta)}
                         disabled={countFiles(venta) === 0}
-                        className={`inline-flex items-center gap-1 px-2 py-1 rounded transition-all duration-200 ${
-                          countFiles(venta) > 0
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded transition-all duration-200 ${countFiles(venta) > 0
                             ? 'bg-purple-100 hover:bg-purple-200 text-purple-700 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 dark:text-purple-400 cursor-pointer'
                             : 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600'
-                        }`}
+                          }`}
                         title={countFiles(venta) > 0 ? 'Visualizza file' : 'Nessun file'}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3683,15 +3680,15 @@ export default function VentaTourAereoPage() {
               ✕
             </button>
           </div>
-          
+
           {Array.isArray(tour?.documentoViaggio) && tour.documentoViaggio.length > 0 ? (
             <div className="space-y-3">
               {tour.documentoViaggio.map((doc, index) => {
                 const isImage = doc.url.includes('/image/') || doc.name?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
-                
+
                 return (
-                  <div 
-                    key={index} 
+                  <div
+                    key={index}
                     className="flex items-center justify-between gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -3775,12 +3772,12 @@ export default function VentaTourAereoPage() {
                         fileName.match(/\.(jpg|jpeg|png|gif|webp)$/i) ||
                         viewingFiles.attachedFile.includes('/image/')
                       );
-                      
+
                       if (isImage) {
                         return (
-                          <img 
-                            src={viewingFiles.attachedFile} 
-                            alt="File principale" 
+                          <img
+                            src={viewingFiles.attachedFile}
+                            alt="File principale"
                             className="w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
                             onClick={() => handleDownload(viewingFiles.attachedFile!, viewingFiles.attachedFileName || 'file_principale.jpg')}
                           />
@@ -3809,18 +3806,18 @@ export default function VentaTourAereoPage() {
                     {(() => {
                       const fileUrl = typeof cuota.attachedFile === 'string' ? cuota.attachedFile : null;
                       if (!fileUrl) return null;
-                      
+
                       const fileName = cuota.attachedFileName || fileUrl;
                       const isImage = fileName && typeof fileName === 'string' && (
                         fileName.match(/\.(jpg|jpeg|png|gif|webp)$/i) ||
                         fileUrl.includes('/image/')
                       );
-                      
+
                       if (isImage) {
                         return (
-                          <img 
-                            src={fileUrl} 
-                            alt={`Rata ${cuota.numeroCuota}`} 
+                          <img
+                            src={fileUrl}
+                            alt={`Rata ${cuota.numeroCuota}`}
                             className="w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
                             onClick={() => handleDownload(fileUrl, cuota.attachedFileName || `rata_${cuota.numeroCuota}.jpg`)}
                           />
@@ -3964,18 +3961,18 @@ export default function VentaTourAereoPage() {
                       { url: selectedClient.document4, name: selectedClient.document4Name, label: 'Documento 4' }
                     ].map((doc, index) => {
                       if (!doc.url) return null;
-                      
+
                       const isImage = doc.url.includes('/image/') || doc.name?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
-                      
+
                       return (
                         <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                           <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             {doc.label}
                           </h4>
                           {isImage ? (
-                            <img 
-                              src={doc.url} 
-                              alt={doc.name || doc.label} 
+                            <img
+                              src={doc.url}
+                              alt={doc.name || doc.label}
                               className="w-full h-32 object-cover rounded cursor-pointer hover:opacity-90 transition-opacity"
                               onClick={() => handleDownload(doc.url!, doc.name || `${doc.label}.jpg`)}
                             />
@@ -3992,7 +3989,7 @@ export default function VentaTourAereoPage() {
                       );
                     })}
                   </div>
-                  
+
                   {!selectedClient.document1 && !selectedClient.document2 && !selectedClient.document3 && !selectedClient.document4 && (
                     <div className="text-center py-8">
                       <p className="text-gray-500 dark:text-gray-400">Nessun documento allegato</p>

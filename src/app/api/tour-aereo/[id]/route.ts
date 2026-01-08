@@ -285,6 +285,7 @@ export async function PUT(
     if (formData.has('guidaLocale')) dataToUpdate.guidaLocale = parseFloat(formData.get('guidaLocale') as string) || 0;
     if (formData.has('coordinatore')) dataToUpdate.coordinatore = parseFloat(formData.get('coordinatore') as string) || 0;
     if (formData.has('transporte')) dataToUpdate.transporte = parseFloat(formData.get('transporte') as string) || 0;
+    if (formData.has('hotel')) dataToUpdate.hotel = parseFloat(formData.get('hotel') as string) || 0;
     if (formData.has('notas')) dataToUpdate.notas = formData.get('notas') as string;
     if (formData.has('notasCoordinador')) {
       const nc = formData.get('notasCoordinador') as string;

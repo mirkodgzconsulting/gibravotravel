@@ -44,14 +44,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Generar datos para la plantilla
-    const agenteName = record.creator 
+    const agenteName = record.creator
       ? `${record.creator.firstName || ''} ${record.creator.lastName || ''}`.trim() || record.creator.email
       : 'Usuario';
 
     // Obtener todos los pasajeros
     const todosPasajeros = record.pasajeros || [];
     const primerPasajero = todosPasajeros[0];
-    
+
     // Generar fecha actual
     const fechaActual = new Date().toLocaleDateString('it-IT', {
       year: 'numeric',
@@ -87,22 +87,22 @@ export async function POST(request: NextRequest) {
           .map(serv => serv.trim())
           .filter(serv => serv && serv.length > 0);
       });
-    
+
     // Eliminar duplicados manteniendo el orden (case-insensitive pero preservando el formato original)
     const serviciosUnicos: string[] = [];
     const serviciosVistos = new Set<string>();
-    
+
     serviciosExtraidos.forEach(servicio => {
       // Normalizar para comparación (sin espacios extras, lowercase)
       const servicioNormalizado = servicio.toLowerCase().trim();
-      
+
       // Si no lo hemos visto antes, agregarlo
       if (!serviciosVistos.has(servicioNormalizado)) {
         serviciosUnicos.push(servicio); // Mantener formato original
         serviciosVistos.add(servicioNormalizado);
       }
     });
-    
+
     const servizioCombinado = serviciosUnicos.join(', ');
 
     // Combinar todos los nombres de pasajeros
@@ -116,10 +116,10 @@ export async function POST(request: NextRequest) {
     if (record.metodoPagamento) {
       try {
         // Intentar parsear si es JSON string
-        const metodoParsed = typeof record.metodoPagamento === 'string' 
-          ? JSON.parse(record.metodoPagamento) 
+        const metodoParsed = typeof record.metodoPagamento === 'string'
+          ? JSON.parse(record.metodoPagamento)
           : record.metodoPagamento;
-        
+
         // Si es un array, unir con comas
         if (Array.isArray(metodoParsed)) {
           metodoPagamentoFormateado = metodoParsed.join(', ');
@@ -141,11 +141,11 @@ export async function POST(request: NextRequest) {
       servizio: servizioCombinado || primerPasajero?.servizio || '',
       metodoPagamento: metodoPagamentoFormateado,
       agente: agenteName,
-      
+
       // Array de pasajeros para iterar en el template
       pasajeros: pasajerosData,
       tienePasajeros: pasajerosData.length > 0,
-      
+
       // Datos financieros
       neto: primerPasajero?.netoBiglietteria?.toString() || '0',
       venduto: record.vendutoTotal?.toString() || '0',
@@ -153,15 +153,15 @@ export async function POST(request: NextRequest) {
       daPagare: record.daPagare?.toString() || '0',
       dapagare: record.daPagare?.toString() || '0', // Para compatibilidad con plantilla
       feeAgv: record.feeAgv?.toString() || '0',
-      
+
       // Fechas
       fecha: fechaActual,
       date: fechaActual,
-      
+
       // Datos adicionales del cliente (placeholders)
       indirizzo: record.indirizzo || 'No especificado',
       codicefiscale: record.codiceFiscale || 'No especificado',
-      
+
       // Cuotas - mapear campos correctamente
       cuotas: (record.cuotas || []).map(cuota => {
         let fechaFormateada = 'Sin fecha';
@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
             fechaFormateada = fecha.toLocaleDateString('it-IT');
           }
         }
-        
+
         return {
           numero: cuota.numeroCuota || '',
           precio: cuota.prezzo?.toString() || '0',
@@ -182,7 +182,7 @@ export async function POST(request: NextRequest) {
         };
       }),
       tieneCuotas: (record.cuotas?.length || 0) > 0,
-      
+
       // Note di ricevuta - limpiar llaves HTML si están presentes
       notaDiRicevuta: (() => {
         let nota = record.notaDiRicevuta || '';
@@ -190,10 +190,10 @@ export async function POST(request: NextRequest) {
           // Método robusto: eliminar todas las llaves { } del contenido
           // Primero decodificar entidades HTML si existen
           nota = nota.replace(/&lt;/g, '<').replace(/&gt;/g, '>');
-          
+
           // Remover llaves al inicio y final
           nota = nota.trim();
-          
+
           // Remover llaves consecutivas al inicio (puede estar en texto o HTML)
           while (nota.startsWith('{') || nota.match(/^<[^>]*>\s*\{/)) {
             if (nota.startsWith('{')) {
@@ -207,7 +207,7 @@ export async function POST(request: NextRequest) {
               }
             }
           }
-          
+
           // Remover llaves consecutivas al final
           while (nota.endsWith('}') || nota.match(/\}\s*<\/[^>]*>$/)) {
             if (nota.endsWith('}')) {
@@ -221,7 +221,7 @@ export async function POST(request: NextRequest) {
               }
             }
           }
-          
+
           // Eliminar TODAS las llaves restantes en cualquier parte del contenido
           // Esto garantiza que no queden llaves en ningún lugar
           nota = nota.replace(/\{/g, '').replace(/\}/g, '');
@@ -235,7 +235,7 @@ export async function POST(request: NextRequest) {
 
     // Leer la plantilla HTML
     const templatePath = path.join(process.cwd(), 'public', 'templates', 'ricevuta-template-v3.html');
-    
+
     if (!fs.existsSync(templatePath)) {
       return NextResponse.json(
         { error: 'Template file not found' },
@@ -250,10 +250,10 @@ export async function POST(request: NextRequest) {
     // 1. Primero procesar arrays (cuotas, pasajeros)
     // 2. Luego procesar condicionales
     // 3. Finalmente procesar campos simples
-    
+
     // Procesar pasajeros PRIMERO para evitar duplicados
     if (data.pasajeros && Array.isArray(data.pasajeros) && data.pasajeros.length > 0) {
-      const pasajerosArray = data.pasajeros.filter((p): p is { nombre: string; servizio: string } => 
+      const pasajerosArray = data.pasajeros.filter((p): p is { nombre: string; servizio: string } =>
         typeof p === 'object' && p !== null && 'nombre' in p
       );
       const nombresUnicosSet = new Set<string>();
@@ -268,10 +268,10 @@ export async function POST(request: NextRequest) {
           return false;
         });
       const nombresUnidos = nombresUnicos.join(', ');
-      
+
       // Reemplazar el bloque {{#pasajeros}}...{{/pasajeros}} con los nombres unidos
       html = html.replace(/\{\{#pasajeros\}\}([\s\S]*?)\{\{\/pasajeros\}\}/g, nombresUnidos);
-      
+
       // Ocultar el fallback {{passeggero}} si hay pasajeros
       if (data.tienePasajeros) {
         html = html.replace(/<span id="passeggero-fallback">[\s\S]*?<\/span>/g, '');
@@ -279,7 +279,7 @@ export async function POST(request: NextRequest) {
         html = html.replace(/\{\{passeggero\}\}/g, '');
       }
     }
-    
+
     // Procesar notaDiRicevuta con limpieza de llaves ANTES del loop
     if (data.notaDiRicevuta) {
       let notaValue = String(data.notaDiRicevuta || '');
@@ -289,7 +289,7 @@ export async function POST(request: NextRequest) {
       html = html.replace(/\{\{\{notaDiRicevuta\}\}\}/g, notaValue);
       html = html.replace(/\{\{notaDiRicevuta\}\}/g, notaValue);
     }
-    
+
     Object.entries(data).forEach(([key, value]) => {
       if (key === 'cuotas' && Array.isArray(value)) {
         // Manejar arrays de cuotas con loop de Handlebars-like
@@ -357,7 +357,7 @@ export async function POST(request: NextRequest) {
 
     // Convertir logo a base64
     const logoPath = path.join(process.cwd(), 'public', 'images', 'logo', 'Logo_gibravo.svg');
-    
+
     let logoBase64 = '';
     if (fs.existsSync(logoPath)) {
       const logoBuffer = fs.readFileSync(logoPath);
@@ -432,7 +432,18 @@ export async function POST(request: NextRequest) {
       });
 
       // Crear el nombre del archivo
-      const fileName = `Ricevuta_${record.cliente.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`;
+      // Crear el nombre del archivo (Sanitizado para evitar errores de header HTTP como "Unexpected end of JSON input")
+      const sanitizeFilename = (text: string): string => {
+        return text
+          .normalize('NFD') // Descompone caracteres (Ñ -> N + ~)
+          .replace(/[\u0300-\u036f]/g, '') // Elimina diacríticos (ej: ~)
+          .replace(/[^a-zA-Z0-9\s-_]/g, '') // Elimina símbolos no ASCII
+          .trim()
+          .replace(/\s+/g, '_');
+      };
+
+      const safeClienteName = sanitizeFilename(record.cliente);
+      const fileName = `Ricevuta_${safeClienteName}_${new Date().getTime()}.pdf`;
 
       // Retornar el documento como respuesta
       const pdfArray = new Uint8Array(pdfBuffer);
@@ -458,10 +469,10 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error generating ricevuta:', error);
-    
+
     return NextResponse.json(
-      { 
-        error: 'Error generating document', 
+      {
+        error: 'Error generating document',
         details: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined
       },

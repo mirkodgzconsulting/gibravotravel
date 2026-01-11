@@ -153,7 +153,7 @@ export function HomeClient({ flightTours, busTours }: HomeClientProps) {
                     <div className="flex flex-col items-center mb-[30px] text-center">
                         <RevealOnScroll>
                             <h2 className="section-title mb-2">
-                                Scelti per te
+                                <span className="brand-gradient">I nostri viaggi</span> scelti per te
                             </h2>
                         </RevealOnScroll>
                     </div>

@@ -394,8 +394,11 @@
 
 /* ---------------------------------- */
 
-@utility menu-item {
-  @apply relative flex items-center w-full gap-3 px-3 py-2 font-medium rounded-lg text-theme-sm;
+@utility brand-gradient {
+  background: linear-gradient(89.58deg, #3186FF .28%, #004ba5 44.45%, #4796f5 99.55%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 @utility menu-item-active {
@@ -1329,6 +1332,7 @@ pre[class*="language-"].line-numbers {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }

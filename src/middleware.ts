@@ -13,8 +13,6 @@ export default clerkMiddleware(async (auth, req) => {
     pathname === '/' ||
     pathname.startsWith('/chi-siamo') ||
     pathname.startsWith('/partenze') ||
-    pathname.startsWith('/destinazioni') ||
-    pathname.startsWith('/tipi-di-viaggio') ||
     pathname.startsWith('/contatti') ||
     pathname.startsWith('/tour') ||
     pathname.startsWith('/prenotazione') ||

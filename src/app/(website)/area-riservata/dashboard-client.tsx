@@ -211,7 +211,7 @@ export function DashboardClient({ userData, bookings }: DashboardClientProps) {
                                             <p className="text-slate-600 mb-6 max-w-md mx-auto">
                                                 Abbiamo centinaia di nuove avventure che ti aspettano.
                                             </p>
-                                            <Link href="/destinazioni">
+                                            <Link href="/partenze">
                                                 <Button className="bg-[#004BA5] hover:bg-[#FE8008] text-white font-[700]">
                                                     Cerca un viaggio
                                                 </Button>

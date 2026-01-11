@@ -7,19 +7,19 @@ const features = [
         badge: "CHI?",
         title: "Una community",
         description: "Conosci nuovi amici viaggiando in piccoli gruppi con persone come te (sempre accompagnati da un Coordinatore!) ed entra a far parte della community di viaggiatori più grande d'Europa.",
-        image: "https://gibravo.it/wp-content/uploads/2025/09/image00014-_1_.webp"
+        image: "https://res.cloudinary.com/dskliu1ig/image/upload/v1767395511/egipto-home-card_rxa21m.webp"
     },
     {
         badge: "COSA?",
         title: "Infiniti viaggi",
         description: "Vivi esperienze uniche in più di 100 paesi nel mondo, scegliendo il mood giusto per te: un evento di qualche ora, un weekend fuori porta, un viaggio tematico o un 360° per scoprire luoghi e culture lontani.",
-        image: "https://gibravo.it/wp-content/uploads/2025/09/8c73c8e47fd3240ad56828a0acae766f04238d33.webp"
+        image: "https://res.cloudinary.com/dskliu1ig/image/upload/v1767368263/chi-siamo-01-section_dqhwgm.webp"
     },
     {
         badge: "COME?",
         title: "Massima flessibilità",
         description: "Puoi bloccare il tuo posto con un acconto e cambiare idea gratuitamente fino a 31 giorni dalla partenza, o fino a 8 se aggiungi la Flexible Cancellation. L'assicurazione medico-bagaglio è sempre inclusa, così viaggi senza pensieri.",
-        image: "https://gibravo.it/wp-content/uploads/2025/09/BCC-2024-EXPLORER-BUENOS_AIRES-LANDMARKS-HEADER-_MOBILE.webp"
+        image: "https://res.cloudinary.com/dskliu1ig/image/upload/v1767393764/contattaci_ezcfzw.jpg"
     }
 ]
 
@@ -29,7 +29,7 @@ export function HowItWorks() {
             <div className="container px-4 mx-auto max-w-7xl">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {features.map((feature, index) => (
-                        <div key={index} className="flex flex-col bg-white rounded-2xl overflow-hidden h-full border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                        <div key={index} className="group cursor-pointer flex flex-col bg-white rounded-2xl overflow-hidden h-full border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300">
                             {/* Top Text Section */}
                             <div className="p-8 flex flex-col items-center text-center flex-grow bg-white">
                                 {/* Badge */}
@@ -45,12 +45,12 @@ export function HowItWorks() {
                             </div>
 
                             {/* Bottom Image Section */}
-                            <div className="relative h-[250px] w-full mt-auto">
+                            <div className="relative h-[250px] w-full mt-auto overflow-hidden">
                                 <Image
                                     src={feature.image}
                                     alt={feature.title}
                                     fill
-                                    className="object-cover"
+                                    className="object-cover transition-transform duration-500 group-hover:scale-105"
                                 />
                             </div>
                         </div>

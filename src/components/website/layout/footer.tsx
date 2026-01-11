@@ -104,10 +104,7 @@ export function Footer() {
                             <h3 className="font-[500] text-white text-lg mb-6 tracking-tight">Menu</h3>
                             <div className="flex flex-col gap-3">
                                 <Link href="/chi-siamo" className="text-[16px] font-medium text-white/80 hover:text-white transition-colors">Chi siamo</Link>
-                                <Link href="/partenze" className="text-[16px] font-medium text-white/80 hover:text-white transition-colors">Tutte le partenze</Link>
-                                <Link href="/destinazioni" className="text-[16px] font-medium text-white/80 hover:text-white transition-colors">Destinazioni</Link>
-                                <Link href="/tipi-di-viaggio/aereo" className="text-[16px] font-medium text-white/80 hover:text-white transition-colors">Viaggi in Aereo</Link>
-                                <Link href="/tipi-di-viaggio/autobus" className="text-[16px] font-medium text-white/80 hover:text-white transition-colors">Viaggi in Bus</Link>
+                                <Link href="/partenze" className="text-[16px] font-medium text-white/80 hover:text-white transition-colors">Partenze</Link>
                             </div>
                         </div>
 

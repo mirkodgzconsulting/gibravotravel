@@ -19,8 +19,8 @@ export function TourOverview({ date, duration, daysCount, type, description }: T
     return (
         <div id="panoramica" className="scroll-mt-32 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             {/* Header */}
-            <div className="p-6 md:p-8 pb-0">
-                <h2 className="text-2xl font-black text-gray-900 mb-6 flex items-center gap-3 uppercase tracking-tight">
+            <div className="p-6 pb-2">
+                <h2 className="text-2xl font-black text-gray-900 mb-4 flex items-center gap-3 uppercase tracking-tight">
                     <span className="p-2 bg-brand-100 text-brand-600 rounded-lg">
                         <Info className="w-6 h-6" />
                     </span>
@@ -30,7 +30,7 @@ export function TourOverview({ date, duration, daysCount, type, description }: T
 
             {/* Stats Grid */}
             <div className="px-6 md:px-8">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-6 border-t border-b border-gray-100">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-4 border-t border-b border-gray-100">
                     {/* Item 1: Date */}
                     <div className="flex items-start gap-4">
                         <div className="p-3 bg-blue-50 text-blue-600 rounded-xl shrink-0">
@@ -74,7 +74,7 @@ export function TourOverview({ date, duration, daysCount, type, description }: T
 
             {/* Description Text */}
             {description && (
-                <div className="p-6 md:p-8 pt-6">
+                <div className="p-6 pt-4">
                     <div className="prose prose-lg max-w-none text-gray-600 leading-relaxed whitespace-pre-line">
                         {description}
                     </div>

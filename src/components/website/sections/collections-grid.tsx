@@ -77,7 +77,8 @@ export function CollectionsGrid() {
                                     fill
                                     className="object-cover transition-transform duration-700 group-hover:scale-105"
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent transition-opacity duration-300 group-hover:opacity-90" />
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
 
                                 <div className="absolute bottom-0 left-0 p-6 w-full flex justify-between items-end">
                                     <div className="text-white">

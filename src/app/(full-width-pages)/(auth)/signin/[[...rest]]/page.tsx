@@ -97,7 +97,7 @@ export default function SignInPage() {
 
         {/* Footer */}
         <div className="text-center text-xs text-gray-500 dark:text-gray-400">
-          <p>© 2026 GiBravo Travel. Tutti i diritti riservati.</p>
+          <p>© 2026 Gibravo Travel. Tutti i diritti riservati.</p>
         </div>
       </div>
     </div>

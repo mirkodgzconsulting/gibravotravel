@@ -29,7 +29,7 @@ export function Features() {
                 <div className="text-center mb-16">
                     <RevealOnScroll>
                         <h2 className="section-title mb-2">
-                            Perché scegliere GiBravo?
+                            Perché scegliere <span className="brand-gradient">GiBravo</span>?
                         </h2>
                         <p className="section-subtitle">
                             Tutto ciò che cerchi in un unico posto

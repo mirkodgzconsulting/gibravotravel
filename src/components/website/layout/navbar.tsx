@@ -42,6 +42,9 @@ const linkVariants = {
     })
 }
 
+const logoWhite = "/Logo-GiBravo-TraciaoBianco.svg"
+const logoOriginal = "/Logo_gibravo.svg"
+
 const getInitials = (firstName: string | null | undefined, lastName: string | null | undefined) => {
     const f = firstName?.charAt(0) || ""
     const l = lastName?.charAt(0) || ""
@@ -60,7 +63,7 @@ export function Navbar() {
     // ... existing logic ...
 
     // Ensure effectiveScrolled logic is kept from original file
-    const effectiveScrolled = true
+    const effectiveScrolled = scrolled
 
     useEffect(() => {
         // ... (keep scroll logic)
@@ -102,7 +105,7 @@ export function Navbar() {
             <header
                 className={cn(
                     "relative z-50 w-full transition-all duration-300",
-                    effectiveScrolled ? "bg-white shadow-md py-0" : "bg-transparent py-4"
+                    effectiveScrolled ? "bg-white/90 backdrop-blur-md shadow-md py-0" : "bg-transparent py-2 lg:py-4"
                 )}
             >
                 <div className="container mx-auto flex h-[58px] items-center px-4 lg:px-8 relative justify-between">
@@ -110,11 +113,11 @@ export function Navbar() {
                     <div className="flex-shrink-0 flex items-center">
                         <Link href="/" className="flex items-center gap-2 group">
                             <Image
-                                src="/Logo_gibravo.svg"
+                                src={effectiveScrolled ? logoOriginal : logoWhite}
                                 alt="Gibravo Travel Logo"
                                 width={160}
                                 height={46}
-                                className="h-10 w-auto md:h-12"
+                                className="h-10 w-auto md:h-12 transition-all duration-300"
                                 priority
                             />
                         </Link>
@@ -127,41 +130,7 @@ export function Navbar() {
                     )}>
                         <Link href="/chi-siamo" className="hover:text-[#FE8008] transition-colors">Chi siamo</Link>
 
-                        <Link href="/destinazioni" className="hover:text-[#FE8008] transition-colors">Destinazioni</Link>
-
-                        {/* Travel Types Dropdown */}
-                        <div className="relative flex items-center h-full" ref={typesMenuRef}>
-                            <button
-                                onClick={() => setTypesMenuOpen(!typesMenuOpen)}
-                                type="button"
-                                className="flex items-center gap-1 hover:text-[#FE8008] transition-colors cursor-pointer h-full outline-none"
-                            >
-                                <span>Tipi di viaggio</span>
-                                <ChevronDown className={cn(
-                                    "h-4 w-4 transition-transform duration-200",
-                                    typesMenuOpen ? "rotate-180" : ""
-                                )} />
-                            </button>
-
-                            {typesMenuOpen && (
-                                <div className="absolute top-[80%] left-1/2 -translate-x-1/2 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-100 overflow-hidden text-slate-900 py-1 animate-in fade-in zoom-in-95 duration-200">
-                                    <Link
-                                        href="/tipi-di-viaggio/autobus"
-                                        className="block px-4 py-2 text-sm font-semibold hover:bg-gray-50 hover:text-[#FE8008] transition-colors"
-                                        onClick={() => setTypesMenuOpen(false)}
-                                    >
-                                        Viaggio in autobus
-                                    </Link>
-                                    <Link
-                                        href="/tipi-di-viaggio/aereo"
-                                        className="block px-4 py-2 text-sm font-semibold hover:bg-gray-50 hover:text-[#FE8008] transition-colors"
-                                        onClick={() => setTypesMenuOpen(false)}
-                                    >
-                                        Viaggio in aereo
-                                    </Link>
-                                </div>
-                            )}
-                        </div>
+                        <Link href="/partenze" className="hover:text-[#FE8008] transition-colors">Partenze</Link>
 
                         <Link href="/domande-frequenti" className="hover:text-[#FE8008] transition-colors">FAQ</Link>
                         <Link href="/contatti" className="hover:text-[#FE8008] transition-colors">Contatti</Link>
@@ -290,34 +259,12 @@ export function Navbar() {
 
                             <motion.div custom={1} variants={linkVariants}>
                                 <Link
-                                    href="/destinazioni"
+                                    href="/partenze"
                                     onClick={() => setMobileMenuOpen(false)}
                                     className="text-2xl font-[500] tracking-tight text-slate-900 hover:text-[#004BA5] transition-colors block"
                                 >
-                                    Destinazioni
+                                    Partenze
                                 </Link>
-                            </motion.div>
-
-                            <motion.div custom={2} variants={linkVariants}>
-                                <div className="space-y-3">
-                                    <span className="text-sm font-bold text-slate-400 uppercase tracking-widest pl-1">TIPI DI VIAGGIO</span>
-                                    <div className="flex flex-col gap-3 pl-1 border-l-2 border-[#FE8008]">
-                                        <Link
-                                            href="/tipi-di-viaggio/autobus"
-                                            onClick={() => setMobileMenuOpen(false)}
-                                            className="text-lg font-medium text-slate-700 hover:text-[#FE8008] pl-3 py-1 block"
-                                        >
-                                            Viaggio in Autobus
-                                        </Link>
-                                        <Link
-                                            href="/tipi-di-viaggio/aereo"
-                                            onClick={() => setMobileMenuOpen(false)}
-                                            className="text-lg font-medium text-slate-700 hover:text-[#FE8008] pl-3 py-1 block"
-                                        >
-                                            Viaggio in Aereo
-                                        </Link>
-                                    </div>
-                                </div>
                             </motion.div>
 
                             <motion.div custom={3} variants={linkVariants}>

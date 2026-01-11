@@ -41,7 +41,7 @@ async function getAllTours() {
     }
 }
 
-export default async function DestinazioniPage() {
+export default async function PartenzePage() {
     const { flightTours, busTours } = await getAllTours()
 
     return <DestinazioniClient flightTours={flightTours} busTours={busTours} />

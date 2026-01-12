@@ -238,6 +238,14 @@ const SimpleRichTextEditor: React.FC<SimpleRichTextEditorProps> = ({
         </div>
         {/* Selector de color */}
         <div className="flex items-center gap-1 border-l border-gray-300 dark:border-gray-600 pl-2 ml-2">
+          {/* Negro (Reset) */}
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => execCommand('foreColor', '#000000')}
+            className="w-6 h-6 rounded bg-black hover:ring-2 hover:ring-offset-1 hover:ring-black transition-all"
+            title="Texto Negro"
+          />
           {/* Rojo */}
           <button
             type="button"

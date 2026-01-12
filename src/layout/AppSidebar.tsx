@@ -240,43 +240,39 @@ const AppSidebar: React.FC = () => {
     navItems: NavItem[],
     menuType: "home" | "modello" | "gestione" | "utenti"
   ) => (
-    <ul className="flex flex-col gap-1">
+    <ul className="flex flex-col gap-1 list-none">
       {navItems.map((nav, index) => (
         <li key={nav.name}>
           {nav.subItems ? (
             <button
               onClick={() => handleSubmenuToggle(index, menuType)}
-              className={`menu-item group  ${
-                openSubmenu?.type === menuType && openSubmenu?.index === index
-                  ? "menu-item-active"
-                  : "menu-item-inactive"
-              } cursor-pointer ${
-                !isExpanded && !isHovered
+              className={`menu-item group  ${openSubmenu?.type === menuType && openSubmenu?.index === index
+                ? "menu-item-active"
+                : "menu-item-inactive"
+                } cursor-pointer ${!isExpanded && !isHovered
                   ? "lg:justify-center"
                   : "lg:justify-start"
-              }`}
+                }`}
             >
               {/* Siempre mostrar texto */}
               <span className={`menu-item-text`}>{nav.name}</span>
               {nav.new && (
                 <span
-                  className={`ml-auto absolute right-10 ${
-                    openSubmenu?.type === menuType &&
+                  className={`ml-auto absolute right-10 ${openSubmenu?.type === menuType &&
                     openSubmenu?.index === index
-                      ? "menu-dropdown-badge-active"
-                      : "menu-dropdown-badge-inactive"
-                  } menu-dropdown-badge`}
+                    ? "menu-dropdown-badge-active"
+                    : "menu-dropdown-badge-inactive"
+                    } menu-dropdown-badge`}
                 >
                   new
                 </span>
               )}
               <ChevronDownIcon
-                className={`ml-auto w-5 h-5 transition-transform duration-200  ${
-                  openSubmenu?.type === menuType &&
+                className={`ml-auto w-5 h-5 transition-transform duration-200  ${openSubmenu?.type === menuType &&
                   openSubmenu?.index === index
-                    ? "rotate-180 text-brand-500"
-                    : ""
-                }`}
+                  ? "rotate-180 text-brand-500"
+                  : ""
+                  }`}
               />
             </button>
           ) : (
@@ -284,9 +280,8 @@ const AppSidebar: React.FC = () => {
               <Link
                 prefetch
                 href={nav.path}
-                className={`menu-item group ${
-                  isActive(nav.path) ? "menu-item-active" : "menu-item-inactive"
-                }`}
+                className={`menu-item group ${isActive(nav.path) ? "menu-item-active" : "menu-item-inactive"
+                  }`}
               >
                 {/* Siempre mostrar texto */}
                 <span className={`menu-item-text`}>{nav.name}</span>
@@ -306,38 +301,35 @@ const AppSidebar: React.FC = () => {
                     : "0px",
               }}
             >
-              <ul className="mt-2 space-y-1 ml-9">
+              <ul className="mt-2 space-y-1 ml-9 list-none">
                 {nav.subItems.map((subItem) => (
                   <li key={subItem.name}>
                     <Link
                       prefetch
                       href={subItem.path}
-                      className={`menu-dropdown-item ${
-                        isActive(subItem.path)
-                          ? "menu-dropdown-item-active"
-                          : "menu-dropdown-item-inactive"
-                      }`}
+                      className={`menu-dropdown-item ${isActive(subItem.path)
+                        ? "menu-dropdown-item-active"
+                        : "menu-dropdown-item-inactive"
+                        }`}
                     >
                       {subItem.name}
                       <span className="flex items-center gap-1 ml-auto">
                         {subItem.new && (
                           <span
-                            className={`ml-auto ${
-                              isActive(subItem.path)
-                                ? "menu-dropdown-badge-active"
-                                : "menu-dropdown-badge-inactive"
-                            } menu-dropdown-badge `}
+                            className={`ml-auto ${isActive(subItem.path)
+                              ? "menu-dropdown-badge-active"
+                              : "menu-dropdown-badge-inactive"
+                              } menu-dropdown-badge `}
                           >
                             new
                           </span>
                         )}
                         {subItem.pro && (
                           <span
-                            className={`ml-auto ${
-                              isActive(subItem.path)
-                                ? "menu-dropdown-badge-pro-active"
-                                : "menu-dropdown-badge-pro-inactive"
-                            } menu-dropdown-badge-pro `}
+                            className={`ml-auto ${isActive(subItem.path)
+                              ? "menu-dropdown-badge-pro-active"
+                              : "menu-dropdown-badge-pro-inactive"
+                              } menu-dropdown-badge-pro `}
                           >
                             pro
                           </span>
@@ -375,10 +367,10 @@ const AppSidebar: React.FC = () => {
         menuType === "home"
           ? homeItems
           : menuType === "modello"
-          ? modelloItems
-          : menuType === "gestione"
-          ? gestioneItems
-          : utentiItems;
+            ? modelloItems
+            : menuType === "gestione"
+              ? gestioneItems
+              : utentiItems;
       items.forEach((nav, index) => {
         if (nav.subItems) {
           nav.subItems.forEach((subItem) => {
@@ -433,123 +425,118 @@ const AppSidebar: React.FC = () => {
     <>
       {/* Overlay para mobile */}
       {isMobileOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-[999996] xl:hidden"
           onClick={toggleMobileSidebar}
         />
       )}
-      
+
       <aside
-        className={`fixed flex flex-col xl:mt-0 top-0 px-2 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-full z-[999997] border-r border-gray-200 w-[250px] xl:w-[200px] transform transition-transform duration-300 ease-in-out ${
-          isMobileOpen ? 'translate-x-0' : '-translate-x-full xl:translate-x-0'
-        }`}
+        className={`fixed flex flex-col xl:mt-0 top-0 px-2 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-full z-[999997] border-r border-gray-200 w-[250px] xl:w-[200px] transform transition-transform duration-300 ease-in-out ${isMobileOpen ? 'translate-x-0' : '-translate-x-full xl:translate-x-0'
+          }`}
       >
-      <div className="py-8 flex justify-start">
-        <Link href="/" prefetch>
-          <>
-            <Image
-              className="dark:hidden"
-              src="/images/logo/Logo_gibravo.svg"
-              alt="GiBravo Travel Logo"
-              width={150}
-              height={40}
-            />
-            <Image
-              className="hidden dark:block"
-              src="/images/logo/Logo_gibravo.svg"
-              alt="GiBravo Travel Logo"
-              width={150}
-              height={40}
-            />
-          </>
-        </Link>
-      </div>
-      <div className="flex flex-col overflow-y-auto  duration-300 ease-linear no-scrollbar">
-        <nav className="mb-6">
-          <div className="flex flex-col gap-4">
-            {/* HOME - Solo para ADMIN y TI */}
-            {canAccessGestione && (
-              <div>
-                <h2
-                  className={`mb-4 text-xs uppercase flex leading-5 text-gray-400 ${
-                    !isExpanded && !isHovered
+        <div className="py-8 flex justify-start">
+          <Link href="/" prefetch>
+            <>
+              <Image
+                className="dark:hidden"
+                src="/images/logo/Logo_gibravo.svg"
+                alt="GiBravo Travel Logo"
+                width={150}
+                height={40}
+              />
+              <Image
+                className="hidden dark:block"
+                src="/images/logo/Logo_gibravo.svg"
+                alt="GiBravo Travel Logo"
+                width={150}
+                height={40}
+              />
+            </>
+          </Link>
+        </div>
+        <div className="flex flex-col overflow-y-auto  duration-300 ease-linear no-scrollbar">
+          <nav className="mb-6">
+            <div className="flex flex-col gap-4">
+              {/* HOME - Solo para ADMIN y TI */}
+              {canAccessGestione && (
+                <div>
+                  <h2
+                    className={`mb-4 text-xs uppercase flex leading-5 text-gray-400 ${!isExpanded && !isHovered
                       ? "xl:justify-center"
                       : "justify-start"
-                  }`}
-                >
-                  {isExpanded || isHovered || isMobileOpen ? (
-                    "Home"
-                  ) : (
-                    <HorizontaLDots />
-                  )}
-                </h2>
-                {renderMenuItems(homeItems, "home")}
-              </div>
-            )}
-            {/* Sección MODELLO - Solo para ADMIN y TI */}
-            {canAccessGestione && (
-              <div>
-                <h2
-                  className={`mb-4 text-xs uppercase flex leading-5 text-gray-400 ${
-                    !isExpanded && !isHovered
+                      }`}
+                  >
+                    {isExpanded || isHovered || isMobileOpen ? (
+                      "Home"
+                    ) : (
+                      <HorizontaLDots />
+                    )}
+                  </h2>
+                  {renderMenuItems(homeItems, "home")}
+                </div>
+              )}
+              {/* Sección MODELLO - Solo para ADMIN y TI */}
+              {canAccessGestione && (
+                <div>
+                  <h2
+                    className={`mb-4 text-xs uppercase flex leading-5 text-gray-400 ${!isExpanded && !isHovered
                       ? "xl:justify-center"
                       : "justify-start"
-                  }`}
-                >
-                  {isExpanded || isHovered || isMobileOpen ? (
-                    "MODELLO"
-                  ) : (
-                    <HorizontaLDots />
-                  )}
-                </h2>
-                {renderMenuItems(modelloItems, "modello")}
-              </div>
-            )}
-            
-            {/* Sección GESTIONE - Solo para ADMIN y TI */}
-            {canAccessGestione && (
-              <div>
-                <h2
-                  className={`mb-4 text-xs uppercase flex leading-5 text-gray-400 ${
-                    !isExpanded && !isHovered
+                      }`}
+                  >
+                    {isExpanded || isHovered || isMobileOpen ? (
+                      "MODELLO"
+                    ) : (
+                      <HorizontaLDots />
+                    )}
+                  </h2>
+                  {renderMenuItems(modelloItems, "modello")}
+                </div>
+              )}
+
+              {/* Sección GESTIONE - Solo para ADMIN y TI */}
+              {canAccessGestione && (
+                <div>
+                  <h2
+                    className={`mb-4 text-xs uppercase flex leading-5 text-gray-400 ${!isExpanded && !isHovered
                       ? "xl:justify-center"
                       : "justify-start"
-                  }`}
-                >
-                  {isExpanded || isHovered || isMobileOpen ? (
-                    "GESTIONE"
-                  ) : (
-                    <HorizontaLDots />
-                  )}
-                </h2>
-                {renderMenuItems(gestioneItems, "gestione")}
-              </div>
-            )}
-            
-            {/* Sección UTENTI - Para ADMIN, TI y USER (pero solo TI puede gestionar) */}
-            {canAccessUtenti && (
-              <div>
-                <h2
-                  className={`mb-4 text-xs uppercase flex leading-5 text-gray-400 ${
-                    !isExpanded && !isHovered
+                      }`}
+                  >
+                    {isExpanded || isHovered || isMobileOpen ? (
+                      "GESTIONE"
+                    ) : (
+                      <HorizontaLDots />
+                    )}
+                  </h2>
+                  {renderMenuItems(gestioneItems, "gestione")}
+                </div>
+              )}
+
+              {/* Sección UTENTI - Para ADMIN, TI y USER (pero solo TI puede gestionar) */}
+              {canAccessUtenti && (
+                <div>
+                  <h2
+                    className={`mb-4 text-xs uppercase flex leading-5 text-gray-400 ${!isExpanded && !isHovered
                       ? "xl:justify-center"
                       : "justify-start"
-                  }`}
-                >
-                  {isExpanded || isHovered || isMobileOpen ? (
-                    "UTENTI"
-                  ) : (
-                    <HorizontaLDots />
-                  )}
-                </h2>
-                {renderMenuItems(utentiItems, "utenti")}
-              </div>
-            )}
-          </div>
-        </nav>
-        {isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null}
-      </div>
-    </aside>
+                      }`}
+                  >
+                    {isExpanded || isHovered || isMobileOpen ? (
+                      "UTENTI"
+                    ) : (
+                      <HorizontaLDots />
+                    )}
+                  </h2>
+                  {renderMenuItems(utentiItems, "utenti")}
+                </div>
+              )}
+            </div>
+          </nav>
+          {isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null}
+        </div>
+      </aside>
     </>
   );
 };

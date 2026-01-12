@@ -63,12 +63,12 @@ export default function AgentSalesPercentageChart({ dateRange, userId }: AgentSa
         });
 
         filteredBiglietteriaRecords.forEach((record: any) => {
-          const agentName = record.creator?.firstName 
+          const agentName = record.creator?.firstName
             ? `${record.creator.firstName}${record.creator.lastName ? ` ${record.creator.lastName}` : ''}`.trim()
             : record.creator?.email || 'Usuario';
-          
+
           const feeAmount = record.feeAgv || 0;
-          
+
           if (agentFeeMap.has(agentName)) {
             agentFeeMap.set(agentName, agentFeeMap.get(agentName)! + feeAmount);
           } else {
@@ -86,20 +86,25 @@ export default function AgentSalesPercentageChart({ dateRange, userId }: AgentSa
         filteredTourAereoTours.forEach((tour: any) => {
           // Calculate tour-level costs
           const tourCostos = (tour.guidaLocale || 0) + (tour.coordinatore || 0) + (tour.transporte || 0);
-          
+
           // Process each venta in this tour
           if (tour.ventas && tour.ventas.length > 0) {
             tour.ventas.forEach((venta: any) => {
-              const agentName = venta.creator?.firstName 
+              const agentName = venta.creator?.firstName
                 ? `${venta.creator.firstName}${venta.creator.lastName ? ` ${venta.creator.lastName}` : ''}`.trim()
                 : venta.creator?.email || 'Usuario';
-              
-              // Calculate total costs for this venta
-              const costosTotales = (venta.transfer || 0) + (venta.hotel || 0) + tourCostos;
-              
-              // Calculate fee for this specific venta: VENDUTO - COSTOS TOTALES
-              const ventaFee = (venta.venduto || 0) - costosTotales;
-              
+
+              // Calculate fee for this specific venta: VENDUTO - ALL COSTS
+              const ventaFee = (venta.venduto || 0) - (
+                (venta.transfer || 0) +
+                (tour.guidaLocale || 0) +
+                (tour.coordinatore || 0) +
+                (tour.transporte || 0) +
+                (tour.hotel || 0) +
+                (venta.tkt || 0) +
+                (venta.polizza || 0)
+              );
+
               if (agentFeeMap.has(agentName)) {
                 agentFeeMap.set(agentName, agentFeeMap.get(agentName)! + ventaFee);
               } else {
@@ -150,7 +155,7 @@ export default function AgentSalesPercentageChart({ dateRange, userId }: AgentSa
         borderRadiusApplication: "end",
       },
     },
-    dataLabels: { 
+    dataLabels: {
       enabled: true,
       formatter: (val: number) => `${val.toFixed(1)}%`,
       style: {
@@ -182,14 +187,14 @@ export default function AgentSalesPercentageChart({ dateRange, userId }: AgentSa
         },
       },
     },
-    legend: { 
+    legend: {
       show: false,
     },
     grid: {
       xaxis: { lines: { show: false } },
       yaxis: { lines: { show: false } },
     },
-    fill: { 
+    fill: {
       opacity: 1,
       type: 'gradient',
       gradient: {
@@ -208,11 +213,11 @@ export default function AgentSalesPercentageChart({ dateRange, userId }: AgentSa
         fontFamily: "Outfit",
         fontSize: '12px',
       },
-      custom: function({series, seriesIndex, dataPointIndex, w}) {
+      custom: function ({ series, seriesIndex, dataPointIndex, w }) {
         const value = series[seriesIndex][dataPointIndex];
         const agentName = w.globals.labels[dataPointIndex];
         const feeAmount = agentData[dataPointIndex]?.feeAmount || 0;
-        
+
         // Si userId está presente (es USER), solo mostrar porcentaje, no el monto
         if (userId) {
           return `
@@ -221,7 +226,7 @@ export default function AgentSalesPercentageChart({ dateRange, userId }: AgentSa
             </div>
           `;
         }
-        
+
         // Para ADMIN/TI, mostrar porcentaje y monto
         return `
           <div style="margin-bottom: 4px;">

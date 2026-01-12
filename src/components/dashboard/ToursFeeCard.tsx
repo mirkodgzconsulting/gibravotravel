@@ -43,32 +43,22 @@ export default function ToursFeeCard({ dateRange, userId, isUser = false }: Tour
         return tourFechaViaje >= startDate && tourFechaViaje <= endDate;
       })
       .reduce((sum: number, tour: any) => {
-        const spesaTotale = (tour.bus || 0) + (tour.pasti || 0) + (tour.parking || 0) + 
-                           (tour.coordinatore1 || 0) + (tour.coordinatore2 || 0) + 
-                           (tour.ztl || 0) + (tour.hotel || 0) + (tour.polizza || 0) + (tour.tkt || 0);
+        const spesaTotale = (tour.bus || 0) + (tour.pasti || 0) + (tour.parking || 0) +
+          (tour.coordinatore1 || 0) + (tour.coordinatore2 || 0) +
+          (tour.ztl || 0) + (tour.hotel || 0) + (tour.polizza || 0) + (tour.tkt || 0);
         const ricavoTotale = tour.ventasTourBus?.reduce((ventaSum: number, venta: any) => {
           return ventaSum + (venta.acconto || 0);
         }, 0) || 0;
         return sum + (ricavoTotale - spesaTotale);
       }, 0);
 
-    // Calculate TOUR AEREO fees - EXACT same logic as TotalFeeCard
+    // Calculate TOUR AEREO fees - SIMPLIFIED: Using feeAgv column
     const tourAereoFee = tourAereo
       .filter((tour: any) => {
         const tourFechaViaje = new Date(tour.fechaViaje);
         return tourFechaViaje >= startDate && tourFechaViaje <= endDate;
       })
-      .reduce((sum: number, tour: any) => {
-        if (tour.ventas?.length > 0) {
-          return sum + tour.ventas.reduce((ventaSum: number, venta: any) => {
-            const costosTotales = (venta.transfer || 0) + (tour.guidaLocale || 0) + 
-                                (tour.coordinatore || 0) + (tour.transporte || 0) + (venta.hotel || 0);
-            const fee = (venta.venduto || 0) - costosTotales;
-            return ventaSum + fee;
-          }, 0);
-        }
-        return sum;
-      }, 0);
+      .reduce((sum: number, tour: any) => sum + (tour.feeAgv || 0), 0);
 
     const total = toursBusFee + tourAereoFee;
 
@@ -121,18 +111,18 @@ export default function ToursFeeCard({ dateRange, userId, isUser = false }: Tour
           <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>
           <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
         </div>
-        
+
         {/* Legend skeleton */}
         <div className="flex items-center justify-between mb-4">
           <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24 animate-pulse"></div>
           <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24 animate-pulse"></div>
         </div>
-        
+
         {/* Chart skeleton */}
         <div className="flex items-center justify-center mb-4">
           <div className="w-32 h-32 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
         </div>
-        
+
         {/* Total skeleton */}
         <div className="flex items-center justify-center">
           <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>
@@ -167,12 +157,12 @@ export default function ToursFeeCard({ dateRange, userId, isUser = false }: Tour
       <div className="flex items-center justify-between mb-4">
         {!isUser && (
           <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 rounded-full" style={{backgroundColor: '#2a31d8'}}></div>
+            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#2a31d8' }}></div>
             <span className="text-sm text-gray-600 dark:text-gray-400">BUS: {feeData.toursBus.toLocaleString()}€</span>
           </div>
         )}
         <div className={`flex items-center space-x-2 ${isUser ? 'mx-auto' : ''}`}>
-          <div className="w-4 h-4 rounded-full" style={{backgroundColor: '#465fff'}}></div>
+          <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#465fff' }}></div>
           <span className="text-sm text-gray-600 dark:text-gray-400">AEREO: {feeData.tourAereo.toLocaleString()}€</span>
         </div>
       </div>

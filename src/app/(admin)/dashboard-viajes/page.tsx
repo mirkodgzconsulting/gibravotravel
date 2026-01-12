@@ -42,7 +42,7 @@ interface ChartData {
 // Constantes
 const CHART_COLORS = {
   BIGLIETTERIA: "#16a34a",
-  TOURS_BUS: "#ea580c", 
+  TOURS_BUS: "#ea580c",
   TOUR_AEREO: "#3B82F6",
   TOTAL: "#6B7280"
 } as const;
@@ -63,19 +63,19 @@ function DashboardViajesContent({ currentUserId }: DashboardViajesContentProps) 
   const [monthlyData, setMonthlyData] = useState<MonthlyFeeData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Date range filters for first 6 charts + percentage chart
   // Por defecto: todo el mes actual (desde el primer día hasta el último día del mes)
   const getCurrentMonthDates = () => {
     const currentDate = new Date();
     const currentYear = currentDate.getFullYear();
     const currentMonth = currentDate.getMonth();
-    
+
     // Primer día del mes actual
     const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
     // Último día del mes actual
     const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
-    
+
     // Formatear fechas en formato YYYY-MM-DD sin problemas de zona horaria
     const formatDate = (date: Date) => {
       const year = date.getFullYear();
@@ -83,18 +83,18 @@ function DashboardViajesContent({ currentUserId }: DashboardViajesContentProps) 
       const day = String(date.getDate()).padStart(2, '0');
       return `${year}-${month}-${day}`;
     };
-    
+
     return {
       start: formatDate(firstDayOfMonth),
       end: formatDate(lastDayOfMonth)
     };
   };
-  
+
   const { start: startOfCurrentMonth, end: endOfCurrentMonth } = getCurrentMonthDates();
-  
+
   const [startDate, setStartDate] = useState<string>(startOfCurrentMonth);
   const [endDate, setEndDate] = useState<string>(endOfCurrentMonth);
-  
+
   // Month/Year filters for other charts
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
@@ -197,32 +197,22 @@ function DashboardViajesContent({ currentUserId }: DashboardViajesContentProps) 
             return tourDate >= startDate && tourDate <= endDate;
           })
           .reduce((sum: number, tour: any) => {
-            const spesaTotale = (tour.bus || 0) + (tour.pasti || 0) + (tour.parking || 0) + 
-                               (tour.coordinatore1 || 0) + (tour.coordinatore2 || 0) + 
-                               (tour.ztl || 0) + (tour.hotel || 0) + (tour.polizza || 0) + (tour.tkt || 0);
+            const spesaTotale = (tour.bus || 0) + (tour.pasti || 0) + (tour.parking || 0) +
+              (tour.coordinatore1 || 0) + (tour.coordinatore2 || 0) +
+              (tour.ztl || 0) + (tour.hotel || 0) + (tour.polizza || 0) + (tour.tkt || 0);
             const ricavoTotale = tour.ventasTourBus?.reduce((ventaSum: number, venta: any) => {
               return ventaSum + (venta.acconto || 0);
             }, 0) || 0;
             return sum + (ricavoTotale - spesaTotale);
           }, 0);
 
-        // Filtrar tours aereo por mes
+        // Filtrar tours aereo por mes - SIMPLIFIED: Using feeAgv column
         const toursAereoFee = tourAereo
           .filter((tour: any) => {
             const tourDate = new Date(tour.fechaViaje);
             return tourDate >= startDate && tourDate <= endDate;
           })
-          .reduce((sum: number, tour: any) => {
-            if (tour.ventas?.length > 0) {
-              return sum + tour.ventas.reduce((ventaSum: number, venta: any) => {
-                const costosTotales = (venta.transfer || 0) + (tour.guidaLocale || 0) + 
-                                    (tour.coordinatore || 0) + (tour.transporte || 0) + (venta.hotel || 0);
-                const fee = (venta.venduto || 0) - costosTotales;
-                return ventaSum + fee;
-              }, 0);
-            }
-            return sum;
-          }, 0);
+          .reduce((sum: number, tour: any) => sum + (tour.feeAgv || 0), 0);
 
         const total = biglietteriaFee + toursBusFee + toursAereoFee;
 
@@ -293,9 +283,9 @@ function DashboardViajesContent({ currentUserId }: DashboardViajesContentProps) 
     tooltip: {
       x: { show: false },
       y: {
-        formatter: (val: number) => `€${val.toLocaleString('es-ES', { 
-          minimumFractionDigits: 2, 
-          maximumFractionDigits: 2 
+        formatter: (val: number) => `€${val.toLocaleString('es-ES', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
         })}`,
       },
     },
@@ -340,7 +330,7 @@ function DashboardViajesContent({ currentUserId }: DashboardViajesContentProps) 
                 Filtro de Período (Primeros 6 Gráficos)
               </h3>
             </div>
-            
+
             <div className="flex flex-wrap items-center justify-center gap-4">
               <div className="flex items-center gap-2">
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
@@ -353,7 +343,7 @@ function DashboardViajesContent({ currentUserId }: DashboardViajesContentProps) 
                   className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white text-sm"
                 />
               </div>
-              
+
               <div className="flex items-center gap-2">
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
                   Hasta:
@@ -379,17 +369,17 @@ function DashboardViajesContent({ currentUserId }: DashboardViajesContentProps) 
 
           {/* Grid de tres tarjetas en una fila (solo 2 para USER) */}
           <div className={`grid grid-cols-1 ${isUser ? 'lg:grid-cols-2' : 'lg:grid-cols-3'} gap-6`}>
-            <ToursFeeCard 
+            <ToursFeeCard
               dateRange={dateRange}
               userId={currentUserId}
               isUser={isUser}
             />
-            <BiglietteriaFeeCard 
+            <BiglietteriaFeeCard
               dateRange={dateRange}
               userId={currentUserId}
             />
             {!isUser && (
-              <TotalFeeCard 
+              <TotalFeeCard
                 dateRange={dateRange}
               />
             )}
@@ -406,15 +396,15 @@ function DashboardViajesContent({ currentUserId }: DashboardViajesContentProps) 
 
           {/* Grid de tres gráficos en una fila - Todos los usuarios ven los mismos datos */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <BiglietteriaUserSalesChart 
+            <BiglietteriaUserSalesChart
               dateRange={dateRange}
               userId={undefined}
             />
-            <TourAereoUserSalesChart 
+            <TourAereoUserSalesChart
               dateRange={dateRange}
               userId={undefined}
             />
-            <TourBusUserSalesChart 
+            <TourBusUserSalesChart
               dateRange={dateRange}
               userId={undefined}
             />
@@ -423,7 +413,7 @@ function DashboardViajesContent({ currentUserId }: DashboardViajesContentProps) 
 
         {/* Porcentaje de Ventas por Agente - TERCERA FILA */}
         <div className="mb-8">
-          <AgentSalesPercentageChart 
+          <AgentSalesPercentageChart
             dateRange={dateRange}
             userId={currentUserId}
           />
@@ -449,7 +439,7 @@ function DashboardViajesContent({ currentUserId }: DashboardViajesContentProps) 
               </select>
             </div>
           </div>
-          <AgentRankingChart 
+          <AgentRankingChart
             selectedYear={selectedYear}
             userId={currentUserId}
           />
@@ -465,163 +455,163 @@ function DashboardViajesContent({ currentUserId }: DashboardViajesContentProps) 
               </h3>
             </div>
 
-          {/* Tarjetas minimalistas */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-100 dark:border-gray-700">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{backgroundColor: CHART_COLORS.BIGLIETTERIA}}></div>
-                <div>
-                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400">BIGLIETTERIA</p>
-                  <p className="text-sm font-bold text-gray-900 dark:text-white">
-                    €{totals.totalBiglietteria.toLocaleString('es-ES', { 
-                      minimumFractionDigits: 0, 
-                      maximumFractionDigits: 0 
-                    })}
-                  </p>
+            {/* Tarjetas minimalistas */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-100 dark:border-gray-700">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: CHART_COLORS.BIGLIETTERIA }}></div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400">BIGLIETTERIA</p>
+                    <p className="text-sm font-bold text-gray-900 dark:text-white">
+                      €{totals.totalBiglietteria.toLocaleString('es-ES', {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                      })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-100 dark:border-gray-700">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: CHART_COLORS.TOURS_BUS }}></div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400">TOURS BUS</p>
+                    <p className="text-sm font-bold text-gray-900 dark:text-white">
+                      €{totals.totalToursBus.toLocaleString('es-ES', {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                      })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-100 dark:border-gray-700">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: CHART_COLORS.TOUR_AEREO }}></div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400">TOUR AEREO</p>
+                    <p className="text-sm font-bold text-gray-900 dark:text-white">
+                      €{totals.totalToursAereo.toLocaleString('es-ES', {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                      })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-100 dark:border-gray-700">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400">TOTAL</p>
+                    <p className="text-sm font-bold text-gray-900 dark:text-white">
+                      €{totals.grandTotal.toLocaleString('es-ES', {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                      })}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-100 dark:border-gray-700">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{backgroundColor: CHART_COLORS.TOURS_BUS}}></div>
-                <div>
-                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400">TOURS BUS</p>
-                  <p className="text-sm font-bold text-gray-900 dark:text-white">
-                    €{totals.totalToursBus.toLocaleString('es-ES', { 
-                      minimumFractionDigits: 0, 
-                      maximumFractionDigits: 0 
-                    })}
-                  </p>
-                </div>
+            {/* Gráfico */}
+            <div className="max-w-full overflow-x-auto custom-scrollbar">
+              <div className="-ml-5 min-w-[650px] xl:min-w-full pl-2">
+                <ReactApexChart
+                  options={chartOptions}
+                  series={chartData.series}
+                  type="bar"
+                  height={CHART_CONFIG.HEIGHT}
+                />
               </div>
             </div>
 
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-100 dark:border-gray-700">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{backgroundColor: CHART_COLORS.TOUR_AEREO}}></div>
-                <div>
-                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400">TOUR AEREO</p>
-                  <p className="text-sm font-bold text-gray-900 dark:text-white">
-                    €{totals.totalToursAereo.toLocaleString('es-ES', { 
-                      minimumFractionDigits: 0, 
-                      maximumFractionDigits: 0 
-                    })}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-100 dark:border-gray-700">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                <div>
-                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400">TOTAL</p>
-                  <p className="text-sm font-bold text-gray-900 dark:text-white">
-                    €{totals.grandTotal.toLocaleString('es-ES', { 
-                      minimumFractionDigits: 0, 
-                      maximumFractionDigits: 0 
-                    })}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Gráfico */}
-          <div className="max-w-full overflow-x-auto custom-scrollbar">
-            <div className="-ml-5 min-w-[650px] xl:min-w-full pl-2">
-              <ReactApexChart
-                options={chartOptions}
-                series={chartData.series}
-                type="bar"
-                height={CHART_CONFIG.HEIGHT}
-              />
-            </div>
-          </div>
-
-          {/* Botón desplegable para tabla */}
-          <div className="flex justify-center mt-4">
-            <button
-              onClick={() => setShowTable(!showTable)}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
-            >
-              <span>Desglose Mensual</span>
-              <svg
-                className={`w-4 h-4 transition-transform ${showTable ? 'rotate-180' : ''}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+            {/* Botón desplegable para tabla */}
+            <div className="flex justify-center mt-4">
+              <button
+                onClick={() => setShowTable(!showTable)}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Tabla desplegable */}
-          {showTable && (
-            <div className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-6">
-              <h4 className="text-sm font-semibold text-gray-800 dark:text-white/90 mb-4">
-                Desglose Mensual FEE/AGV
-              </h4>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                  <thead className="bg-gray-50 dark:bg-gray-700">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        Mes
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        BIGLIETTERIA
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        TOURS BUS
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        TOUR AEREO
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        Total
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    {monthlyData.map((data, index) => (
-                      <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                          {data.month}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600 dark:text-blue-400 font-semibold">
-                          €{data.biglietteria.toLocaleString('es-ES', { 
-                            minimumFractionDigits: 2, 
-                            maximumFractionDigits: 2 
-                          })}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 dark:text-green-400 font-semibold">
-                          €{data.toursBus.toLocaleString('es-ES', { 
-                            minimumFractionDigits: 2, 
-                            maximumFractionDigits: 2 
-                          })}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-600 dark:text-purple-400 font-semibold">
-                          €{data.toursAereo.toLocaleString('es-ES', { 
-                            minimumFractionDigits: 2, 
-                            maximumFractionDigits: 2 
-                          })}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">
-                          €{data.total.toLocaleString('es-ES', { 
-                            minimumFractionDigits: 2, 
-                            maximumFractionDigits: 2 
-                          })}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                <span>Desglose Mensual</span>
+                <svg
+                  className={`w-4 h-4 transition-transform ${showTable ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
             </div>
-          )}
+
+            {/* Tabla desplegable */}
+            {showTable && (
+              <div className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-6">
+                <h4 className="text-sm font-semibold text-gray-800 dark:text-white/90 mb-4">
+                  Desglose Mensual FEE/AGV
+                </h4>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead className="bg-gray-50 dark:bg-gray-700">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          Mes
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          BIGLIETTERIA
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          TOURS BUS
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          TOUR AEREO
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          Total
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                      {monthlyData.map((data, index) => (
+                        <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                            {data.month}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600 dark:text-blue-400 font-semibold">
+                            €{data.biglietteria.toLocaleString('es-ES', {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2
+                            })}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 dark:text-green-400 font-semibold">
+                            €{data.toursBus.toLocaleString('es-ES', {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2
+                            })}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-600 dark:text-purple-400 font-semibold">
+                            €{data.toursAereo.toLocaleString('es-ES', {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2
+                            })}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">
+                            €{data.total.toLocaleString('es-ES', {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2
+                            })}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -657,7 +647,7 @@ export default function DashboardViajesPage() {
         setUserIdLoading(false);
       }
     };
-    
+
     fetchUserId();
   }, [clerkUser, isUser]);
 
@@ -671,7 +661,7 @@ export default function DashboardViajesPage() {
   }
 
   return (
-    <DashboardDataProvider 
+    <DashboardDataProvider
       userId={isUser ? currentUserId || undefined : undefined}
       waitForUserId={isUser}
     >

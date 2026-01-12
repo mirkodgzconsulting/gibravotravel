@@ -1,0 +1,193 @@
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+   ▲ Next.js 15.4.8
+   - Environments: .env
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 10.0s
+   Skipping linting
+   Checking validity of types ...
+   Collecting page data ...
+🔍 Using database URL from: DATABASE_URL
+🔍 Using database URL from: DATABASE_URL
+🔍 Using database URL from: DATABASE_URL
+🔍 Using database URL from: DATABASE_URL
+🔍 Using database URL from: DATABASE_URL
+🔍 Using database URL from: DATABASE_URL
+🔍 Using database URL from: DATABASE_URL
+🔍 Using database URL from: DATABASE_URL
+🔍 Using database URL from: DATABASE_URL
+🔍 Using database URL from: DATABASE_URL
+🔍 Using database URL from: DATABASE_URL
+🔍 Using database URL from: DATABASE_URL
+🔍 Using database URL from: DATABASE_URL
+🔍 Using database URL from: DATABASE_URL
+🔍 Using database URL from: DATABASE_URL
+   Generating static pages (0/107) ...
+🔍 Using database URL from: DATABASE_URL
+🔍 Using database URL from: DATABASE_URL
+🔍 Using database URL from: DATABASE_URL
+   Generating static pages (26/107) 
+🔍 Using database URL from: DATABASE_URL
+   Generating static pages (53/107) 
+   Generating static pages (80/107) 
+ ✓ Generating static pages (107/107)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                      Size  First Load JS
+┌ ƒ /                                         22.5 kB         180 kB
+├ ○ /_not-found                                 344 B         101 kB
+├ ○ /analytics                                  337 B         101 kB
+├ ƒ /api/acquisto                               344 B         101 kB
+├ ƒ /api/admin/agregar-iatas                    344 B         101 kB
+├ ƒ /api/admin/agregar-servicios                344 B         101 kB
+├ ƒ /api/admin/clean-connections                344 B         101 kB
+├ ƒ /api/admin/verificar-indices                344 B         101 kB
+├ ƒ /api/agendas-personales                     344 B         101 kB
+├ ƒ /api/agendas-personales/[id]                344 B         101 kB
+├ ƒ /api/auditoria                              344 B         101 kB
+├ ƒ /api/biglietteria                           344 B         101 kB
+├ ƒ /api/biglietteria/[id]                      344 B         101 kB
+├ ƒ /api/biglietteria/cuota/[id]                344 B         101 kB
+├ ƒ /api/biglietteria/generate-ricevuta         344 B         101 kB
+├ ƒ /api/biglietteria/pasajero-servicio         344 B         101 kB
+├ ƒ /api/biglietteria/pasajero-servicio/[id]    344 B         101 kB
+├ ƒ /api/biglietteria/pasajero/[id]             344 B         101 kB
+├ ƒ /api/calendario                             344 B         101 kB
+├ ƒ /api/checkout                               344 B         101 kB
+├ ƒ /api/clients                                344 B         101 kB
+├ ƒ /api/clients/[id]                           344 B         101 kB
+├ ƒ /api/cron/notificaciones                    344 B         101 kB
+├ ƒ /api/debug/clerk                            344 B         101 kB
+├ ƒ /api/debug/test-user-creation               344 B         101 kB
+├ ƒ /api/download-file                          344 B         101 kB
+├ ƒ /api/fermata-bus                            344 B         101 kB
+├ ƒ /api/fermata-bus/[id]                       344 B         101 kB
+├ ƒ /api/fix-database                           344 B         101 kB
+├ ƒ /api/force-clear-cache                      344 B         101 kB
+├ ƒ /api/health/database                        344 B         101 kB
+├ ƒ /api/health/reconnect                       344 B         101 kB
+├ ƒ /api/iata                                   344 B         101 kB
+├ ƒ /api/iata/[id]                              344 B         101 kB
+├ ƒ /api/info                                   344 B         101 kB
+├ ƒ /api/info/[id]                              344 B         101 kB
+├ ƒ /api/metodo-pagamento                       344 B         101 kB
+├ ƒ /api/metodo-pagamento/[id]                  344 B         101 kB
+├ ƒ /api/migrate                                344 B         101 kB
+├ ƒ /api/notificaciones                         344 B         101 kB
+├ ƒ /api/notificaciones/[id]                    344 B         101 kB
+├ ƒ /api/notificaciones/marcar-todas            344 B         101 kB
+├ ƒ /api/pagamento                              344 B         101 kB
+├ ƒ /api/pagamento/[id]                         344 B         101 kB
+├ ƒ /api/percorsi                               344 B         101 kB
+├ ƒ /api/percorsi/[id]                          344 B         101 kB
+├ ƒ /api/post-deploy                            344 B         101 kB
+├ ƒ /api/reference/acquisto                     344 B         101 kB
+├ ƒ /api/reference/iata                         344 B         101 kB
+├ ƒ /api/reference/metodo-pagamento             344 B         101 kB
+├ ƒ /api/reference/pagamento                    344 B         101 kB
+├ ƒ /api/reference/servizio                     344 B         101 kB
+├ ƒ /api/route                                    0 B            0 B
+├ ƒ /api/route/[id]                             344 B         101 kB
+├ ƒ /api/seed-bus-data                          344 B         101 kB
+├ ƒ /api/servizi                                344 B         101 kB
+├ ƒ /api/servizio                               344 B         101 kB
+├ ƒ /api/servizio/[id]                          344 B         101 kB
+├ ƒ /api/show-template                          344 B         101 kB
+├ ƒ /api/stato-bus                              344 B         101 kB
+├ ƒ /api/stato-bus/[id]                         344 B         101 kB
+├ ƒ /api/stop                                   344 B         101 kB
+├ ƒ /api/stop/[id]                              344 B         101 kB
+├ ƒ /api/test-db                                344 B         101 kB
+├ ƒ /api/test-ricevuta                          344 B         101 kB
+├ ƒ /api/tour-aereo                             344 B         101 kB
+├ ƒ /api/tour-aereo/[id]                        344 B         101 kB
+├ ƒ /api/tour-aereo/[id]/stanze                 344 B         101 kB
+├ ƒ /api/tour-aereo/[id]/ventas                 344 B         101 kB
+├ ƒ /api/tour-aereo/ventas/[id]                 344 B         101 kB
+├ ƒ /api/tour-aereo/ventas/[id]/ricevuta        344 B         101 kB
+├ ƒ /api/tour-bus                               344 B         101 kB
+├ ƒ /api/tour-bus/[id]                          344 B         101 kB
+├ ƒ /api/tour-bus/asiento/[id]                  344 B         101 kB
+├ ƒ /api/tour-bus/generate-ricevuta             344 B         101 kB
+├ ƒ /api/tour-bus/venta                         344 B         101 kB
+├ ƒ /api/tour-bus/venta/[id]                    344 B         101 kB
+├ ƒ /api/tour-bus/ventas                        344 B         101 kB
+├ ƒ /api/uploads/[...path]                      344 B         101 kB
+├ ƒ /api/user/[id]                              344 B         101 kB
+├ ƒ /api/user/change-password                   344 B         101 kB
+├ ƒ /api/user/create                            344 B         101 kB
+├ ƒ /api/user/list                              344 B         101 kB
+├ ƒ /api/user/profile                           344 B         101 kB
+├ ƒ /api/user/role                              344 B         101 kB
+├ ƒ /api/users                                  344 B         101 kB
+├ ƒ /api/verify-template                        344 B         101 kB
+├ ƒ /api/webhooks/clerk                         344 B         101 kB
+├ ƒ /api/webhooks/stripe                        344 B         101 kB
+├ ƒ /area-riservata                           7.36 kB         150 kB
+├ ○ /auditoria                                3.31 kB         134 kB
+├ ○ /biglietteria                             29.5 kB         300 kB
+├ ○ /calendario                               5.74 kB         133 kB
+├ ○ /chi-siamo                                5.41 kB         111 kB
+├ ○ /clienti                                  8.25 kB         276 kB
+├ ○ /coming-soon                                692 B         109 kB
+├ ○ /contatti                                   808 B         106 kB
+├ ○ /crea-utenti                               6.5 kB         143 kB
+├ ○ /crm                                        336 B         101 kB
+├ ○ /dashboard-viajes                         10.5 kB         152 kB
+├ ○ /database-admin                           4.06 kB         140 kB
+├ ○ /domande-frequenti                        9.89 kB         131 kB
+├ ○ /error-404                                  194 B         109 kB
+├ ○ /error-500                                  194 B         109 kB
+├ ○ /error-503                                  194 B         109 kB
+├ ○ /fermate                                  7.43 kB         144 kB
+├ ○ /iata                                     5.19 kB         136 kB
+├ ○ /info                                     7.15 kB         143 kB
+├ ○ /informativa-cookie                         524 B         101 kB
+├ ○ /informativa-privacy                        524 B         101 kB
+├ ○ /limpiar-conexiones                       1.67 kB         105 kB
+├ ƒ /login                                    1.33 kB         198 kB
+├ ○ /logistics                                  336 B         101 kB
+├ ○ /maintenance                                194 B         109 kB
+├ ○ /marketing                                  338 B         101 kB
+├ ○ /metodo-pagamento                         4.92 kB         136 kB
+├ ○ /modifica-profilo                         5.75 kB         142 kB
+├ ○ /pagamento                                 4.9 kB         136 kB
+├ ƒ /partenze                                   544 B         109 kB
+├ ○ /partenze-note                            7.05 kB         143 kB
+├ ○ /percorsi                                 7.14 kB         143 kB
+├ ƒ /prenotazione/[id]                        29.4 kB         142 kB
+├ ƒ /prenotazione/[id]/checkout               14.1 kB         130 kB
+├ ○ /prenotazione/conferma                    3.88 kB         114 kB
+├ ƒ /register                                  1.8 kB         199 kB
+├ ○ /reset-password                             166 B         104 kB
+├ ○ /robots.txt                                 344 B         101 kB
+├ ○ /saas                                       334 B         101 kB
+├ ○ /servizio                                 5.16 kB         136 kB
+├ ƒ /sign-in/[[...sign-in]]                     403 B         135 kB
+├ ƒ /sign-up/[[...sign-up]]                     403 B         135 kB
+├ ƒ /signin/[[...rest]]                       3.29 kB         136 kB
+├ ○ /sitemap.xml                                344 B         101 kB
+├ ○ /stocks                                     340 B         101 kB
+├ ○ /success                                    194 B         109 kB
+├ ○ /termini-e-condizioni                       524 B         101 kB
+├ ○ /tour-aereo                               4.84 kB         170 kB
+├ ○ /tour-bus                                 6.62 kB         172 kB
+├ ƒ /tour-bus/[id]/asientos                   25.7 kB         164 kB
+├ ƒ /tour/[slug]                              4.71 kB         120 kB
+├ ○ /two-step-verification                    1.58 kB         112 kB
+├ ○ /unauthorized                             1.98 kB         135 kB
+├ ƒ /venta-tour-aereo/[id]                    23.9 kB         305 kB
+└ ○ /verificar-indices                        1.71 kB         102 kB
++ First Load JS shared by all                  100 kB
+  ├ chunks/4bd1b696-cc729d47eba2cee4.js       54.1 kB
+  ├ chunks/5964-909c2aa918bcc589.js           43.9 kB
+  └ other shared chunks (total)               2.17 kB
+
+
+ƒ Middleware                                  80.7 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

@@ -50,40 +50,30 @@ export default function TotalFeeCard({ dateRange }: TotalFeeCardProps) {
         return tourFechaViaje >= startDate && tourFechaViaje <= endDate;
       })
       .reduce((sum: number, tour: any) => {
-        const spesaTotale = (tour.bus || 0) + (tour.pasti || 0) + (tour.parking || 0) + 
-                           (tour.coordinatore1 || 0) + (tour.coordinatore2 || 0) + 
-                           (tour.ztl || 0) + (tour.hotel || 0) + (tour.polizza || 0) + (tour.tkt || 0);
+        const spesaTotale = (tour.bus || 0) + (tour.pasti || 0) + (tour.parking || 0) +
+          (tour.coordinatore1 || 0) + (tour.coordinatore2 || 0) +
+          (tour.ztl || 0) + (tour.hotel || 0) + (tour.polizza || 0) + (tour.tkt || 0);
         const ricavoTotale = tour.ventasTourBus?.reduce((ventaSum: number, venta: any) => {
           return ventaSum + (venta.acconto || 0);
         }, 0) || 0;
         return sum + (ricavoTotale - spesaTotale);
       }, 0);
 
-    // Calculate TOUR AEREO fees
+    // Calculate TOUR AEREO fees - SIMPLIFIED: Using feeAgv column
     const tourAereoFee = tourAereo
       .filter((tour: any) => {
         const tourFechaViaje = new Date(tour.fechaViaje);
         return tourFechaViaje >= startDate && tourFechaViaje <= endDate;
       })
-      .reduce((sum: number, tour: any) => {
-        if (tour.ventas?.length > 0) {
-          return sum + tour.ventas.reduce((ventaSum: number, venta: any) => {
-            const costosTotales = (venta.transfer || 0) + (tour.guidaLocale || 0) + 
-                                (tour.coordinatore || 0) + (tour.transporte || 0) + (venta.hotel || 0);
-            const fee = (venta.venduto || 0) - costosTotales;
-            return ventaSum + fee;
-          }, 0);
-        }
-        return sum;
-      }, 0);
+      .reduce((sum: number, tour: any) => sum + (tour.feeAgv || 0), 0);
 
     const total = biglietteriaFee + toursBusFee + tourAereoFee;
 
-    setFeeData({ 
-      biglietteria: biglietteriaFee, 
-      toursBus: toursBusFee, 
-      tourAereo: tourAereoFee, 
-      total 
+    setFeeData({
+      biglietteria: biglietteriaFee,
+      toursBus: toursBusFee,
+      tourAereo: tourAereoFee,
+      total
     });
   }, [dateRange, dashboardData]);
 
@@ -126,12 +116,12 @@ export default function TotalFeeCard({ dateRange }: TotalFeeCardProps) {
           <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-24 animate-pulse"></div>
           <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
         </div>
-        
+
         {/* Chart skeleton */}
         <div className="flex items-center justify-center mb-4">
           <div className="w-32 h-32 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
         </div>
-        
+
         {/* Total skeleton */}
         <div className="flex items-center justify-center">
           <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>

@@ -236,6 +236,33 @@ const SimpleRichTextEditor: React.FC<SimpleRichTextEditorProps> = ({
             ))}
           </select>
         </div>
+        {/* Selector de color */}
+        <div className="flex items-center gap-1 border-l border-gray-300 dark:border-gray-600 pl-2 ml-2">
+          {/* Rojo */}
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => execCommand('foreColor', '#ef4444')}
+            className="w-6 h-6 rounded bg-red-500 hover:ring-2 hover:ring-offset-1 hover:ring-red-500 transition-all"
+            title="Texto Rojo"
+          />
+          {/* Azul */}
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => execCommand('foreColor', '#3b82f6')}
+            className="w-6 h-6 rounded bg-blue-500 hover:ring-2 hover:ring-offset-1 hover:ring-blue-500 transition-all"
+            title="Texto Azul"
+          />
+          {/* Verde */}
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => execCommand('foreColor', '#22c55e')}
+            className="w-6 h-6 rounded bg-green-500 hover:ring-2 hover:ring-offset-1 hover:ring-green-500 transition-all"
+            title="Texto Verde"
+          />
+        </div>
       </div>
 
       {/* Editor */}
@@ -272,7 +299,7 @@ const SimpleRichTextEditor: React.FC<SimpleRichTextEditorProps> = ({
         ul { list-style-type: disc; margin-left: 20px; }
         ol { list-style-type: decimal; margin-left: 20px; }
       `}} />
-    </div>
+    </div >
   );
 };
 

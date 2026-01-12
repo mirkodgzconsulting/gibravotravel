@@ -52,13 +52,27 @@ export default function ToursFeeCard({ dateRange, userId, isUser = false }: Tour
         return sum + (ricavoTotale - spesaTotale);
       }, 0);
 
-    // Calculate TOUR AEREO fees - SIMPLIFIED: Using feeAgv column
+    // Calculate TOUR AEREO fees - DYNAMIC: Summing individual sales fees (Venduto - Costs)
     const tourAereoFee = tourAereo
       .filter((tour: any) => {
         const tourFechaViaje = new Date(tour.fechaViaje);
         return tourFechaViaje >= startDate && tourFechaViaje <= endDate;
       })
-      .reduce((sum: number, tour: any) => sum + (tour.feeAgv || 0), 0);
+      .reduce((sum: number, tour: any) => {
+        const totalSalesFee = tour.ventas?.reduce((vSum: number, venta: any) => {
+          const ventaFee = (venta.venduto || 0) - (
+            (venta.transfer || 0) +
+            (tour.guidaLocale || 0) +
+            (tour.coordinatore || 0) +
+            (tour.transporte || 0) +
+            (tour.hotel || 0) +
+            (venta.tkt || 0) +
+            (venta.polizza || 0)
+          );
+          return vSum + ventaFee;
+        }, 0) || 0;
+        return sum + totalSalesFee;
+      }, 0);
 
     const total = toursBusFee + tourAereoFee;
 

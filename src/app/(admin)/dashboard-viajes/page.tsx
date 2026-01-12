@@ -206,13 +206,27 @@ function DashboardViajesContent({ currentUserId }: DashboardViajesContentProps) 
             return sum + (ricavoTotale - spesaTotale);
           }, 0);
 
-        // Filtrar tours aereo por mes - SIMPLIFIED: Using feeAgv column
+        // Filtrar tours aereo por mes - DYNAMIC: Summing individual sales fees (Venduto - Costs)
         const toursAereoFee = tourAereo
           .filter((tour: any) => {
             const tourDate = new Date(tour.fechaViaje);
             return tourDate >= startDate && tourDate <= endDate;
           })
-          .reduce((sum: number, tour: any) => sum + (tour.feeAgv || 0), 0);
+          .reduce((sum: number, tour: any) => {
+            const totalSalesFee = tour.ventas?.reduce((vSum: number, venta: any) => {
+              const ventaFee = (venta.venduto || 0) - (
+                (venta.transfer || 0) +
+                (tour.guidaLocale || 0) +
+                (tour.coordinatore || 0) +
+                (tour.transporte || 0) +
+                (tour.hotel || 0) +
+                (venta.tkt || 0) +
+                (venta.polizza || 0)
+              );
+              return vSum + ventaFee;
+            }, 0) || 0;
+            return sum + totalSalesFee;
+          }, 0);
 
         const total = biglietteriaFee + toursBusFee + toursAereoFee;
 

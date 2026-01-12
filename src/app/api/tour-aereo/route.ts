@@ -82,6 +82,8 @@ export async function GET(request: NextRequest) {
                 venduto: true,
                 transfer: true,
                 hotel: true,
+                tkt: true,
+                polizza: true,
                 createdAt: true,
                 creator: {
                   select: {
@@ -201,6 +203,8 @@ export async function GET(request: NextRequest) {
                 venduto: true,
                 transfer: true,
                 hotel: true,
+                tkt: true,
+                polizza: true,
                 createdAt: true,
                 creator: {
                   select: {

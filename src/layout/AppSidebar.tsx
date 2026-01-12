@@ -246,9 +246,9 @@ const AppSidebar: React.FC = () => {
           {nav.subItems ? (
             <button
               onClick={() => handleSubmenuToggle(index, menuType)}
-              className={`menu-item group  ${openSubmenu?.type === menuType && openSubmenu?.index === index
-                ? "menu-item-active"
-                : "menu-item-inactive"
+              className={`group relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium duration-300 ease-in-out  ${openSubmenu?.type === menuType && openSubmenu?.index === index
+                  ? "menu-item-active"
+                  : "menu-item-inactive"
                 } cursor-pointer ${!isExpanded && !isHovered
                   ? "lg:justify-center"
                   : "lg:justify-start"
@@ -280,7 +280,7 @@ const AppSidebar: React.FC = () => {
               <Link
                 prefetch
                 href={nav.path}
-                className={`menu-item group ${isActive(nav.path) ? "menu-item-active" : "menu-item-inactive"
+                className={`group relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium duration-300 ease-in-out ${isActive(nav.path) ? "menu-item-active" : "menu-item-inactive"
                   }`}
               >
                 {/* Siempre mostrar texto */}

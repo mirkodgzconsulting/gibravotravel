@@ -272,7 +272,7 @@ const SimpleRichTextEditor: React.FC<SimpleRichTextEditorProps> = ({
           contentEditable
           onInput={handleInput}
           onKeyDown={handleKeyDown}
-          className="w-full px-3 py-2 text-gray-900 dark:text-white focus:outline-none"
+          className="w-full px-3 py-2 text-gray-900 dark:text-white focus:outline-none rte-content"
           style={{
             minHeight: `${rows * 1.5}rem`,
             whiteSpace: 'pre-wrap',
@@ -290,14 +290,14 @@ const SimpleRichTextEditor: React.FC<SimpleRichTextEditorProps> = ({
         )}
       </div>
 
-      {/* Estilos globales para el editor */}
+      {/* Estilos locales para el editor (Scoped) */}
       <style dangerouslySetInnerHTML={{
         __html: `
-        [contenteditable]:focus {
+        .rte-content:focus {
           outline: none;
         }
-        ul { list-style-type: disc; margin-left: 20px; }
-        ol { list-style-type: decimal; margin-left: 20px; }
+        .rte-content ul { list-style-type: disc !important; margin-left: 20px !important; }
+        .rte-content ol { list-style-type: decimal !important; margin-left: 20px !important; }
       `}} />
     </div >
   );

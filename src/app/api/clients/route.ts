@@ -4,17 +4,23 @@ import { v2 as cloudinary } from 'cloudinary';
 import { prisma } from '@/lib/prisma';
 
 // Configurar Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dskliu1ig',
-  api_key: process.env.CLOUDINARY_API_KEY || '538724966551851',
-  api_secret: process.env.CLOUDINARY_API_SECRET || 'Q1fP7-pH6iiltPbFNkqPn0d93no',
-});
+if (process.env.CLOUDINARY_URL) {
+  cloudinary.config({
+    secure: true
+  });
+} else {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+}
 
 // GET - Listar todos los clientes activos
 export async function GET(request: NextRequest) {
   try {
     const { userId } = await auth();
-    
+
     if (!userId) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
@@ -123,7 +129,7 @@ export async function POST(request: NextRequest) {
     const phoneNumber = formData.get('phoneNumber') as string;
     const birthPlace = formData.get('birthPlace') as string;
     const birthDate = formData.get('birthDate') as string;
-    
+
     // Obtener archivos
     const document1 = formData.get('document1') as File | null;
     const document2 = formData.get('document2') as File | null;
@@ -142,7 +148,7 @@ export async function POST(request: NextRequest) {
     const fiscalCodeTrimmed = fiscalCode?.trim() || '';
     if (fiscalCodeTrimmed !== '') {
       const existingClientByFiscal = await prisma.client.findFirst({
-        where: { 
+        where: {
           fiscalCode: fiscalCodeTrimmed,
           isActive: true,
           NOT: { fiscalCode: '' } // Excluir strings vacíos
@@ -150,7 +156,7 @@ export async function POST(request: NextRequest) {
       });
 
       if (existingClientByFiscal) {
-        return NextResponse.json({ 
+        return NextResponse.json({
           error: 'Ya existe un cliente con este código fiscal',
           field: 'fiscalCode',
           details: `El código fiscal "${fiscalCodeTrimmed}" ya está registrado`
@@ -162,7 +168,7 @@ export async function POST(request: NextRequest) {
     const emailTrimmed = email?.trim() || '';
     if (emailTrimmed !== '' && !emailTrimmed.startsWith('temp-email-')) {
       const existingClientByEmail = await prisma.client.findFirst({
-        where: { 
+        where: {
           email: emailTrimmed,
           isActive: true,
           NOT: { email: { startsWith: 'temp-email-' } } // Excluir emails temporales
@@ -170,7 +176,7 @@ export async function POST(request: NextRequest) {
       });
 
       if (existingClientByEmail) {
-        return NextResponse.json({ 
+        return NextResponse.json({
           error: 'Ya existe un cliente con este email',
           field: 'email',
           details: `El email "${emailTrimmed}" ya está registrado`
@@ -182,7 +188,7 @@ export async function POST(request: NextRequest) {
     const phoneNumberTrimmed = phoneNumber?.trim() || '';
     if (phoneNumberTrimmed !== '') {
       const existingClientByPhone = await prisma.client.findFirst({
-        where: { 
+        where: {
           phoneNumber: phoneNumberTrimmed,
           isActive: true,
           NOT: { phoneNumber: '' } // Excluir strings vacíos
@@ -190,7 +196,7 @@ export async function POST(request: NextRequest) {
       });
 
       if (existingClientByPhone) {
-        return NextResponse.json({ 
+        return NextResponse.json({
           error: 'Ya existe un cliente con este número de teléfono',
           field: 'phoneNumber',
           details: `El número de teléfono "${phoneNumberTrimmed}" ya está registrado`
@@ -201,11 +207,11 @@ export async function POST(request: NextRequest) {
     // Validar tamaños de archivos (10MB máximo por archivo)
     const maxFileSize = 10 * 1024 * 1024; // 10MB
     const files = [document1, document2, document3, document4].filter(f => f && f.size > 0);
-    
+
     for (const file of files) {
       if (file && file.size > maxFileSize) {
-        return NextResponse.json({ 
-          error: `El archivo ${file.name} es demasiado grande. Máximo 10MB por archivo.` 
+        return NextResponse.json({
+          error: `El archivo ${file.name} es demasiado grande. Máximo 10MB por archivo.`
         }, { status: 400 });
       }
     }
@@ -228,12 +234,12 @@ export async function POST(request: NextRequest) {
       try {
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
-        
+
         // Detectar el tipo de archivo para usar el resource_type correcto
         const fileExtension = file.name.toLowerCase().split('.').pop();
         const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension || '');
         const resourceType = isImage ? 'image' : 'raw'; // PDFs y otros archivos usan 'raw'
-        
+
         const result = await new Promise<any>((resolve, reject) => {
           cloudinary.uploader.upload_stream(
             {
@@ -265,7 +271,7 @@ export async function POST(request: NextRequest) {
 
     try {
       const uploadResults = await Promise.all(uploadPromises);
-      
+
       uploadResults.forEach(result => {
         if (result.index === 1) {
           documentData.document1 = result.url;
@@ -282,7 +288,7 @@ export async function POST(request: NextRequest) {
         }
       });
     } catch (uploadError) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Error subiendo archivos a Cloudinary',
         details: uploadError instanceof Error ? uploadError.message : 'Unknown error'
       }, { status: 500 });
@@ -292,10 +298,10 @@ export async function POST(request: NextRequest) {
     // Nota: fiscalCode, address y email ahora son opcionales
     // Para email vacío, usar un valor único temporal para evitar conflictos con @unique
     // emailTrimmed ya está definido arriba en las validaciones
-    const emailValue = emailTrimmed !== '' 
-      ? emailTrimmed 
+    const emailValue = emailTrimmed !== ''
+      ? emailTrimmed
       : `temp-email-${Date.now()}-${Math.random().toString(36).substring(2, 15)}-${userId.substring(0, 8)}`;
-    
+
     // Preparar datos para crear el cliente
     const clientData: any = {
       firstName: firstName.trim(),
@@ -314,9 +320,9 @@ export async function POST(request: NextRequest) {
       data: clientData
     });
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       client: newClient,
-      message: 'Cliente creato con successo!' 
+      message: 'Cliente creato con successo!'
     });
 
   } catch (error: any) {
@@ -324,40 +330,40 @@ export async function POST(request: NextRequest) {
     console.error('Error code:', error.code);
     console.error('Error meta:', error.meta);
     console.error('Error message:', error.message);
-    
+
     // Detectar errores de Prisma relacionados con constraints únicos
     if (error.code === 'P2002') {
       // Error de unique constraint en Prisma
       const target = error.meta?.target;
-      
+
       console.error('P2002 error - Unique constraint violation on:', target);
-      
+
       if (Array.isArray(target) && target.length > 0) {
         const field = target[0];
-        
+
         // Mapear nombres de campos a mensajes más amigables
         const fieldMessages: Record<string, string> = {
           'email': 'Ya existe un cliente activo con este email. Por favor, verifica el email ingresado.',
           'fiscalCode': 'Ya existe un cliente activo con este código fiscal. Por favor, verifica el código fiscal ingresado.',
           'phoneNumber': 'Ya existe un cliente activo con este número de teléfono. Por favor, verifica el teléfono ingresado.',
         };
-        
+
         const message = fieldMessages[field] || `Ya existe un cliente activo con este ${field}. Por favor, verifica el campo ${field}.`;
-        
-        return NextResponse.json({ 
+
+        return NextResponse.json({
           error: message,
           field: field,
           details: `El campo '${field}' ya está registrado en el sistema (cliente activo)`
         }, { status: 400 });
       }
-      
-      return NextResponse.json({ 
+
+      return NextResponse.json({
         error: 'Ya existe un cliente activo con estos datos. Por favor, verifica la información ingresada.',
         details: 'Los datos ingresados ya están registrados en el sistema (cliente activo)'
       }, { status: 400 });
     }
-    
-    return NextResponse.json({ 
+
+    return NextResponse.json({
       error: 'Error interno del servidor',
       details: error.message || 'Error desconocido al crear el cliente'
     }, { status: 500 });

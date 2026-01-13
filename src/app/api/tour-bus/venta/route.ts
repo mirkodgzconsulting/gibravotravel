@@ -11,9 +11,9 @@ if (process.env.CLOUDINARY_URL) {
   });
 } else {
   cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dskliu1ig',
-    api_key: process.env.CLOUDINARY_API_KEY || '538724966551851',
-    api_secret: process.env.CLOUDINARY_API_SECRET || 'Q1fP7-pH6iiltPbFNkqPn0d93no',
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
   });
 }
 
@@ -30,9 +30,9 @@ async function recalcularFeeAgv(tourId: string) {
     if (!tour) return;
 
     // Calcular SPESA TOTALE (suma de todos los costos)
-    const spesaTotale = (tour.bus || 0) + (tour.pasti || 0) + (tour.parking || 0) + 
-                       (tour.coordinatore1 || 0) + (tour.coordinatore2 || 0) + 
-                       (tour.ztl || 0) + (tour.hotel || 0) + (tour.polizza || 0) + (tour.tkt || 0);
+    const spesaTotale = (tour.bus || 0) + (tour.pasti || 0) + (tour.parking || 0) +
+      (tour.coordinatore1 || 0) + (tour.coordinatore2 || 0) +
+      (tour.ztl || 0) + (tour.hotel || 0) + (tour.polizza || 0) + (tour.tkt || 0);
 
     // Calcular RICAVO TOTALE (suma de todos los accontos)
     const ricavoTotale = tour.ventasTourBus.reduce((sum, venta) => sum + (venta.acconto || 0), 0);
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
 
     // Leer FormData
     const formData = await request.formData();
-    
+
     // Extraer datos del formulario
     const tourBusId = formData.get('tourBusId') as string;
     const clienteId = formData.get('clienteId') as string | null;
@@ -101,19 +101,19 @@ export async function POST(request: NextRequest) {
     const estadoPago = formData.get('estadoPago') as string;
     const notaEsternaRicevuta = formData.get('notaEsternaRicevuta') as string | null;
     const notaInterna = formData.get('notaInterna') as string | null;
-    
+
     // Parsear acompañantes y cuotas desde JSON
     const acompanantesJson = formData.get('acompanantes') as string;
     const acompanantes = acompanantesJson ? JSON.parse(acompanantesJson) : [];
     const cuotasJson = formData.get('cuotas') as string;
     const cuotas = cuotasJson ? JSON.parse(cuotasJson) : [];
-    
+
     // Manejar archivo adjunto
     const fileEntry = formData.get('file');
     const file = fileEntry instanceof File ? fileEntry : null;
     let attachedFileUrl: string | null = null;
     let attachedFileName: string | null = null;
-    
+
     if (file && file.size > 0) {
       try {
         const bytes = await file.arrayBuffer();
@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
         const fileExtension = file.name.toLowerCase().split('.').pop();
         const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension ?? '');
         const resourceType = isImage ? 'image' : 'raw';
-        
+
         const result = await new Promise<UploadApiResponse>((resolve, reject) => {
           cloudinary.uploader
             .upload_stream(
@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
             )
             .end(buffer);
         });
-        
+
         attachedFileUrl = result.secure_url;
         attachedFileName = file.name;
       } catch (error) {
@@ -316,9 +316,9 @@ export async function POST(request: NextRequest) {
       // No fallar la venta por este error
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       venta: resultado,
-      message: 'Venta creada exitosamente' 
+      message: 'Venta creada exitosamente'
     });
 
   } catch (error: any) {
@@ -328,7 +328,7 @@ export async function POST(request: NextRequest) {
       code: error.code,
       meta: error.meta
     });
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: 'Error interno del servidor',
       details: error.message,
       code: error.code

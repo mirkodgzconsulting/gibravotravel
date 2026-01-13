@@ -17,12 +17,12 @@ async function recalcularFeeAgvAereo(tourId: string) {
 
     // Calcular FEE/AGV total de todas las ventas
     let totalFeeAgv = 0;
-    
+
     for (const venta of tour.ventas) {
       // Calcular costos totales de esta venta
-      const costosTotales = (venta.transfer || 0) + (tour.guidaLocale || 0) + 
-                          (tour.coordinatore || 0) + (tour.transporte || 0) + (tour.hotel || 0);
-      
+      const costosTotales = (venta.transfer || 0) + (tour.guidaLocale || 0) +
+        (tour.coordinatore || 0) + (tour.transporte || 0) + (tour.hotel || 0);
+
       // Calcular FEE/AGV de esta venta: VENDUTO - COSTOS TOTALES
       const feeAgvVenta = (venta.venduto || 0) - costosTotales;
       totalFeeAgv += feeAgvVenta;
@@ -48,9 +48,9 @@ if (process.env.CLOUDINARY_URL) {
   });
 } else {
   cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dskliu1ig',
-    api_key: process.env.CLOUDINARY_API_KEY || '538724966551851',
-    api_secret: process.env.CLOUDINARY_API_SECRET || 'Q1fP7-pH6iiltPbFNkqPn0d93no',
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
   });
 }
 
@@ -133,7 +133,7 @@ export async function POST(
     }
 
     const { id: tourId } = await params;
-    
+
     // Obtener FormData para manejar archivos
     const formData = await request.formData();
 
@@ -177,21 +177,21 @@ export async function POST(
     const cuotasJson = formData.get('cuotas') as string;
     const notaEsternaRicevuta = formData.get('notaEsternaRicevuta') as string | null;
     const notaInterna = formData.get('notaInterna') as string | null;
-    
+
     // Procesar archivo principal
     const file = formData.get('file') as File | null;
     let attachedFileUrl = null;
     let attachedFileName = null;
-    
+
     if (file && file.size > 0) {
       try {
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
-        
+
         const fileExtension = file.name.toLowerCase().split('.').pop();
         const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension || '');
         const resourceType = isImage ? 'image' : 'raw';
-        
+
         const result = await new Promise<any>((resolve, reject) => {
           cloudinary.uploader.upload_stream(
             {
@@ -204,7 +204,7 @@ export async function POST(
             }
           ).end(buffer);
         });
-        
+
         attachedFileUrl = result.secure_url;
         attachedFileName = file.name;
       } catch (error) {
@@ -224,24 +224,24 @@ export async function POST(
     // Procesar cuotas con archivos
     const cuotas = cuotasJson ? JSON.parse(cuotasJson) : [];
     const cuotasConArchivos = [];
-    
+
     if (cuotas && cuotas.length > 0) {
       for (let i = 0; i < cuotas.length; i++) {
         const cuota = cuotas[i];
         let cuotaAttachedFile = null;
         let cuotaAttachedFileName = null;
-        
+
         // Procesar archivo de la cuota si existe
         const cuotaFile = formData.get(`cuotaFile${i}`) as File | null;
         if (cuotaFile && cuotaFile.size > 0) {
           try {
             const bytes = await cuotaFile.arrayBuffer();
             const buffer = Buffer.from(bytes);
-            
+
             const fileExtension = cuotaFile.name.toLowerCase().split('.').pop();
             const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension || '');
             const resourceType = isImage ? 'image' : 'raw';
-            
+
             const result = await new Promise<any>((resolve, reject) => {
               cloudinary.uploader.upload_stream(
                 {
@@ -254,14 +254,14 @@ export async function POST(
                 }
               ).end(buffer);
             });
-            
+
             cuotaAttachedFile = result.secure_url;
             cuotaAttachedFileName = cuotaFile.name;
           } catch (error) {
             console.error(`Error uploading cuota file ${i}:`, error);
           }
         }
-        
+
         const cuotaData = {
           numeroCuota: cuota.numeroCuota,
           fechaPago: new Date(cuota.fechaPago),
@@ -350,7 +350,7 @@ export async function POST(
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
     const errorStack = error instanceof Error ? error.stack : '';
     console.error('Error details:', { errorMessage, errorStack });
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: 'Error interno del servidor',
       details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
     }, { status: 500 });

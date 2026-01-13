@@ -4,11 +4,17 @@ import { v2 as cloudinary } from 'cloudinary';
 import { prisma } from '@/lib/prisma';
 
 // Configurar Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dskliu1ig',
-  api_key: process.env.CLOUDINARY_API_KEY || '538724966551851',
-  api_secret: process.env.CLOUDINARY_API_SECRET || 'Q1fP7-pH6iiltPbFNkqPn0d93no',
-});
+if (process.env.CLOUDINARY_URL) {
+  cloudinary.config({
+    secure: true
+  });
+} else {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+}
 
 export async function GET(
   request: NextRequest,
@@ -75,7 +81,7 @@ export async function PUT(
 ) {
   try {
     const { userId } = await auth();
-    
+
     if (!userId) {
       return NextResponse.json(
         { error: 'No autorizado' },
@@ -85,7 +91,7 @@ export async function PUT(
 
     const { id } = await params;
     const formData = await request.formData();
-    
+
     const title = formData.get('title') as string;
     const textContent = formData.get('textContent') as string;
     const coverImage = formData.get('coverImage') as File;
@@ -157,7 +163,7 @@ export async function PUT(
         try {
           const bytes = await coverImage.arrayBuffer();
           const buffer = Buffer.from(bytes);
-          
+
           const result = await new Promise((resolve, reject) => {
             cloudinary.uploader.upload_stream(
               {
@@ -183,7 +189,7 @@ export async function PUT(
           throw new Error(`Error uploading image: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
       })();
-      
+
       uploadPromises.push(imageUploadPromise);
     }
 
@@ -193,7 +199,7 @@ export async function PUT(
         try {
           const bytes = await pdfFile.arrayBuffer();
           const buffer = Buffer.from(bytes);
-          
+
           const result = await new Promise((resolve, reject) => {
             cloudinary.uploader.upload_stream(
               {
@@ -216,7 +222,7 @@ export async function PUT(
           throw new Error(`Error uploading PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
       })();
-      
+
       uploadPromises.push(pdfUploadPromise);
     }
 
@@ -224,7 +230,7 @@ export async function PUT(
     if (uploadPromises.length > 0) {
       try {
         const uploadResults = await Promise.all(uploadPromises);
-        
+
         uploadResults.forEach(result => {
           if (result.type === 'image') {
             coverImageUrl = result.url;
@@ -236,7 +242,7 @@ export async function PUT(
         });
       } catch (uploadError) {
         return NextResponse.json(
-          { 
+          {
             error: 'Error subiendo archivos a Cloudinary',
             details: uploadError instanceof Error ? uploadError.message : 'Unknown error'
           },
@@ -272,7 +278,7 @@ export async function PUT(
   } catch (error) {
     console.error('Error updating stop template:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Error interno del servidor',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
@@ -287,7 +293,7 @@ export async function DELETE(
 ) {
   try {
     const { userId } = await auth();
-    
+
     if (!userId) {
       return NextResponse.json(
         { error: 'No autorizado' },
@@ -330,7 +336,7 @@ export async function DELETE(
   } catch (error) {
     console.error('Error deleting stop template:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Error interno del servidor',
         details: error instanceof Error ? error.message : 'Unknown error'
       },

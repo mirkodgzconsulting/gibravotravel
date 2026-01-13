@@ -11,9 +11,9 @@ if (process.env.CLOUDINARY_URL) {
   });
 } else {
   cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dskliu1ig',
-    api_key: process.env.CLOUDINARY_API_KEY || '538724966551851',
-    api_secret: process.env.CLOUDINARY_API_SECRET || 'Q1fP7-pH6iiltPbFNkqPn0d93no',
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
   });
 }
 
@@ -28,7 +28,7 @@ export async function PUT(
     }
 
     const { id } = await params;
-    
+
     // Leer FormData o JSON según el Content-Type
     const contentType = request.headers.get('content-type') || '';
     let clienteId, clienteNombre, codiceFiscale, indirizzo, email, numeroTelefono, fechaNacimiento;
@@ -37,7 +37,7 @@ export async function PUT(
     let notaEsternaRicevuta, notaInterna, cuotas;
     let file: File | null = null;
     let removeFile = false;
-    
+
     if (contentType.includes('multipart/form-data')) {
       // FormData
       const formData = await request.formData();
@@ -65,11 +65,11 @@ export async function PUT(
       acompanantes = acompanantesJson ? JSON.parse(acompanantesJson) : [];
       const cuotasJson = formData.get('cuotas') as string;
       cuotas = cuotasJson ? JSON.parse(cuotasJson) : [];
-      
+
       // Obtener archivo si existe
       const fileEntry = formData.get('file');
       file = fileEntry instanceof File ? fileEntry : null;
-      
+
       // Verificar si se debe eliminar el archivo existente
       removeFile = formData.get('removeFile') === 'true';
     } else {
@@ -134,7 +134,7 @@ export async function PUT(
     if (!asientoPrincipal) {
       return NextResponse.json({ error: 'Asiento no encontrado' }, { status: 404 });
     }
-    
+
     // Solo validar si el asiento está vendido si es diferente al actual
     if (numeroAsiento !== existingVenta.numeroAsiento && asientoPrincipal.isVendido) {
       return NextResponse.json({ error: 'El asiento ya está vendido' }, { status: 400 });
@@ -160,42 +160,42 @@ export async function PUT(
     // Manejar archivo adjunto si se envía
     let attachedFileUrl = existingVenta.attachedFile || null;
     let attachedFileName = existingVenta.attachedFileName || null;
-    
+
     // Verificar si se debe eliminar el archivo existente
     if (removeFile && !file) {
       attachedFileUrl = null;
       attachedFileName = null;
     }
-    
+
     if (file && file.size > 0) {
-        try {
-          const bytes = await file.arrayBuffer();
-          const buffer = Buffer.from(bytes);
-          const fileExtension = file.name.toLowerCase().split('.').pop();
-          const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension ?? '');
-          const resourceType = isImage ? 'image' : 'raw';
-          
-          const result = await new Promise<UploadApiResponse>((resolve, reject) => {
-            cloudinary.uploader
-              .upload_stream(
-                {
-                  folder: 'gibravotravel/tour-bus/ventas',
-                  resource_type: resourceType,
-                },
-                (error, result) => {
-                  if (error) reject(error);
-                  else resolve(result as UploadApiResponse);
-                }
-              )
-              .end(buffer);
-          });
-          
-          attachedFileUrl = result.secure_url;
-          attachedFileName = file.name;
-        } catch (error) {
-          console.error('Error uploading file:', error);
-          // No fallar la actualización por error de archivo
-        }
+      try {
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+        const fileExtension = file.name.toLowerCase().split('.').pop();
+        const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension ?? '');
+        const resourceType = isImage ? 'image' : 'raw';
+
+        const result = await new Promise<UploadApiResponse>((resolve, reject) => {
+          cloudinary.uploader
+            .upload_stream(
+              {
+                folder: 'gibravotravel/tour-bus/ventas',
+                resource_type: resourceType,
+              },
+              (error, result) => {
+                if (error) reject(error);
+                else resolve(result as UploadApiResponse);
+              }
+            )
+            .end(buffer);
+        });
+
+        attachedFileUrl = result.secure_url;
+        attachedFileName = file.name;
+      } catch (error) {
+        console.error('Error uploading file:', error);
+        // No fallar la actualización por error de archivo
+      }
     }
 
     // Actualizar la venta con transacción
@@ -230,7 +230,7 @@ export async function PUT(
       // 2. Liberar asientos de acompañantes que ya no están
       const nuevosAsientosAcomp = acompanantes?.map((a: any) => a.numeroAsiento) || [];
       const asientosALiberar = asientosActualesAcomp.filter(a => !nuevosAsientosAcomp.includes(a));
-      
+
       for (const numAsiento of asientosALiberar) {
         const asientoALiberar = tour.asientos.find(a => a.numeroAsiento === numAsiento);
         if (asientoALiberar) {
@@ -376,7 +376,7 @@ export async function PUT(
   } catch (error) {
     console.error('Error updating venta:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Error interno del servidor',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
@@ -442,9 +442,9 @@ export async function DELETE(
     }
 
     // Obtener IP y User Agent
-    const ipAddress = request.headers.get('x-forwarded-for') || 
-                     request.headers.get('x-real-ip') || 
-                     'unknown';
+    const ipAddress = request.headers.get('x-forwarded-for') ||
+      request.headers.get('x-real-ip') ||
+      'unknown';
     const userAgent = request.headers.get('user-agent') || 'unknown';
 
     // Registrar en auditoría ANTES de eliminar (si la tabla existe)
@@ -528,7 +528,7 @@ export async function DELETE(
   } catch (error) {
     console.error('Error deleting venta:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Error interno del servidor',
         details: error instanceof Error ? error.message : 'Unknown error'
       },

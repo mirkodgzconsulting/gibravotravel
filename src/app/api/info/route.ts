@@ -3,17 +3,22 @@ import { auth } from '@clerk/nextjs/server';
 import { v2 as cloudinary } from 'cloudinary';
 import { prisma } from '@/lib/prisma';
 
-// Configurar Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dskliu1ig',
-  api_key: process.env.CLOUDINARY_API_KEY || '538724966551851',
-  api_secret: process.env.CLOUDINARY_API_SECRET || 'Q1fP7-pH6iiltPbFNkqPn0d93no',
-});
+if (process.env.CLOUDINARY_URL) {
+  cloudinary.config({
+    secure: true
+  });
+} else {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+}
 
 export async function GET() {
   try {
     console.log('🔍 Fetching info templates...');
-    
+
     // Consulta optimizada sin include para evitar problemas de JOIN
     const templates = await prisma.info.findMany({
       where: {
@@ -83,7 +88,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth();
-    
+
     if (!userId) {
       return NextResponse.json(
         { error: 'No autorizado' },
@@ -104,7 +109,7 @@ export async function POST(request: NextRequest) {
 
     if (missingFields.length > 0) {
       return NextResponse.json(
-        { error: `Faltan campos requeridos: ${missingFields.join(', ')}` },
+        { error: `Faltan campos requeridos: ${missingFields.join(', ')} ` },
         { status: 400 }
       );
     }
@@ -139,7 +144,7 @@ export async function POST(request: NextRequest) {
         try {
           const bytes = await coverImage.arrayBuffer();
           const buffer = Buffer.from(bytes);
-          
+
           // Subir directamente a Cloudinary usando Promise
           const result = await new Promise((resolve, reject) => {
             cloudinary.uploader.upload_stream(
@@ -163,10 +168,10 @@ export async function POST(request: NextRequest) {
             name: coverImage.name
           };
         } catch (error) {
-          throw new Error(`Error uploading image: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          throw new Error(`Error uploading image: ${error instanceof Error ? error.message : 'Unknown error'} `);
         }
       })();
-      
+
       uploadPromises.push(imageUploadPromise);
     }
 
@@ -176,7 +181,7 @@ export async function POST(request: NextRequest) {
         try {
           const bytes = await pdfFile.arrayBuffer();
           const buffer = Buffer.from(bytes);
-          
+
           // Subir directamente a Cloudinary usando Promise
           const result = await new Promise((resolve, reject) => {
             cloudinary.uploader.upload_stream(
@@ -197,10 +202,10 @@ export async function POST(request: NextRequest) {
             name: pdfFile.name
           };
         } catch (error) {
-          throw new Error(`Error uploading PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          throw new Error(`Error uploading PDF: ${error instanceof Error ? error.message : 'Unknown error'} `);
         }
       })();
-      
+
       uploadPromises.push(pdfUploadPromise);
     }
 
@@ -213,7 +218,7 @@ export async function POST(request: NextRequest) {
     if (uploadPromises.length > 0) {
       try {
         const uploadResults = await Promise.all(uploadPromises);
-        
+
         uploadResults.forEach(result => {
           if (result.type === 'image') {
             coverImageUrl = result.url;
@@ -225,7 +230,7 @@ export async function POST(request: NextRequest) {
         });
       } catch (uploadError) {
         return NextResponse.json(
-          { 
+          {
             error: 'Error subiendo archivos a Cloudinary',
             details: uploadError instanceof Error ? uploadError.message : 'Unknown error'
           },
@@ -270,9 +275,9 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Error interno del servidor';
     return NextResponse.json(
-      { 
+      {
         error: 'Error interno del servidor',
-        details: errorMessage 
+        details: errorMessage
       },
       { status: 500 }
     );

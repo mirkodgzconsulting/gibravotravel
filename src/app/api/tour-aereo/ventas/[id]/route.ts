@@ -10,9 +10,9 @@ if (process.env.CLOUDINARY_URL) {
   });
 } else {
   cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dskliu1ig',
-    api_key: process.env.CLOUDINARY_API_KEY || '538724966551851',
-    api_secret: process.env.CLOUDINARY_API_SECRET || 'Q1fP7-pH6iiltPbFNkqPn0d93no',
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
   });
 }
 
@@ -72,7 +72,7 @@ export async function PATCH(
     const puedeActualizarEstado = soloActualizaEstado && stato !== undefined && allowedUserStates.has(stato);
     if (user.role === 'USER' && venta.createdBy !== user.id) {
       if (!puedeActualizarEstado && !soloActualizaTkt && !soloActualizaPolizza) {
-      return NextResponse.json({ error: 'No autorizado para editar esta venta' }, { status: 403 });
+        return NextResponse.json({ error: 'No autorizado para editar esta venta' }, { status: 403 });
       }
     }
 
@@ -102,7 +102,7 @@ export async function PATCH(
         updateData.polizza = Math.round(parsedPolizza * 100) / 100;
       }
     }
-    
+
     const ventaActualizada = await prisma.ventaTourAereo.update({
       where: { id: ventaId },
       data: updateData
@@ -128,7 +128,7 @@ export async function PUT(
     }
 
     const { id: ventaId } = await params;
-    
+
     // Obtener FormData para manejar archivos
     const formData = await request.formData();
 
@@ -185,21 +185,21 @@ export async function PUT(
     const cuotasJson = formData.get('cuotas') as string;
     const notaEsternaRicevutaRaw = formData.get('notaEsternaRicevuta');
     const notaInternaRaw = formData.get('notaInterna');
-    
+
     // Procesar archivo principal
     const file = formData.get('file') as File | null;
     let attachedFileUrl = venta.attachedFile;
     let attachedFileName = venta.attachedFileName;
-    
+
     if (file && file.size > 0) {
       try {
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
-        
+
         const fileExtension = file.name.toLowerCase().split('.').pop();
         const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension || '');
         const resourceType = isImage ? 'image' : 'raw';
-        
+
         const result = await new Promise<any>((resolve, reject) => {
           cloudinary.uploader.upload_stream(
             {
@@ -212,7 +212,7 @@ export async function PUT(
             }
           ).end(buffer);
         });
-        
+
         attachedFileUrl = result.secure_url;
         attachedFileName = file.name;
       } catch (error) {
@@ -220,8 +220,8 @@ export async function PUT(
       }
     }
 
-    if (!pasajero || !codiceFiscale || !indirizzo || !email || !numeroTelefono || 
-        !paisOrigen || !iata || !venduto || !metodoPagamento || !stato) {
+    if (!pasajero || !codiceFiscale || !indirizzo || !email || !numeroTelefono ||
+      !paisOrigen || !iata || !venduto || !metodoPagamento || !stato) {
       return NextResponse.json({ error: 'Faltan campos requeridos' }, { status: 400 });
     }
 
@@ -231,25 +231,25 @@ export async function PUT(
     // Procesar cuotas con archivos
     const cuotas = cuotasJson ? JSON.parse(cuotasJson) : [];
     const cuotasConArchivos = [];
-    
+
     if (cuotas && cuotas.length > 0) {
       for (let i = 0; i < cuotas.length; i++) {
         const cuota = cuotas[i];
         // IMPORTANTE: Mantener archivos existentes por defecto
         let cuotaAttachedFile = cuota.attachedFile || null;
         let cuotaAttachedFileName = cuota.attachedFileName || null;
-        
+
         // Procesar archivo NUEVO de la cuota si existe
         const cuotaFile = formData.get(`cuotaFile${i}`) as File | null;
         if (cuotaFile && cuotaFile.size > 0) {
           try {
             const bytes = await cuotaFile.arrayBuffer();
             const buffer = Buffer.from(bytes);
-            
+
             const fileExtension = cuotaFile.name.toLowerCase().split('.').pop();
             const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension || '');
             const resourceType = isImage ? 'image' : 'raw';
-            
+
             const result = await new Promise<any>((resolve, reject) => {
               cloudinary.uploader.upload_stream(
                 {
@@ -262,7 +262,7 @@ export async function PUT(
                 }
               ).end(buffer);
             });
-            
+
             cuotaAttachedFile = result.secure_url;
             cuotaAttachedFileName = cuotaFile.name;
           } catch (error) {
@@ -273,7 +273,7 @@ export async function PUT(
           if (cuotaAttachedFile) {
           }
         }
-        
+
         cuotasConArchivos.push({
           numeroCuota: cuota.numeroCuota,
           fechaPago: new Date(cuota.fechaPago),
@@ -287,23 +287,23 @@ export async function PUT(
     }
 
     const updatePayload: Record<string, unknown> = {
-        pasajero,
-        codiceFiscale,
-        indirizzo,
-        email,
-        numeroTelefono,
-        paisOrigen,
-        iata,
-        pnr: pnr || null,
+      pasajero,
+      codiceFiscale,
+      indirizzo,
+      email,
+      numeroTelefono,
+      paisOrigen,
+      iata,
+      pnr: pnr || null,
       hotel: venta.tourAereo?.hotel ?? null,
       transfer: transfer ? parseFloat(transfer) : null,
-        venduto: parseFloat(venduto),
-        acconto: parseFloat(acconto || '0'),
-        daPagare,
-        metodoPagamento,
-        metodoCompra: metodoCompra || null,
-        stato,
-        attachedFile: attachedFileUrl,
+      venduto: parseFloat(venduto),
+      acconto: parseFloat(acconto || '0'),
+      daPagare,
+      metodoPagamento,
+      metodoCompra: metodoCompra || null,
+      stato,
+      attachedFile: attachedFileUrl,
       attachedFileName,
     };
 
@@ -441,9 +441,9 @@ export async function DELETE(
     }
 
     // Obtener IP y User Agent
-    const ipAddress = request.headers.get('x-forwarded-for') || 
-                     request.headers.get('x-real-ip') || 
-                     'unknown';
+    const ipAddress = request.headers.get('x-forwarded-for') ||
+      request.headers.get('x-real-ip') ||
+      'unknown';
     const userAgent = request.headers.get('user-agent') || 'unknown';
 
     // Registrar en auditoría ANTES de eliminar (si la tabla existe)

@@ -33,7 +33,7 @@ export function TourItinerary({ itinerary }: FooterItineraryProps) {
                             <div
                                 onClick={() => toggleDay(i)}
                                 className={cn(
-                                    "cursor-pointer flex items-center gap-6 px-8 py-5 rounded-2xl transition-all duration-200 group select-none",
+                                    "cursor-pointer flex items-center gap-4 md:gap-6 px-5 md:px-8 py-4 md:py-5 rounded-2xl transition-all duration-200 group select-none",
                                     isOpen
                                         ? "bg-[#004BA5] text-white shadow-lg shadow-blue-900/10"
                                         : "bg-[#F7F9FB] hover:bg-slate-100 text-[#323232]"
@@ -49,8 +49,8 @@ export function TourItinerary({ itinerary }: FooterItineraryProps) {
                                 </div>
 
                                 {/* Text */}
-                                <div className="text-lg font-medium leading-tight">
-                                    <span className={cn("font-black mr-3 uppercase tracking-wide", isOpen ? "text-white" : "text-[#FE8008]")}>
+                                <div className="text-base md:text-lg font-medium leading-tight">
+                                    <span className={cn("block md:inline font-black mr-3 uppercase tracking-wide text-sm md:text-base mb-1 md:mb-0", isOpen ? "text-white" : "text-[#FE8008]")}>
                                         Giorno {i + 1}
                                     </span>
                                     <span className={isOpen ? "text-blue-50" : "text-gray-700"}>
@@ -62,7 +62,7 @@ export function TourItinerary({ itinerary }: FooterItineraryProps) {
                             {/* Body */}
                             <div
                                 className={cn(
-                                    "overflow-hidden transition-all duration-300 ease-in-out pl-20 pr-8",
+                                    "overflow-hidden transition-all duration-300 ease-in-out pl-6 md:pl-20 pr-4 md:pr-8",
                                     isOpen ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
                                 )}
                             >

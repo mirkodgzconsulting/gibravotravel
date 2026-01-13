@@ -100,23 +100,25 @@ export default function ChiSiamoPage() {
 
                         <RevealOnScroll delay={200}>
                             <div className="relative aspect-square w-full">
-                                <div className="absolute top-0 right-0 w-[60%] h-[60%] rounded-[30px] overflow-hidden shadow-2xl z-20">
+                                <div className="absolute top-0 right-0 w-[60%] h-[60%] rounded-[30px] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.15)] z-20 group hover:z-40 transition-all duration-500 hover:scale-105">
                                     <Image
                                         src="https://res.cloudinary.com/dskliu1ig/image/upload/v1767368572/Praga-image1_uj60xx.jpg"
                                         alt="Viaggiatori Praga"
                                         fill
                                         className="object-cover"
                                     />
+                                    <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-all duration-500" />
                                 </div>
-                                <div className="absolute bottom-0 left-0 w-[80%] h-[80%] rounded-[40px] overflow-hidden shadow-2xl z-30 border-8 border-white">
+                                <div className="absolute bottom-0 left-0 w-[80%] h-[80%] rounded-[40px] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.2)] z-30 group hover:scale-105 transition-transform duration-500">
                                     <Image
                                         src="https://res.cloudinary.com/dskliu1ig/image/upload/v1767368571/Praga-image6_fcmaii.jpg"
                                         alt="Praga Escursione"
                                         fill
                                         className="object-cover"
                                     />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent group-hover:from-transparent transition-all duration-500" />
                                 </div>
-                                <div className="absolute -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[#004BA5]/5 rounded-full blur-3xl opacity-50" />
+                                <div className="absolute -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-[#004BA5]/10 rounded-full blur-[100px] opacity-60" />
                             </div>
                         </RevealOnScroll>
                     </div>

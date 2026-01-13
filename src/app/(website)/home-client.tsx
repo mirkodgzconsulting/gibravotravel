@@ -154,10 +154,10 @@ export function HomeClient({ flightTours, busTours }: HomeClientProps) {
                 {/* Content */}
                 <div className="relative z-10 container flex flex-col items-center text-center px-4 mt-24">
                     <RevealOnScroll>
-                        <h1 className="text-4xl md:text-[52px] font-[700] tracking-tight text-white hover:text-[#004BA5] transition-colors duration-300 leading-[1.1] mb-2 drop-shadow-2xl shadow-black">
+                        <h1 className="text-4xl md:text-[52px] font-[700] tracking-tight text-white hover:text-[#004BA5] transition-colors duration-700 leading-[1.1] mb-2 drop-shadow-2xl shadow-black">
                             Viaggia sicuro,
                         </h1>
-                        <h2 className="text-3xl md:text-[52px] font-[700] tracking-tight text-white hover:text-[#004BA5] transition-colors duration-300 leading-[1.1] mb-6 drop-shadow-2xl shadow-black">
+                        <h2 className="text-3xl md:text-[52px] font-[700] tracking-tight text-white hover:text-[#004BA5] transition-colors duration-700 leading-[1.1] mb-6 drop-shadow-2xl shadow-black">
                             viaggia con GiBravo
                         </h2>
 

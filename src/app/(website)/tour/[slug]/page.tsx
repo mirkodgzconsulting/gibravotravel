@@ -247,6 +247,7 @@ export default async function TourPage({ params }: TourPageProps) {
                                 daysCount={daysCount}
                                 type={tour.type as 'aereo' | 'bus'}
                                 description={tour.infoGeneral}
+                                gallery={gallery}
                             />
                         </div>
 
@@ -354,17 +355,22 @@ export default async function TourPage({ params }: TourPageProps) {
                         )}
 
                         {/* Map Embed - Clean */}
+                        {/* Map Embed - Standard & Visible */}
                         {tour.mapaEmbed && (
-                            <div className="rounded-2xl overflow-hidden bg-gray-100 h-80 w-full relative grayscale hover:grayscale-0 transition-all duration-500">
-                                <iframe
-                                    src={tour.mapaEmbed.includes('<iframe') ? (tour.mapaEmbed.match(/src=["']([^"']+)["']/) || [])[1] : tour.mapaEmbed}
-                                    width="100%"
-                                    height="100%"
-                                    style={{ border: 0 }}
-                                    loading="lazy"
-                                    referrerPolicy="no-referrer-when-downgrade"
-                                    className="absolute inset-0"
-                                />
+                            <div className="pt-8 border-t border-gray-100">
+                                <h2 className="text-2xl font-black text-[#004BA5] mb-8 uppercase tracking-tight">Mappa</h2>
+                                <div className="rounded-2xl overflow-hidden bg-gray-100 h-96 w-full relative shadow-sm border border-gray-200">
+                                    <iframe
+                                        src={tour.mapaEmbed.includes('<iframe') ? (tour.mapaEmbed.match(/src=["']([^"']+)["']/) || [])[1] : tour.mapaEmbed}
+                                        width="100%"
+                                        height="100%"
+                                        style={{ border: 0 }}
+                                        allowFullScreen
+                                        loading="lazy"
+                                        referrerPolicy="no-referrer-when-downgrade"
+                                        className="absolute inset-0"
+                                    />
+                                </div>
                             </div>
                         )}
 
@@ -384,9 +390,14 @@ export default async function TourPage({ params }: TourPageProps) {
                             <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-gray-100 overflow-hidden p-8">
                                 <div className="text-center">
                                     <p className="text-xs text-gray-400 uppercase tracking-widest font-bold mb-2">Prezzo a persona</p>
-                                    <div className="flex items-center justify-center gap-1 mb-4">
-                                        <span className="text-3xl font-bold text-gray-400 font-light">€</span>
-                                        <span className="text-6xl font-black text-brand-600 tracking-tighter">{tour.precioAdulto}</span>
+                                    <div className="flex flex-col items-center justify-center mb-6">
+                                        <div className="flex items-center gap-1 mb-2">
+                                            <span className="text-3xl font-bold text-gray-300 font-light">€</span>
+                                            <span className="text-6xl font-black text-[#FE8008] tracking-tighter shadow-orange-100">{tour.precioAdulto}</span>
+                                        </div>
+                                        <p className="text-sm text-gray-500 font-medium bg-gray-50 px-4 py-2 rounded-lg text-center max-w-[200px] leading-snug">
+                                            ⚠️ Il prezzo si intende per il <span className="text-[#004BA5] font-bold">solo tour</span>, voli esclusi.
+                                        </p>
                                     </div>
 
                                     <div className="flex items-center justify-center gap-4 text-sm text-gray-500 mb-8">
@@ -404,8 +415,8 @@ export default async function TourPage({ params }: TourPageProps) {
                                     </button>
                                 </div>
                                 <div className="w-full border-t border-gray-50 pt-6 flex justify-center">
-                                    <div className="bg-blue-50 text-[#004BA5] px-4 py-1.5 rounded-full font-bold text-xs">
-                                        Solo {('meta' in tour ? tour.meta : 50) || 20} posti totali
+                                    <div className="bg-red-50 text-red-600 px-4 py-1.5 rounded-full font-bold text-xs uppercase tracking-wide animate-pulse">
+                                        🔥 Ultimi posti disponibili
                                     </div>
                                 </div>
                             </div>
@@ -479,6 +490,22 @@ export default async function TourPage({ params }: TourPageProps) {
                     </div>
                 )
             }
+
+            {/* --- MOBILE FIXED BOTTOM BAR (Conversion Booster) --- */}
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] z-50 md:hidden flex items-center justify-between gap-4 pb-safe">
+                <div className="flex flex-col">
+                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Prezzo a persona</span>
+                    <div className="flex items-center gap-1">
+                        <span className="text-xl font-bold text-gray-300">€</span>
+                        <span className="text-3xl font-black text-[#FE8008] tracking-tight">{tour.precioAdulto}</span>
+                    </div>
+                </div>
+                <Link href={`/prenotazione/${tour.slug || tour.id}`} className="flex-1">
+                    <button className="w-full py-3 bg-[#004BA5] text-white font-bold rounded-xl shadow-lg shadow-blue-900/20 active:scale-95 transition-transform text-lg">
+                        Prenota Ora
+                    </button>
+                </Link>
+            </div>
         </div >
     );
 }

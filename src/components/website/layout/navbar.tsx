@@ -15,7 +15,7 @@ const menuVariants: Variants = {
         opacity: 0,
         x: "100%",
         transition: {
-            duration: 0.2,
+            duration: 0.15,
             type: "tween",
             ease: "easeInOut"
         }
@@ -24,7 +24,7 @@ const menuVariants: Variants = {
         opacity: 1,
         x: "0%",
         transition: {
-            duration: 0.4,
+            duration: 0.3,
             type: "spring",
             damping: 25,
             stiffness: 200
@@ -37,7 +37,7 @@ const linkVariants = {
     open: (i: number) => ({
         opacity: 1,
         x: 0,
-        transition: { delay: i * 0.1, duration: 0.4 }
+        transition: { delay: i * 0.05, duration: 0.3 }
     })
 }
 
@@ -71,11 +71,11 @@ export function Navbar() {
     const [scrolled, setScrolled] = useState(false)
     const [partenzeOpen, setPartenzeOpen] = useState(false)
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+    const [mobilePartenzeOpen, setMobilePartenzeOpen] = useState(false)
     const partenzeRef = useRef<HTMLDivElement>(null)
     const pathname = usePathname()
 
-    // Ensure effectiveScrolled logic is kept from original file
-    const effectiveScrolled = scrolled
+    const effectiveScrolled = scrolled || mobileMenuOpen
 
     useEffect(() => {
         const handleScroll = () => {
@@ -105,6 +105,8 @@ export function Navbar() {
             document.body.style.overflow = 'hidden'
         } else {
             document.body.style.overflow = 'unset'
+            // Reset mobile submenus when closing main menu
+            setMobilePartenzeOpen(false)
         }
         return () => {
             document.body.style.overflow = 'unset'
@@ -115,8 +117,8 @@ export function Navbar() {
         <>
             <header
                 className={cn(
-                    "relative z-50 w-full transition-all duration-300",
-                    effectiveScrolled ? "bg-white/95 backdrop-blur-md shadow-sm py-0" : "bg-transparent py-2 lg:py-4"
+                    "w-full transition-all duration-300",
+                    effectiveScrolled ? "bg-white shadow-sm py-0" : "bg-transparent py-2"
                 )}
                 onMouseLeave={() => setPartenzeOpen(false)}
             >
@@ -125,11 +127,11 @@ export function Navbar() {
                     <div className="flex-shrink-0 flex items-center z-50">
                         <Link href="/" className="flex items-center gap-2 group">
                             <Image
-                                src={logoOriginal}
+                                src={effectiveScrolled ? logoOriginal : logoOriginal}
                                 alt="Gibravo Travel Logo"
                                 width={160}
                                 height={46}
-                                className="h-10 w-auto md:h-12 transition-all duration-300 drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]"
+                                className="h-10 w-auto md:h-12 transition-all duration-300"
                                 priority
                             />
                         </Link>
@@ -288,7 +290,6 @@ export function Navbar() {
                             )}
                         </div>
 
-                        {/* Mobile Menu Toggle - Improved Icon Button */}
                         <button
                             onClick={() => setMobileMenuOpen(true)}
                             className={cn(
@@ -298,7 +299,7 @@ export function Navbar() {
                             aria-label="Apri menu"
                         >
 
-                            {/* Custom 2-line Menu Icon */}
+                            {/* Custom 3-line Menu Icon (Hamburger) */}
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 className="h-7 w-7"
@@ -309,124 +310,181 @@ export function Navbar() {
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                             >
-                                <line x1="4" x2="20" y1="9" y2="9" />
-                                <line x1="4" x2="20" y1="15" y2="15" />
+                                <line x1="4" x2="20" y1="6" y2="6" />
+                                <line x1="4" x2="20" y1="12" y2="12" />
+                                <line x1="4" x2="20" y1="18" y2="18" />
                             </svg>
                         </button>
                     </div>
                 </div>
-            </header>
 
-            {/* SUPER MODERN MOBILE MENU */}
-            <AnimatePresence>
-                {mobileMenuOpen && (
-                    <motion.div
-                        initial="closed"
-                        animate="open"
-                        exit="closed"
-                        variants={menuVariants}
-                        className="fixed inset-0 z-[100] bg-white flex flex-col overflow-hidden"
-                    >
-                        {/* Header */}
-                        <div className="flex items-center justify-between p-6 pb-2">
-                            <Link href="/" onClick={() => setMobileMenuOpen(false)}>
-                                <Image
-                                    src="/Logo_gibravo.svg"
-                                    alt="Gibravo"
-                                    width={140}
-                                    height={40}
-                                    className="h-10 w-auto"
-                                />
-                            </Link>
-                            <button
+                {/* SUPER MODERN MOBILE MENU - ABSOLUTE POSITIONING */}
+                <AnimatePresence>
+                    {mobileMenuOpen && (
+                        <>
+                            {/* Backdrop - Fixed viewport coverage */}
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.2 }}
                                 onClick={() => setMobileMenuOpen(false)}
-                                className="p-2 rounded-full bg-slate-100 text-slate-900 hover:bg-slate-200 transition-colors"
+                                className="fixed inset-0 z-[-1] bg-black/60 backdrop-blur-sm h-[100vh]"
+                            />
+
+                            {/* Drawer - Fixed Top (Covers Header) */}
+                            <motion.div
+                                initial={{ y: "-100%" }}
+                                animate={{ y: 0 }}
+                                exit={{ y: "-100%" }}
+                                transition={{ type: "spring", damping: 30, stiffness: 300 }}
+                                className="fixed top-0 left-0 right-0 z-[110] w-full bg-white shadow-2xl rounded-b-3xl overflow-hidden max-h-[85vh] flex flex-col"
                             >
-                                <X className="h-7 w-7" />
-                            </button>
-                        </div>
-
-                        {/* Menu Items */}
-                        <div className="flex-1 flex flex-col justify-center px-8 gap-6 overflow-y-auto">
-                            <motion.div custom={0} variants={linkVariants}>
-                                <Link
-                                    href="/chi-siamo"
-                                    onClick={() => setMobileMenuOpen(false)}
-                                    className="text-2xl font-[500] tracking-tight text-slate-900 hover:text-[#004BA5] transition-colors block"
-                                >
-                                    Chi Siamo
-                                </Link>
-                            </motion.div>
-
-                            <motion.div custom={1} variants={linkVariants}>
-                                <div className="space-y-4">
-                                    <span className="text-2xl font-[500] tracking-tight text-slate-900 block border-b border-gray-100 pb-2">
-                                        Partenze
-                                    </span>
-                                    <div className="pl-4 grid grid-cols-2 gap-3">
-                                        <Link
-                                            href="/categoria/aereo"
-                                            onClick={() => setMobileMenuOpen(false)}
-                                            className="text-lg text-slate-600 hover:text-[#004BA5] flex items-center gap-2"
-                                        >
-                                            <Plane className="h-4 w-4" /> Aereo
-                                        </Link>
-                                        <Link
-                                            href="/categoria/bus"
-                                            onClick={() => setMobileMenuOpen(false)}
-                                            className="text-lg text-slate-600 hover:text-[#004BA5] flex items-center gap-2"
-                                        >
-                                            <Bus className="h-4 w-4" /> Bus
-                                        </Link>
+                                {/* Internal Header (Logo + Close) */}
+                                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100/50 bg-white">
+                                    <div className="flex items-center gap-2">
+                                        <img
+                                            src="/Logo_gibravo.svg"
+                                            alt="Gibravo Travel Logo"
+                                            width={140}
+                                            height={40}
+                                            className="h-10 w-auto object-contain"
+                                        />
                                     </div>
-                                    <div className="pl-4 grid grid-cols-3 gap-2">
-                                        {months.slice(0, 6).map(m => (
-                                            <Link
-                                                key={m.value}
-                                                href={`/partenze?mese=${m.value}`}
-                                                onClick={() => setMobileMenuOpen(false)}
-                                                className="text-sm text-slate-500 hover:text-[#004BA5]"
+                                    <button
+                                        onClick={() => setMobileMenuOpen(false)}
+                                        className="p-2 rounded-full bg-slate-50 text-slate-900 hover:bg-slate-100 transition-colors"
+                                        aria-label="Chiudi menu"
+                                    >
+                                        <X className="h-6 w-6" />
+                                    </button>
+                                </div>
+
+                                {/* Menu Items */}
+                                <div className="flex-1 flex flex-col px-6 py-4 gap-2 overflow-y-auto">
+                                    <motion.div custom={0} variants={linkVariants} initial="closed" animate="open">
+                                        <Link
+                                            href="/chi-siamo"
+                                            onClick={() => setMobileMenuOpen(false)}
+                                            className="text-lg font-[600] tracking-tight text-slate-900 hover:text-[#004BA5] transition-colors block py-2.5"
+                                        >
+                                            Chi Siamo
+                                        </Link>
+                                    </motion.div>
+
+                                    <motion.div custom={1} variants={linkVariants} initial="closed" animate="open">
+                                        <div className="space-y-1">
+                                            <button
+                                                onClick={() => setMobilePartenzeOpen(!mobilePartenzeOpen)}
+                                                className="flex items-center justify-between w-full text-lg font-[600] tracking-tight text-slate-900 border-b border-gray-100 pb-2.5 py-2.5"
                                             >
-                                                {m.name.slice(0, 3)}
-                                            </Link>
-                                        ))}
-                                    </div>
+                                                Partenze
+                                                <ChevronDown className={cn("h-5 w-5 text-gray-400 transition-transform duration-200", mobilePartenzeOpen && "rotate-180")} />
+                                            </button>
+
+                                            <AnimatePresence>
+                                                {mobilePartenzeOpen && (
+                                                    <motion.div
+                                                        initial={{ height: 0, opacity: 0 }}
+                                                        animate={{ height: "auto", opacity: 1 }}
+                                                        exit={{ height: 0, opacity: 0 }}
+                                                        transition={{ duration: 0.2 }}
+                                                        className="overflow-hidden bg-gray-50/50 rounded-lg"
+                                                    >
+                                                        <div className="p-3 space-y-4">
+                                                            {/* Section 1: Types */}
+                                                            <div>
+                                                                <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 pl-1">Tipo di Viaggio</h4>
+                                                                <div className="grid grid-cols-2 gap-2">
+                                                                    <Link
+                                                                        href="/categoria/aereo"
+                                                                        onClick={() => setMobileMenuOpen(false)}
+                                                                        className="flex flex-col items-center justify-center gap-1.5 p-2.5 bg-white rounded-xl border border-blue-100/50 hover:border-blue-200 transition-colors shadow-sm"
+                                                                    >
+                                                                        <div className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center text-[#004BA5]">
+                                                                            <Plane className="h-3.5 w-3.5" />
+                                                                        </div>
+                                                                        <span className="text-sm font-bold text-[#004BA5]">Aereo</span>
+                                                                    </Link>
+                                                                    <Link
+                                                                        href="/categoria/bus"
+                                                                        onClick={() => setMobileMenuOpen(false)}
+                                                                        className="flex flex-col items-center justify-center gap-1.5 p-2.5 bg-white rounded-xl border border-orange-100/50 hover:border-orange-200 transition-colors shadow-sm"
+                                                                    >
+                                                                        <div className="w-7 h-7 rounded-full bg-orange-50 flex items-center justify-center text-[#FE8008]">
+                                                                            <Bus className="h-3.5 w-3.5" />
+                                                                        </div>
+                                                                        <span className="text-sm font-bold text-[#FE8008]">Bus</span>
+                                                                    </Link>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Section 2: Months */}
+                                                            <div>
+                                                                <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 pl-1">Filtra per Mese</h4>
+                                                                <div className="grid grid-cols-4 gap-1.5">
+                                                                    {months.map(m => (
+                                                                        <Link
+                                                                            key={m.value}
+                                                                            href={`/partenze?mese=${m.value}`}
+                                                                            onClick={() => setMobileMenuOpen(false)}
+                                                                            className="text-center py-1.5 rounded-md bg-white border border-gray-100 text-slate-600 text-[10px] font-[700] uppercase tracking-wide hover:bg-[#004BA5] hover:text-white hover:border-[#004BA5] transition-all shadow-sm"
+                                                                        >
+                                                                            {m.name.slice(0, 3)}
+                                                                        </Link>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
+                                        </div>
+                                    </motion.div>
+
+                                    <motion.div custom={2} variants={linkVariants} initial="closed" animate="open">
+                                        <Link
+                                            href="/come-funziona"
+                                            onClick={() => setMobileMenuOpen(false)}
+                                            className="text-lg font-[600] tracking-tight text-slate-900 hover:text-[#004BA5] transition-colors block py-2.5"
+                                        >
+                                            Come funziona
+                                        </Link>
+                                    </motion.div>
+
+                                    <motion.div custom={3} variants={linkVariants} initial="closed" animate="open">
+                                        <Link
+                                            href="/domande-frequenti"
+                                            onClick={() => setMobileMenuOpen(false)}
+                                            className="text-lg font-[600] tracking-tight text-slate-900 hover:text-[#004BA5] transition-colors block py-2.5"
+                                        >
+                                            FAQ
+                                        </Link>
+                                    </motion.div>
+
+                                    <motion.div custom={4} variants={linkVariants} initial="closed" animate="open">
+                                        <Link
+                                            href="/contatti"
+                                            onClick={() => setMobileMenuOpen(false)}
+                                            className="text-lg font-[600] tracking-tight text-slate-900 hover:text-[#004BA5] transition-colors block py-2.5"
+                                        >
+                                            Contatti
+                                        </Link>
+                                    </motion.div>
+                                </div>
+
+                                {/* Drawer Footer Handle */}
+                                <div className="p-3 border-t border-gray-50 flex justify-center bg-gray-50/30">
+                                    <div className="w-10 h-1 bg-gray-200 rounded-full" />
                                 </div>
                             </motion.div>
+                        </>
+                    )}
+                </AnimatePresence>
 
-                            <motion.div custom={2} variants={linkVariants}>
-                                <Link
-                                    href="/come-funziona"
-                                    onClick={() => setMobileMenuOpen(false)}
-                                    className="text-2xl font-[500] tracking-tight text-slate-900 hover:text-[#004BA5] transition-colors block"
-                                >
-                                    Come funziona
-                                </Link>
-                            </motion.div>
+            </header>
 
-                            <motion.div custom={3} variants={linkVariants}>
-                                <Link
-                                    href="/domande-frequenti"
-                                    onClick={() => setMobileMenuOpen(false)}
-                                    className="text-2xl font-[500] tracking-tight text-slate-900 hover:text-[#004BA5] transition-colors block"
-                                >
-                                    FAQ
-                                </Link>
-                            </motion.div>
-
-                            <motion.div custom={4} variants={linkVariants}>
-                                <Link
-                                    href="/contatti"
-                                    onClick={() => setMobileMenuOpen(false)}
-                                    className="text-2xl font-[500] tracking-tight text-slate-900 hover:text-[#004BA5] transition-colors block"
-                                >
-                                    Contatti
-                                </Link>
-                            </motion.div>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            {/* Mobile Menu Removed (Moved inside Header) */}
         </>
     )
 }

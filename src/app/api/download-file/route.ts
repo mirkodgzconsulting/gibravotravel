@@ -8,9 +8,9 @@ if (process.env.CLOUDINARY_URL) {
   });
 } else {
   cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dskliu1ig',
-    api_key: process.env.CLOUDINARY_API_KEY || '538724966551851',
-    api_secret: process.env.CLOUDINARY_API_SECRET || 'Q1fP7-pH6iiltPbFNkqPn0d93no',
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
   });
 }
 
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
       if (isCloudinary && isRawFile) {
         // Para archivos raw de Cloudinary, intentar diferentes estrategias
         // Los PDFs pueden estar en /image/upload/ aunque no sean imágenes
-        
+
         // Estrategia 1: Si está en /raw/upload/, usar resource_type: 'raw'
         let urlMatch = fileUrl.match(/\/raw\/upload\/(?:v\d+\/)?(.+?)(?:\?|$)/);
         if (urlMatch) {
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
           urlMatch = fileUrl.match(/\/image\/upload\/(?:v\d+\/)?(.+?)(?:\?|$)/);
           if (urlMatch) {
             const publicId = urlMatch[1];
-            
+
             // Para archivos en /image/upload/ que no son imágenes (PDFs subidos con 'auto')
             // Intentar primero como 'raw' porque aunque estén en /image/, son archivos raw
             const signedRawUrl = cloudinary.url(publicId, {
@@ -78,14 +78,14 @@ export async function GET(request: NextRequest) {
               secure: true,
               sign_url: true,
             });
-            
+
             response = await fetch(signedRawUrl, {
               method: 'GET',
               headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
               },
             });
-            
+
             // Si falla como raw, intentar como image
             if (!response.ok) {
               const signedImageUrl = cloudinary.url(publicId, {
@@ -181,7 +181,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Devolver el archivo con headers para forzar la descarga
-      return new NextResponse(buffer, {
+      return new NextResponse(new Uint8Array(buffer), {
         headers: {
           'Content-Type': contentType,
           'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,

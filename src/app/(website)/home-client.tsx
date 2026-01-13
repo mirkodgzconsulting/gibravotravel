@@ -23,6 +23,7 @@ import {
 import { DraggableCardsSection } from "@/components/website/sections/draggable-cards-section"
 import TestimonialsComponent from "@/components/shadcn-studio/blocks/testimonials-component-06/testimonials-component-06"
 
+
 interface TourData {
     id: string
     title: string
@@ -111,34 +112,56 @@ export function HomeClient({ flightTours, busTours }: HomeClientProps) {
     // Combine both Flight and Bus tours for the Featured Carousel
     const allTours = [...flightTours, ...busTours]
 
+    const heroImages = [
+        "https://res.cloudinary.com/dskliu1ig/image/upload/v1768252166/img-hero5_sqkdwb.jpg",
+        "https://res.cloudinary.com/dskliu1ig/image/upload/v1768252165/img-hero6_kidgur.jpg",
+        "https://res.cloudinary.com/dskliu1ig/image/upload/v1768252163/img-hero1_ebkhxx.jpg",
+        "https://res.cloudinary.com/dskliu1ig/image/upload/v1768252163/img-hero3_irc053.jpg",
+        "https://res.cloudinary.com/dskliu1ig/image/upload/v1768252163/img-hero2_xx72si.jpg",
+        "https://res.cloudinary.com/dskliu1ig/image/upload/v1768252162/img-hero4_fcauvc.jpg"
+    ]
+
+    const [currentHeroIndex, setCurrentHeroIndex] = React.useState(0)
+
+    React.useEffect(() => {
+        const interval = setInterval(() => {
+            setCurrentHeroIndex((prev) => (prev + 1) % heroImages.length)
+        }, 5000)
+        return () => clearInterval(interval)
+    }, [])
+
     return (
         <div className="flex flex-col min-h-screen">
             {/* Hero Section - GiBravo Design */}
-            <section className="relative h-[650px] w-full flex items-center justify-center">
+            <section className="relative h-[90vh] min-h-[500px] w-full flex items-center justify-center overflow-hidden">
                 {/* Background */}
                 <div className="absolute inset-0 z-0">
-                    <Image
-                        src="https://res.cloudinary.com/dskliu1ig/image/upload/v1767357683/hero-homepage_obrvuk.webp"
-                        alt="Hero Background"
-                        fill
-                        className="object-cover"
-                        priority
-                    />
-                    {/* Darker gradient for text contrast */}
-                    <div className="absolute inset-0 bg-black/40" />
+                    {heroImages.map((src, index) => (
+                        <Image
+                            key={src}
+                            src={src}
+                            alt={`Hero Background ${index + 1}`}
+                            fill
+                            className={`object-cover transition-opacity duration-1000 ease-in-out ${index === currentHeroIndex ? "opacity-100" : "opacity-0"
+                                }`}
+                            priority={index === 0}
+                        />
+                    ))}
+                    {/* Darker gradient for text contrast - Enhanced */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent z-10" />
                 </div>
 
                 {/* Content */}
-                <div className="relative z-10 container flex flex-col items-center text-center px-4 mt-0 md:mt-[-60px]">
+                <div className="relative z-10 container flex flex-col items-center text-center px-4 mt-24">
                     <RevealOnScroll>
-                        <h1 className="text-4xl md:text-[52px] font-[700] tracking-tight text-white leading-[1.1] mb-2 drop-shadow-lg">
+                        <h1 className="text-4xl md:text-[52px] font-[700] tracking-tight text-white hover:text-[#004BA5] transition-colors duration-300 leading-[1.1] mb-2 drop-shadow-2xl shadow-black">
                             Viaggia sicuro,
                         </h1>
-                        <h2 className="text-3xl md:text-[52px] font-[700] tracking-tight text-white leading-[1.1] mb-4 drop-shadow-md">
+                        <h2 className="text-3xl md:text-[52px] font-[700] tracking-tight text-white hover:text-[#004BA5] transition-colors duration-300 leading-[1.1] mb-6 drop-shadow-2xl shadow-black">
                             viaggia con GiBravo
                         </h2>
 
-                        <p className="text-xl md:text-2xl font-medium text-white/90 mb-12 drop-shadow-sm tracking-wide">
+                        <p className="text-xl md:text-2xl font-medium text-white/95 hover:text-[#FE8008] transition-colors duration-300 mb-12 drop-shadow-xl tracking-wide max-w-2xl mx-auto shadow-black">
                             Scopri il mondo viaggiando in piccoli gruppi
                         </p>
                     </RevealOnScroll>
@@ -147,72 +170,26 @@ export function HomeClient({ flightTours, busTours }: HomeClientProps) {
 
             </section>
 
-            {/* Featured Section (Carousel) */}
-            <section className="pt-20 pb-12 bg-slate-50">
-                <div className="container px-4 max-w-7xl mx-auto">
-                    <div className="flex flex-col items-center mb-[30px] text-center">
-                        <RevealOnScroll>
-                            <h2 className="section-title mb-2">
-                                <span className="brand-gradient">I nostri viaggi</span> scelti per te
-                            </h2>
-                        </RevealOnScroll>
-                    </div>
-
-                    <div className="w-full">
-                        <RevealOnScroll delay={200}>
-                            <Carousel
-                                opts={{
-                                    align: "start",
-                                    loop: true,
-                                }}
-                                plugins={[
-                                    Autoplay({
-                                        delay: 3000,
-                                    }),
-                                ]}
-                                className="w-full"
-                            >
-                                <CarouselContent className="-ml-2 md:-ml-4">
-                                    {allTours.length > 0 ? (
-                                        allTours.map((trip) => (
-                                            <CarouselItem key={trip.id} className="pl-2 md:pl-4 basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4">
-                                                <div className="p-1 h-full">
-                                                    <TravelCard {...trip} size="compact" theme="light" />
-                                                </div>
-                                            </CarouselItem>
-                                        ))
-                                    ) : (
-                                        // Use Mock Data if no real tours are available, just for visual check
-                                        <div className="w-full text-center text-gray-500 py-10 italic">
-                                            Al momento non ci sono offerte disponibili.
-                                        </div>
-                                    )}
-                                </CarouselContent>
-                                <CarouselPrevious className="hidden md:flex -left-4 md:-left-12 bg-white/80 hover:bg-white text-[#004BA5] border-[#004BA5]/20 hover:border-[#004BA5]" />
-                                <CarouselNext className="hidden md:flex -right-4 md:-right-12 bg-white/80 hover:bg-white text-[#004BA5] border-[#004BA5]/20 hover:border-[#004BA5]" />
-                            </Carousel>
-                        </RevealOnScroll>
-                    </div>
-                </div>
-            </section>
-
-            <Features />
-
-            <div className="hidden md:block">
+            <div>
                 <DraggableCardsSection />
             </div>
 
             <RevealOnScroll delay={100}>
-                <TestimonialsComponent testimonials={testimonialsData} />
+                <div className="pt-20">
+                    <TestimonialsComponent />
+                </div>
             </RevealOnScroll>
+
+            <RevealOnScroll delay={100}>
+                <HowItWorks />
+            </RevealOnScroll>
+
+            <Features />
 
             {/* Other Sections */}
             < RevealOnScroll delay={100} >
                 <CollectionsGrid />
             </RevealOnScroll >
-            <RevealOnScroll delay={100}>
-                <HowItWorks />
-            </RevealOnScroll>
         </div >
     )
 }

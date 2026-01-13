@@ -129,7 +129,7 @@ export function DashboardClient({ userData, bookings }: DashboardClientProps) {
     }
 
     return (
-        <div className="min-h-screen bg-slate-50 pt-[100px] pb-20">
+        <div className="min-h-screen bg-slate-50 pt-48 pb-20">
             <div className="container mx-auto px-4 max-w-7xl">
 
                 {/* Header Section */}

@@ -8,10 +8,10 @@ export default function ContactsPage() {
     return (
         <main className="min-h-screen bg-slate-50 pb-24">
             {/* 1. HERO SECTION - Premium Split Design */}
-            <section className="relative h-[60vh] min-h-[500px] w-full flex items-center overflow-hidden bg-black mb-16">
+            <section className="relative h-[60vh] min-h-[500px] w-full flex items-center overflow-hidden bg-black mb-12 md:mb-16">
                 <div className="absolute inset-0 z-0">
                     <Image
-                        src="https://res.cloudinary.com/dskliu1ig/image/upload/v1767393764/contattaci_ezcfzw.jpg"
+                        src="https://res.cloudinary.com/dskliu1ig/image/upload/v1768265641/hero-homepagecf_u1x58g.png"
                         alt="Contatti Hero"
                         fill
                         className="object-cover opacity-80"
@@ -20,7 +20,7 @@ export default function ContactsPage() {
                     <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent z-10" />
                 </div>
 
-                <div className="container mx-auto px-4 z-20 relative">
+                <div className="container mx-auto px-4 z-20 relative pt-32">
                     <RevealOnScroll>
                         <div className="max-w-3xl">
                             <h1 className="text-5xl md:text-7xl font-[700] text-white tracking-tighter leading-[1.1] mb-8">
@@ -38,7 +38,7 @@ export default function ContactsPage() {
             <div className="container mx-auto px-4 max-w-7xl">
                 {/* Intro Text */}
                 <RevealOnScroll>
-                    <div className="text-center mb-16">
+                    <div className="text-center mb-12 md:mb-16">
                         <span className="text-[#FE8008] font-bold tracking-wider text-sm uppercase mb-2 block font-outfit">
                             Siamo qui per te
                         </span>
@@ -52,7 +52,7 @@ export default function ContactsPage() {
                     </div>
                 </RevealOnScroll>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-center mt-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-24 items-center mt-6">
 
                     {/* Left Col: Contact Info */}
                     <RevealOnScroll delay={100}>

@@ -52,7 +52,7 @@ export default function ChiSiamoPage() {
                     <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent z-10" />
                 </div>
 
-                <div className="container mx-auto px-4 z-20 relative">
+                <div className="container mx-auto px-4 z-20 relative pt-32">
                     <RevealOnScroll>
                         <div className="max-w-3xl">
 
@@ -71,7 +71,7 @@ export default function ChiSiamoPage() {
             {/* 2. INTRO SECTION - Minimalist & Elegant */}
             <section className="py-24 bg-white">
                 <div className="container mx-auto px-4 max-w-7xl">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
                         <RevealOnScroll>
                             <div className="space-y-6">
                                 <h2 className="section-title">
@@ -137,7 +137,7 @@ export default function ChiSiamoPage() {
                         </RevealOnScroll>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
                         {teamMembers.map((member, idx) => (
                             <RevealOnScroll key={member.name} delay={idx * 100}>
                                 <div className="group bg-white rounded-[32px] p-4 shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-2 transition-all duration-500 w-full">
@@ -172,7 +172,7 @@ export default function ChiSiamoPage() {
             {/* 4. MISSION & VISION - Premium Bento Style */}
             <section className="py-24 bg-white relative">
                 <div className="container mx-auto px-4 max-w-7xl">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                         <RevealOnScroll className="h-full">
                             <div className="group relative bg-[#004BA5] p-12 rounded-[40px] overflow-hidden text-white h-full shadow-2xl shadow-blue-900/20">
                                 <div className="absolute -top-12 -right-12 h-64 w-64 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />

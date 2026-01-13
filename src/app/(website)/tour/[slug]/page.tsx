@@ -36,18 +36,33 @@ interface TourPageProps {
     }>;
 }
 
+interface ItineraryItem {
+    title: string;
+    description: string;
+}
+
+interface FAQItem {
+    question: string;
+    answer: string;
+}
+
 // FORCE DYNAMIC to avoid static gen issues with slug param
 export const dynamic = 'force-dynamic';
 
 async function getTour(slug: string) {
     // 1. Try TourAereo
-    let tourAereo = await prisma.tourAereo.findUnique({
-        where: { slug },
+    // Use findFirst for case-insensitive slug match
+    let tourAereo = await prisma.tourAereo.findFirst({
+        where: {
+            slug: { equals: slug, mode: 'insensitive' }
+        },
         include: { creator: true }
     });
 
     if (!tourAereo) {
         // Fallback: Check by ID if slug lookup failed
+        // IDs are case-sensitive/exact usually, so findUnique is fine, but safe to use findFirst if needed.
+        // Keeping findUnique for ID as it's cleaner, but wrapping in try/catch if strictly compliant.
         tourAereo = await prisma.tourAereo.findUnique({
             where: { id: slug },
             include: { creator: true }
@@ -57,8 +72,10 @@ async function getTour(slug: string) {
     if (tourAereo) return { ...tourAereo, type: 'aereo' };
 
     // 2. Try TourBus
-    let tourBus = await prisma.tourBus.findUnique({
-        where: { slug },
+    let tourBus = await prisma.tourBus.findFirst({
+        where: {
+            slug: { equals: slug, mode: 'insensitive' }
+        },
         include: { creator: true }
     });
 
@@ -177,14 +194,14 @@ export default async function TourPage({ params }: TourPageProps) {
     // Safe parsing for Itinerary
     // It's defined as Json in Prisma, so standard TS treats it as 'any' or 'JsonValue'.
     // We know it's { title: string, description: string }[] based on previous tasks.
-    const itinerary = Array.isArray(tour.itinerario) ? tour.itinerario as any[] : [];
+    const itinerary = Array.isArray(tour.itinerario) ? tour.itinerario as unknown as ItineraryItem[] : [];
     const gallery = Array.isArray(tour.galeria) ? tour.galeria as string[] : [];
 
     // Hero Image (Use cover or first gallery or placeholder)
     const heroImage = tour.coverImage || gallery[0] || '/images/placeholder-tour.jpg';
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-20">
+        <div className="min-h-screen bg-white pb-20">
             {/* --- HERO SECTION --- */}
             <div className="relative h-[60vh] w-full">
                 <Image
@@ -199,17 +216,8 @@ export default async function TourPage({ params }: TourPageProps) {
 
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-                {/* Hero Content */}
-                <div className="absolute bottom-0 left-0 right-0 w-full p-6 md:p-12 text-white max-w-6xl mx-auto">
-                    {tour.etiquetas && Array.isArray(tour.etiquetas) && (
-                        <div className="flex flex-wrap gap-2 mb-4">
-                            {tour.etiquetas.map((tag: string, i: number) => (
-                                <span key={i} className="px-3 py-1 bg-brand-500/90 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-sm">
-                                    {tag}
-                                </span>
-                            ))}
-                        </div>
-                    )}
+                <div className="absolute bottom-0 left-0 right-0 w-full p-6 md:p-12 text-white max-w-7xl mx-auto">
+
                     <h1 className="text-4xl md:text-6xl font-black mb-2 uppercase tracking-tight shadow-sm">
                         {tour.titulo}
                     </h1>
@@ -225,34 +233,105 @@ export default async function TourPage({ params }: TourPageProps) {
             <TourStickyNav />
 
             {/* --- MAIN CONTENT GRID --- */}
-            <div className="max-w-6xl mx-auto px-4 md:px-6 mt-4 relative z-10">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="max-w-7xl mx-auto px-4 md:px-6 mt-12 relative z-10">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
 
                     {/* LEFT COLUMN (Details) */}
-                    <div className="lg:col-span-2 space-y-8">
+                    <div className="lg:col-span-2 space-y-12">
 
                         {/* Consolidated Overview Section */}
-                        <TourOverview
-                            date={tour.fechaViaje}
-                            duration={tour.duracionTexto}
-                            daysCount={daysCount}
-                            type={tour.type as 'aereo' | 'bus'}
-                            description={tour.infoGeneral}
-                        />
+                        <div className="border-b border-gray-100 pb-12">
+                            <TourOverview
+                                date={tour.fechaViaje}
+                                duration={tour.duracionTexto}
+                                daysCount={daysCount}
+                                type={tour.type as 'aereo' | 'bus'}
+                                description={tour.infoGeneral}
+                            />
+                        </div>
 
+                        {/* Dynamic Itinerary */}
+                        <div className="border-b border-gray-100 pb-12">
+                            <h2 className="text-2xl font-black text-[#004BA5] mb-8 uppercase tracking-tight">Itinerario di Viaggio</h2>
+                            <TourItinerary itinerary={itinerary} />
+                        </div>
 
+                        {/* Inclusions / Exclusions - Clean Columns */}
+                        <div id="incluso" className="scroll-mt-32 border-b border-gray-100 pb-12">
+                            <h2 className="text-2xl font-black text-[#004BA5] mb-8 uppercase tracking-tight">Cosa è compreso</h2>
+                            <div className="grid md:grid-cols-2 gap-x-12 gap-y-8">
+                                {/* Includes */}
+                                <div>
+                                    <h3 className="font-bold text-[#323232] mb-4 flex items-center gap-2 text-lg">
+                                        <CheckCircle2 className="w-5 h-5 text-[#FE8008]" />
+                                        La Quota Include
+                                    </h3>
+                                    <ul className="space-y-3">
+                                        {(tour.incluye as string[] || []).map((item, i) => (
+                                            <li key={i} className="flex gap-3 text-gray-600 text-sm leading-relaxed">
+                                                <span className="w-1.5 h-1.5 bg-[#FE8008] rounded-full mt-2 flex-shrink-0" />
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
 
-                        {/* Documentation Requirements */}
+                                {/* Excludes */}
+                                <div>
+                                    <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2 text-lg">
+                                        <XCircle className="w-5 h-5 text-red-500" />
+                                        La Quota Non Include
+                                    </h3>
+                                    <ul className="space-y-3">
+                                        {(tour.noIncluye as string[] || []).map((item, i) => (
+                                            <li key={i} className="flex gap-3 text-gray-600 text-sm leading-relaxed">
+                                                <span className="w-1.5 h-1.5 bg-red-400 rounded-full mt-2 flex-shrink-0" />
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Coordinator - Minimalist */}
+                        {tour.coordinadorNombre && (
+                            <div id="coordinatore" className="scroll-mt-32 border-b border-gray-100 pb-12">
+                                <h2 className="text-2xl font-black text-[#004BA5] mb-8 uppercase tracking-tight">Il Coordinatore</h2>
+                                <div className="flex flex-col sm:flex-row gap-8 items-center sm:items-start text-center sm:text-left">
+                                    <div className="relative w-28 h-28 rounded-full overflow-hidden border-4 border-white shadow-lg shadow-blue-900/10 flex-shrink-0">
+                                        {tour.coordinadorFoto ? (
+                                            <Image src={tour.coordinadorFoto} alt={tour.coordinadorNombre} fill className="object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full bg-gray-100 flex items-center justify-center text-3xl">👤</div>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-bold text-[#323232] mb-1">{tour.coordinadorNombre}</h3>
+                                        <p className="text-[#FE8008] font-[700] mb-4 text-xs uppercase tracking-widest">Coordinatore Gibravo</p>
+                                        <div className="relative pl-6">
+                                            <span className="absolute left-0 top-0 text-3xl text-gray-200 font-serif">"</span>
+                                            <div
+                                                className="text-gray-600 italic leading-relaxed prose prose-sm max-w-none"
+                                                dangerouslySetInnerHTML={{ __html: tour.coordinadorDescripcion || 'Pronto a guidarvi in questa fantastica avventura!' }}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Documentation & Info - Simple List */}
                         {tour.requisitosDocumentacion && Array.isArray(tour.requisitosDocumentacion) && tour.requisitosDocumentacion.length > 0 && (
-                            <div className="bg-amber-50 rounded-xl shadow-sm p-6 border border-amber-100">
-                                <h3 className="font-bold text-amber-900 mb-4 flex items-center gap-2 text-lg">
+                            <div className="border-b border-gray-100 pb-12">
+                                <h3 className="font-bold text-gray-900 mb-6 flex items-center gap-2 text-xl">
                                     <FileText className="w-5 h-5" />
                                     Documenti Richiesti
                                 </h3>
-                                <ul className="space-y-2">
+                                <ul className="grid md:grid-cols-2 gap-4">
                                     {tour.requisitosDocumentacion.map((req: string, i: number) => (
-                                        <li key={i} className="flex gap-3 text-amber-800 text-sm">
-                                            <span className="text-amber-600 mt-1 flex-shrink-0">•</span>
+                                        <li key={i} className="flex gap-3 text-gray-600 text-sm bg-gray-50 p-3 rounded-lg">
+                                            <span className="text-brand-600 font-bold">•</span>
                                             <span>{req}</span>
                                         </li>
                                     ))}
@@ -260,75 +339,13 @@ export default async function TourPage({ params }: TourPageProps) {
                             </div>
                         )}
 
-
-
-
-
-                        {/* Dynamic Itinerary */}
-                        <TourItinerary itinerary={itinerary} />
-
-                        {/* Inclusions / Exclusions */}
-                        <div id="incluso" className="scroll-mt-32 grid md:grid-cols-2 gap-6">
-                            {/* Includes */}
-                            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                                <h3 className="font-bold text-green-700 mb-4 flex items-center gap-2 text-lg">
-                                    <CheckCircle2 className="w-5 h-5" />
-                                    La Quota Include
-                                </h3>
-                                <ul className="space-y-3">
-                                    {(tour.incluye as string[] || []).map((item, i) => (
-                                        <li key={i} className="flex gap-3 text-gray-700 text-sm">
-                                            <span className="text-green-500 mt-1 flex-shrink-0">✓</span>
-                                            <span>{item}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-
-                            {/* Excludes */}
-                            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                                <h3 className="font-bold text-red-700 mb-4 flex items-center gap-2 text-lg">
-                                    <XCircle className="w-5 h-5" />
-                                    La Quota Non Include
-                                </h3>
-                                <ul className="space-y-3">
-                                    {(tour.noIncluye as string[] || []).map((item, i) => (
-                                        <li key={i} className="flex gap-3 text-gray-700 text-sm">
-                                            <span className="text-red-400 mt-1 flex-shrink-0">✕</span>
-                                            <span>{item}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        </div>
-
-                        {/* Coordinator / Accompanist */}
-                        {tour.coordinadorNombre && (
-                            <div id="coordinatore" className="scroll-mt-32 bg-gradient-to-br from-brand-50 to-blue-50 rounded-xl p-8 border border-brand-100 flex flex-col md:flex-row gap-6 items-center md:items-start text-center md:text-left">
-                                <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-md flex-shrink-0">
-                                    {tour.coordinadorFoto ? (
-                                        <Image src={tour.coordinadorFoto} alt={tour.coordinadorNombre} fill className="object-cover" />
-                                    ) : (
-                                        <div className="w-full h-full bg-brand-200 flex items-center justify-center text-4xl">👤</div>
-                                    )}
-                                </div>
-                                <div>
-                                    <h3 className="text-xl font-bold text-gray-900 mb-1">In viaggio con {tour.coordinadorNombre}</h3>
-                                    <p className="text-brand-600 font-medium mb-3">Coordinatore Gibravo</p>
-                                    <p className="text-gray-600 text-sm italic">
-                                        "{tour.coordinadorDescripcion || 'Pronto a guidarvi in questa fantastica avventura!'}"
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Gallery */}
+                        {/* Gallery - Tighter Grid */}
                         {gallery.length > 0 && (
-                            <div className="space-y-4">
-                                <h2 className="text-2xl font-bold text-gray-900">Galleria Fotografica</h2>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 h-96 md:h-80">
+                            <div className="space-y-6">
+                                <h2 className="text-2xl font-black text-[#004BA5] uppercase tracking-tight">Galleria</h2>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 h-96 md:h-80">
                                     {gallery.slice(0, 5).map((url, i) => (
-                                        <div key={i} className={`relative rounded-xl overflow-hidden shadow-sm hover:opacity-90 transition-opacity ${i === 0 ? 'col-span-2 row-span-2 h-full' : 'h-full'}`}>
+                                        <div key={i} className={`relative rounded-2xl overflow-hidden cursor-pointer hover:opacity-90 transition-opacity ${i === 0 ? 'col-span-2 row-span-2 h-full' : 'h-full'}`}>
                                             <Image src={url} alt={`Gallery ${i}`} fill className="object-cover" />
                                         </div>
                                     ))}
@@ -336,9 +353,9 @@ export default async function TourPage({ params }: TourPageProps) {
                             </div>
                         )}
 
-                        {/* Map Embed */}
+                        {/* Map Embed - Clean */}
                         {tour.mapaEmbed && (
-                            <div className="rounded-xl overflow-hidden shadow-sm border border-gray-100 h-80 w-full relative bg-gray-100">
+                            <div className="rounded-2xl overflow-hidden bg-gray-100 h-80 w-full relative grayscale hover:grayscale-0 transition-all duration-500">
                                 <iframe
                                     src={tour.mapaEmbed.includes('<iframe') ? (tour.mapaEmbed.match(/src=["']([^"']+)["']/) || [])[1] : tour.mapaEmbed}
                                     width="100%"
@@ -351,53 +368,56 @@ export default async function TourPage({ params }: TourPageProps) {
                             </div>
                         )}
 
-                        {/* Dynamic FAQ */}
-                        <TourFAQ faq={tour.faq as any[]} />
+                        {/* Dynamic FAQ - Divider only */}
+                        <div className="pt-8">
+                            <h2 className="text-2xl font-black text-[#004BA5] mb-8 uppercase tracking-tight">Domande Frequenti</h2>
+                            <TourFAQ faq={tour.faq as unknown as FAQItem[]} />
+                        </div>
 
                     </div>
 
 
                     {/* RIGHT COLUMN (Sticky Sidebar) */}
                     <div className="lg:col-span-1">
-                        <div className="sticky top-24 space-y-6">
-                            {/* Price Card */}
-                            <div className="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden">
-                                <div className="bg-gray-900 text-white p-4 text-center">
-                                    <p className="text-sm opacity-80 uppercase tracking-widest font-semibold">Prezzo a persona</p>
-                                </div>
-                                <div className="p-6 text-center">
-                                    <div className="flex items-start justify-center gap-1">
-                                        <span className="text-2xl text-gray-400 font-light mt-2">€</span>
-                                        <span className="text-5xl font-black text-brand-600">{tour.precioAdulto}</span>
+                        <div className="sticky top-24 space-y-8">
+                            {/* Price Card - Clean White */}
+                            <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-gray-100 overflow-hidden p-8">
+                                <div className="text-center">
+                                    <p className="text-xs text-gray-400 uppercase tracking-widest font-bold mb-2">Prezzo a persona</p>
+                                    <div className="flex items-center justify-center gap-1 mb-4">
+                                        <span className="text-3xl font-bold text-gray-400 font-light">€</span>
+                                        <span className="text-6xl font-black text-brand-600 tracking-tighter">{tour.precioAdulto}</span>
                                     </div>
-                                    <p className="text-gray-500 text-sm mt-2 mb-6">Tasse incluse • Cancellazione flessibile</p>
 
-                                    <Link href={`/prenotazione/${tour.slug || tour.id}`}>
-                                        <button className="w-full py-4 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-lg shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 mb-3 text-lg cursor-pointer">
+                                    <div className="flex items-center justify-center gap-4 text-sm text-gray-500 mb-8">
+                                        <span className="flex items-center gap-1"><CheckCircle2 className="w-4 h-4 text-green-500" /> Tasse incluse</span>
+                                        <span className="flex items-center gap-1"><CheckCircle2 className="w-4 h-4 text-green-500" /> Cancellabile</span>
+                                    </div>
+
+                                    <Link href={`/prenotazione/${tour.slug || tour.id}`} className="w-full block">
+                                        <button className="w-full py-4 bg-[#004BA5] hover:bg-[#003a80] text-white font-bold rounded-2xl shadow-xl shadow-blue-900/20 hover:shadow-blue-900/30 transition-all transform hover:-translate-y-0.5 mb-6 text-xl">
                                             Prenota Ora
                                         </button>
                                     </Link>
-                                    <button className="w-full py-3 border-2 border-brand-100 text-brand-700 hover:bg-brand-50 font-bold rounded-lg transition-colors">
-                                        Richiedi Info
+                                    <button className="w-full py-2 text-gray-400 font-bold hover:text-[#004BA5] transition-colors text-sm mb-6">
+                                        Scarica Programma PDF
                                     </button>
                                 </div>
-                                <div className="bg-gray-50 p-4 border-t border-gray-100 text-xs text-gray-500 text-center space-y-1">
-                                    <p>Solo {('meta' in tour ? tour.meta : 50) || 20} posti totali</p>
-                                    {tour.precioNino > 0 && <p>Prezzo Bambino: €{tour.precioNino}</p>}
+                                <div className="w-full border-t border-gray-50 pt-6 flex justify-center">
+                                    <div className="bg-blue-50 text-[#004BA5] px-4 py-1.5 rounded-full font-bold text-xs">
+                                        Solo {('meta' in tour ? tour.meta : 50) || 20} posti totali
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* Why Travel With Us Card */}
+                            {/* Why Us - Clean List (No colored box) */}
                             {tour.etiquetas && tour.etiquetas.length > 0 && (
-                                <div className="bg-emerald-50 rounded-xl p-6 border border-emerald-100">
-                                    <h4 className="font-bold text-emerald-900 mb-4 flex items-center gap-2">
-                                        <Star className="w-5 h-5 fill-emerald-600 text-emerald-600" />
-                                        Perché viaggiare con noi?
-                                    </h4>
-                                    <ul className="space-y-3">
+                                <div className="pl-2">
+                                    <h4 className="font-bold text-[#323232] mb-4 text-sm uppercase tracking-wider">Perché questo viaggio?</h4>
+                                    <ul className="space-y-4">
                                         {(tour.etiquetas as string[]).map((tag, i) => (
-                                            <li key={i} className="flex items-start gap-3 text-emerald-800 text-sm font-medium">
-                                                <span className="text-emerald-500 mt-0.5">★</span>
+                                            <li key={i} className="flex items-start gap-3 text-gray-600 text-sm font-medium">
+                                                <Star className="w-5 h-5 text-[#FE8008] flex-shrink-0" />
                                                 <span>{tag}</span>
                                             </li>
                                         ))}
@@ -405,14 +425,17 @@ export default async function TourPage({ params }: TourPageProps) {
                                 </div>
                             )}
 
-                            {/* Need Help Card */}
-                            <div className="bg-blue-50 rounded-xl p-6 border border-blue-100">
-                                <h4 className="font-bold text-blue-900 mb-2 flex items-center gap-2">
-                                    <Phone className="w-4 h-4" /> Hai dubbi?
+                            {/* Assistance - Clean */}
+                            <div className="pl-2 border-t border-gray-100 pt-6 mt-6">
+                                <h4 className="font-bold text-[#323232] mb-2 text-sm flex items-center gap-2">
+                                    <HelpCircle className="w-4 h-4 text-[#004BA5]" />
+                                    Serve aiuto?
                                 </h4>
-                                <p className="text-blue-700 text-sm mb-4">Parla con un nostro esperto di viaggi per chiarire ogni dettaglio.</p>
-                                <a href="mailto:info@gibravotravel.com" className="text-blue-600 font-bold text-sm hover:underline flex items-center gap-1">
-                                    <Mail className="w-3 h-3" /> Contattaci
+                                <p className="text-gray-500 text-sm mb-3 leading-relaxed">
+                                    Hai dubbi sull'itinerario o sui pagamenti?
+                                </p>
+                                <a href="https://wa.me/393282197645" target="_blank" className="text-[#004BA5] font-bold text-sm hover:underline flex items-center gap-2">
+                                    <Phone className="w-4 h-4" /> Parla con noi su WhatsApp
                                 </a>
                             </div>
                         </div>
@@ -423,27 +446,30 @@ export default async function TourPage({ params }: TourPageProps) {
             {/* --- NEXT TOURS SECTION --- */}
             {
                 relatedTours.length > 0 && (
-                    <div className="max-w-5xl mx-auto px-4 py-16">
-                        <div className="text-center mb-10">
-                            <h2 className="text-3xl font-black text-gray-900 mb-6">I nostri prossimi viaggi di gruppo</h2>
+                    <div className="max-w-7xl mx-auto px-4 py-24 border-t border-gray-100 mt-12">
+                        <div className="flex justify-between items-end mb-12">
+                            <div>
+                                <h2 className="text-3xl font-black text-[#004BA5] mb-2">Prossime Partenze</h2>
+                                <p className="text-gray-500">Altri viaggi che potrebbero interessarti</p>
+                            </div>
                             <Link
                                 href={tour.type === 'aereo' ? '/viaggi/aereo' : '/viaggi/bus'}
-                                className="inline-block border-2 border-brand-500 text-brand-600 hover:bg-brand-50 font-bold py-2 px-6 rounded-full transition-colors"
+                                className="hidden md:inline-block font-bold text-[#FE8008] hover:text-[#e67300] transition-colors"
                             >
-                                Tutti i viaggi
+                                Vedi tutti &rarr;
                             </Link>
                         </div>
 
-                        <div className="space-y-6">
-                            {relatedTours.map((t: any) => (
+                        <div className="space-y-8">
+                            {relatedTours.map((t) => (
                                 <TourHorizontalCard
                                     key={t.id}
                                     id={t.id}
-                                    slug={t.slug || t.id}
+                                    slug={t.slug ?? t.id}
                                     title={t.titulo}
                                     image={t.coverImage || (t.galeria && t.galeria[0]) || '/images/placeholder-tour.jpg'}
                                     date={t.fechaViaje}
-                                    duration={t.duracionTexto}
+                                    duration={t.duracionTexto ?? ''}
                                     price={t.precioAdulto}
                                     coordinator={t.coordinadorNombre ? { name: t.coordinadorNombre, photo: t.coordinadorFoto } : null}
                                     tags={Array.isArray(t.etiquetas) ? t.etiquetas : []}

@@ -43,9 +43,10 @@ export function TourFAQ({ faq }: TourFAQProps) {
                                 "transition-all duration-300 ease-in-out border-t border-gray-100 bg-gray-50/50",
                                 isOpen ? "max-h-[500px] opacity-100 p-5" : "max-h-0 opacity-0 overflow-hidden"
                             )}>
-                                <p className="text-gray-600 leading-relaxed">
-                                    {item.answer}
-                                </p>
+                                <div
+                                    className="text-gray-600 leading-relaxed prose prose-sm max-w-none"
+                                    dangerouslySetInnerHTML={{ __html: item.answer || '' }}
+                                />
                             </div>
                         </div>
                     )

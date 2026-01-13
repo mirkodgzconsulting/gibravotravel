@@ -77,10 +77,10 @@ export default function FAQPage() {
     return (
         <main className="min-h-screen bg-slate-50 pb-24">
             {/* 1. HERO SECTION - Identical to Contatti for consistency */}
-            <section className="relative h-[60vh] min-h-[500px] w-full flex items-center overflow-hidden bg-black">
+            <section className="relative h-[60vh] min-h-[500px] w-full flex items-center overflow-hidden bg-black mb-12 md:mb-16">
                 <div className="absolute inset-0 z-0">
                     <Image
-                        src="https://res.cloudinary.com/dskliu1ig/image/upload/v1767393764/contattaci_ezcfzw.jpg"
+                        src="https://res.cloudinary.com/dskliu1ig/image/upload/v1768266059/img-faqhero_plcnio.jpg"
                         alt="FAQ Hero"
                         fill
                         className="object-cover opacity-80"
@@ -89,7 +89,7 @@ export default function FAQPage() {
                     <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent z-10" />
                 </div>
 
-                <div className="container mx-auto px-4 z-20 relative">
+                <div className="container mx-auto px-4 z-20 relative pt-32">
                     <RevealOnScroll>
                         <div className="max-w-3xl">
                             <h1 className="text-5xl md:text-7xl font-[700] text-white tracking-tighter leading-[1.1] mb-8">
@@ -110,7 +110,7 @@ export default function FAQPage() {
             {/* 3. FINAL CTA */}
             <div className="container mx-auto px-4 max-w-7xl">
                 <RevealOnScroll delay={300}>
-                    <div className="mt-8 p-8 md:p-12 bg-gradient-to-br from-[#004BA5] to-[#003580] rounded-[3rem] text-white flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl shadow-blue-900/20">
+                    <div className="mt-8 p-8 md:p-12 bg-gradient-to-br from-[#004BA5] to-[#003580] rounded-[2rem] md:rounded-[3rem] text-white flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl shadow-blue-900/20">
                         <div className="text-center md:text-left">
                             <h3 className="text-3xl font-bold mb-3 tracking-tight">Hai ancora qualche dubbio?</h3>
                             <p className="text-xl opacity-90 font-medium">Il nostro team è pronto a risponderti in tempo reale su WhatsApp.</p>

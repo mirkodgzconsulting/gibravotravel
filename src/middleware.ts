@@ -9,6 +9,12 @@ export default clerkMiddleware(async (auth, req) => {
   const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
 
   // 1. PUBLIC WEBSITE ROUTES (Always allowed on main domain/localhost)
+  if (pathname === '/admin') {
+    const url = req.nextUrl.clone();
+    url.pathname = '/dashboard-viajes';
+    return NextResponse.redirect(url);
+  }
+
   const isWebsitePublicRoute =
     pathname === '/' ||
     pathname.startsWith('/chi-siamo') ||
@@ -20,12 +26,15 @@ export default clerkMiddleware(async (auth, req) => {
     pathname.startsWith('/login') ||
     pathname.startsWith('/register') ||
     pathname.startsWith('/sign-in') ||
+    pathname.startsWith('/signin') ||
     pathname.startsWith('/domande-frequenti') ||
+    pathname.startsWith('/come-funziona') ||
     pathname.startsWith('/informativa-privacy') ||
     pathname.startsWith('/termini-e-condizioni') ||
     pathname.startsWith('/informativa-cookie') ||
     pathname.startsWith('/sitemap.xml') ||
     pathname.startsWith('/robots.txt') ||
+    pathname.startsWith('/categoria') ||
     pathname.startsWith('/api')
 
   // 2. SYSTEMS DOMAIN LOGIC

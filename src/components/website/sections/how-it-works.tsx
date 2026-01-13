@@ -1,59 +1,104 @@
 "use client"
 
+import React from "react"
 import Image from "next/image"
+import Link from "next/link"
+import { RevealOnScroll } from "@/components/website/ui/reveal-on-scroll"
+import { Facebook, Instagram } from "lucide-react"
 
 const features = [
     {
-        badge: "CHI?",
         title: "Una community",
-        description: "Conosci nuovi amici viaggiando in piccoli gruppi con persone come te (sempre accompagnati da un Coordinatore!) ed entra a far parte della community di viaggiatori più grande d'Europa.",
-        image: "https://res.cloudinary.com/dskliu1ig/image/upload/v1767395511/egipto-home-card_rxa21m.webp"
+        description: "Entra nel nostro gruppo Facebook esclusivo! Conosci i tuoi compagni di viaggio prima di partire, scambia consigli e condividi le tue esperienze.",
+        image: "https://res.cloudinary.com/dskliu1ig/image/upload/v1767395511/egipto-home-card_rxa21m.webp",
+        socialIcon: Facebook,
+        socialLink: "https://www.facebook.com/GiBravoTravelAgenzia",
+        socialColor: "bg-[#1877F2] text-white"
     },
     {
-        badge: "COSA?",
         title: "Infiniti viaggi",
-        description: "Vivi esperienze uniche in più di 100 paesi nel mondo, scegliendo il mood giusto per te: un evento di qualche ora, un weekend fuori porta, un viaggio tematico o un 360° per scoprire luoghi e culture lontani.",
-        image: "https://res.cloudinary.com/dskliu1ig/image/upload/v1767368263/chi-siamo-01-section_dqhwgm.webp"
+        description: "Seguici su Instagram per la tua dose quotidiana di ispirazione. Scopri le destinazioni più incredibili e inizia a sognare la tua prossima meta.",
+        image: "https://res.cloudinary.com/dskliu1ig/image/upload/v1767368263/chi-siamo-01-section_dqhwgm.webp",
+        socialIcon: Instagram,
+        socialLink: "https://www.instagram.com/gibravo.travel",
+        socialColor: "bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500 text-white"
     },
     {
-        badge: "COME?",
         title: "Massima flessibilità",
-        description: "Puoi bloccare il tuo posto con un acconto e cambiare idea gratuitamente fino a 31 giorni dalla partenza, o fino a 8 se aggiungi la Flexible Cancellation. L'assicurazione medico-bagaglio è sempre inclusa, così viaggi senza pensieri.",
-        image: "https://res.cloudinary.com/dskliu1ig/image/upload/v1767393764/contattaci_ezcfzw.jpg"
+        description: "Scopri il lato divertente dei nostri viaggi su TikTok! Video virali, challenge, dietro le quinte e tutto il mood GiBravo.",
+        image: "https://res.cloudinary.com/dskliu1ig/image/upload/v1767444828/Foto-Destinazioni-Cover-Egitto-QA_n98kvv.webp",
+        socialIcon: "tiktok",
+        socialLink: "https://www.tiktok.com/@gibravotravel",
+        socialColor: "bg-black text-white"
     }
 ]
 
 export function HowItWorks() {
     return (
-        <section className="py-16 bg-slate-50">
-            <div className="container px-4 mx-auto max-w-7xl">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <section className="py-20 bg-slate-50 relative overflow-hidden">
+            <div className="container px-4 mx-auto max-w-7xl relative z-10">
+                {/* Header */}
+                <div className="text-center mb-12">
+                    <RevealOnScroll>
+                        <h2 className="section-title mb-4">Unisciti a noi</h2>
+                        <p className="section-subtitle max-w-2xl mx-auto">
+                            Unisciti ai nostri social e scopri tutto ciò che abbiamo da offrire
+                        </p>
+                    </RevealOnScroll>
+                </div>
+
+                {/* Content Grid (Stable - No Accordion) */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
                     {features.map((feature, index) => (
-                        <div key={index} className="group cursor-pointer flex flex-col bg-white rounded-2xl overflow-hidden h-full border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300">
-                            {/* Top Text Section */}
-                            <div className="p-8 flex flex-col items-center text-center flex-grow bg-white">
-                                {/* Badge */}
-                                <span className="inline-block bg-[#323232] text-white text-xs font-[700] px-3 py-1 rounded-sm mb-6 uppercase tracking-wider">
-                                    {feature.badge}
-                                </span>
+                        <Link
+                            key={index}
+                            href={feature.socialLink}
+                            target="_blank"
+                            className="relative group overflow-hidden rounded-[32px] h-[450px] w-full transition-all duration-500 cursor-pointer shadow-lg hover:shadow-2xl border border-slate-100/10"
+                        >
+                            {/* Background Image - Cinematic Zoom */}
+                            <Image
+                                src={feature.image}
+                                alt={feature.title}
+                                fill
+                                className="object-cover transition-transform duration-1000 ease-out group-hover:scale-110"
+                            />
 
-                                <h3 className="text-2xl font-[700] text-[#323232] mb-4">{feature.title}</h3>
+                            {/* Gradient Overlay (Always visible for readability) */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent transition-opacity duration-500 group-hover:from-black/90 group-hover:via-black/50" />
 
-                                <p className="text-slate-600 text-[14px] leading-relaxed">
-                                    {feature.description}
-                                </p>
+                            {/* Content Container */}
+                            <div className="absolute h-full w-full inset-0 flex flex-col justify-end items-center text-center p-8 transition-transform duration-500 group-hover:-translate-y-2">
+
+                                {/* Text Content */}
+                                <div className="w-full max-w-xs mx-auto mb-auto flex flex-col justify-end h-full pb-4">
+                                    <h3 className="section-title text-3xl font-bold !text-white mb-3 w-full drop-shadow-lg">
+                                        {feature.title}
+                                    </h3>
+                                    <p className="text-white/90 text-[15px] leading-relaxed font-medium mb-5 line-clamp-3 drop-shadow-md">
+                                        {feature.description}
+                                    </p>
+                                </div>
+
+                                {/* Social Icon */}
+                                <div className={`h-12 w-12 shrink-0 rounded-full flex items-center justify-center shadow-xl transition-all duration-300 transform group-hover:scale-110 ${feature.socialColor} border border-white/20 backdrop-blur-sm mt-1 mb-8`}>
+                                    {feature.socialIcon === "tiktok" ? (
+                                        <svg
+                                            width="20"
+                                            height="20"
+                                            viewBox="0 0 24 24"
+                                            fill="currentColor"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                        >
+                                            <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.06-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z" />
+                                        </svg>
+                                    ) : (
+                                        /* @ts-ignore */
+                                        <feature.socialIcon className="h-6 w-6" />
+                                    )}
+                                </div>
                             </div>
-
-                            {/* Bottom Image Section */}
-                            <div className="relative h-[250px] w-full mt-auto overflow-hidden">
-                                <Image
-                                    src={feature.image}
-                                    alt={feature.title}
-                                    fill
-                                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                                />
-                            </div>
-                        </div>
+                        </Link>
                     ))}
                 </div>
             </div>

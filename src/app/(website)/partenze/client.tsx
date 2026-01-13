@@ -22,13 +22,24 @@ interface Tour {
 interface DestinazioniClientProps {
     flightTours: Tour[]
     busTours: Tour[]
+    title?: string
+    subtitle?: string
+    description?: string
+    heroImage?: string
 }
 
-export function DestinazioniClient({ flightTours, busTours }: DestinazioniClientProps) {
+export function DestinazioniClient({
+    flightTours,
+    busTours,
+    title,
+    subtitle,
+    description,
+    heroImage
+}: DestinazioniClientProps) {
     const content = {
-        subtitle: "Le Prossime Partenze",
-        title: "Partenze",
-        description: "Che tu preferisca volare o viaggiare su strada, abbiamo l'avventura perfecta per te. Scegli la tua prossima meta.",
+        subtitle: subtitle || "Le Prossime Partenze",
+        title: title || "Partenze",
+        description: description || "Che tu preferisca volare o viaggiare su strada, abbiamo l'avventura perfecta per te. Scegli la tua prossima meta.",
         empty: "Nessun viaggio disponibile al momento."
     }
 
@@ -47,9 +58,9 @@ export function DestinazioniClient({ flightTours, busTours }: DestinazioniClient
                     <div
                         className="absolute inset-0 w-full h-full opacity-80"
                         style={{
-                            backgroundImage: "url('https://res.cloudinary.com/dskliu1ig/image/upload/v1767444828/Foto-Destinazioni-Cover-Egitto-QA_n98kvv.webp')",
-                            backgroundSize: "contain",
-                            backgroundRepeat: "repeat-x",
+                            backgroundImage: `url('${heroImage || "https://res.cloudinary.com/dskliu1ig/image/upload/v1767444828/Foto-Destinazioni-Cover-Egitto-QA_n98kvv.webp"}')`,
+                            backgroundSize: "cover",
+                            backgroundRepeat: "no-repeat",
                             backgroundPosition: "center"
                         }}
                     />
@@ -60,7 +71,19 @@ export function DestinazioniClient({ flightTours, busTours }: DestinazioniClient
                     <RevealOnScroll>
                         <div className="max-w-3xl">
                             <h1 className="text-5xl md:text-7xl font-[700] text-white tracking-tighter leading-[1.1] mb-8">
-                                {content.title}
+                                {(() => {
+                                    const titleStr = content.title || "";
+                                    const words = titleStr.split(" ");
+                                    if (words.length > 1) {
+                                        const lastWord = words.pop();
+                                        return (
+                                            <>
+                                                {words.join(" ")} <span className="text-[#FE8008]">{lastWord}</span>
+                                            </>
+                                        );
+                                    }
+                                    return titleStr;
+                                })()}
                             </h1>
                             <p className="text-xl md:text-2xl text-white/90 font-medium leading-relaxed max-w-2xl">
                                 {content.description}

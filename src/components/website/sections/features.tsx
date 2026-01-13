@@ -1,63 +1,85 @@
 "use client"
 
 import React from "react"
+import { ShieldCheck, Plane, Wallet } from "lucide-react"
 import Image from "next/image"
 import { RevealOnScroll } from "@/components/website/ui/reveal-on-scroll"
 
 const features = [
     {
-        title: "VIAGGIARE SICURI",
-        description: "Tutti i nostri tour includono un'assicurazione di base (che copre le spese mediche in caso di infortunio, assistenza e rientro anticipato).",
-        image: "https://res.cloudinary.com/dskliu1ig/image/upload/v1767378526/viaggi-sicuro-icon01_b73tcy.png"
+        title: "Viaggiare Sicuri",
+        description: "Tutti i nostri tour includono un'assicurazione di base che copre spese mediche, assistenza e rientro anticipato.",
+        icon: ShieldCheck,
+        color: "bg-[#004BA5]"
     },
     {
-        title: "PACCHETTI VACANZE",
-        description: "Voli in tutto il mondo, molteplici opzioni di pacchetti volo + hotel, l'assistenza di viaggio più completa e la migliore esperienza turistica.",
-        image: "https://res.cloudinary.com/dskliu1ig/image/upload/v1767378528/paccheti-vacanze-icon02_wqklhc.png"
+        title: "Pacchetti Vacanze",
+        description: "Voli in tutto il mondo, hotel selezionati e l'assistenza più completa per la migliore esperienza turistica.",
+        icon: Plane,
+        color: "bg-[#FB6514]" // Brand Orange for contrast
     },
     {
-        title: "PREZZI",
-        description: "I prezzi sono molto importanti e i nostri sono garantiti. Non ci saranno supplementi imprevisti (niente tasse, niente carburante, ecc.).",
-        image: "https://res.cloudinary.com/dskliu1ig/image/upload/v1767378527/prezzi-icon03_carumf.png"
+        title: "Prezzi Garantiti",
+        description: "Nessun costo nascosto. I nostri prezzi sono trasparenti e garantiti: niente tasse a sorpresa o adeguamenti carburante.",
+        icon: Wallet,
+        color: "bg-[#004BA5]"
     }
 ]
 
 export function Features() {
     return (
-        <section className="py-20 bg-slate-50/50">
+        <section className="py-24 bg-white overflow-hidden">
             <div className="container px-4 mx-auto max-w-7xl">
-                <div className="text-center mb-16">
-                    <RevealOnScroll>
-                        <h2 className="section-title mb-2">
-                            Perché scegliere <span className="brand-gradient">GiBravo</span>?
-                        </h2>
-                        <p className="section-subtitle">
-                            Tutto ciò che cerchi in un unico posto
-                        </p>
-                    </RevealOnScroll>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {features.map((feature, index) => (
-                        <RevealOnScroll key={index} delay={index * 100}>
-                            <div className="bg-white rounded-[24px] p-8 md:p-10 shadow-sm border border-slate-100 hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-500 h-full flex flex-col items-center text-center group">
-                                <div className="relative h-24 w-24 mb-8 transition-transform duration-500 group-hover:scale-110">
-                                    <Image
-                                        src={feature.image}
-                                        alt={feature.title}
-                                        fill
-                                        className="object-contain"
-                                    />
-                                </div>
-                                <h3 className="text-xl font-[700] text-[#004BA5] mb-4 tracking-wider uppercase">
-                                    {feature.title}
-                                </h3>
-                                <p className="body-text">
-                                    {feature.description}
-                                </p>
-                            </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+
+                    {/* Left Column: Content (Desktop) / Top (Mobile) */}
+                    <div className="flex flex-col space-y-10 order-1 lg:order-1">
+                        <RevealOnScroll>
+                            <h2 className="section-title text-left mb-4">
+                                Perché scegliere GiBravo?
+                            </h2>
+                            <p className="section-subtitle text-left max-w-lg">
+                                Tutto ciò che cerchi in un unico posto per un'esperienza senza pensieri.
+                            </p>
                         </RevealOnScroll>
-                    ))}
+
+                        <div className="space-y-8">
+                            {features.map((feature, index) => (
+                                <RevealOnScroll key={index} delay={index * 100}>
+                                    <div className="flex items-start gap-6 group">
+
+                                        {/* Icon Bubble */}
+                                        <div className={`relative flex-shrink-0 h-14 w-14 rounded-2xl ${feature.color} flex items-center justify-center shadow-lg shadow-blue-900/5 group-hover:scale-110 transition-transform duration-300`}>
+                                            <feature.icon className="h-7 w-7 text-white" strokeWidth={2} />
+                                        </div>
+
+                                        <div className="pt-1">
+                                            <h3 className="text-xl font-bold text-[#323232] mb-2 tracking-tight group-hover:text-[#004BA5] transition-colors duration-300">
+                                                {feature.title}
+                                            </h3>
+                                            <p className="text-slate-600 leading-relaxed text-[16px]">
+                                                {feature.description}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </RevealOnScroll>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Right Column: Inspirational Image (Desktop) / Bottom (Mobile) */}
+                    <RevealOnScroll className="relative h-[400px] lg:h-[600px] w-full rounded-[1.5rem] overflow-hidden shadow-2xl shadow-blue-900/10 order-2 lg:order-2">
+                        <Image
+                            src="/imghome.webp"
+                            alt="Viaggia con GiBravo"
+                            fill
+                            className="object-cover hover:scale-105 transition-transform duration-1000 ease-out"
+                        />
+                        {/* Subtle Overlay gradient for depth */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+                    </RevealOnScroll>
+
                 </div>
             </div>
         </section>

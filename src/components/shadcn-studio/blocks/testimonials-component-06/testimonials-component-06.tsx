@@ -50,7 +50,7 @@ const TestimonialsComponent = () => {
                         Cosa dicono di noi?
                     </h2>
                     <p className="section-subtitle">
-                        Più di 20.000 huakaiers hanno già provato l'esperienza
+                        Più di 20.000 GIbravotravelers hanno già provato l'esperienza
                     </p>
 
                     {/* Google Rating Block */}

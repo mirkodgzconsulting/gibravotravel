@@ -352,6 +352,16 @@ export async function PUT(
       try { dataToUpdate.faq = JSON.parse(formData.get('faq') as string || '[]'); } catch { }
     }
 
+    // New Fields 2026-01-14
+    if (formData.has('flightRefTitle')) dataToUpdate.flightRefTitle = formData.get('flightRefTitle') as string || null;
+    if (formData.has('flightRefLink')) dataToUpdate.flightRefLink = formData.get('flightRefLink') as string || null;
+    if (formData.has('optionCameraSingola')) dataToUpdate.optionCameraSingola = formData.get('optionCameraSingola') === 'true';
+    if (formData.has('optionFlexibleCancel')) dataToUpdate.optionFlexibleCancel = formData.get('optionFlexibleCancel') === 'true';
+    if (formData.has('priceFlexibleCancel')) dataToUpdate.priceFlexibleCancel = parseFloat(formData.get('priceFlexibleCancel') as string) || 0;
+    if (formData.has('optionCameraPrivata')) dataToUpdate.optionCameraPrivata = formData.get('optionCameraPrivata') === 'true';
+    if (formData.has('priceCameraPrivata')) dataToUpdate.priceCameraPrivata = parseFloat(formData.get('priceCameraPrivata') as string) || 0;
+    if (formData.has('travelStatus')) dataToUpdate.travelStatus = formData.get('travelStatus') as string;
+
 
     // --- FILES (Only update if uploaded OR explicit clear) ---
     // 1. Cover Image

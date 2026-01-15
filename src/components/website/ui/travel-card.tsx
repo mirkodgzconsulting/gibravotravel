@@ -15,6 +15,15 @@ interface TravelCardProps {
     tags?: string[]
     theme?: 'light' | 'dark'
     size?: 'default' | 'compact'
+    travelStatus?: string
+}
+
+const TRAVEL_STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: any }> = {
+    SOGNANDO: { label: 'Sognando', color: 'text-purple-600', bg: 'bg-white/90', icon: 'Sparkles' },
+    QUASI_FAMIGLIA: { label: 'Quasi in Famiglia', color: 'text-blue-600', bg: 'bg-white/90', icon: 'Users' },
+    CONFERMATO: { label: 'Confermato', color: 'text-green-600', bg: 'bg-white/90', icon: 'CheckCircle2' },
+    ULTIMI_POSTI: { label: 'Ultimi Posti', color: 'text-orange-600', bg: 'bg-white/90', icon: 'AlertCircle' },
+    COMPLETO: { label: 'Sold Out', color: 'text-gray-500', bg: 'bg-white/90', icon: 'XCircle' }
 }
 
 export function TravelCard({
@@ -28,7 +37,8 @@ export function TravelCard({
     reviews,
     tags,
     theme = 'light',
-    size = 'default'
+    size = 'default',
+    travelStatus = "SOGNANDO"
 }: TravelCardProps) {
     const isDark = theme === 'dark'
     const isCompact = size === 'compact'
@@ -44,20 +54,42 @@ export function TravelCard({
                     className="object-cover transition-transform duration-700 group-hover:scale-105"
                 />
 
-                {/* Mood Tags - Top Left (Solid Black for "Top Seller" style) */}
-                {tags && tags.length > 0 && (
-                    <div className="absolute top-3 left-3 z-20 flex flex-col gap-2">
-                        {tags.map((tag, i) => (
-                            <span key={tag} className={cn(
-                                "font-[700] uppercase tracking-wider text-white rounded-md shadow-sm",
-                                isCompact ? "px-2 py-0.5 text-[10px]" : "px-3 py-1 text-[11px]",
-                                i === 0 ? "bg-[#1F1F1F] text-white" : "bg-black/60 backdrop-blur-sm"
-                            )}>
-                                {tag}
-                            </span>
-                        ))}
-                    </div>
-                )}
+                {/* Mood Tags - Top Left */}
+                <div className="absolute top-3 left-3 z-20 flex flex-col gap-2 items-start">
+                    {tags && tags.length > 0 && tags.map((tag, i) => (
+                        <span key={tag} className={cn(
+                            "font-[700] uppercase tracking-wider text-white rounded-md shadow-sm",
+                            isCompact ? "px-2 py-0.5 text-[10px]" : "px-3 py-1 text-[11px]",
+                            i === 0 ? "bg-[#1F1F1F] text-white" : "bg-black/60 backdrop-blur-sm"
+                        )}>
+                            {tag}
+                        </span>
+                    ))}
+
+                    {/* Travel Status Badge */}
+                    {travelStatus && TRAVEL_STATUS_CONFIG[travelStatus] && (
+                        <span className={cn(
+                            "font-[700] uppercase tracking-wider rounded-md shadow-sm flex items-center gap-1.5 backdrop-blur-md",
+                            isCompact ? "px-2 py-0.5 text-[10px]" : "px-3 py-1 text-[11px]",
+                            TRAVEL_STATUS_CONFIG[travelStatus].bg,
+                            TRAVEL_STATUS_CONFIG[travelStatus].color
+                        )}>
+                            {(() => {
+                                const IconName = TRAVEL_STATUS_CONFIG[travelStatus].icon;
+                                const LucideIcons = require('lucide-react');
+                                const Icon = LucideIcons[IconName] || LucideIcons.AlertCircle;
+                                return <Icon className="w-3 h-3" />;
+                            })()}
+                            {TRAVEL_STATUS_CONFIG[travelStatus].label}
+                        </span>
+                    )}
+                </div>
+
+                {/* Travel Status - Top Center/Right or Below Tags? Let's put it top right or below tags. 
+                    Actually, let's put it Absolute Top Right, replacing Heart for now? Or Next to tags?
+                    Let's put it below tags on the left side to keep it organized.
+                 */}
+                {/* Wait, I can't access `travelStatus` here easily without adding it to props first. */}
 
                 {/* Heart Icon (Top Right) */}
                 <div className="absolute top-3 right-3 z-20">

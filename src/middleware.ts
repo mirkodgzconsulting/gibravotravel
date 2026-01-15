@@ -35,7 +35,9 @@ export default clerkMiddleware(async (auth, req) => {
     pathname.startsWith('/sitemap.xml') ||
     pathname.startsWith('/robots.txt') ||
     pathname.startsWith('/categoria') ||
-    pathname.startsWith('/api')
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/sso-callback') ||
+    pathname.startsWith('/reset-password')
 
   // 2. SYSTEMS DOMAIN LOGIC
   if (isSystemsDomain) {

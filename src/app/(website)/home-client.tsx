@@ -164,6 +164,17 @@ export function HomeClient({ flightTours, busTours }: HomeClientProps) {
                         <p className="text-xl md:text-2xl font-medium text-white/95 hover:text-[#FE8008] transition-colors duration-300 mb-12 drop-shadow-xl tracking-wide max-w-2xl mx-auto shadow-black">
                             Scopri il mondo viaggiando in piccoli gruppi
                         </p>
+
+                        <div className="flex gap-4 justify-center animate-in fade-in zoom-in duration-1000 delay-300">
+                            <Link href="/partenze">
+                                <Button
+                                    size="lg"
+                                    className="rounded-full text-lg px-8 py-6 font-bold shadow-2xl hover:scale-105 transition-transform duration-300 bg-[#FE8008] hover:bg-[#004BA5] text-white border-2 border-transparent hover:border-white/20"
+                                >
+                                    Scopri le Partenze
+                                </Button>
+                            </Link>
+                        </div>
                     </RevealOnScroll>
                 </div>
 

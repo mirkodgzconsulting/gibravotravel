@@ -127,7 +127,7 @@ export function Navbar() {
                     <div className="flex-shrink-0 flex items-center z-50">
                         <Link href="/" className="flex items-center gap-2 group">
                             <Image
-                                src={effectiveScrolled ? logoOriginal : logoOriginal}
+                                src={effectiveScrolled ? logoOriginal : logoWhite}
                                 alt="Gibravo Travel Logo"
                                 width={160}
                                 height={46}
@@ -144,95 +144,7 @@ export function Navbar() {
                     )}>
                         <Link href="/chi-siamo" className="hover:text-[#FE8008] transition-colors py-2">Chi siamo</Link>
 
-                        {/* Partenze Dropdown Trigger */}
-                        <div
-                            className="relative h-full flex items-center"
-                            ref={partenzeRef}
-                            onMouseEnter={() => setPartenzeOpen(true)}
-                        >
-                            <button
-                                className={cn(
-                                    "flex items-center gap-1 hover:text-[#FE8008] transition-colors focus:outline-none py-2",
-                                    partenzeOpen && "text-[#FE8008]"
-                                )}
-                                onClick={() => setPartenzeOpen(!partenzeOpen)}
-                            >
-                                Partenze
-                                <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", partenzeOpen && "rotate-180")} />
-                            </button>
-
-                            {/* Mega Menu Dropdown */}
-                            <AnimatePresence>
-                                {partenzeOpen && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: 10 }}
-                                        transition={{ duration: 0.2 }}
-                                        className="absolute top-[80%] left-1/2 -translate-x-1/2 pt-4 w-[600px]"
-                                    >
-                                        <div className="bg-white rounded-xl shadow-xl border border-gray-100 p-8 grid grid-cols-2 gap-8 relative overflow-hidden">
-                                            {/* Column 1: Mesi */}
-                                            <div>
-                                                <h3 className="text-[#004BA5] font-bold text-lg mb-4 flex items-center gap-2">
-                                                    Mesi
-                                                </h3>
-                                                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                                                    {months.map((month) => (
-                                                        <Link
-                                                            key={month.value}
-                                                            href={`/partenze?mese=${month.value}`}
-                                                            className="text-gray-600 hover:text-[#FE8008] text-sm py-1 transition-colors block"
-                                                            onClick={() => setPartenzeOpen(false)}
-                                                        >
-                                                            {month.name}
-                                                        </Link>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            {/* Column 2: Viaggi */}
-                                            <div className="border-l border-gray-100 pl-8">
-                                                <h3 className="text-[#004BA5] font-bold text-lg mb-4 flex items-center gap-2">
-                                                    Viaggi
-                                                </h3>
-                                                <div className="space-y-3">
-                                                    <Link
-                                                        href="/categoria/aereo"
-                                                        className="group flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50 transition-colors"
-                                                        onClick={() => setPartenzeOpen(false)}
-                                                    >
-                                                        <div className="bg-blue-100 text-[#004BA5] p-2 rounded-full group-hover:bg-[#004BA5] group-hover:text-white transition-colors">
-                                                            <Plane className="h-5 w-5" />
-                                                        </div>
-                                                        <div>
-                                                            <span className="block font-semibold text-gray-800 group-hover:text-[#004BA5]">Viaggi Aerei</span>
-                                                            <span className="text-xs text-gray-500">Esplora il mondo in volo</span>
-                                                        </div>
-                                                    </Link>
-
-                                                    <Link
-                                                        href="/categoria/bus"
-                                                        className="group flex items-center gap-3 p-3 rounded-lg hover:bg-orange-50 transition-colors"
-                                                        onClick={() => setPartenzeOpen(false)}
-                                                    >
-                                                        <div className="bg-orange-100 text-[#FE8008] p-2 rounded-full group-hover:bg-[#FE8008] group-hover:text-white transition-colors">
-                                                            <Bus className="h-5 w-5" />
-                                                        </div>
-                                                        <div>
-                                                            <span className="block font-semibold text-gray-800 group-hover:text-[#FE8008]">Viaggi in Bus</span>
-                                                            <span className="text-xs text-gray-500">Tour comodi e vicini</span>
-                                                        </div>
-                                                    </Link>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {/* Invisible bridge to prevent closing when moving mouse */}
-                                        <div className="absolute top-0 left-0 w-full h-8 -mt-8 bg-transparent" />
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div>
+                        <Link href="/partenze" className="hover:text-[#FE8008] transition-colors py-2">Partenze</Link>
 
                         <Link href="/come-funziona" className="hover:text-[#FE8008] transition-colors py-2">Come funziona</Link>
                         <Link href="/domande-frequenti" className="hover:text-[#FE8008] transition-colors py-2">FAQ</Link>
@@ -374,13 +286,24 @@ export function Navbar() {
 
                                     <motion.div custom={1} variants={linkVariants} initial="closed" animate="open">
                                         <div className="space-y-1">
-                                            <button
-                                                onClick={() => setMobilePartenzeOpen(!mobilePartenzeOpen)}
-                                                className="flex items-center justify-between w-full text-lg font-[600] tracking-tight text-slate-900 border-b border-gray-100 pb-2.5 py-2.5"
-                                            >
-                                                Partenze
-                                                <ChevronDown className={cn("h-5 w-5 text-gray-400 transition-transform duration-200", mobilePartenzeOpen && "rotate-180")} />
-                                            </button>
+                                            <div className="flex items-center justify-between w-full border-b border-gray-100 pb-2.5 py-2.5">
+                                                <Link
+                                                    href="/partenze"
+                                                    onClick={() => setMobileMenuOpen(false)}
+                                                    className="text-lg font-[600] tracking-tight text-slate-900 hover:text-[#004BA5] transition-colors flex-1"
+                                                >
+                                                    Partenze
+                                                </Link>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        setMobilePartenzeOpen(!mobilePartenzeOpen)
+                                                    }}
+                                                    className="p-2 -mr-2 text-slate-500 hover:text-[#004BA5] transition-colors"
+                                                >
+                                                    <ChevronDown className={cn("h-5 w-5 transition-transform duration-200", mobilePartenzeOpen && "rotate-180")} />
+                                                </button>
+                                            </div>
 
                                             <AnimatePresence>
                                                 {mobilePartenzeOpen && (

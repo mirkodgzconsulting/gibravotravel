@@ -356,6 +356,52 @@ export async function POST(request: NextRequest) {
     let galeria: string[] = [];
     try { galeria = JSON.parse(formData.get('galeria') as string || '[]'); } catch { }
 
+    // 5. Galeria2 (Array of Strings)
+    let galeria2: string[] = [];
+    try { galeria2 = JSON.parse(formData.get('galeria2') as string || '[]'); } catch { }
+
+    // Gallery Files (1 & 2)
+    const galleryFiles = formData.getAll('galleryImages');
+    const gallery2Files = formData.getAll('gallery2Images');
+
+    // Upload new gallery files (Gallery 1)
+    for (const file of galleryFiles) {
+      if (file instanceof File && file.size > 0) {
+        const buffer = Buffer.from(await file.arrayBuffer());
+        // Auto resource type for video/image
+        const result = await new Promise<any>((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            { folder: 'gibravotravel/tour_aereo/gallery', resource_type: 'auto' },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          );
+          uploadStream.end(buffer);
+        });
+        if (result?.secure_url) galeria.push(result.secure_url);
+      }
+    }
+
+    // Upload new gallery files (Gallery 2)
+    for (const file of gallery2Files) {
+      if (file instanceof File && file.size > 0) {
+        const buffer = Buffer.from(await file.arrayBuffer());
+        // Auto resource type for video/image
+        const result = await new Promise<any>((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            { folder: 'gibravotravel/tour_aereo/gallery', resource_type: 'auto' },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          );
+          uploadStream.end(buffer);
+        });
+        if (result?.secure_url) galeria2.push(result.secure_url);
+      }
+    }
+
     // FAQ (JSON)
     let faq = null;
     try { faq = JSON.parse(formData.get('faq') as string || 'null'); } catch { }
@@ -375,6 +421,16 @@ export async function POST(request: NextRequest) {
         if (isNaN(fechaViajeDate.getTime())) fechaViajeDate = null;
       } catch (error) { fechaViajeDate = null; }
     }
+
+    // New Fields 2026-01-14
+    const flightRefTitle = formData.get('flightRefTitle') as string;
+    const flightRefLink = formData.get('flightRefLink') as string;
+    const optionCameraSingola = formData.get('optionCameraSingola') === 'true';
+    const optionFlexibleCancel = formData.get('optionFlexibleCancel') === 'true';
+    const priceFlexibleCancel = parseFloat(formData.get('priceFlexibleCancel') as string) || 0;
+    const optionCameraPrivata = formData.get('optionCameraPrivata') === 'true';
+    const priceCameraPrivata = parseFloat(formData.get('priceCameraPrivata') as string) || 0;
+    const travelStatus = formData.get('travelStatus') as string || 'SOGNANDO';
 
     // Procesar fecha de fin
     let fechaFinDate = null;
@@ -518,12 +574,23 @@ export async function POST(request: NextRequest) {
       itinerario, // JSON
       mapaEmbed,
       galeria,
+      galeria2, // New Field
       incluye,
       noIncluye,
       coordinadorNombre,
       coordinadorDescripcion,
       coordinadorFoto: finalCoordinadorFotoUrl,
       faq: faq ? (faq as any) : undefined,
+
+      // New Fields Injection
+      flightRefTitle: flightRefTitle || null,
+      flightRefLink: flightRefLink || null,
+      optionCameraSingola,
+      optionFlexibleCancel,
+      priceFlexibleCancel,
+      optionCameraPrivata,
+      priceCameraPrivata,
+      travelStatus,
 
       createdBy: userId,
     };

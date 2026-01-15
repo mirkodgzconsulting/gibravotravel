@@ -18,7 +18,16 @@ interface TourHorizontalCardProps {
         photo: string | null
     } | null
     tags?: string[]
+    travelStatus?: string
 }
+
+const TRAVEL_STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: any }> = {
+    SOGNANDO: { label: 'Sognando', color: 'text-purple-600', bg: 'bg-purple-100', icon: 'Sparkles' },
+    QUASI_FAMIGLIA: { label: 'Quasi in Famiglia', color: 'text-blue-600', bg: 'bg-blue-100', icon: 'Users' },
+    CONFERMATO: { label: 'Confermato', color: 'text-green-600', bg: 'bg-green-100', icon: 'CheckCircle2' },
+    ULTIMI_POSTI: { label: 'Ultimi Posti', color: 'text-orange-600', bg: 'bg-orange-100', icon: 'AlertCircle' },
+    COMPLETO: { label: 'Sold Out', color: 'text-gray-500', bg: 'bg-gray-100', icon: 'XCircle' }
+};
 
 export function TourHorizontalCard({
     id,
@@ -29,7 +38,8 @@ export function TourHorizontalCard({
     duration,
     price,
     coordinator,
-    tags
+    tags,
+    travelStatus = "SOGNANDO"
 }: TourHorizontalCardProps) {
     const tourDate = date ? new Date(date) : null
     const day = tourDate ? tourDate.getDate() : ""
@@ -101,6 +111,20 @@ export function TourHorizontalCard({
                         {tags && tags.length > 0 && (
                             <span className="px-2 py-1 bg-red-100 text-red-600 text-xs font-bold rounded uppercase">
                                 {tags[0]}
+                            </span>
+                        )}
+
+                        {/* Travel Status */}
+                        {travelStatus && TRAVEL_STATUS_CONFIG[travelStatus] && (
+                            <span className={`px-2 py-1 text-xs font-bold rounded uppercase flex items-center gap-1 ${TRAVEL_STATUS_CONFIG[travelStatus].bg} ${TRAVEL_STATUS_CONFIG[travelStatus].color}`}>
+                                {(() => {
+                                    const IconName = TRAVEL_STATUS_CONFIG[travelStatus].icon;
+                                    // Use required icons or fallback
+                                    const LucideIcons = require('lucide-react');
+                                    const Icon = LucideIcons[IconName] || LucideIcons.AlertCircle;
+                                    return <Icon className="w-3 h-3" />;
+                                })()}
+                                {TRAVEL_STATUS_CONFIG[travelStatus].label}
                             </span>
                         )}
                     </div>

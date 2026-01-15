@@ -579,6 +579,16 @@ export async function PUT(
     if (formData.has('noIncluye')) updateData.noIncluye = noIncluye;
     if (formData.has('faq')) updateData.faq = faq ? faq : Prisma.JsonNull;
 
+    // New Fields 2026-01-14
+    if (formData.has('flightRefTitle')) updateData.flightRefTitle = formData.get('flightRefTitle') as string || null;
+    if (formData.has('flightRefLink')) updateData.flightRefLink = formData.get('flightRefLink') as string || null;
+    if (formData.has('optionCameraSingola')) updateData.optionCameraSingola = formData.get('optionCameraSingola') === 'true';
+    if (formData.has('optionFlexibleCancel')) updateData.optionFlexibleCancel = formData.get('optionFlexibleCancel') === 'true';
+    if (formData.has('priceFlexibleCancel')) updateData.priceFlexibleCancel = parseFloat(formData.get('priceFlexibleCancel') as string) || 0;
+    if (formData.has('optionCameraPrivata')) updateData.optionCameraPrivata = formData.get('optionCameraPrivata') === 'true';
+    if (formData.has('priceCameraPrivata')) updateData.priceCameraPrivata = parseFloat(formData.get('priceCameraPrivata') as string) || 0;
+    if (formData.has('travelStatus')) updateData.travelStatus = formData.get('travelStatus') as string;
+
     // Coordinador Foto Logic
     // If finalCoordinadorFotoUrl is different or explicitly cleared?
     // Re-use logic: if results had 'coordFoto', use it.

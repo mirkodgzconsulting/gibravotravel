@@ -17,12 +17,7 @@ const RegisterPage = async () => {
 
     return (
         <>
-            <div className="start-0 top-0 w-full z-50 fixed bg-white/80 backdrop-blur-md border-b">
-                <Navbar />
-            </div>
-            <div className="pt-[58px]">
-                <Register />
-            </div>
+            <Register />
         </>
     )
 }

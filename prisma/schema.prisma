@@ -354,6 +354,7 @@ model TourBus {
   
   // Multimedia
   galeria          String[]  // Array de URLs
+  galeria2         String[]
   
   // Listas
   incluye          String[]
@@ -366,6 +367,16 @@ model TourBus {
   
   // FAQ
   faq              Json?
+
+  // Nuevos Campos Web (Solicitud 2026-01-14)
+  flightRefTitle        String?
+  flightRefLink         String?
+  optionCameraSingola   Boolean        @default(false)
+  optionFlexibleCancel  Boolean        @default(false)
+  priceFlexibleCancel   Float          @default(0)
+  optionCameraPrivata   Boolean        @default(false)
+  priceCameraPrivata    Float          @default(0)
+  travelStatus          String         @default("SOGNANDO") // SOGNANDO, QUASI_FAMIGLIA, CONFERMATO, ULTIMI_POSTI, COMPLETO
 
   createdBy        String
   createdAt        DateTime       @default(now())
@@ -427,6 +438,7 @@ model TourAereo {
   
   // Multimedia
   galeria          String[]
+  galeria2         String[] 
   
   // Listas
   incluye          String[]
@@ -439,6 +451,16 @@ model TourAereo {
   
   // FAQ
   faq              Json?
+
+  // Nuevos Campos Web (Solicitud 2026-01-14)
+  flightRefTitle        String?
+  flightRefLink         String?
+  optionCameraSingola   Boolean        @default(false)
+  optionFlexibleCancel  Boolean        @default(false)
+  priceFlexibleCancel   Float          @default(0)
+  optionCameraPrivata   Boolean        @default(false)
+  priceCameraPrivata    Float          @default(0)
+  travelStatus          String         @default("SOGNANDO") // SOGNANDO, QUASI_FAMIGLIA, CONFERMATO, ULTIMI_POSTI, COMPLETO
 
   isActive                 Boolean          @default(true)
   createdBy                String

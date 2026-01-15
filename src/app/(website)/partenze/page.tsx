@@ -44,5 +44,10 @@ async function getAllTours() {
 export default async function PartenzePage() {
     const { flightTours, busTours } = await getAllTours()
 
-    return <DestinazioniClient flightTours={flightTours} busTours={busTours} />
+    const heroImages = [
+        "https://res.cloudinary.com/dskliu1ig/image/upload/v1768264416/img-viaggi-aereo_e45yvq.jpg",
+        "https://res.cloudinary.com/dskliu1ig/image/upload/v1768264413/img-viaggi-bus_ggkkfn.jpg"
+    ]
+
+    return <DestinazioniClient flightTours={flightTours} busTours={busTours} heroImages={heroImages} />
 }

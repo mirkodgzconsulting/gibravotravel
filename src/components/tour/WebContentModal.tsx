@@ -49,22 +49,41 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
         itinerario: [] as ItineraryItem[], // Structured Itinerary
         mapaEmbed: "",
         galeria: [] as string[],
+        galeria2: [] as string[], // New Gallery 2
         incluye: [] as string[],
         noIncluye: [] as string[],
         coordinadorNombre: "",
         coordinadorDescripcion: "",
         faq: [] as { question: string; answer: string }[],
+        galeria2: [] as string[],
+
+        // 2026-01-14 New Fields
+        flightRefTitle: "",
+        flightRefLink: "",
+        optionCameraSingola: false,
+        optionFlexibleCancel: false,
+        priceFlexibleCancel: "",
+        optionCameraPrivata: false,
+        priceCameraPrivata: "",
+        travelStatus: "SOGNANDO",
+        travelStatus: "SOGNANDO",
     });
 
     // File States
     const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
     const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
-    const [webCoverImageFile, setWebCoverImageFile] = useState<File | null>(null); // New
-    const [webCoverImagePreview, setWebCoverImagePreview] = useState<string | null>(null); // New
+    const [webCoverImageFile, setWebCoverImageFile] = useState<File | null>(null);
+    const [webCoverImagePreview, setWebCoverImagePreview] = useState<string | null>(null);
     const [coordinadorFotoFile, setCoordinadorFotoFile] = useState<File | null>(null);
     const [coordinadorFotoPreview, setCoordinadorFotoPreview] = useState<string | null>(null);
+
+    // Gallery 1 State
     const [newGalleryFiles, setNewGalleryFiles] = useState<File[]>([]);
-    const [newGalleryPreviews, setNewGalleryPreviews] = useState<string[]>([]);
+    const [newGalleryPreviews, setNewGalleryPreviews] = useState<{ url: string, type: 'image' | 'video' }[]>([]);
+
+    // Gallery 2 State
+    const [newGallery2Files, setNewGallery2Files] = useState<File[]>([]);
+    const [newGallery2Previews, setNewGallery2Previews] = useState<{ url: string, type: 'image' | 'video' }[]>([]);
 
     // Helpers for Lists
     const [newTag, setNewTag] = useState("");
@@ -113,6 +132,17 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
                 coordinadorNombre: tour.coordinadorNombre || "",
                 coordinadorDescripcion: tour.coordinadorDescripcion || "",
                 faq: Array.isArray(tour.faq) ? tour.faq : [],
+
+                // 2026-01-14 New Fields
+                flightRefTitle: tour.flightRefTitle || "",
+                flightRefLink: tour.flightRefLink || "",
+                optionCameraSingola: tour.optionCameraSingola || false,
+                optionFlexibleCancel: tour.optionFlexibleCancel || false,
+                priceFlexibleCancel: tour.priceFlexibleCancel?.toString() || "",
+                optionCameraPrivata: tour.optionCameraPrivata || false,
+                priceCameraPrivata: tour.priceCameraPrivata?.toString() || "",
+                travelStatus: tour.travelStatus || "SOGNANDO",
+                galeria2: Array.isArray(tour.galeria2) ? tour.galeria2 : [],
             });
 
             setCoverImagePreview(tour.coverImage || null);
@@ -121,8 +151,19 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
             setWebCoverImageFile(null); // New
             setCoordinadorFotoPreview(tour.coordinadorFoto || null);
             setCoordinadorFotoFile(null);
+            setWebCoverImageFile(null); // New
+            setCoordinadorFotoPreview(tour.coordinadorFoto || null);
+            setCoordinadorFotoFile(null);
+
+            // Reset Gallery 1
             setNewGalleryFiles([]);
             setNewGalleryPreviews([]);
+
+            // Reset Gallery 2
+            setFormData(prev => ({ ...prev, galeria2: Array.isArray(tour.galeria2) ? tour.galeria2 : [] }));
+            setNewGallery2Files([]);
+            setNewGallery2Previews([]);
+
             setError(null);
         }
     }, [tour, isOpen]);
@@ -130,10 +171,11 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
     // Cleanup
     useEffect(() => {
         return () => {
-            newGalleryPreviews.forEach(url => URL.revokeObjectURL(url));
+            newGalleryPreviews.forEach(p => URL.revokeObjectURL(p.url));
+            newGallery2Previews.forEach(p => URL.revokeObjectURL(p.url));
             if (coverImageFile) URL.revokeObjectURL(coverImagePreview || "");
         };
-    }, [newGalleryPreviews, coverImageFile, coverImagePreview]);
+    }, [newGalleryPreviews, newGallery2Previews, coverImageFile, coverImagePreview]);
 
     // Handlers
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -217,25 +259,60 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
         multiple: false
     });
 
+    // Gallery 1 Drop (Mixed Image/Video)
     const onDropGallery = useCallback((acceptedFiles: File[]) => {
-        const newPreviews = acceptedFiles.map(file => URL.createObjectURL(file));
+        const newPreviews = acceptedFiles.map(file => ({
+            url: URL.createObjectURL(file),
+            type: file.type.startsWith('video') ? 'video' as const : 'image' as const
+        }));
         setNewGalleryFiles(prev => [...prev, ...acceptedFiles]);
         setNewGalleryPreviews(prev => [...prev, ...newPreviews]);
     }, []);
 
     const { getRootProps: getGalleryRoot, getInputProps: getGalleryInput } = useDropzone({
         onDrop: onDropGallery,
-        accept: { 'image/*': [] },
+        accept: {
+            'image/*': [],
+            'video/*': []
+        },
     });
 
-    const removeGalleryItem = (index: number, isExisting: boolean) => {
-        if (isExisting) {
-            setFormData(prev => ({ ...prev, galeria: prev.galeria.filter((_, i) => i !== index) }));
+    // Gallery 2 Drop (Mixed Image/Video)
+    const onDropGallery2 = useCallback((acceptedFiles: File[]) => {
+        const newPreviews = acceptedFiles.map(file => ({
+            url: URL.createObjectURL(file),
+            type: file.type.startsWith('video') ? 'video' as const : 'image' as const
+        }));
+        setNewGallery2Files(prev => [...prev, ...acceptedFiles]);
+        setNewGallery2Previews(prev => [...prev, ...newPreviews]);
+    }, []);
+
+    const { getRootProps: getGallery2Root, getInputProps: getGallery2Input } = useDropzone({
+        onDrop: onDropGallery2,
+        accept: {
+            'image/*': [],
+            'video/*': []
+        },
+    });
+
+
+    const removeGalleryItem = (index: number, isExisting: boolean, galleryNum: 1 | 2 = 1) => {
+        if (galleryNum === 1) {
+            if (isExisting) {
+                setFormData(prev => ({ ...prev, galeria: prev.galeria.filter((_, i) => i !== index) }));
+            } else {
+                setNewGalleryFiles(prev => prev.filter((_, i) => i !== index));
+                URL.revokeObjectURL(newGalleryPreviews[index].url);
+                setNewGalleryPreviews(prev => prev.filter((_, i) => i !== index));
+            }
         } else {
-            const realIndex = index;
-            setNewGalleryFiles(prev => prev.filter((_, i) => i !== realIndex));
-            URL.revokeObjectURL(newGalleryPreviews[realIndex]);
-            setNewGalleryPreviews(prev => prev.filter((_, i) => i !== realIndex));
+            if (isExisting) {
+                setFormData(prev => ({ ...prev, galeria2: prev.galeria2.filter((_, i) => i !== index) }));
+            } else {
+                setNewGallery2Files(prev => prev.filter((_, i) => i !== index));
+                URL.revokeObjectURL(newGallery2Previews[index].url);
+                setNewGallery2Previews(prev => prev.filter((_, i) => i !== index));
+            }
         }
     };
 
@@ -266,6 +343,16 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
             data.append('coordinadorNombre', formData.coordinadorNombre);
             data.append('coordinadorDescripcion', formData.coordinadorDescripcion);
 
+            // 2026-01-14 New Fields
+            data.append('flightRefTitle', formData.flightRefTitle);
+            data.append('flightRefLink', formData.flightRefLink);
+            data.append('optionCameraSingola', formData.optionCameraSingola ? 'true' : 'false');
+            data.append('optionFlexibleCancel', formData.optionFlexibleCancel ? 'true' : 'false');
+            data.append('priceFlexibleCancel', formData.priceFlexibleCancel);
+            data.append('optionCameraPrivata', formData.optionCameraPrivata ? 'true' : 'false');
+            data.append('priceCameraPrivata', formData.priceCameraPrivata);
+            data.append('travelStatus', formData.travelStatus);
+
             // JSON Fields
             data.append('etiquetas', JSON.stringify(formData.etiquetas));
             data.append('incluye', JSON.stringify(formData.incluye));
@@ -276,6 +363,12 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
             data.append('galeria', JSON.stringify(formData.galeria));
             newGalleryFiles.forEach(file => {
                 data.append('galleryImages', file);
+            });
+
+            // Gallery 2
+            data.append('galeria2', JSON.stringify(formData.galeria2));
+            newGallery2Files.forEach(file => {
+                data.append('gallery2Images', file);
             });
 
             if (coverImageFile) data.append('coverImage', coverImageFile);
@@ -404,10 +497,30 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sottotitolo (Marketing)</label>
                                     <input type="text" value={formData.subtitulo} onChange={(e) => handleInputChange('subtitulo', e.target.value)} className="w-full p-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:text-white" placeholder="Es: Un'avventura indimenticabile!" />
                                 </div>
-                                <div className="flex items-center gap-2 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                    <div className={`w-3 h-3 rounded-full ${formData.isPublic ? 'bg-green-500' : 'bg-gray-400'}`} />
-                                    <span className="font-medium">Stato: {formData.isPublic ? 'PUBBLICO' : 'BOZZA'}</span>
-                                    <p className="text-sm text-gray-500 ml-auto">Usa i pulsanti in basso per modificare.</p>
+
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Stato del Viaggio</label>
+                                    <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                                        {[
+                                            { val: "SOGNANDO", label: "💭 Sognando" },
+                                            { val: "QUASI_FAMIGLIA", label: "👨‍👩‍👧‍👦 Quasi Famiglia" },
+                                            { val: "CONFERMATO", label: "✅ Confermato" },
+                                            { val: "ULTIMI_POSTI", label: "⏳ Ultimi Posti" },
+                                            { val: "COMPLETO", label: "🚫 Completo" },
+                                        ].map((status) => (
+                                            <button
+                                                key={status.val}
+                                                onClick={() => handleInputChange('travelStatus', status.val)}
+                                                className={`p-2 rounded-md text-sm font-medium border transition-colors ${formData.travelStatus === status.val
+                                                    ? 'bg-brand-50 border-brand-500 text-brand-700 ring-1 ring-brand-500'
+                                                    : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                                                    }`}
+                                            >
+                                                {status.label}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -433,6 +546,90 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
                                             </li>
                                         ))}
                                     </ul>
+                                </div>
+
+                                {/* --- NEW SECTION: Extra & Options --- */}
+                                <div className="border-t pt-6 space-y-4">
+                                    <h3 className="font-medium text-gray-900 border-b pb-2">Opzioni e Supplementi</h3>
+
+                                    {/* Flight Reference */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Titolo Volo / Operativo</label>
+                                            <input type="text" value={formData.flightRefTitle} onChange={(e) => handleInputChange('flightRefTitle', e.target.value)} className="w-full p-2 border border-gray-300 rounded-md" placeholder="Es: Voli Turkish Airlines" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Link Volo (Opzionale)</label>
+                                            <input type="text" value={formData.flightRefLink} onChange={(e) => handleInputChange('flightRefLink', e.target.value)} className="w-full p-2 border border-gray-300 rounded-md" placeholder="https://..." />
+                                        </div>
+                                    </div>
+
+                                    {/* Checkboxes & Costs */}
+                                    <div className="space-y-3 bg-gray-50 p-4 rounded-lg">
+                                        {/* Single Room */}
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="checkbox"
+                                                id="opt_single"
+                                                checked={formData.optionCameraSingola}
+                                                onChange={(e) => handleInputChange('optionCameraSingola', e.target.checked)}
+                                                className="h-4 w-4 text-brand-600 rounded border-gray-300"
+                                            />
+                                            <label htmlFor="opt_single" className="text-sm font-medium text-gray-700">Abilita opzione &quot;Mi va bene camera singola&quot;</label>
+                                        </div>
+
+                                        {/* Flexible Cancellation */}
+                                        <div className="flex items-center gap-4">
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="checkbox"
+                                                    id="opt_flex"
+                                                    checked={formData.optionFlexibleCancel}
+                                                    onChange={(e) => handleInputChange('optionFlexibleCancel', e.target.checked)}
+                                                    className="h-4 w-4 text-brand-600 rounded border-gray-300"
+                                                />
+                                                <label htmlFor="opt_flex" className="text-sm font-medium text-gray-700">Flexible Cancellation</label>
+                                            </div>
+                                            {formData.optionFlexibleCancel && (
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-sm text-gray-500">Costo: €</span>
+                                                    <input
+                                                        type="number"
+                                                        value={formData.priceFlexibleCancel}
+                                                        onChange={(e) => handleInputChange('priceFlexibleCancel', e.target.value)}
+                                                        className="w-24 p-1 border border-gray-300 rounded-md text-sm"
+                                                        placeholder="0.00"
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Private Room */}
+                                        <div className="flex items-center gap-4">
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="checkbox"
+                                                    id="opt_private"
+                                                    checked={formData.optionCameraPrivata}
+                                                    onChange={(e) => handleInputChange('optionCameraPrivata', e.target.checked)}
+                                                    className="h-4 w-4 text-brand-600 rounded border-gray-300"
+                                                />
+                                                <label htmlFor="opt_private" className="text-sm font-medium text-gray-700">Camera Privata</label>
+                                            </div>
+                                            {formData.optionCameraPrivata && (
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-sm text-gray-500">Costo: €</span>
+                                                    <input
+                                                        type="number"
+                                                        value={formData.priceCameraPrivata}
+                                                        onChange={(e) => handleInputChange('priceCameraPrivata', e.target.value)}
+                                                        className="w-24 p-1 border border-gray-300 rounded-md text-sm"
+                                                        placeholder="0.00"
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -534,12 +731,77 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
                                         </div>
                                     </div>
                                 </div>
+                                {/* Gallery 1 */}
                                 <div className="border-t pt-6">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Galleria Immagini</label>
-                                    <div {...getGalleryRoot()} className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-brand-500"><input {...getGalleryInput()} /><p className="text-gray-500">Trascina le immagini qui</p></div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Galleria Immagini - Galleria 1</label>
+                                    <div {...getGalleryRoot()} className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-brand-500 bg-white dark:bg-gray-900">
+                                        <input {...getGalleryInput()} />
+                                        <div className="flex flex-col items-center">
+                                            <UploadIcon className="w-8 h-8 text-gray-400 mb-2" />
+                                            <p className="text-gray-500">Trascina immagini e video qui</p>
+                                            <p className="text-xs text-orange-500 mt-1">Video: Max 20MB consigliato</p>
+                                        </div>
+                                    </div>
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                                        {formData.galeria.map((url, i) => (<div key={`e-${i}`} className="relative group aspect-video bg-gray-100 rounded-lg overflow-hidden"><Image src={url} alt="" fill className="object-cover" /><button onClick={() => removeGalleryItem(i, true)} className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100"><XIcon className="w-4 h-4" /></button></div>))}
-                                        {newGalleryPreviews.map((url, i) => (<div key={`n-${i}`} className="relative group aspect-video bg-gray-100 rounded-lg overflow-hidden border-2 border-green-500"><Image src={url} alt="" fill className="object-cover" /><button onClick={() => removeGalleryItem(i, false)} className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100"><XIcon className="w-4 h-4" /></button></div>))}
+                                        {/* Existing Gallery 1 */}
+                                        {formData.galeria.map((url, i) => (
+                                            <div key={`e-${i}`} className="relative group aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                                                {url.match(/\.(mp4|webm|ogg)$/i) || url.includes('/video/') ? (
+                                                    <video src={url} className="object-cover w-full h-full" controls={false} />
+                                                ) : (
+                                                    <Image src={url} alt="" fill className="object-cover" />
+                                                )}
+                                                <button onClick={() => removeGalleryItem(i, true, 1)} className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"><XIcon className="w-4 h-4" /></button>
+                                            </div>
+                                        ))}
+                                        {/* New Gallery 1 Files */}
+                                        {newGalleryPreviews.map((item, i) => (
+                                            <div key={`n-${i}`} className="relative group aspect-video bg-gray-100 rounded-lg overflow-hidden border-2 border-green-500">
+                                                {item.type === 'video' ? (
+                                                    <video src={item.url} className="object-cover w-full h-full" />
+                                                ) : (
+                                                    <Image src={item.url} alt="" fill className="object-cover" />
+                                                )}
+                                                <button onClick={() => removeGalleryItem(i, false, 1)} className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"><XIcon className="w-4 h-4" /></button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Gallery 2 */}
+                                <div className="border-t pt-6">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Galleria Immagini - Galleria 2</label>
+                                    <div {...getGallery2Root()} className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-brand-500 bg-white dark:bg-gray-900">
+                                        <input {...getGallery2Input()} />
+                                        <div className="flex flex-col items-center">
+                                            <UploadIcon className="w-8 h-8 text-gray-400 mb-2" />
+                                            <p className="text-gray-500">Trascina immagini e video qui</p>
+                                            <p className="text-xs text-orange-500 mt-1">Video: Max 20MB consigliato</p>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                                        {/* Existing Gallery 2 */}
+                                        {formData.galeria2?.map((url, i) => (
+                                            <div key={`e2-${i}`} className="relative group aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                                                {url.match(/\.(mp4|webm|ogg)$/i) || url.includes('/video/') ? (
+                                                    <video src={url} className="object-cover w-full h-full" controls={false} />
+                                                ) : (
+                                                    <Image src={url} alt="" fill className="object-cover" />
+                                                )}
+                                                <button onClick={() => removeGalleryItem(i, true, 2)} className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"><XIcon className="w-4 h-4" /></button>
+                                            </div>
+                                        ))}
+                                        {/* New Gallery 2 Files */}
+                                        {newGallery2Previews.map((item, i) => (
+                                            <div key={`n2-${i}`} className="relative group aspect-video bg-gray-100 rounded-lg overflow-hidden border-2 border-green-500">
+                                                {item.type === 'video' ? (
+                                                    <video src={item.url} className="object-cover w-full h-full" />
+                                                ) : (
+                                                    <Image src={item.url} alt="" fill className="object-cover" />
+                                                )}
+                                                <button onClick={() => removeGalleryItem(i, false, 2)} className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"><XIcon className="w-4 h-4" /></button>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             </div>
@@ -619,7 +881,8 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
                     <Button onClick={() => handleSubmit(false)} variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200" disabled={isSubmitting}><SaveIcon className="w-4 h-4 mr-2" /> Salva Bozza</Button>
                     <Button onClick={() => handleSubmit(true)} className="bg-green-600 text-white" disabled={isSubmitting}><SendIcon className="w-4 h-4 mr-2" /> PUBBLICA</Button>
                 </div>
-            </div>
+            </div >
         </Modal >
     );
 }
+

@@ -68,7 +68,7 @@ export function TourItinerary({ itinerary }: FooterItineraryProps) {
                             >
                                 <div className="py-6">
                                     <div
-                                        className="text-gray-600 leading-relaxed text-base prose max-w-none"
+                                        className="text-gray-600 leading-relaxed text-base prose max-w-none rte-content"
                                         dangerouslySetInnerHTML={{ __html: day.description || '' }}
                                     />
                                 </div>

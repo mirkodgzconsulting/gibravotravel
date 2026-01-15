@@ -68,7 +68,7 @@ export function TourOverview({ date, duration, daysCount, type, description, gal
 
             {/* Description Text - No Padding */}
             {description && (
-                <div className="prose prose-lg max-w-none text-gray-600 leading-relaxed mb-8">
+                <div className="prose prose-lg max-w-none leading-relaxed mb-8 rte-content text-gray-600">
                     <div dangerouslySetInnerHTML={{ __html: description || '' }} />
                 </div>
             )}

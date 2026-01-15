@@ -91,7 +91,13 @@ export default async function BookingPage({ params }: BookingPageProps) {
                 image: tour.webCoverImage || tour.coverImage || "/placeholder.jpg",
                 type: tour.type as 'bus' | 'aereo',
                 date: tour.fechaViaje ? tour.fechaViaje.toISOString() : new Date().toISOString(),
-                duration: tour.duracionTexto || "N/A"
+                duration: tour.duracionTexto || "N/A",
+                // Validar que las propiedades existan antes de pasarlas (para evitar errores si el tipo no coincide perfectamente en tiempo de ejecución)
+                optionCameraSingola: 'optionCameraSingola' in tour ? !!tour.optionCameraSingola : false,
+                optionFlexibleCancel: 'optionFlexibleCancel' in tour ? !!tour.optionFlexibleCancel : false,
+                priceFlexibleCancel: 'priceFlexibleCancel' in tour ? Number(tour.priceFlexibleCancel) : 0,
+                optionCameraPrivata: 'optionCameraPrivata' in tour ? !!tour.optionCameraPrivata : false,
+                priceCameraPrivata: 'priceCameraPrivata' in tour ? Number(tour.priceCameraPrivata) : 0,
             }}
         />
     )

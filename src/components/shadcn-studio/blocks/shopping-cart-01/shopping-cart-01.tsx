@@ -1,8 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ClockIcon, Trash2Icon, Bus, Plane, Users, CheckCircle2 } from "lucide-react"
-import { Link } from "lucide-react"
+import { ClockIcon, Trash2Icon, Bus, Plane, Users, CheckCircle2, Minus, Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -11,8 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { useSearchParams, useRouter } from "next/navigation"
+import { useRouter } from "next/navigation"
 
 interface ShoppingCartProps {
     tour: {
@@ -25,6 +23,12 @@ interface ShoppingCartProps {
         type: 'bus' | 'aereo'
         date: string
         duration: string
+        // New options
+        optionCameraSingola?: boolean
+        optionFlexibleCancel?: boolean
+        priceFlexibleCancel?: number
+        optionCameraPrivata?: boolean
+        priceCameraPrivata?: number
     }
 }
 
@@ -36,15 +40,26 @@ const BUS_STOPS = [
 
 export const ShoppingCart = ({ tour }: ShoppingCartProps) => {
     const router = useRouter()
-    const [quantity, setQuantity] = useState(1)
+
+    // Split Counters
+    const [countDonna, setCountDonna] = useState(1)
+    const [countUomo, setCountUomo] = useState(0)
+
+    const quantity = countDonna + countUomo
+
     const [selectedStop, setSelectedStop] = useState<string>("")
+
+    // New Options State
+    const [selectedSharedRoom, setSelectedSharedRoom] = useState(false)
+    const [selectedFlexibleCancel, setSelectedFlexibleCancel] = useState(false)
+    const [selectedPrivateRoom, setSelectedPrivateRoom] = useState(false)
 
     // Dynamic Passenger State
     const [passengers, setPassengers] = useState<{ firstName: string, lastName: string, cf: string }[]>([
         { firstName: "", lastName: "", cf: "" }
     ])
 
-    // Update passengers array when quantity changes
+    // Update passengers array when total quantity changes
     useEffect(() => {
         setPassengers(prev => {
             const newPassengers = [...prev];
@@ -68,13 +83,22 @@ export const ShoppingCart = ({ tour }: ShoppingCartProps) => {
         setPassengers(newPassengers);
     }
 
-    const subtotal = tour.price * quantity;
-    const tax = 0; // Included
+    // Pricing Logic
+    const basePrice = tour.price * quantity;
+    const flexibleCancelCost = selectedFlexibleCancel && tour.priceFlexibleCancel ? tour.priceFlexibleCancel * quantity : 0;
+    const privateRoomCost = selectedPrivateRoom && tour.priceCameraPrivata ? tour.priceCameraPrivata * quantity : 0;
+
+    const subtotal = basePrice + flexibleCancelCost + privateRoomCost;
     const total = subtotal;
 
     const handleProceed = () => {
         if (tour.type === 'bus' && !selectedStop) {
             alert("Seleziona una fermata di partenza");
+            return;
+        }
+
+        if (quantity === 0) {
+            alert("Seleziona almeno un passeggero");
             return;
         }
 
@@ -86,16 +110,20 @@ export const ShoppingCart = ({ tour }: ShoppingCartProps) => {
             }
         }
 
-        // Serialize state to pass to Checkout (using URL params for simplicity now, or LocalStorage)
-        // For security/cleanliness, URL params with JSON might be ugly but functional for now. 
-        // Better: Checkout page uses this same component structure or we persist to a store. 
-        // Let's use Session Storage + Router
+        // Serialize state
         sessionStorage.setItem("cart_booking", JSON.stringify({
             tour,
             quantity,
+            countDonna,
+            countUomo,
             selectedStop,
             passengers,
-            total
+            total,
+            options: {
+                sharedRoom: selectedSharedRoom,
+                flexibleCancel: selectedFlexibleCancel,
+                privateRoom: selectedPrivateRoom
+            }
         }));
 
         router.push(`/prenotazione/${tour.slug}/checkout`);
@@ -133,26 +161,83 @@ export const ShoppingCart = ({ tour }: ShoppingCartProps) => {
                                     <Separator />
 
                                     {/* Configuration */}
-                                    <div className="grid md:grid-cols-2 gap-6">
-                                        <div className="space-y-2">
-                                            <label className="text-xs font-bold uppercase text-slate-400">Passeggeri</label>
-                                            <Select
-                                                value={quantity.toString()}
-                                                onValueChange={(v) => setQuantity(parseInt(v))}
-                                            >
-                                                <SelectTrigger className="w-full bg-white text-black border-slate-200 h-10">
-                                                    <SelectValue placeholder="Seleziona" />
-                                                </SelectTrigger>
-                                                <SelectContent className="bg-white text-black border-slate-200">
-                                                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
-                                                        <SelectItem key={n} value={n.toString()} className="hover:bg-slate-100">{n} Persona{n > 1 ? 'e' : ''}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                    <div className="space-y-6">
+                                        {/* Row 1: Passengers */}
+                                        <div>
+                                            <label className="text-xs font-bold uppercase text-slate-400 mb-3 block">Passeggeri</label>
+                                            <div className="flex flex-col sm:flex-row gap-4">
+                                                {/* Donna Counter */}
+                                                <div className="flex items-center justify-between p-3 border border-slate-200 rounded-xl bg-slate-50 flex-1">
+                                                    <span className="font-medium text-slate-700">Donna</span>
+                                                    <div className="flex items-center gap-3">
+                                                        <Button
+                                                            variant="outline" size="icon" className="h-8 w-8 rounded-full bg-white"
+                                                            onClick={() => setCountDonna(Math.max(0, countDonna - 1))}
+                                                            disabled={quantity <= 1 && countDonna === 1}
+                                                        >
+                                                            <Minus className="h-3 w-3" />
+                                                        </Button>
+                                                        <span className="font-bold w-4 text-center">{countDonna}</span>
+                                                        <Button
+                                                            variant="outline" size="icon" className="h-8 w-8 rounded-full bg-white"
+                                                            onClick={() => setCountDonna(countDonna + 1)}
+                                                        >
+                                                            <Plus className="h-3 w-3" />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+
+                                                {/* Uomo Counter */}
+                                                <div className="flex items-center justify-between p-3 border border-slate-200 rounded-xl bg-slate-50 flex-1">
+                                                    <span className="font-medium text-slate-700">Uomo</span>
+                                                    <div className="flex items-center gap-3">
+                                                        <Button
+                                                            variant="outline" size="icon" className="h-8 w-8 rounded-full bg-white"
+                                                            onClick={() => setCountUomo(Math.max(0, countUomo - 1))}
+                                                            disabled={quantity <= 1 && countUomo === 1}
+                                                        >
+                                                            <Minus className="h-3 w-3" />
+                                                        </Button>
+                                                        <span className="font-bold w-4 text-center">{countUomo}</span>
+                                                        <Button
+                                                            variant="outline" size="icon" className="h-8 w-8 rounded-full bg-white"
+                                                            onClick={() => setCountUomo(countUomo + 1)}
+                                                        >
+                                                            <Plus className="h-3 w-3" />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
 
+                                        {/* Camera Mista Option */}
+                                        {tour.optionCameraSingola && (
+                                            <div className="bg-blue-50/50 border border-blue-100 p-4 rounded-xl">
+                                                <div className="flex items-start space-x-3">
+                                                    <Checkbox
+                                                        id="cameraMista"
+                                                        checked={selectedSharedRoom}
+                                                        onCheckedChange={(c) => setSelectedSharedRoom(!!c)}
+                                                        className="mt-1"
+                                                    />
+                                                    <div className="space-y-1">
+                                                        <label
+                                                            htmlFor="cameraMista"
+                                                            className="text-sm font-bold text-[#004BA5] leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                                        >
+                                                            Abilita opzione Mi va bene camera singola
+                                                        </label>
+                                                        <p className="text-xs text-slate-500 leading-snug">
+                                                            Scegliendo questa opzione, accetti di condividere la camera con altri viaggiatori. È un modo fantastico per fare nuove amicizie e risparmiare!
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Row 2: Bus Stop (if applicable) */}
                                         {tour.type === 'bus' && (
-                                            <div className="space-y-2">
+                                            <div className="space-y-2 pt-2">
                                                 <label className="text-xs font-bold uppercase text-slate-400">Fermata Partenza</label>
                                                 <Select value={selectedStop} onValueChange={setSelectedStop}>
                                                     <SelectTrigger className="w-full bg-white text-black border-slate-200 h-10">
@@ -170,6 +255,56 @@ export const ShoppingCart = ({ tour }: ShoppingCartProps) => {
                                 </div>
                             </div>
                         </div>
+
+                        {/* Additional Options Section (New) */}
+                        {(tour.optionFlexibleCancel || tour.optionCameraPrivata) && (
+                            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 space-y-4">
+                                <h4 className="font-bold text-lg flex items-center gap-2 text-[#323232]">
+                                    <CheckCircle2 className="h-5 w-5 text-[#FE8008]" />
+                                    Opzioni Aggiuntive
+                                </h4>
+
+                                <div className="space-y-4">
+                                    {/* Flexible Cancellation */}
+                                    {tour.optionFlexibleCancel && (
+                                        <div className="flex items-center justify-between p-4 border border-slate-100 rounded-xl hover:border-blue-100 transition-colors cursor-pointer" onClick={() => setSelectedFlexibleCancel(!selectedFlexibleCancel)}>
+                                            <div className="flex items-center gap-3">
+                                                <Checkbox
+                                                    checked={selectedFlexibleCancel}
+                                                    onCheckedChange={(c) => setSelectedFlexibleCancel(!!c)}
+                                                />
+                                                <div>
+                                                    <p className="font-bold text-slate-700">Cancella senza pensieri</p>
+                                                    <p className="text-xs text-slate-500">Rimborso garantito fino a 48h prima</p>
+                                                </div>
+                                            </div>
+                                            <div className="font-bold text-[#323232]">
+                                                + €{tour.priceFlexibleCancel} <span className="text-xs font-normal text-slate-400">/pers</span>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Private Room */}
+                                    {tour.optionCameraPrivata && (
+                                        <div className="flex items-center justify-between p-4 border border-slate-100 rounded-xl hover:border-blue-100 transition-colors cursor-pointer" onClick={() => setSelectedPrivateRoom(!selectedPrivateRoom)}>
+                                            <div className="flex items-center gap-3">
+                                                <Checkbox
+                                                    checked={selectedPrivateRoom}
+                                                    onCheckedChange={(c) => setSelectedPrivateRoom(!!c)}
+                                                />
+                                                <div>
+                                                    <p className="font-bold text-slate-700">Camera Privata</p>
+                                                    <p className="text-xs text-slate-500">Goditi la tua privacy durante il viaggio</p>
+                                                </div>
+                                            </div>
+                                            <div className="font-bold text-[#323232]">
+                                                + €{tour.priceCameraPrivata} <span className="text-xs font-normal text-slate-400">/pers</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Passenger Details Form */}
                         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 space-y-4">
@@ -238,8 +373,36 @@ export const ShoppingCart = ({ tour }: ShoppingCartProps) => {
                                             <span className="text-slate-700 font-medium">Passeggeri</span>
                                             <span className="font-bold text-[#323232]">x {quantity}</span>
                                         </div>
+
+                                        {countDonna > 0 && (
+                                            <div className="flex items-center justify-between text-xs text-slate-400 pl-2">
+                                                <span>Donna</span>
+                                                <span>x {countDonna}</span>
+                                            </div>
+                                        )}
+                                        {countUomo > 0 && (
+                                            <div className="flex items-center justify-between text-xs text-slate-400 pl-2">
+                                                <span>Uomo</span>
+                                                <span>x {countUomo}</span>
+                                            </div>
+                                        )}
+
+                                        {selectedFlexibleCancel && (
+                                            <div className="flex items-center justify-between text-slate-600 pt-2 border-t border-dashed border-slate-100 mt-2">
+                                                <span className="font-medium text-xs">Flexi Cancel</span>
+                                                <span className="font-bold text-xs">+ €{(tour.priceFlexibleCancel || 0) * quantity}</span>
+                                            </div>
+                                        )}
+
+                                        {selectedPrivateRoom && (
+                                            <div className="flex items-center justify-between text-slate-600">
+                                                <span className="font-medium text-xs">Camera Privata</span>
+                                                <span className="font-bold text-xs">+ €{(tour.priceCameraPrivata || 0) * quantity}</span>
+                                            </div>
+                                        )}
+
                                         {tour.type === 'bus' && selectedStop && (
-                                            <div className="flex items-center justify-between text-[#004BA5]">
+                                            <div className="flex items-center justify-between text-[#004BA5] pt-2">
                                                 <span className="font-medium">Fermata Bus</span>
                                                 <span className="font-bold text-right">{selectedStop}</span>
                                             </div>

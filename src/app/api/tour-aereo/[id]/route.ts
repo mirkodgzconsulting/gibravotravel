@@ -138,6 +138,28 @@ export async function PUT(
 
     const { id } = await params;
 
+    // Configurar Cloudinary con variables de entorno (Prioridad a nombres de Vercel)
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    const apiKey = process.env.CLOUDINARY_API_KEY || process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY;
+    const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+    console.log('Configuring Cloudinary:', {
+      cloud_name: cloudName,
+      api_key: apiKey ? '***' + apiKey.slice(-4) : 'MISSING',
+      api_secret: apiSecret ? 'PRESENT' : 'MISSING'
+    });
+
+    if (!cloudName || !apiKey || !apiSecret) {
+      console.error("Faltan variables de entorno de Cloudinary");
+      // No retornamos error aquí para permitir depuración, pero fallará el upload
+    }
+
+    cloudinary.config({
+      cloud_name: cloudName,
+      api_key: apiKey,
+      api_secret: apiSecret,
+    });
+
     // Verificar existencia
     const currentTour = await prisma.tourAereo.findUnique({
       where: { id },
@@ -145,7 +167,8 @@ export async function PUT(
         coverImage: true,
         pdfFile: true,
         coordinadorFoto: true,
-        galeria: true, // Existing gallery URLs
+        galeria: true,
+        galeria2: true, // Existing gallery 2 URLs
       }
     });
 
@@ -153,7 +176,20 @@ export async function PUT(
       return NextResponse.json({ error: 'Tour no encontrado' }, { status: 404 });
     }
 
-    const formData = await request.formData();
+    console.log('PUT request received');
+    console.log('Content-Type:', request.headers.get('content-type'));
+    console.log('Content-Length:', request.headers.get('content-length'));
+
+    let formData: FormData;
+    try {
+      formData = await request.formData();
+    } catch (e) {
+      console.error('Error parsing FormData:', e);
+      return NextResponse.json(
+        { error: `Error técnico: ${e instanceof Error ? e.message : 'Unknown issue'}` },
+        { status: 400 }
+      );
+    }
 
     // Archivos
     const coverImage = formData.get('coverImage') as File | null;
@@ -162,6 +198,9 @@ export async function PUT(
     const webCoverImage = formData.get('webCoverImage') as File | null;
     // New: multiple gallery images
     const newGalleryImages = formData.getAll('galleryImages') as File[]; // New files
+
+    // Gallery 2 (New)
+    const newGallery2Images = formData.getAll('gallery2Images') as File[];
 
     // INIT PARALLEL UPLOADS
     const uploadPromises: Promise<any>[] = [];
@@ -191,13 +230,6 @@ export async function PUT(
         return { type: 'webCover', url: res.secure_url, name: webCoverImage.name };
       })());
     }
-
-    // ... (rest of uploads)
-
-    // ...
-
-    // 1.5 Web Cover Image Result
-    // ...
 
     // 2. PDF
     if (pdfFile && pdfFile.size > 0) {
@@ -238,6 +270,23 @@ export async function PUT(
                 (err, res) => { if (err) reject(err); else resolve(res); }).end(buffer);
             });
             return { type: 'gallery', url: res.secure_url };
+          })());
+        }
+      });
+    }
+
+    // 5. Gallery 2 Images (Multiple)
+    if (newGallery2Images.length > 0) {
+      newGallery2Images.forEach((file) => {
+        if (file.size > 0) {
+          uploadPromises.push((async () => {
+            const bytes = await file.arrayBuffer();
+            const buffer = Buffer.from(bytes);
+            const res: any = await new Promise((resolve, reject) => {
+              cloudinary.uploader.upload_stream({ folder: 'gibravotravel/tour_aereo/gallery2', resource_type: 'image' },
+                (err, res) => { if (err) reject(err); else resolve(res); }).end(buffer);
+            });
+            return { type: 'gallery2', url: res.secure_url };
           })());
         }
       });
@@ -433,6 +482,24 @@ export async function PUT(
       dataToUpdate.galeria = [...keptImages, ...newUrls];
     }
 
+    // 5. Gallery 2 (Merge with existing)
+    const hasGallery2Field = formData.has('galeria2');
+    const hasNewGallery2Images = newGallery2Images.length > 0;
+
+    if (hasGallery2Field || hasNewGallery2Images) {
+      let keptImages2: string[] = [];
+      if (hasGallery2Field) {
+        try {
+          const s = formData.get('galeria2');
+          if (typeof s === 'string') keptImages2 = JSON.parse(s);
+        } catch { }
+      } else {
+        keptImages2 = (currentTour.galeria2 as string[]) || [];
+      }
+
+      const newUrls2 = results.filter(r => r.type === 'gallery2').map(r => r.url);
+      dataToUpdate.galeria2 = [...keptImages2, ...newUrls2];
+    }
 
     // UPDATE DB
     const tour = await prisma.tourAereo.update({

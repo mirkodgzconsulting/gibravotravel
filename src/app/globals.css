@@ -312,7 +312,64 @@
 }
 
 /* Utility styles - Must be outside :root */
-@layer components {}
+@layer components {
+
+  /* Rich Text Editor Content - Viewer Styles to match Editor */
+  .rte-content {
+    white-space: pre-wrap !important;
+    /* Respect newlines and wrapping */
+    overflow-wrap: break-word !important;
+    /* Prevent overflow */
+    display: block;
+  }
+
+  .rte-content ul {
+    list-style-type: disc !important;
+    padding-left: 1.5rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .rte-content ol {
+    list-style-type: decimal !important;
+    padding-left: 1.5rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .rte-content li {
+    margin-bottom: 0.25rem;
+    padding-left: 0.25rem;
+  }
+
+  .rte-content p {
+    margin-bottom: 0.75rem;
+    min-height: 1rem;
+    /* Prevent collapse of empty lines */
+  }
+
+  .rte-content br {
+    display: block;
+    /* Ensure br takes up space */
+    content: "";
+    margin: 0;
+  }
+
+  .rte-content b,
+  .rte-content strong {
+    font-weight: 700 !important;
+    color: inherit;
+    /* Allow color overrides */
+  }
+
+  .rte-content i,
+  .rte-content em {
+    font-style: italic !important;
+  }
+
+  /* Ensure inline styles for colors work */
+  .rte-content span[style*="color"] {
+    color: inherit !important;
+  }
+}
 
 /* Marquee Styles */
 .animate-marquee-horizontal {

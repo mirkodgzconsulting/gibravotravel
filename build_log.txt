@@ -1,38 +1,24 @@
-[dotenv@17.2.3] injecting env (0) from .env -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
-[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
    ▲ Next.js 15.4.8
    - Environments: .env
+   - Experiments (use with caution):
+     · serverActions
 
    Creating an optimized production build ...
- ✓ Compiled successfully in 9.0s
+ ✓ Compiled successfully in 21.0s
    Skipping linting
    Checking validity of types ...
-   Collecting page data ...
-🔍 Using database URL from: DATABASE_URL
-🔍 Using database URL from: DATABASE_URL
-🔍 Using database URL from: DATABASE_URL
-🔍 Using database URL from: DATABASE_URL
-🔍 Using database URL from: DATABASE_URL
-🔍 Using database URL from: DATABASE_URL
-🔍 Using database URL from: DATABASE_URL
-🔍 Using database URL from: DATABASE_URL
-🔍 Using database URL from: DATABASE_URL
-🔍 Using database URL from: DATABASE_URL
-🔍 Using database URL from: DATABASE_URL
-🔍 Using database URL from: DATABASE_URL
-🔍 Using database URL from: DATABASE_URL
-🔍 Using database URL from: DATABASE_URL
-🔍 Using database URL from: DATABASE_URL
-Error: Missing API key. Pass it to the constructor `new Resend("re_123")`
-    at new <anonymous> (D:\gibravotravel\.next\server\app\api\webhooks\stripe\route.js:2:61538)
-    at 48120 (D:\gibravotravel\.next\server\app\api\webhooks\stripe\route.js:2:61079)
-    at c (D:\gibravotravel\.next\server\webpack-runtime.js:1:143)
-    at <unknown> (D:\gibravotravel\.next\server\app\api\webhooks\stripe\route.js:40:59616)
-    at c.X (D:\gibravotravel\.next\server\webpack-runtime.js:1:2204)
-    at <unknown> (D:\gibravotravel\.next\server\app\api\webhooks\stripe\route.js:40:59586)
-    at Object.<anonymous> (D:\gibravotravel\.next\server\app\api\webhooks\stripe\route.js:40:59648)
+Failed to compile.
 
-> Build error occurred
-[Error: Failed to collect page data for /api/webhooks/stripe] {
-  type: 'Error'
-}
+./src/components/tour/WebContentModal.tsx:58:9
+Type error: An object literal cannot have multiple properties with the same name.
+
+[0m [90m 56 |[39m         coordinadorDescripcion[33m:[39m [32m""[39m[33m,[39m
+ [90m 57 |[39m         faq[33m:[39m [] [36mas[39m { question[33m:[39m string[33m;[39m answer[33m:[39m string }[][33m,[39m
+[31m[1m>[22m[39m[90m 58 |[39m         galeria2[33m:[39m [] [36mas[39m string[][33m,[39m
+ [90m    |[39m         [31m[1m^[22m[39m
+ [90m 59 |[39m
+ [90m 60 |[39m         [90m// 2026-01-14 New Fields[39m
+ [90m 61 |[39m         flightRefTitle[33m:[39m [32m""[39m[33m,[39m[0m
+Next.js build worker exited with code: 1 and signal: null

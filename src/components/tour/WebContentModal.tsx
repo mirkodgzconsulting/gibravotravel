@@ -55,8 +55,6 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
         coordinadorNombre: "",
         coordinadorDescripcion: "",
         faq: [] as { question: string; answer: string }[],
-        galeria2: [] as string[],
-
         // 2026-01-14 New Fields
         flightRefTitle: "",
         flightRefLink: "",
@@ -65,7 +63,6 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
         priceFlexibleCancel: "",
         optionCameraPrivata: false,
         priceCameraPrivata: "",
-        travelStatus: "SOGNANDO",
         travelStatus: "SOGNANDO",
     });
 

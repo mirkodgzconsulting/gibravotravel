@@ -23,9 +23,9 @@ const pasajeroServiciosInclude = Prisma.validator<Prisma.PasajeroBiglietteriaInc
 
 // Configurar Cloudinary
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dskliu1ig',
-  api_key: process.env.CLOUDINARY_API_KEY || '538724966551851',
-  api_secret: process.env.CLOUDINARY_API_SECRET || 'Q1fP7-pH6iiltPbFNkqPn0d93no',
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY || process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 // GET - Obtener un registro específico
@@ -35,7 +35,7 @@ export async function GET(
 ) {
   try {
     const { userId } = await auth();
-    
+
     if (!userId) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
@@ -63,7 +63,7 @@ export async function GET(
     return NextResponse.json({ record });
   } catch (error) {
     console.error('Error fetching biglietteria record:', error);
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: 'Error interno del servidor',
       details: error instanceof Error ? error.message : 'Error desconocido'
     }, { status: 500 });
@@ -77,7 +77,7 @@ export async function PUT(
 ) {
   try {
     const { userId } = await auth();
-    
+
     if (!userId) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
@@ -367,7 +367,7 @@ export async function PATCH(
 ) {
   try {
     const { userId } = await auth();
-    
+
     if (!userId) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
@@ -399,8 +399,8 @@ export async function PATCH(
       // Si el usuario es USER, solo puede usar Acconto o Ricevuto
       if (user.role === 'USER') {
         if (body.pagamento !== 'Acconto' && body.pagamento !== 'Ricevuto') {
-          return NextResponse.json({ 
-            error: 'No tienes permisos para usar este valor de pagamento. Solo puedes usar "Acconto" o "Ricevuto".' 
+          return NextResponse.json({
+            error: 'No tienes permisos para usar este valor de pagamento. Solo puedes usar "Acconto" o "Ricevuto".'
           }, { status: 403 });
         }
       }
@@ -426,14 +426,14 @@ export async function PATCH(
       }
     });
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       record,
-      message: 'Campo actualizado exitosamente' 
+      message: 'Campo actualizado exitosamente'
     });
 
   } catch (error) {
     console.error('Error patching biglietteria record:', error);
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: 'Error interno del servidor',
       details: error instanceof Error ? error.message : 'Error desconocido'
     }, { status: 500 });
@@ -447,7 +447,7 @@ export async function DELETE(
 ) {
   try {
     const { userId } = await auth();
-    
+
     if (!userId) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
@@ -479,9 +479,9 @@ export async function DELETE(
     });
 
     // Obtener IP y User Agent
-    const ipAddress = request.headers.get('x-forwarded-for') || 
-                     request.headers.get('x-real-ip') || 
-                     'unknown';
+    const ipAddress = request.headers.get('x-forwarded-for') ||
+      request.headers.get('x-real-ip') ||
+      'unknown';
     const userAgent = request.headers.get('user-agent') || 'unknown';
 
     // Registrar en auditoría ANTES de eliminar (si la tabla existe)
@@ -513,13 +513,13 @@ export async function DELETE(
       where: { id }
     });
 
-    return NextResponse.json({ 
-      message: 'Registro eliminado exitosamente' 
+    return NextResponse.json({
+      message: 'Registro eliminado exitosamente'
     });
 
   } catch (error) {
     console.error('Error deleting biglietteria record:', error);
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: 'Error interno del servidor',
       details: error instanceof Error ? error.message : 'Error desconocido'
     }, { status: 500 });

@@ -401,160 +401,160 @@ function normalizeMetodoPagamentoArray(value: unknown): string[] {
 export default function BiglietteriaPage() {
   const { canAccessGestione, isLoading: roleLoading, userRole, isUser } = useUserRole();
   const { isOpen: isModalOpen, openModal, closeModal } = useModal();
-  
+
   // Estados principales
   const [records, setRecords] = useState<BiglietteriaRecord[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  
+
   // Estados para edición y eliminación
   const [editingRecord, setEditingRecord] = useState<BiglietteriaRecord | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [deletingRecordId, setDeletingRecordId] = useState<string | null>(null);
-  
+
   // Estados para visualización de archivos
   const [viewingFiles, setViewingFiles] = useState<BiglietteriaRecord | null>(null);
   const [isFileViewerOpen, setIsFileViewerOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  
+
   // Estados para modal de cliente
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  
+
   // Estados para tabla de detalles de pasajeros
   const [isPassengerDetailsOpen, setIsPassengerDetailsOpen] = useState(false);
   const [isPassengerDetailsSimpleOpen, setIsPassengerDetailsSimpleOpen] = useState(false);
-  
+
   // Estado para edición inline de Pagamento
   const [editingPagamentoId, setEditingPagamentoId] = useState<string | null>(null);
-  
+
   // Estados para filtro de mes y año
   const [mesSeleccionado, setMesSeleccionado] = useState<number>(new Date().getMonth());
   const [añoSeleccionado, setAñoSeleccionado] = useState<number>(new Date().getFullYear());
-  
+
   // Estado para filtro de usuario creador
   const [filtroCreador, setFiltroCreador] = useState<string>('');
   const [usuarios, setUsuarios] = useState<Array<{ clerkId: string; firstName: string; lastName: string; role: string }>>([]);
   const [showCreadorDropdown, setShowCreadorDropdown] = useState<boolean>(false);
-  
-const canUseAgentFilter = useMemo(() => {
-  if (roleLoading) return false;
-  return userRole === 'ADMIN' || userRole === 'TI';
-}, [roleLoading, userRole]);
 
-useEffect(() => {
-  if (!canUseAgentFilter) {
-    setFiltroCreador('');
-    setCreadorSearchTerm('');
-    setShowCreadorDropdown(false);
-  }
-}, [canUseAgentFilter]);
+  const canUseAgentFilter = useMemo(() => {
+    if (roleLoading) return false;
+    return userRole === 'ADMIN' || userRole === 'TI';
+  }, [roleLoading, userRole]);
+
+  useEffect(() => {
+    if (!canUseAgentFilter) {
+      setFiltroCreador('');
+      setCreadorSearchTerm('');
+      setShowCreadorDropdown(false);
+    }
+  }, [canUseAgentFilter]);
 
   // Estados para filtro de pagamento
   const [pagamentos, setPagamentos] = useState<string[]>([]);
-  
+
   // Estados para IATA y MetodoPagamento
   const [iataList, setIataList] = useState<string[]>([]);
   const [metodoPagamentoList, setMetodoPagamentoList] = useState<string[]>([]);
   const [acquistoOptions, setAcquistoOptions] = useState<string[]>([]);
-  
+
   // Estados para búsqueda y paginación (igual que TOUR GRUPPO)
   const [searchTerm, setSearchTerm] = useState('');
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
-  
+
   // Estados para filtros (igual que TOUR GRUPPO) - creadorSearchTerm
   const [creadorSearchTerm, setCreadorSearchTerm] = useState('');
-  
+
   // Estados para cliente dropdown
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [showClientDropdown, setShowClientDropdown] = useState(false);
   const [clientSearchTerm, setClientSearchTerm] = useState('');
-  
+
   // Estados para pagamento dropdown (igual que cliente)
   const [showPagamentoDropdown, setShowPagamentoDropdown] = useState(false);
   const [pagamentoSearchTerm, setPagamentoSearchTerm] = useState('');
-  
+
   // Estados para dropdowns individuales de IATA por pasajero y servicio
-  const [showIndividualIataDropdowns, setShowIndividualIataDropdowns] = useState<{[key: string]: boolean}>({});
-  const [individualIataSearchTerms, setIndividualIataSearchTerms] = useState<{[key: string]: string}>({});
-  
+  const [showIndividualIataDropdowns, setShowIndividualIataDropdowns] = useState<{ [key: string]: boolean }>({});
+  const [individualIataSearchTerms, setIndividualIataSearchTerms] = useState<{ [key: string]: string }>({});
+
   // Estados para MetodoPagamento dropdown (igual que cliente)
   const [showMetodoPagamentoDropdown, setShowMetodoPagamentoDropdown] = useState(false);
   const [metodoPagamentoSearchTerm, setMetodoPagamentoSearchTerm] = useState('');
-  
+
   // Estado para controlar qué filas tienen expandidos los servicios
   const [expandedServiciosRows, setExpandedServiciosRows] = useState<Set<string>>(new Set());
-  
+
   // Estados para servicios dropdown
   const [showServiziDropdown, setShowServiziDropdown] = useState<number | null>(null);
-  
+
   // Estados para servicios
   const [servizi, setServizi] = useState<Array<{ id: string; servizio: string; isActive: boolean }>>([]);
-  
+
   // Función para filtrar clientes basado en la búsqueda
-  const filteredClients = clients && Array.isArray(clients) ? clients.filter(client => 
+  const filteredClients = clients && Array.isArray(clients) ? clients.filter(client =>
     `${client.firstName} ${client.lastName}`.toLowerCase().includes(clientSearchTerm.toLowerCase()) ||
     client.fiscalCode.toLowerCase().includes(clientSearchTerm.toLowerCase()) ||
     client.email.toLowerCase().includes(clientSearchTerm.toLowerCase())
   ) : [];
-  
+
   // Función para obtener pagamentos disponibles según el rol del usuario
   const getAvailablePagamentos = useMemo(() => {
     if (!pagamentos || !Array.isArray(pagamentos)) return [];
-    
+
     // Si es USER, solo mostrar Acconto y Ricevuto
     if (isUser) {
-      return pagamentos.filter(pag => 
+      return pagamentos.filter(pag =>
         pag === 'Acconto' || pag === 'Ricevuto'
       );
     }
-    
+
     // ADMIN y TI pueden ver todas las opciones
     return pagamentos;
   }, [pagamentos, isUser]);
 
   // Función para filtrar pagamentos basado en la búsqueda (igual que clientes)
-  const filteredPagamentos = getAvailablePagamentos.filter(pagamento => 
+  const filteredPagamentos = getAvailablePagamentos.filter(pagamento =>
     pagamento.toLowerCase().includes(pagamentoSearchTerm.toLowerCase())
   );
-  
+
   // Función para filtrar IATA basado en la búsqueda (igual que clientes)
   // Función para filtrar MetodoPagamento basado en la búsqueda (igual que clientes)
-  const filteredMetodoPagamento = metodoPagamentoList && Array.isArray(metodoPagamentoList) ? metodoPagamentoList.filter(metodo => 
+  const filteredMetodoPagamento = metodoPagamentoList && Array.isArray(metodoPagamentoList) ? metodoPagamentoList.filter(metodo =>
     metodo.toLowerCase().includes(metodoPagamentoSearchTerm.toLowerCase())
   ) : [];
-  
+
   // Estados para archivos
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  
+
   // Estados para modal de detalles
   const [viewingDetails, setViewingDetails] = useState<BiglietteriaRecord | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  
+
   // Estados para funcionalidades de tabla
   const loadingClientData = false;
-  
+
   // Estados para cuotas - REPLICANDO LÓGICA DE TOUR GRUPPO
   const [numeroCuotas, setNumeroCuotas] = useState<number>(0);
-  const [cuotas, setCuotas] = useState<Array<{ 
+  const [cuotas, setCuotas] = useState<Array<{
     id?: string;
-    numeroCuota: number; 
-    data: string; 
-    prezzo: string; 
-    note: string; 
+    numeroCuota: number;
+    data: string;
+    prezzo: string;
+    note: string;
     isPagato: boolean;
     file: File | null;
     attachedFile?: string | null;
     attachedFileName?: string | null;
   }>>([]);
-  
+
   // Estado para control de carga de cuotas en edición - REPLICANDO TOUR GRUPPO
   const [isLoadingCuotas, setIsLoadingCuotas] = useState(false);
   const cuotasInicializadas = useRef(false);
-  
+
 
   // Resetear cuotas cuando se abre el modal en modo nuevo registro
   useEffect(() => {
@@ -572,7 +572,7 @@ useEffect(() => {
     if (isLoadingCuotas) {
       return;
     }
-    
+
     // Siempre actualizar dinámicamente cuando cambia el número de cuotas
     if (numeroCuotas > 0) {
       // Recrear las cuotas con el nuevo número
@@ -605,236 +605,236 @@ useEffect(() => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [numeroCuotas, isLoadingCuotas]);
-  
+
   // Constantes - ahora se obtienen de la base de datos
   const serviciosDisponibles = servizi.map(s => s.servizio);
-  
+
   // ==================== FUNCIONES AUXILIARES ====================
-  
+
   // Servicios conocidos que tienen campos específicos en la interfaz
   const serviciosConocidos = ['VOLO', 'EXPRESS', 'POLIZZA', 'L.INVITO', 'HOTEL'];
-  
+
   // Función para normalizar el nombre del servicio (para comparaciones)
   const normalizarServicio = (servicio: string): string => {
     return servicio.toUpperCase().trim();
   };
-  
+
   // Función para verificar si un servicio es conocido
   const esServicioConocido = (servicio: string): boolean => {
     const normalizado = normalizarServicio(servicio);
-    return serviciosConocidos.some(conocido => 
+    return serviciosConocidos.some(conocido =>
       normalizado.includes(conocido) || conocido.includes(normalizado)
     );
   };
-  
+
   // Función para obtener servicios que requieren campos dinámicos
   const obtenerServiciosDinamicos = (servicios: string[]): string[] => {
     return servicios.filter(s => !esServicioConocido(s));
   };
-  
-const euroFormatter = new Intl.NumberFormat('it-IT', {
-  style: 'currency',
-  currency: 'EUR',
-  minimumFractionDigits: 2,
-});
 
-const formatCurrencyDisplay = (value: number | string | null | undefined): string => {
-  if (value === null || value === undefined || value === '') {
-    return '-';
-  }
-  const numericValue = typeof value === 'string' ? Number(value) : value;
-  if (Number.isNaN(numericValue)) {
-    return '-';
-  }
-  return euroFormatter.format(numericValue);
-};
+  const euroFormatter = new Intl.NumberFormat('it-IT', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 2,
+  });
 
-const formatDateDisplay = (value: string | Date | null | undefined): string => {
-  if (!value) return '-';
-  const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) return '-';
-  return date.toLocaleDateString('it-IT');
-};
-
-const getReadableNotes = (value: string | null | undefined): string => {
-  if (!value) return '';
-  const trimmed = value.trim();
-  if (!trimmed) return '';
-  if (trimmed.startsWith('{')) {
-    try {
-      const parsed = JSON.parse(trimmed);
-      if (parsed && typeof parsed === 'object') {
-        if (typeof parsed.notasUsuario === 'string' && parsed.notasUsuario.trim()) {
-          return parsed.notasUsuario;
-        }
-        if (typeof parsed.descripcion === 'string' && parsed.descripcion.trim()) {
-          return parsed.descripcion;
-        }
-      }
-    } catch {
-      // ignorar errores de parseo
+  const formatCurrencyDisplay = (value: number | string | null | undefined): string => {
+    if (value === null || value === undefined || value === '') {
+      return '-';
     }
-  }
-  return value;
-};
+    const numericValue = typeof value === 'string' ? Number(value) : value;
+    if (Number.isNaN(numericValue)) {
+      return '-';
+    }
+    return euroFormatter.format(numericValue);
+  };
 
-const toISODateString = (value: string | Date | null | undefined): string | null => {
-  if (!value) return null;
-  const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-  return date.toISOString();
-};
+  const formatDateDisplay = (value: string | Date | null | undefined): string => {
+    if (!value) return '-';
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) return '-';
+    return date.toLocaleDateString('it-IT');
+  };
 
-const extractIataValue = (raw: unknown, servicio?: string): string => {
-  if (!raw) return '';
-
-  if (typeof raw === 'string') {
-    const trimmed = raw.trim();
+  const getReadableNotes = (value: string | null | undefined): string => {
+    if (!value) return '';
+    const trimmed = value.trim();
+    if (!trimmed) return '';
     if (trimmed.startsWith('{')) {
       try {
-        return extractIataValue(JSON.parse(trimmed), servicio);
+        const parsed = JSON.parse(trimmed);
+        if (parsed && typeof parsed === 'object') {
+          if (typeof parsed.notasUsuario === 'string' && parsed.notasUsuario.trim()) {
+            return parsed.notasUsuario;
+          }
+          if (typeof parsed.descripcion === 'string' && parsed.descripcion.trim()) {
+            return parsed.descripcion;
+          }
+        }
       } catch {
-        return trimmed;
+        // ignorar errores de parseo
       }
     }
-    return trimmed;
-  }
-
-  if (typeof raw === 'object' && raw !== null) {
-    const record = raw as Record<string, unknown>;
-
-    if (servicio) {
-      const servicioLower = servicio.toLowerCase();
-      const key = Object.keys(record).find(k => {
-        const lower = k.toLowerCase();
-        return lower === servicioLower || servicioLower.includes(lower) || lower.includes(servicioLower);
-      });
-      const value = key ? record[key] : undefined;
-      if (typeof value === 'string') {
-        return value;
-      }
-    }
-
-    const values = Object.values(record)
-      .filter((val): val is string => typeof val === 'string' && val.trim().length > 0);
-
-    return values.join(', ');
-  }
-
-  return String(raw);
-};
-
-const buildFallbackServicios = (pasajero: PasajeroData): PasajeroServicioDetalle[] => {
-  const fallback: PasajeroServicioDetalle[] = [];
-
-  const pushServicio = (servicio: string, data?: { iata?: string; neto?: string; venduto?: string; metodo?: string; andata?: string; ritorno?: string }) => {
-    if (!data) return;
-    const { iata, neto, venduto, metodo, andata, ritorno } = data;
-    if (
-      iata ||
-      (neto !== undefined && neto !== '') ||
-      (venduto !== undefined && venduto !== '') ||
-      (metodo !== undefined && metodo !== '')
-    ) {
-      fallback.push({
-        servicio,
-        iata: iata || '',
-        neto: neto ?? '',
-        venduto: venduto ?? '',
-        metodoDiAcquisto: metodo ?? '',
-        andata: andata ?? null,
-        ritorno: ritorno ?? null,
-        estado: 'Pendiente',
-      });
-    }
+    return value;
   };
 
-  pushServicio('VOLO', {
-    iata: pasajero.iataBiglietteria || extractIataValue(pasajero.iata, 'volo'),
-    neto: pasajero.netoBiglietteria,
-    venduto: pasajero.vendutoBiglietteria,
-    metodo: pasajero.metodoAcquistoBiglietteria,
-    andata: pasajero.andata || undefined,
-    ritorno: pasajero.ritorno || undefined,
-  });
+  const toISODateString = (value: string | Date | null | undefined): string | null => {
+    if (!value) return null;
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+    return date.toISOString();
+  };
 
-  pushServicio('EXPRESS', {
-    iata: pasajero.iataExpress || extractIataValue(pasajero.iata, 'express'),
-    neto: pasajero.netoExpress,
-    venduto: pasajero.vendutoExpress,
-    metodo: pasajero.metodoAcquistoExpress,
-  });
+  const extractIataValue = (raw: unknown, servicio?: string): string => {
+    if (!raw) return '';
 
-  pushServicio('POLIZZA', {
-    iata: pasajero.iataPolizza || extractIataValue(pasajero.iata, 'polizza'),
-    neto: pasajero.netoPolizza,
-    venduto: pasajero.vendutoPolizza,
-    metodo: pasajero.metodoAcquistoPolizza,
-  });
+    if (typeof raw === 'string') {
+      const trimmed = raw.trim();
+      if (trimmed.startsWith('{')) {
+        try {
+          return extractIataValue(JSON.parse(trimmed), servicio);
+        } catch {
+          return trimmed;
+        }
+      }
+      return trimmed;
+    }
 
-  pushServicio('L.INVITO', {
-    iata: pasajero.iataLetteraInvito || extractIataValue(pasajero.iata, 'invito'),
-    neto: pasajero.netoLetteraInvito,
-    venduto: pasajero.vendutoLetteraInvito,
-    metodo: pasajero.metodoAcquistoLetteraInvito,
-  });
+    if (typeof raw === 'object' && raw !== null) {
+      const record = raw as Record<string, unknown>;
 
-  pushServicio('HOTEL', {
-    iata: pasajero.iataHotel || extractIataValue(pasajero.iata, 'hotel'),
-    neto: pasajero.netoHotel,
-    venduto: pasajero.vendutoHotel,
-    metodo: pasajero.metodoAcquistoHotel,
-  });
+      if (servicio) {
+        const servicioLower = servicio.toLowerCase();
+        const key = Object.keys(record).find(k => {
+          const lower = k.toLowerCase();
+          return lower === servicioLower || servicioLower.includes(lower) || lower.includes(servicioLower);
+        });
+        const value = key ? record[key] : undefined;
+        if (typeof value === 'string') {
+          return value;
+        }
+      }
 
-  if (pasajero.serviciosData) {
-    Object.entries(pasajero.serviciosData).forEach(([servicio, data]) => {
-      pushServicio(servicio, {
-        iata: data.iata,
-        neto: data.neto,
-        venduto: data.venduto,
-        metodo: data.metodoDiAcquisto,
-      });
+      const values = Object.values(record)
+        .filter((val): val is string => typeof val === 'string' && val.trim().length > 0);
+
+      return values.join(', ');
+    }
+
+    return String(raw);
+  };
+
+  const buildFallbackServicios = (pasajero: PasajeroData): PasajeroServicioDetalle[] => {
+    const fallback: PasajeroServicioDetalle[] = [];
+
+    const pushServicio = (servicio: string, data?: { iata?: string; neto?: string; venduto?: string; metodo?: string; andata?: string; ritorno?: string }) => {
+      if (!data) return;
+      const { iata, neto, venduto, metodo, andata, ritorno } = data;
+      if (
+        iata ||
+        (neto !== undefined && neto !== '') ||
+        (venduto !== undefined && venduto !== '') ||
+        (metodo !== undefined && metodo !== '')
+      ) {
+        fallback.push({
+          servicio,
+          iata: iata || '',
+          neto: neto ?? '',
+          venduto: venduto ?? '',
+          metodoDiAcquisto: metodo ?? '',
+          andata: andata ?? null,
+          ritorno: ritorno ?? null,
+          estado: 'Pendiente',
+        });
+      }
+    };
+
+    pushServicio('VOLO', {
+      iata: pasajero.iataBiglietteria || extractIataValue(pasajero.iata, 'volo'),
+      neto: pasajero.netoBiglietteria,
+      venduto: pasajero.vendutoBiglietteria,
+      metodo: pasajero.metodoAcquistoBiglietteria,
+      andata: pasajero.andata || undefined,
+      ritorno: pasajero.ritorno || undefined,
     });
-  }
 
-  return fallback;
-};
+    pushServicio('EXPRESS', {
+      iata: pasajero.iataExpress || extractIataValue(pasajero.iata, 'express'),
+      neto: pasajero.netoExpress,
+      venduto: pasajero.vendutoExpress,
+      metodo: pasajero.metodoAcquistoExpress,
+    });
 
-const getServiciosDetallados = (pasajero: PasajeroData): PasajeroServicioDetalle[] => {
-  if (pasajero.serviciosDetalle && pasajero.serviciosDetalle.length > 0) {
-    return pasajero.serviciosDetalle;
-  }
-  return buildFallbackServicios(pasajero);
-};
+    pushServicio('POLIZZA', {
+      iata: pasajero.iataPolizza || extractIataValue(pasajero.iata, 'polizza'),
+      neto: pasajero.netoPolizza,
+      venduto: pasajero.vendutoPolizza,
+      metodo: pasajero.metodoAcquistoPolizza,
+    });
 
-const getEstadoVisual = (estado?: string | null) => {
-  const normalized = estado ? String(estado).trim() : '';
-  const label = normalized || 'Pendiente';
-  const lower = label.toLowerCase();
-  const isPagado = lower === 'pagado' || lower === 'pagada' || lower === 'pagata' || lower === 'pagate';
-  return {
-    label,
-    className: isPagado
-      ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-200'
-      : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-200',
+    pushServicio('L.INVITO', {
+      iata: pasajero.iataLetteraInvito || extractIataValue(pasajero.iata, 'invito'),
+      neto: pasajero.netoLetteraInvito,
+      venduto: pasajero.vendutoLetteraInvito,
+      metodo: pasajero.metodoAcquistoLetteraInvito,
+    });
+
+    pushServicio('HOTEL', {
+      iata: pasajero.iataHotel || extractIataValue(pasajero.iata, 'hotel'),
+      neto: pasajero.netoHotel,
+      venduto: pasajero.vendutoHotel,
+      metodo: pasajero.metodoAcquistoHotel,
+    });
+
+    if (pasajero.serviciosData) {
+      Object.entries(pasajero.serviciosData).forEach(([servicio, data]) => {
+        pushServicio(servicio, {
+          iata: data.iata,
+          neto: data.neto,
+          venduto: data.venduto,
+          metodo: data.metodoDiAcquisto,
+        });
+      });
+    }
+
+    return fallback;
   };
-};
+
+  const getServiciosDetallados = (pasajero: PasajeroData): PasajeroServicioDetalle[] => {
+    if (pasajero.serviciosDetalle && pasajero.serviciosDetalle.length > 0) {
+      return pasajero.serviciosDetalle;
+    }
+    return buildFallbackServicios(pasajero);
+  };
+
+  const getEstadoVisual = (estado?: string | null) => {
+    const normalized = estado ? String(estado).trim() : '';
+    const label = normalized || 'Pendiente';
+    const lower = label.toLowerCase();
+    const isPagado = lower === 'pagado' || lower === 'pagada' || lower === 'pagata' || lower === 'pagate';
+    return {
+      label,
+      className: isPagado
+        ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-200'
+        : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-200',
+    };
+  };
 
   // Función para verificar si tiene Volo (anteriormente Biglietteria)
   const tieneBiglietteria = (servicios: string[]) => {
     return servicios.some(s => s.toLowerCase().includes('volo'));
   };
-  
+
   // Función para verificar si tiene servicios adicionales (cualquier servicio excepto Volo)
   const tieneServiciosAdicionales = (servicios: string[]) => {
     return servicios.some(s => !tieneBiglietteria([s]));
   };
-  
+
   // Función para verificar si tiene servicios que NO son adicionales
   const tieneServiciosNoAdicionales = (servicios: string[]) => {
     const hasBiglietteria = tieneBiglietteria(servicios); // hasBiglietteria ahora verifica "volo"
     const hasAdicionales = tieneServiciosAdicionales(servicios);
-    
+
     if (hasBiglietteria && hasAdicionales) {
       // Si tiene Volo + servicios adicionales
       return { showDateFields: true, showBiglietteriaFields: true, showAdditionalServiceFields: true };
@@ -849,12 +849,12 @@ const getEstadoVisual = (estado?: string | null) => {
       return { showDateFields: false, showBiglietteriaFields: false, showAdditionalServiceFields: false };
     }
   };
-  
+
   // Función para determinar qué campos mostrar para un pasajero
   const shouldShowFieldsForPasajero = (pasajero: PasajeroData) => {
     return tieneServiciosNoAdicionales(pasajero.servicios);
   };
-  
+
   // Estado del formulario
   const [formData, setFormData] = useState<BiglietteriaFormData>({
     cliente: '',
@@ -866,10 +866,10 @@ const getEstadoVisual = (estado?: string | null) => {
     data: new Date().toISOString().split('T')[0],
     pnr: '',
     itinerario: '',
-      metodoPagamento: [], // Array de métodos de pago
-      notaDiVendita: '',
-      notaDiRicevuta: '',
-      numeroPasajeros: 1,
+    metodoPagamento: [], // Array de métodos de pago
+    notaDiVendita: '',
+    notaDiRicevuta: '',
+    numeroPasajeros: 1,
     pasajeros: [crearPasajeroVacio()],
     netoPrincipal: '',
     vendutoTotal: '',
@@ -877,17 +877,17 @@ const getEstadoVisual = (estado?: string | null) => {
     daPagare: '',
     feeAgv: ''
   });
-  
+
   // Función para calcular totales
   const calcularTotales = useCallback((pasajeros: PasajeroData[], accontoValue: string): TotalesCalculados => {
     let netoPrincipal = 0;
     let vendutoTotal = 0;
-    
+
     pasajeros.forEach(pasajero => {
       // Sumar Biglietteria
       if (pasajero.netoBiglietteria) netoPrincipal += parseFloat(pasajero.netoBiglietteria) || 0;
       if (pasajero.vendutoBiglietteria) vendutoTotal += parseFloat(pasajero.vendutoBiglietteria) || 0;
-      
+
       // Sumar servicios adicionales
       if (pasajero.tieneExpress) {
         if (pasajero.netoExpress) netoPrincipal += parseFloat(pasajero.netoExpress) || 0;
@@ -905,7 +905,7 @@ const getEstadoVisual = (estado?: string | null) => {
         if (pasajero.netoHotel) netoPrincipal += parseFloat(pasajero.netoHotel) || 0;
         if (pasajero.vendutoHotel) vendutoTotal += parseFloat(pasajero.vendutoHotel) || 0;
       }
-      
+
       // Sumar servicios dinámicos
       if (pasajero.serviciosData) {
         Object.values(pasajero.serviciosData).forEach((servicioData) => {
@@ -914,11 +914,11 @@ const getEstadoVisual = (estado?: string | null) => {
         });
       }
     });
-    
+
     const acconto = parseFloat(accontoValue) || 0;
     const daPagare = vendutoTotal - acconto;
     const feeAgv = vendutoTotal - netoPrincipal;
-    
+
     return {
       netoPrincipal: netoPrincipal.toFixed(2),
       vendutoTotal: vendutoTotal.toFixed(2),
@@ -926,20 +926,20 @@ const getEstadoVisual = (estado?: string | null) => {
       feeAgv: feeAgv.toFixed(2)
     };
   }, []);
-  
+
   const totalesCalculados = useMemo(
     () => calcularTotales(formData.pasajeros, formData.acconto),
     [formData.pasajeros, formData.acconto, calcularTotales]
   );
-  
+
   // ==================== EFECTOS ====================
-  
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
-  
+
   // Inicializar dropdowns de pasajeros
-  
+
   // Cerrar dropdowns al hacer click fuera
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -957,39 +957,39 @@ const getEstadoVisual = (estado?: string | null) => {
       if (!target.closest('.creador-dropdown-container')) {
         setShowCreadorDropdown(false);
       }
-      
+
       // Cerrar todos los dropdowns individuales de IATA si no se está haciendo click en ninguno
       if (!target.closest('.iata-dropdown-container')) {
         setShowIndividualIataDropdowns({});
       }
     };
-    
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [formData.numeroPasajeros]);
-  
+
   // Calcular Acconto automáticamente sumando las cuotas pagadas
   // Solo actualiza cuando cambia el estado isPagato de las cuotas, no cuando se seleccionan cuotas
   const estadoIsPagatoRef = useRef<Map<string, { isPagato: boolean; monto: number }>>(new Map());
-  
+
   useEffect(() => {
     // Crear un mapa de estado isPagato actual por cuota
     const estadoIsPagatoActual = new Map<string, { isPagato: boolean; monto: number }>();
     cuotas.forEach(cuota => {
       const key = cuota.id || `${cuota.numeroCuota}-${cuota.prezzo}`;
       const monto = parseFloat(cuota.prezzo.toString()) || 0;
-      estadoIsPagatoActual.set(key, { 
-        isPagato: cuota.isPagato || false, 
-        monto 
+      estadoIsPagatoActual.set(key, {
+        isPagato: cuota.isPagato || false,
+        monto
       });
     });
-    
+
     // Detectar cambios en isPagato (no solo agregar/remover cuotas)
     let cambioDetectado = false;
     let diferencia = 0;
-    
+
     // Comparar con estado anterior - detectar cambios en isPagato
     estadoIsPagatoActual.forEach((estado, key) => {
       const estadoAnterior = estadoIsPagatoRef.current.get(key);
@@ -999,7 +999,7 @@ const getEstadoVisual = (estado?: string | null) => {
         diferencia += estado.isPagato ? estado.monto : -estado.monto;
       }
     });
-    
+
     // Verificar si se eliminó una cuota que estaba pagada
     estadoIsPagatoRef.current.forEach((estadoAnterior, key) => {
       if (!estadoIsPagatoActual.has(key) && estadoAnterior.isPagato) {
@@ -1007,18 +1007,18 @@ const getEstadoVisual = (estado?: string | null) => {
         diferencia -= estadoAnterior.monto;
       }
     });
-    
+
     // Solo actualizar si hubo cambio en isPagato
     if (cambioDetectado) {
       const accontoActual = parseFloat(formData.acconto) || 0;
       const nuevoAcconto = Math.max(0, accontoActual + diferencia);
-      
+
       setFormData(prev => ({
         ...prev,
         acconto: nuevoAcconto.toFixed(2)
       }));
     }
-    
+
     // Actualizar referencia
     estadoIsPagatoRef.current = new Map(estadoIsPagatoActual);
   }, [cuotas, formData.acconto]);
@@ -1044,149 +1044,149 @@ const getEstadoVisual = (estado?: string | null) => {
       };
     });
   }, [totalesCalculados]);
-  
+
   // Cargar datos iniciales - OPTIMIZADO: Mostrar datos del caché inmediatamente
   const fetchData = useCallback(async () => {
     if (roleLoading) return;
-      try {
-        // OPTIMIZACIÓN: Primero verificar si hay datos en caché
-        // Si hay datos en caché, mostrarlos inmediatamente sin loading
-        const biglietteriaUrl = `/api/biglietteria${isUser ? '?userOnly=true' : ''}`;
-        // Datos dinámicos: 30 segundos
-        const cachedRecords = getCachedData<{ records: BiglietteriaRecordApi[] }>(biglietteriaUrl, { ttlMs: 30000 });
-        // Datos de referencia: 5 minutos
-        const cachedClients = getCachedData<{ clients: Client[] }>('/api/clients', { ttlMs: 300000 });
-        const cachedServizi = getCachedData<ServizioOption[]>('/api/servizi', { ttlMs: 300000 });
-        const cachedUsers = getCachedData<ApiUser[]>('/api/users', { ttlMs: 300000 });
-        const cachedPagamentos = getCachedData<PagamentoOption[]>('/api/pagamento', { ttlMs: 300000 });
-        const cachedIata = getCachedData<IataOption[]>('/api/iata', { ttlMs: 300000 });
-        const cachedMetodo = getCachedData<{ metodosPagamento: MetodoPagamentoOption[] }>('/api/metodo-pagamento', { ttlMs: 300000 });
-        const cachedAcquisto = getCachedData<{ acquisti: AcquistoOption[] }>('/api/acquisto', { ttlMs: 300000 });
+    try {
+      // OPTIMIZACIÓN: Primero verificar si hay datos en caché
+      // Si hay datos en caché, mostrarlos inmediatamente sin loading
+      const biglietteriaUrl = `/api/biglietteria${isUser ? '?userOnly=true' : ''}`;
+      // Datos dinámicos: 30 segundos
+      const cachedRecords = getCachedData<{ records: BiglietteriaRecordApi[] }>(biglietteriaUrl, { ttlMs: 30000 });
+      // Datos de referencia: 5 minutos
+      const cachedClients = getCachedData<{ clients: Client[] }>('/api/clients', { ttlMs: 300000 });
+      const cachedServizi = getCachedData<ServizioOption[]>('/api/servizi', { ttlMs: 300000 });
+      const cachedUsers = getCachedData<ApiUser[]>('/api/users', { ttlMs: 300000 });
+      const cachedPagamentos = getCachedData<PagamentoOption[]>('/api/pagamento', { ttlMs: 300000 });
+      const cachedIata = getCachedData<IataOption[]>('/api/iata', { ttlMs: 300000 });
+      const cachedMetodo = getCachedData<{ metodosPagamento: MetodoPagamentoOption[] }>('/api/metodo-pagamento', { ttlMs: 300000 });
+      const cachedAcquisto = getCachedData<{ acquisti: AcquistoOption[] }>('/api/acquisto', { ttlMs: 300000 });
 
-        // Si tenemos todos los datos en caché, mostrarlos inmediatamente
-        const hasAllCachedData = cachedRecords && cachedClients && cachedServizi && cachedUsers && 
-                                 cachedPagamentos && cachedIata && cachedMetodo && cachedAcquisto;
+      // Si tenemos todos los datos en caché, mostrarlos inmediatamente
+      const hasAllCachedData = cachedRecords && cachedClients && cachedServizi && cachedUsers &&
+        cachedPagamentos && cachedIata && cachedMetodo && cachedAcquisto;
 
-        if (hasAllCachedData) {
-          // Mostrar datos del caché inmediatamente (sin loading)
-          const processedRecords = (cachedRecords.records ?? []).map(processRecord);
-          setRecords(processedRecords);
-          setClients(Array.isArray(cachedClients.clients) ? cachedClients.clients : []);
-          setServizi(Array.isArray(cachedServizi) ? cachedServizi : []);
-          
-          const validRoles = new Set(['USER', 'ADMIN', 'TI']);
-          const rawUsersArray = Array.isArray(cachedUsers)
-            ? cachedUsers
-            : Array.isArray((cachedUsers as { users?: ApiUser[] })?.users)
-              ? ((cachedUsers as { users?: ApiUser[] }).users ?? [])
-              : [];
-          const usuariosNormalizados = rawUsersArray.filter((usuario) => {
-            const role = typeof usuario.role === 'string' ? usuario.role.toUpperCase() : '';
-            return validRoles.has(role);
-          });
-          setUsuarios(usuariosNormalizados);
-          
-          const pagamentosNombres = (Array.isArray(cachedPagamentos) ? cachedPagamentos : []).map(option => option.pagamento);
-          setPagamentos(pagamentosNombres);
-          
-          const iataNombres = (Array.isArray(cachedIata) ? cachedIata : []).map(option => option.iata);
-          setIataList(iataNombres);
-          
-          const metodoPagamentoNombres = (cachedMetodo?.metodosPagamento ?? []).map(option => option.metodoPagamento);
-          setMetodoPagamentoList(metodoPagamentoNombres);
-
-          const acquistoNombres = Array.isArray(cachedAcquisto?.acquisti) ? cachedAcquisto.acquisti.map(item => item.acquisto) : [];
-          setAcquistoOptions(acquistoNombres);
-          
-          setLoading(false); // No mostrar loading si tenemos datos en caché
-        } else {
-          // Si no hay datos en caché, mostrar loading
-          setLoading(true);
-        }
-        
-        // Siempre hacer fetch en background para actualizar datos (incluso si tenemos caché)
-        const [
-          recordsData,
-          clientsData,
-          serviziData,
-          usersData,
-          pagamentosData,
-          iataData,
-          metodoData,
-          acquistoData,
-        ] = await Promise.all([
-          // Datos dinámicos: 30 segundos (cambian frecuentemente)
-          cachedFetch<{ records: BiglietteriaRecordApi[] }>(biglietteriaUrl, {
-            ttlMs: 30000,
-          }),
-          // Datos de referencia: 5 minutos (cambian raramente)
-          cachedFetch<{ clients: Client[] }>(`/api/clients`, { ttlMs: 300000 }).catch(() => ({ clients: [] })),
-          cachedFetch<ServizioOption[]>('/api/servizi', { ttlMs: 300000 }).catch(() => []),
-          cachedFetch<ApiUser[]>('/api/users', { ttlMs: 300000 }).catch(() => []),
-          cachedFetch<PagamentoOption[]>('/api/pagamento', { ttlMs: 300000 }).catch(() => []),
-          cachedFetch<IataOption[]>('/api/iata', { ttlMs: 300000 }).catch(() => []),
-          cachedFetch<{ metodosPagamento: MetodoPagamentoOption[] }>('/api/metodo-pagamento', {
-            ttlMs: 300000,
-          }).catch(() => ({ metodosPagamento: [] })),
-          cachedFetch<{ acquisti: AcquistoOption[] }>('/api/acquisto', { ttlMs: 300000 }).catch(() => ({ acquisti: [] })),
-        ]);
-        
-        // Procesar registros y pre-parsear metodoPagamento para evitar JSON.parse en filtro
-        const processedRecords = (recordsData?.records ?? []).map(processRecord);
+      if (hasAllCachedData) {
+        // Mostrar datos del caché inmediatamente (sin loading)
+        const processedRecords = (cachedRecords.records ?? []).map(processRecord);
         setRecords(processedRecords);
-        
-        // Procesar clientes
-        setClients(Array.isArray(clientsData?.clients) ? clientsData.clients : []);
-        
-        // Procesar servicios
-        setServizi(Array.isArray(serviziData) ? serviziData : []);
-        
-        // Procesar usuarios
+        setClients(Array.isArray(cachedClients.clients) ? cachedClients.clients : []);
+        setServizi(Array.isArray(cachedServizi) ? cachedServizi : []);
+
         const validRoles = new Set(['USER', 'ADMIN', 'TI']);
-        const rawUsersArray = Array.isArray(usersData)
-          ? usersData
-          : Array.isArray((usersData as { users?: ApiUser[] })?.users)
-            ? ((usersData as { users?: ApiUser[] }).users ?? [])
+        const rawUsersArray = Array.isArray(cachedUsers)
+          ? cachedUsers
+          : Array.isArray((cachedUsers as { users?: ApiUser[] })?.users)
+            ? ((cachedUsers as { users?: ApiUser[] }).users ?? [])
             : [];
         const usuariosNormalizados = rawUsersArray.filter((usuario) => {
           const role = typeof usuario.role === 'string' ? usuario.role.toUpperCase() : '';
           return validRoles.has(role);
         });
         setUsuarios(usuariosNormalizados);
-        
-        // Procesar pagamentos
-        const pagamentosNombres = (Array.isArray(pagamentosData) ? pagamentosData : []).map(option => option.pagamento);
+
+        const pagamentosNombres = (Array.isArray(cachedPagamentos) ? cachedPagamentos : []).map(option => option.pagamento);
         setPagamentos(pagamentosNombres);
-        
-        // Procesar IATA
-        const iataNombres = (Array.isArray(iataData) ? iataData : []).map(option => option.iata);
+
+        const iataNombres = (Array.isArray(cachedIata) ? cachedIata : []).map(option => option.iata);
         setIataList(iataNombres);
-        
-        // Procesar MetodoPagamento
-        const metodoPagamentoNombres = (metodoData?.metodosPagamento ?? []).map(option => option.metodoPagamento);
+
+        const metodoPagamentoNombres = (cachedMetodo?.metodosPagamento ?? []).map(option => option.metodoPagamento);
         setMetodoPagamentoList(metodoPagamentoNombres);
 
-        const acquistoNombres = Array.isArray(acquistoData?.acquisti) ? acquistoData.acquisti.map(item => item.acquisto) : [];
+        const acquistoNombres = Array.isArray(cachedAcquisto?.acquisti) ? cachedAcquisto.acquisti.map(item => item.acquisto) : [];
         setAcquistoOptions(acquistoNombres);
-        
-      } catch (error) {
-        console.error('Error cargando datos:', error);
-      } finally {
-        setLoading(false);
+
+        setLoading(false); // No mostrar loading si tenemos datos en caché
+      } else {
+        // Si no hay datos en caché, mostrar loading
+        setLoading(true);
       }
-    }, [roleLoading, isUser]);
+
+      // Siempre hacer fetch en background para actualizar datos (incluso si tenemos caché)
+      const [
+        recordsData,
+        clientsData,
+        serviziData,
+        usersData,
+        pagamentosData,
+        iataData,
+        metodoData,
+        acquistoData,
+      ] = await Promise.all([
+        // Datos dinámicos: 30 segundos (cambian frecuentemente)
+        cachedFetch<{ records: BiglietteriaRecordApi[] }>(biglietteriaUrl, {
+          ttlMs: 30000,
+        }),
+        // Datos de referencia: 5 minutos (cambian raramente)
+        cachedFetch<{ clients: Client[] }>(`/api/clients`, { ttlMs: 300000 }).catch(() => ({ clients: [] })),
+        cachedFetch<ServizioOption[]>('/api/servizi', { ttlMs: 300000 }).catch(() => []),
+        cachedFetch<ApiUser[]>('/api/users', { ttlMs: 300000 }).catch(() => []),
+        cachedFetch<PagamentoOption[]>('/api/pagamento', { ttlMs: 300000 }).catch(() => []),
+        cachedFetch<IataOption[]>('/api/iata', { ttlMs: 300000 }).catch(() => []),
+        cachedFetch<{ metodosPagamento: MetodoPagamentoOption[] }>('/api/metodo-pagamento', {
+          ttlMs: 300000,
+        }).catch(() => ({ metodosPagamento: [] })),
+        cachedFetch<{ acquisti: AcquistoOption[] }>('/api/acquisto', { ttlMs: 300000 }).catch(() => ({ acquisti: [] })),
+      ]);
+
+      // Procesar registros y pre-parsear metodoPagamento para evitar JSON.parse en filtro
+      const processedRecords = (recordsData?.records ?? []).map(processRecord);
+      setRecords(processedRecords);
+
+      // Procesar clientes
+      setClients(Array.isArray(clientsData?.clients) ? clientsData.clients : []);
+
+      // Procesar servicios
+      setServizi(Array.isArray(serviziData) ? serviziData : []);
+
+      // Procesar usuarios
+      const validRoles = new Set(['USER', 'ADMIN', 'TI']);
+      const rawUsersArray = Array.isArray(usersData)
+        ? usersData
+        : Array.isArray((usersData as { users?: ApiUser[] })?.users)
+          ? ((usersData as { users?: ApiUser[] }).users ?? [])
+          : [];
+      const usuariosNormalizados = rawUsersArray.filter((usuario) => {
+        const role = typeof usuario.role === 'string' ? usuario.role.toUpperCase() : '';
+        return validRoles.has(role);
+      });
+      setUsuarios(usuariosNormalizados);
+
+      // Procesar pagamentos
+      const pagamentosNombres = (Array.isArray(pagamentosData) ? pagamentosData : []).map(option => option.pagamento);
+      setPagamentos(pagamentosNombres);
+
+      // Procesar IATA
+      const iataNombres = (Array.isArray(iataData) ? iataData : []).map(option => option.iata);
+      setIataList(iataNombres);
+
+      // Procesar MetodoPagamento
+      const metodoPagamentoNombres = (metodoData?.metodosPagamento ?? []).map(option => option.metodoPagamento);
+      setMetodoPagamentoList(metodoPagamentoNombres);
+
+      const acquistoNombres = Array.isArray(acquistoData?.acquisti) ? acquistoData.acquisti.map(item => item.acquisto) : [];
+      setAcquistoOptions(acquistoNombres);
+
+    } catch (error) {
+      console.error('Error cargando datos:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [roleLoading, isUser]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-  
+
   // ==================== HANDLERS ====================
-  
+
   // Handler para cambiar número de pasajeros
   const handleNumeroPasajerosChange = (numero: number) => {
     const nuevoNumero = Math.max(1, Math.min(20, numero));
     const pasajerosActuales = formData.pasajeros;
-    
+
     let nuevosPasajeros: PasajeroData[];
     if (nuevoNumero > pasajerosActuales.length) {
       // Agregar pasajeros
@@ -1198,60 +1198,113 @@ const getEstadoVisual = (estado?: string | null) => {
       // Quitar pasajeros
       nuevosPasajeros = pasajerosActuales.slice(0, nuevoNumero);
     }
-    
+
     // Actualizar el array de dropdowns
     setShowServiziDropdown(null);
-    
+
     setFormData(prev => ({
       ...prev,
       numeroPasajeros: nuevoNumero,
       pasajeros: nuevosPasajeros
     }));
   };
-  
+
   // Handler para actualizar datos de un pasajero
   const handlePasajeroChange = <K extends keyof PasajeroData>(index: number, field: K, value: PasajeroData[K]) => {
     setFormData(prev => ({
       ...prev,
-      pasajeros: prev.pasajeros.map((p, i) => 
-        i === index ? { ...p, [field]: value } : p
-      )
+      pasajeros: prev.pasajeros.map((p, i) => {
+        if (i !== index) return p;
+
+        // 1. Actualizar el campo plano
+        const updatedPasajero = { ...p, [field]: value };
+
+        // 2. Sincronizar serviciosDetalle si es un campo financiero o relevante
+        // Esto soluciona el problema donde el backend prioriza serviciosDetalle (con valores viejos) sobre los campos planos nuevos
+        const fieldStr = String(field);
+        if (
+          updatedPasajero.serviciosDetalle &&
+          updatedPasajero.serviciosDetalle.length > 0 &&
+          (fieldStr.startsWith('neto') ||
+            fieldStr.startsWith('venduto') ||
+            fieldStr.startsWith('iata') ||
+            fieldStr.startsWith('metodoAcquisto'))
+        ) {
+          // Identificar el tipo de servicio basado en el sufijo del campo
+          let targetSuffix = '';
+          let targetProp: keyof PasajeroServicioDetalle | '' = '';
+
+          if (fieldStr.includes('Biglietteria')) targetSuffix = 'Biglietteria';
+          else if (fieldStr.includes('Express')) targetSuffix = 'Express';
+          else if (fieldStr.includes('Polizza')) targetSuffix = 'Polizza';
+          else if (fieldStr.includes('LetteraInvito')) targetSuffix = 'LetteraInvito';
+          else if (fieldStr.includes('Hotel')) targetSuffix = 'Hotel';
+
+          // Mapear el nombre del campo a la propiedad del detalle
+          if (fieldStr.startsWith('neto')) targetProp = 'neto';
+          else if (fieldStr.startsWith('venduto')) targetProp = 'venduto';
+          else if (fieldStr.startsWith('iata')) targetProp = 'iata';
+          else if (fieldStr.startsWith('metodoAcquisto')) targetProp = 'metodoDiAcquisto';
+
+          if (targetSuffix && targetProp) {
+            updatedPasajero.serviciosDetalle = updatedPasajero.serviciosDetalle.map(detalle => {
+              const servicioNorm = normalizarServicio(detalle.servicio);
+              let isMatch = false;
+
+              // Lógica de coincidencia de servicios (consistente con el resto del componente)
+              if (targetSuffix === 'Biglietteria') isMatch = servicioNorm.includes('VOLO') || servicioNorm.includes('BIGLIETTERIA');
+              else if (targetSuffix === 'Express') isMatch = servicioNorm.includes('EXPRESS');
+              else if (targetSuffix === 'Polizza') isMatch = servicioNorm.includes('POLIZZA');
+              else if (targetSuffix === 'LetteraInvito') isMatch = servicioNorm.includes('INVITO') || servicioNorm.includes('LETTERA');
+              else if (targetSuffix === 'Hotel') isMatch = servicioNorm.includes('HOTEL');
+
+              if (isMatch) {
+                // Actualizar la propiedad en el detalle para mantener consistencia
+                return { ...detalle, [targetProp]: value };
+              }
+              return detalle;
+            });
+          }
+        }
+
+        return updatedPasajero;
+      })
     }));
   };
-  
+
   // Handler para toggle servicio de un pasajero
   const handleServicioToggle = (index: number, servicio: string) => {
     setFormData(prev => ({
       ...prev,
       pasajeros: prev.pasajeros.map((p, i) => {
         if (i !== index) return p;
-        
+
         // Toggle el servicio
         const servicios = p.servicios.includes(servicio)
           ? p.servicios.filter(s => s !== servicio)
           : [...p.servicios, servicio];
-        
+
         // Determinar qué servicios están activos
         const hasBiglietteria = tieneBiglietteria(servicios);
         const tieneExpress = servicios.some(s => s.toLowerCase().includes('express'));
         const tienePolizza = servicios.some(s => s.toLowerCase().includes('polizza'));
         const tieneLetteraInvito = servicios.some(s => s.toLowerCase().includes('l.invito') || s.toLowerCase().includes('lettera'));
         const tieneHotel = servicios.some(s => s.toLowerCase().includes('hotel'));
-        
+
         // Manejar serviciosData dinámicos
         const serviciosData = { ...(p.serviciosData || {}) };
-        
+
         // Obtener servicios dinámicos actuales
         const serviciosDinamicosActuales = obtenerServiciosDinamicos(servicios);
         const serviciosDinamicosKeys = serviciosDinamicosActuales.map(s => normalizarServicio(s));
-        
+
         // Limpiar serviciosData que ya no están seleccionados
         Object.keys(serviciosData).forEach(key => {
           if (!serviciosDinamicosKeys.includes(key)) {
             delete serviciosData[key];
           }
         });
-        
+
         // Inicializar serviciosData para nuevos servicios dinámicos
         serviciosDinamicosActuales.forEach(servicio => {
           const servicioKey = normalizarServicio(servicio);
@@ -1259,7 +1312,7 @@ const getEstadoVisual = (estado?: string | null) => {
             serviciosData[servicioKey] = { iata: '', neto: '', venduto: '', metodoDiAcquisto: '' };
           }
         });
-        
+
         return {
           ...p,
           servicios,
@@ -1290,7 +1343,7 @@ const getEstadoVisual = (estado?: string | null) => {
       })
     }));
   };
-  
+
   // Handler para seleccionar cliente
   const handleClientSelect = (clientId: string) => {
     const selectedClient = clients.find(c => c.id === clientId);
@@ -1308,7 +1361,7 @@ const getEstadoVisual = (estado?: string | null) => {
       setClientSearchTerm('');
     }
   };
-  
+
   // Handler para seleccionar pagamento (igual que cliente)
   const handlePagamentoSelect = (pagamento: string) => {
     setFormData(prev => ({
@@ -1318,7 +1371,7 @@ const getEstadoVisual = (estado?: string | null) => {
     setShowPagamentoDropdown(false);
     setPagamentoSearchTerm('');
   };
-  
+
   // Funciones para manejar dropdowns individuales de IATA
   const getIndividualIataKey = (pasajeroIndex: number, servicio: string) => {
     return `${pasajeroIndex}-${servicio}`;
@@ -1353,12 +1406,12 @@ const getEstadoVisual = (estado?: string | null) => {
   const handleIndividualIataSelect = (pasajeroIndex: number, servicio: string, iata: string) => {
     // Mapear servicio a campo IATA específico
     const campoIata = servicio === 'EXPRESS' ? 'iataExpress' :
-                      servicio === 'POLIZZA' ? 'iataPolizza' :
-                      servicio === 'HOTEL' ? 'iataHotel' :
-                      servicio === 'L.INVITO' || servicio === 'LETTERA' || servicio === 'LETTERA D\'INVITO' ? 'iataLetteraInvito' :
-                      servicio === 'Volo' || servicio === 'VOLO' || servicio === 'Biglietteria' || servicio === 'BIGLIETTERIA' ? 'iataBiglietteria' :
-                      'iata'; // Fallback para compatibilidad
-    
+      servicio === 'POLIZZA' ? 'iataPolizza' :
+        servicio === 'HOTEL' ? 'iataHotel' :
+          servicio === 'L.INVITO' || servicio === 'LETTERA' || servicio === 'LETTERA D\'INVITO' ? 'iataLetteraInvito' :
+            servicio === 'Volo' || servicio === 'VOLO' || servicio === 'Biglietteria' || servicio === 'BIGLIETTERIA' ? 'iataBiglietteria' :
+              'iata'; // Fallback para compatibilidad
+
     handlePasajeroChange(pasajeroIndex, campoIata as keyof PasajeroData, iata);
     setIndividualIataDropdown(pasajeroIndex, servicio, false);
     setIndividualIataSearchTerm(pasajeroIndex, servicio, '');
@@ -1367,18 +1420,18 @@ const getEstadoVisual = (estado?: string | null) => {
   // Función para filtrar IATA individual
   const getFilteredIndividualIata = (pasajeroIndex: number, servicio: string) => {
     const searchTerm = getIndividualIataSearchTerm(pasajeroIndex, servicio);
-    return iataList && Array.isArray(iataList) ? iataList.filter(iata => 
+    return iataList && Array.isArray(iataList) ? iataList.filter(iata =>
       iata.toLowerCase().includes(searchTerm.toLowerCase())
     ) : [];
   };
-  
+
   // Handler para toggle de MetodoPagamento (igual que servicios)
   const handleMetodoPagamentoToggle = (metodo: string) => {
     setFormData(prev => {
       const sanitizedMetodo = sanitizeMetodoPagamento(metodo);
       const currentMetodos = (prev.metodoPagamento || []).map(sanitizeMetodoPagamento);
       const isSelected = currentMetodos.includes(sanitizedMetodo);
-      
+
       if (isSelected) {
         // Remover si ya está seleccionado
         return {
@@ -1395,15 +1448,15 @@ const getEstadoVisual = (estado?: string | null) => {
     });
     setMetodoPagamentoSearchTerm('');
   };
-  
+
   // Handler para ver cliente (igual que TOUR GRUPPO)
   const handleClientClick = (clienteName: string) => {
     // Buscar el cliente por nombre completo o código fiscal
-    const client = clients.find(c => 
-      `${c.firstName} ${c.lastName}` === clienteName || 
+    const client = clients.find(c =>
+      `${c.firstName} ${c.lastName}` === clienteName ||
       c.fiscalCode === clienteName
     );
-    
+
     if (client) {
       setSelectedClient(client);
       setIsClientModalOpen(true);
@@ -1411,7 +1464,7 @@ const getEstadoVisual = (estado?: string | null) => {
     }
   };
 
-  
+
   // Handler para ver archivos (igual que TOUR GRUPPO)
   const handleViewFiles = (record: BiglietteriaRecord) => {
     setViewingFiles(record);
@@ -1428,34 +1481,34 @@ const getEstadoVisual = (estado?: string | null) => {
   const handleDownload = async (url: string, filename: string) => {
     try {
       const response = await fetch(url);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const blob = await response.blob();
-      
+
       // Crear URL temporal para el blob
       const blobUrl = URL.createObjectURL(blob);
-      
+
       // Crear elemento de descarga
       const link = document.createElement('a');
       link.href = blobUrl;
       link.download = filename;
       document.body.appendChild(link);
       link.click();
-      
+
       // Limpiar
       document.body.removeChild(link);
       URL.revokeObjectURL(blobUrl);
-      
+
     } catch (error) {
       console.error('❌ Error al descargar archivo:', error);
       // Fallback: abrir en nueva ventana
       window.open(url, '_blank');
     }
   };
-  
+
   // Función para contar archivos (igual que TOUR GRUPPO)
   const countFiles = (record: BiglietteriaRecord): number => {
     let count = 0;
@@ -1465,7 +1518,7 @@ const getEstadoVisual = (estado?: string | null) => {
     }
     return count;
   };
-  
+
   // Handler para generar recibo
   const handleGenerateRicevuta = async (recordId: string) => {
     try {
@@ -1492,13 +1545,13 @@ const getEstadoVisual = (estado?: string | null) => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      
+
       // Extraer el nombre del archivo del header Content-Disposition
       const contentDisposition = response.headers.get('Content-Disposition');
-      const fileName = contentDisposition 
+      const fileName = contentDisposition
         ? contentDisposition.split('filename=')[1].replace(/"/g, '')
         : `Ricevuta_${recordId}_${new Date().getTime()}.pdf`;
-      
+
       a.download = fileName;
       document.body.appendChild(a);
       a.click();
@@ -1517,7 +1570,7 @@ const getEstadoVisual = (estado?: string | null) => {
       });
     }
   };
-  
+
   // Función para exportar a Excel (igual que TOUR GRUPPO)
   const handleExportToExcel = () => {
     const dataToExport = filteredRecords.map(record => ({
@@ -1556,8 +1609,8 @@ const getEstadoVisual = (estado?: string | null) => {
       'Da Pagare': record.daPagare,
       'Metodo Pagamento': (() => {
         try {
-          const parsed = typeof record.metodoPagamento === 'string' 
-            ? JSON.parse(record.metodoPagamento) 
+          const parsed = typeof record.metodoPagamento === 'string'
+            ? JSON.parse(record.metodoPagamento)
             : record.metodoPagamento;
           return Array.isArray(parsed) ? parsed.join(', ') : record.metodoPagamento;
         } catch {
@@ -1565,7 +1618,7 @@ const getEstadoVisual = (estado?: string | null) => {
         }
       })(),
       'Fee AGV': record.feeAgv,
-      'Agente': record.creator?.firstName 
+      'Agente': record.creator?.firstName
         ? `${record.creator.firstName}${record.creator.lastName ? ` ${record.creator.lastName}` : ''}`.trim()
         : record.creator?.email || 'N/A'
     }));
@@ -1573,11 +1626,11 @@ const getEstadoVisual = (estado?: string | null) => {
     const ws = XLSX.utils.json_to_sheet(dataToExport);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Biglietteria');
-    
+
     const fileName = `biglietteria_${new Date().toISOString().split('T')[0]}.xlsx`;
     XLSX.writeFile(wb, fileName);
   };
-  
+
   // OPTIMIZACIÓN: Memoizar el cálculo del nombre del creator para evitar re-calcularlo
   const getCreatorName = useCallback((creator?: RecordCreator | null): string => {
     if (creator?.firstName) {
@@ -1591,7 +1644,7 @@ const getEstadoVisual = (estado?: string | null) => {
   const fechaDesdeDate = useMemo(() => {
     return new Date(añoSeleccionado, mesSeleccionado, 1);
   }, [añoSeleccionado, mesSeleccionado]);
-  
+
   const fechaHastaDate = useMemo(() => {
     return new Date(añoSeleccionado, mesSeleccionado + 1, 0, 23, 59, 59);
   }, [añoSeleccionado, mesSeleccionado]);
@@ -1599,19 +1652,19 @@ const getEstadoVisual = (estado?: string | null) => {
   // Filtrado y paginación - OPTIMIZADO: useMemo y uso de datos pre-parseados
   const filteredRecords = useMemo(() => {
     if (!records || records.length === 0) return [];
-    
+
     const searchLower = searchTerm ? searchTerm.toLowerCase() : '';
-    
+
     return records.filter(record => {
       // Filtro por búsqueda de texto - OPTIMIZADO: usar metodoPagamentoParsed pre-parseado
       if (searchTerm) {
         // Usar metodoPagamentoParsed en lugar de hacer JSON.parse aquí
-        const metodoPagamentoText = record.metodoPagamentoParsed 
+        const metodoPagamentoText = record.metodoPagamentoParsed
           ? record.metodoPagamentoParsed.join(', ')
           : record.metodoPagamento || '';
-        
+
         const creatorName = getCreatorName(record.creator);
-        
+
         const searchFields = [
           record.cliente,
           record.codiceFiscale,
@@ -1624,24 +1677,24 @@ const getEstadoVisual = (estado?: string | null) => {
           metodoPagamentoText,
           creatorName
         ];
-        
-        const matchesSearch = searchFields.some(field => 
+
+        const matchesSearch = searchFields.some(field =>
           field && field.toString().toLowerCase().includes(searchLower)
         );
-        
+
         if (!matchesSearch) return false;
       }
-      
+
       // Filtro por mes y año - OPTIMIZADO: usar fechas memoizadas
       const recordDate = new Date(record.data);
       if (recordDate < fechaDesdeDate || recordDate > fechaHastaDate) return false;
-      
+
       // Filtro por creador - solo para TI/ADMIN
       if (canUseAgentFilter && filtroCreador) {
         const nombreCompleto = getCreatorName(record.creator);
         if (nombreCompleto !== filtroCreador) return false;
       }
-      
+
       return true;
     });
   }, [records, searchTerm, fechaDesdeDate, fechaHastaDate, filtroCreador, getCreatorName, canUseAgentFilter]);
@@ -1659,7 +1712,7 @@ const getEstadoVisual = (estado?: string | null) => {
     const totalAcconto = filteredRecords.reduce((sum, record) => sum + (record.acconto || 0), 0);
     const totalDaPagare = filteredRecords.reduce((sum, record) => sum + (record.daPagare || 0), 0);
     const totalFeeAgv = filteredRecords.reduce((sum, record) => sum + (record.feeAgv || 0), 0);
-    
+
     return {
       totalNeto,
       totalVenduto,
@@ -1668,28 +1721,28 @@ const getEstadoVisual = (estado?: string | null) => {
       totalFeeAgv
     };
   }, [filteredRecords]);
-  
+
   // Handler para enviar formulario
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     setMessage(null);
-    
+
     try {
       // Validaciones
       if (!formData.cliente || !formData.data || !formData.itinerario) {
         throw new Error('Por favor complete todos los campos obligatorios');
       }
-      
+
       if (formData.pasajeros.length === 0) {
         throw new Error('Debe agregar al menos un pasajero');
       }
-      
+
       // Validar metodoPagamento
       if (!formData.metodoPagamento || formData.metodoPagamento.length === 0) {
         throw new Error('Debe seleccionar al menos un método de pago');
       }
-      
+
       // Validar que cada pasajero tenga nombre y al menos un servicio
       for (let i = 0; i < formData.pasajeros.length; i++) {
         const p = formData.pasajeros[i];
@@ -1700,10 +1753,10 @@ const getEstadoVisual = (estado?: string | null) => {
           throw new Error(`El pasajero ${i + 1} debe tener al menos un servicio seleccionado`);
         }
       }
-      
+
       // Preparar datos para enviar
       const dataToSend = new FormData();
-      
+
       // Datos básicos
       Object.entries(formData).forEach(([key, value]) => {
         if (['pasajeros', 'netoPrincipal', 'vendutoTotal', 'daPagare', 'feeAgv'].includes(key)) {
@@ -1724,18 +1777,18 @@ const getEstadoVisual = (estado?: string | null) => {
           dataToSend.append(key, String(value));
         }
       });
-      
+
       // Agregar pasajeros como JSON
       dataToSend.append('pasajeros', JSON.stringify(formData.pasajeros));
-      
+
       // Agregar archivo si existe
       if (selectedFile) {
         dataToSend.append('file', selectedFile);
       }
-      
+
       // Agregar información de cuotas - REPLICANDO TOUR GRUPPO
       dataToSend.append('numeroCuotas', (numeroCuotas > 0 ? numeroCuotas : 0).toString());
-      
+
       // Agregar cuotas si existen
       if (numeroCuotas > 0 && cuotas.length > 0) {
         dataToSend.append('cuotas', JSON.stringify(cuotas.map(c => ({
@@ -1749,7 +1802,7 @@ const getEstadoVisual = (estado?: string | null) => {
           attachedFile: c.file ? null : (c.attachedFile || null),
           attachedFileName: c.file ? null : (c.attachedFileName || null)
         }))));
-        
+
         // Agregar archivos nuevos de cuotas
         cuotas.forEach((cuota, index) => {
           if (cuota.file) {
@@ -1757,23 +1810,23 @@ const getEstadoVisual = (estado?: string | null) => {
           }
         });
       }
-      
+
       // Enviar al servidor
       const url = isEditMode ? `/api/biglietteria/${editingRecord?.id}` : '/api/biglietteria';
       const method = isEditMode ? 'PUT' : 'POST';
-      
+
       const response = await fetch(url, {
         method,
         body: dataToSend
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Error al guardar');
       }
-      
+
       const result = await response.json();
-      
+
       // Actualizar lista de registros
       if (isEditMode) {
         // El API devuelve { record, message }
@@ -1781,7 +1834,7 @@ const getEstadoVisual = (estado?: string | null) => {
         // OPTIMIZACIÓN: Procesar registro antes de actualizar estado
         setRecords(prev => prev.map(r => r.id === updatedRecord.id ? processRecord(updatedRecord) : r));
         setMessage({ type: 'success', text: 'Registro actualizado correctamente' });
-        
+
         // Cerrar modal automáticamente después de actualizar
         setTimeout(() => {
           handleCancelEdit();
@@ -1790,11 +1843,11 @@ const getEstadoVisual = (estado?: string | null) => {
         // OPTIMIZACIÓN: Procesar registro antes de agregar al estado
         setRecords(prev => [processRecord(result), ...prev]);
         setMessage({ type: 'success', text: 'Registro creado correctamente' });
-        
+
         // Limpiar formulario y cerrar modal
         handleCancelEdit();
       }
-      
+
     } catch (error: unknown) {
       console.error('Error al guardar:', error);
       const message = error instanceof Error ? error.message : 'Error al guardar el registro';
@@ -1803,7 +1856,7 @@ const getEstadoVisual = (estado?: string | null) => {
       setSubmitting(false);
     }
   };
-  
+
   // Handler para cancelar edición
   const handleCancelEdit = () => {
     setEditingRecord(null);
@@ -1835,23 +1888,23 @@ const getEstadoVisual = (estado?: string | null) => {
     cuotasInicializadas.current = false; // Resetear flag de inicialización
     setSelectedClientId('');
     setShowServiziDropdown(null);
-    
+
     closeModal();
   };
-  
+
   // Handler para editar registro
   const handleEditRecord = (record: BiglietteriaRecord) => {
     setEditingRecord(record);
     setIsEditMode(true);
-    
+
     // Buscar el cliente por nombre
-    const matchingClient = clients.find(c => 
+    const matchingClient = clients.find(c =>
       `${c.firstName} ${c.lastName}` === record.cliente
     );
     if (matchingClient) {
       setSelectedClientId(matchingClient.id);
     }
-    
+
     // Mapear pasajeros desde el formato de la base de datos al formato del formulario
     const pasajerosMapeados = record.pasajeros?.map(pasajeroRaw => {
       const pasajero = pasajeroRaw as PasajeroApi;
@@ -2130,11 +2183,11 @@ const getEstadoVisual = (estado?: string | null) => {
 
       return pasajeroResultado;
     }) || [crearPasajeroVacio()];
-    
-    
+
+
     // Parsear metodoPagamento desde JSON o string
     const metodoPagamentoArray = normalizeMetodoPagamentoArray(record.metodoPagamento);
-    
+
     // Cargar datos del formulario
     setFormData({
       cliente: record.cliente,
@@ -2157,20 +2210,20 @@ const getEstadoVisual = (estado?: string | null) => {
       daPagare: record.daPagare.toString(),
       feeAgv: record.feeAgv.toString()
     });
-    
+
     // Actualizar arrays de dropdowns
     setShowServiziDropdown(null);
-    
+
     // Cargar datos de cuotas si existen - REPLICANDO LÓGICA DE TOUR GRUPPO
     if (record.numeroCuotas && record.numeroCuotas > 0) {
       // IMPORTANTE: Activar flag ANTES de cambiar numeroCuotas
       setIsLoadingCuotas(true);
       cuotasInicializadas.current = false; // Reset para permitir carga desde edición
-      
+
       // Usar setTimeout para asegurar que el flag se establezca antes
       setTimeout(() => {
         setNumeroCuotas(record.numeroCuotas || 0);
-        
+
         // Convertir las cuotas del registro al formato del formulario
         if (record.cuotas && record.cuotas.length > 0) {
           const cuotasFormato = record.cuotas.map(cuota => ({
@@ -2187,7 +2240,7 @@ const getEstadoVisual = (estado?: string | null) => {
           setCuotas(cuotasFormato);
           cuotasInicializadas.current = true; // Marcar como inicializadas después de cargar
         }
-        
+
         // Desactivar flag después de cargar
         setTimeout(() => setIsLoadingCuotas(false), 50);
       }, 0);
@@ -2196,7 +2249,7 @@ const getEstadoVisual = (estado?: string | null) => {
       setCuotas([]);
       cuotasInicializadas.current = false;
     }
-    
+
     // Cargar archivo adjunto si existe
     if (record.attachedFile) {
       // Crear un objeto File simulado para mantener la compatibilidad
@@ -2205,10 +2258,10 @@ const getEstadoVisual = (estado?: string | null) => {
     } else {
       setSelectedFile(null);
     }
-    
+
     openModal();
   };
-  
+
   // Handler para ver detalles completos
   const handleViewDetails = (record: BiglietteriaRecord) => {
     setViewingDetails(record);
@@ -2242,21 +2295,21 @@ const getEstadoVisual = (estado?: string | null) => {
     if (!confirm('¿Estás seguro de que quieres eliminar este registro? Esta acción no se puede deshacer.')) {
       return;
     }
-    
+
     setDeletingRecordId(recordId);
-    
+
     try {
       const response = await fetch(`/api/biglietteria/${recordId}`, {
         method: 'DELETE'
       });
-      
+
       if (!response.ok) {
         throw new Error('Error al eliminar');
       }
-      
+
       setRecords(prev => prev.filter(r => r.id !== recordId));
       setMessage({ type: 'success', text: 'Registro eliminado correctamente' });
-      
+
     } catch (error) {
       console.error('Error al eliminar:', error);
       setMessage({ type: 'error', text: 'Error al eliminar el registro' });
@@ -2264,10 +2317,10 @@ const getEstadoVisual = (estado?: string | null) => {
       setDeletingRecordId(null);
     }
   };
-  
-  
+
+
   // ==================== RENDER ====================
-  
+
   if (roleLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -2275,7 +2328,7 @@ const getEstadoVisual = (estado?: string | null) => {
       </div>
     );
   }
-  
+
   // Carga progresiva: Mostrar skeleton de tabla mientras cargan los datos
   if (loading) {
     return (
@@ -2284,7 +2337,7 @@ const getEstadoVisual = (estado?: string | null) => {
         <div className="mb-6">
           <div className="h-9 bg-gray-200 dark:bg-gray-700 rounded w-48 animate-pulse"></div>
         </div>
-        
+
         {/* Container skeleton */}
         <div className="overflow-hidden bg-white dark:bg-white/[0.03] rounded-xl max-w-none">
           {/* Header con filtros skeleton */}
@@ -2299,7 +2352,7 @@ const getEstadoVisual = (estado?: string | null) => {
             {/* Buscador skeleton */}
             <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-full max-w-md animate-pulse"></div>
           </div>
-          
+
           {/* Tabla skeleton */}
           <div className="border border-gray-100 dark:border-white/[0.05] rounded-b-xl overflow-hidden">
             {/* Header de tabla */}
@@ -2317,7 +2370,7 @@ const getEstadoVisual = (estado?: string | null) => {
               </div>
             ))}
           </div>
-          
+
           {/* Paginación skeleton */}
           <div className="flex items-center justify-between px-4 py-4 border-t border-gray-100 dark:border-white/[0.05]">
             <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>
@@ -2330,7 +2383,7 @@ const getEstadoVisual = (estado?: string | null) => {
       </div>
     );
   }
-  
+
   if (!canAccessGestione) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -2341,14 +2394,14 @@ const getEstadoVisual = (estado?: string | null) => {
       </div>
     );
   }
-  
+
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Biglietteria</h1>
       </div>
-      
+
       {/* Container principal con data tables (igual que TOUR GRUPPO) */}
       <div className="overflow-hidden bg-white dark:bg-white/[0.03] rounded-xl max-w-none">
         {/* Header con selector y buscador (igual que TOUR GRUPPO) */}
@@ -2412,7 +2465,7 @@ const getEstadoVisual = (estado?: string | null) => {
                 ))}
               </select>
             </div>
-            
+
             {/* Filtro de mes y año */}
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-500 dark:text-gray-400">Mese</span>
@@ -2456,102 +2509,102 @@ const getEstadoVisual = (estado?: string | null) => {
                 })}
               </select>
             </div>
-            
+
             {/* Filtro por Creador */}
             {canUseAgentFilter && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500 dark:text-gray-400">Agente</span>
-              <div className="relative creador-dropdown-container">
-                <input
-                  type="text"
-                  value={creadorSearchTerm}
-                  onChange={(e) => {
-                    setCreadorSearchTerm(e.target.value);
-                    setShowCreadorDropdown(true);
-                    if (!e.target.value) {
-                      setFiltroCreador('');
-                      setCurrentPage(1);
-                    }
-                  }}
-                  onFocus={() => setShowCreadorDropdown(true)}
-                  placeholder="Tutti"
-                  className="py-2 pl-3 pr-8 text-xs text-gray-800 bg-transparent border border-gray-300 rounded-lg dark:bg-dark-900 h-9 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800 w-[140px]"
-                />
-                {/* Ícono de dropdown */}
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-                
-                {/* Dropdown de usuarios */}
-                {showCreadorDropdown && (
-                  <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {/* Opción "Tutti" */}
-                    <div
-                      onClick={() => {
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500 dark:text-gray-400">Agente</span>
+                <div className="relative creador-dropdown-container">
+                  <input
+                    type="text"
+                    value={creadorSearchTerm}
+                    onChange={(e) => {
+                      setCreadorSearchTerm(e.target.value);
+                      setShowCreadorDropdown(true);
+                      if (!e.target.value) {
                         setFiltroCreador('');
-                        setCreadorSearchTerm('');
-                        setShowCreadorDropdown(false);
                         setCurrentPage(1);
-                      }}
-                      className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-xs text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700"
-                    >
-                      Tutti
-                    </div>
-                    
-                    {/* Lista de usuarios filtrados */}
-                    {usuarios
-                      .filter(usuario => {
+                      }
+                    }}
+                    onFocus={() => setShowCreadorDropdown(true)}
+                    placeholder="Tutti"
+                    className="py-2 pl-3 pr-8 text-xs text-gray-800 bg-transparent border border-gray-300 rounded-lg dark:bg-dark-900 h-9 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800 w-[140px]"
+                  />
+                  {/* Ícono de dropdown */}
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+
+                  {/* Dropdown de usuarios */}
+                  {showCreadorDropdown && (
+                    <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {/* Opción "Tutti" */}
+                      <div
+                        onClick={() => {
+                          setFiltroCreador('');
+                          setCreadorSearchTerm('');
+                          setShowCreadorDropdown(false);
+                          setCurrentPage(1);
+                        }}
+                        className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-xs text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700"
+                      >
+                        Tutti
+                      </div>
+
+                      {/* Lista de usuarios filtrados */}
+                      {usuarios
+                        .filter(usuario => {
+                          const nombreCompleto = `${usuario.firstName} ${usuario.lastName}`.trim().toLowerCase();
+                          return nombreCompleto.includes(creadorSearchTerm.toLowerCase());
+                        })
+                        .map((usuario) => {
+                          const nombreCompleto = `${usuario.firstName} ${usuario.lastName}`.trim();
+                          return (
+                            <div
+                              key={usuario.clerkId}
+                              onClick={() => {
+                                setFiltroCreador(nombreCompleto);
+                                setCreadorSearchTerm(nombreCompleto);
+                                setShowCreadorDropdown(false);
+                                setCurrentPage(1);
+                              }}
+                              className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-xs text-gray-900 dark:text-white"
+                            >
+                              {nombreCompleto}
+                            </div>
+                          );
+                        })}
+
+                      {/* Mensaje cuando no hay resultados */}
+                      {creadorSearchTerm && usuarios.filter(usuario => {
                         const nombreCompleto = `${usuario.firstName} ${usuario.lastName}`.trim().toLowerCase();
                         return nombreCompleto.includes(creadorSearchTerm.toLowerCase());
-                      })
-                      .map((usuario) => {
-                        const nombreCompleto = `${usuario.firstName} ${usuario.lastName}`.trim();
-                        return (
-                          <div
-                            key={usuario.clerkId}
-                            onClick={() => {
-                              setFiltroCreador(nombreCompleto);
-                              setCreadorSearchTerm(nombreCompleto);
-                              setShowCreadorDropdown(false);
-                              setCurrentPage(1);
-                            }}
-                            className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-xs text-gray-900 dark:text-white"
-                          >
-                            {nombreCompleto}
+                      }).length === 0 && (
+                          <div className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">
+                            Nessun utente trovato
                           </div>
-                        );
-                      })}
-                    
-                    {/* Mensaje cuando no hay resultados */}
-                    {creadorSearchTerm && usuarios.filter(usuario => {
-                      const nombreCompleto = `${usuario.firstName} ${usuario.lastName}`.trim().toLowerCase();
-                      return nombreCompleto.includes(creadorSearchTerm.toLowerCase());
-                    }).length === 0 && (
-                      <div className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">
-                        Nessun utente trovato
-                      </div>
-                    )}
-                  </div>
+                        )}
+                    </div>
+                  )}
+                </div>
+                {filtroCreador && (
+                  <button
+                    onClick={() => {
+                      setFiltroCreador('');
+                      setCreadorSearchTerm('');
+                      setCurrentPage(1);
+                    }}
+                    className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
+                    title="Cancella filtro"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
                 )}
               </div>
-              {filtroCreador && (
-                <button
-                  onClick={() => {
-                    setFiltroCreador('');
-                    setCreadorSearchTerm('');
-                    setCurrentPage(1);
-                  }}
-                  className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
-                  title="Cancella filtro"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
-            </div>
             )}
           </div>
 
@@ -2570,7 +2623,7 @@ const getEstadoVisual = (estado?: string | null) => {
                 className="dark:bg-dark-900 h-10 w-full rounded-lg border border-gray-300 bg-transparent py-2 pl-10 pr-4 text-xs text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 xl:w-[300px] lg:w-[280px] md:w-[250px]"
               />
             </div>
-            
+
             {/* Botón Nuovo */}
             <button
               onClick={openModal}
@@ -2583,482 +2636,478 @@ const getEstadoVisual = (estado?: string | null) => {
             </button>
           </div>
         </div>
-      
-      {/* Mensaje */}
-      {message && (
-        <div className={`mb-4 p-4 rounded-lg ${
-          message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-        }`}>
-          {message.text}
-        </div>
-      )}
-      
-      
-      {/* Tabla - Aplicando diseño de TOUR AEREO */}
-      <div className="overflow-x-auto">
-        <table className="min-w-[1400px] divide-y divide-gray-200 dark:divide-gray-700">
-          <thead className="bg-[#0366D6]">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                Cliente
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                Pagamento
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                Data
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                PNR
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                SERVIZI
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                Itinerario
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                Neto
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                Venduto
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                Pagato/Acconto
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                DaPagare
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                MetodoPag.
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                FEE/AGV
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                Files
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                Agente
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                Azioni
-              </th>
-            </tr>
-          </thead>
 
-          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            {currentData.length === 0 ? (
+        {/* Mensaje */}
+        {message && (
+          <div className={`mb-4 p-4 rounded-lg ${message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+            }`}>
+            {message.text}
+          </div>
+        )}
+
+
+        {/* Tabla - Aplicando diseño de TOUR AEREO */}
+        <div className="overflow-x-auto">
+          <table className="min-w-[1400px] divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-[#0366D6]">
               <tr>
-                <td colSpan={16} className="px-5 py-8 text-center text-gray-500 dark:text-gray-400">
-                  {searchTerm ? 'Nessun record trovato con i criteri di ricerca' : 'Nessun record registrato'}
-                </td>
+                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                  Cliente
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                  Pagamento
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                  Data
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                  PNR
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                  SERVIZI
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                  Itinerario
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                  Neto
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                  Venduto
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                  Pagato/Acconto
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                  DaPagare
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                  MetodoPag.
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                  FEE/AGV
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                  Files
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                  Agente
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                  Azioni
+                </th>
               </tr>
-            ) : (
-              currentData.map((record) => (
-                <tr key={record.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    <button
-                      onClick={() => handleClientClick(record.cliente)}
-                      disabled={loadingClientData}
-                      className="block font-medium text-gray-800 dark:text-white/90 text-xs truncate transition-colors cursor-pointer hover:underline disabled:opacity-50 disabled:cursor-not-allowed text-left w-full"
-                      title={`Ver datos completos de ${record.cliente}`}
-                    >
-                      {record.cliente}
-                    </button>
-                  </td>
-                  {/* <TableCell className="w-[140px] sm:w-[160px] xl:w-[180px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300">
-                    {record.codiceFiscale}
-                  </td> */}
-                  <td className="w-[120px] px-3 py-2">
-                    {editingPagamentoId === record.id ? (
-                      <select
-                        value={record.pagamento}
-                        autoFocus
-                        onBlur={() => setEditingPagamentoId(null)}
-                        onChange={async (e) => {
-                          const newValue = e.target.value;
-                          setEditingPagamentoId(null);
-                          
-                          try {
-                            const response = await fetch(`/api/biglietteria/${record.id}`, {
-                              method: 'PATCH',
-                              headers: {
-                                'Content-Type': 'application/json',
-                              },
-                              body: JSON.stringify({ pagamento: newValue }),
-                            });
+            </thead>
 
-                            if (response.ok) {
-                              // OPTIMIZACIÓN: Procesar registro actualizado
-                              setRecords(prev => prev.map(r => 
-                                r.id === record.id ? processRecord({ ...r, pagamento: newValue }) : r
-                              ));
-                              setMessage({
-                                type: 'success',
-                                text: 'Pagamento aggiornato'
-                              });
-                              setTimeout(() => setMessage(null), 3000);
-                            } else {
-                              throw new Error('Error al actualizar');
-                            }
-                          } catch (error) {
-                            console.error('Error actualizando pagamento', error);
-                            setMessage({
-                              type: 'error',
-                              text: 'Error al actualizar pagamento'
-                            });
-                            setTimeout(() => setMessage(null), 3000);
-                          }
-                        }}
-                        className="w-full px-2 py-1 text-xs border border-brand-500 rounded focus:ring-2 focus:ring-brand-500 focus:outline-none dark:bg-gray-800 dark:border-brand-400 dark:text-white"
-                      >
-                        {getAvailablePagamentos.map((pag) => (
-                          <option key={pag} value={pag}>
-                            {pag}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <div
-                        onClick={() => {
-                          // Si es USER y el valor actual no es Acconto ni Ricevuto, no permitir edición
-                          if (isUser && record.pagamento !== 'Acconto' && record.pagamento !== 'Ricevuto') {
-                            setMessage({
-                              type: 'error',
-                              text: 'No tienes permisos para editar este valor de pagamento'
-                            });
-                            setTimeout(() => setMessage(null), 3000);
-                            return;
-                          }
-                          setEditingPagamentoId(record.id);
-                        }}
-                        className={`text-xs truncate px-2 py-1 rounded text-center font-medium ${
-                          record.pagamento === 'Acconto' ? 'bg-gray-500 text-white' :
-                          record.pagamento === 'Acconto V' ? 'bg-purple-400 text-white' :
-                          record.pagamento === 'Ricevuto' ? 'bg-green-500 text-white' :
-                          record.pagamento === 'Verificato' ? 'bg-purple-600 text-white' :
-                          'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
-                        } ${
-                          // Si es USER y el valor no es editable, mostrar cursor no permitido
-                          isUser && record.pagamento !== 'Acconto' && record.pagamento !== 'Ricevuto'
-                            ? 'cursor-not-allowed opacity-75'
-                            : 'cursor-pointer'
-                        }`}
-                        title={
-                          isUser && record.pagamento !== 'Acconto' && record.pagamento !== 'Ricevuto'
-                            ? 'No tienes permisos para editar este valor'
-                            : 'Clic para editar'
-                        }
-                      >
-                        {record.pagamento}
-                      </div>
-                    )}
-                  </td>
-                  <td className="w-[100px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 truncate">
-                    {new Date(record.data).toLocaleDateString('it-IT')}
-                  </td>
-                  <td className="w-[100px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono truncate">
-                    {record.pnr || '-'}
-                  </td>
-                  <td className="w-[150px] px-3 py-2 text-gray-600 text-start text-[10px] dark:text-gray-300">
-                    {(() => {
-                      // Extraer todos los servicios únicos de todos los pasajeros
-                      const serviciosSet = new Set<string>();
-                      if (record.pasajeros && Array.isArray(record.pasajeros)) {
-                        record.pasajeros.forEach((pasajero: PasajeroApi) => {
-                          if (pasajero.servicios && Array.isArray(pasajero.servicios)) {
-                            pasajero.servicios.forEach((servicio: string) => {
-                              serviciosSet.add(servicio.trim());
-                            });
-                          } else if (typeof pasajero.servizio === 'string') {
-                            // Compatibilidad con formato antiguo
-                            const servicios = pasajero.servizio.split(',').map((s) => s.trim());
-                            servicios.forEach((servicio: string) => {
-                              serviciosSet.add(servicio);
-                            });
-                          }
-                        });
-                      }
-                      const serviciosArray = Array.from(serviciosSet);
-                      const isExpanded = expandedServiciosRows.has(record.id);
-                      
-                      const toggleExpand = () => {
-                        setExpandedServiciosRows(prev => {
-                          const newSet = new Set(prev);
-                          if (newSet.has(record.id)) {
-                            newSet.delete(record.id);
-                          } else {
-                            newSet.add(record.id);
-                          }
-                          return newSet;
-                        });
-                      };
-
-                      if (serviciosArray.length === 0) {
-                        return <span className="text-gray-400">-</span>;
-                      }
-
-                      // Si hay un solo servicio, mostrarlo directamente sin colapsar
-                      if (serviciosArray.length === 1) {
-                        return (
-                          <span className="inline-block px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded text-[10px]">
-                            {serviciosArray[0].length > 20 ? `${serviciosArray[0].substring(0, 20)}...` : serviciosArray[0]}
-                          </span>
-                        );
-                      }
-
-                      // Si hay múltiples servicios, mostrar colapsable
-                      return (
-                        <span className="inline-flex items-center gap-1.5 flex-nowrap">
-                          {isExpanded ? (
-                            <>
-                              {serviciosArray.map((servicio, idx) => (
-                                <span
-                                  key={idx}
-                                  className="inline-block px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded text-[10px] whitespace-nowrap"
-                                  title={servicio}
-                                >
-                                  {servicio.length > 10 ? `${servicio.substring(0, 10)}...` : servicio}
-                                </span>
-                              ))}
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleExpand();
-                                }}
-                                className="text-blue-600 dark:text-blue-400 hover:underline text-[10px] whitespace-nowrap"
-                              >
-                                Menos
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              <span className="inline-block px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded text-[10px] whitespace-nowrap">
-                                {serviciosArray[0].length > 10 ? `${serviciosArray[0].substring(0, 10)}...` : serviciosArray[0]}
-                                {serviciosArray.length > 1 && ` +${serviciosArray.length - 1}`}
-                              </span>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleExpand();
-                                }}
-                                className="text-blue-600 dark:text-blue-400 hover:underline text-[10px] whitespace-nowrap"
-                                title={`Mostrar todos los ${serviciosArray.length} servicios`}
-                              >
-                                Ver más
-                              </button>
-                            </>
-                          )}
-                        </span>
-                      );
-                    })()}
-                  </td>
-                  <td className="w-[120px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 truncate">
-                    {record.itinerario}
-                  </td>
-                  <td className="w-[80px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono truncate">
-                    €{record.netoPrincipal.toFixed(2)}
-                  </td>
-                  <td className="w-[80px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono truncate">
-                    €{record.vendutoTotal.toFixed(2)}
-                  </td>
-                  <td className="w-[80px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono truncate">
-                    €{record.acconto.toFixed(2)}
-                  </td>
-                  <td className="w-[80px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono truncate">
-                    €{record.daPagare.toFixed(2)}
-                  </td>
-                  <td className="w-[100px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 truncate">
-                    {(() => {
-                      try {
-                        const parsed = typeof record.metodoPagamento === 'string' 
-                          ? JSON.parse(record.metodoPagamento) 
-                          : record.metodoPagamento;
-                        return Array.isArray(parsed) ? parsed.join(', ') : record.metodoPagamento;
-                      } catch {
-                        return record.metodoPagamento;
-                      }
-                    })()}
-                  </td>
-                  <td className="w-[80px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono truncate">
-                    €{record.feeAgv.toFixed(2)}
-                  </td>
-                  
-                  {/* Columna Files */}
-                  <td className="w-[80px] px-3 py-2 text-center">
-                    <button
-                      onClick={() => handleViewFiles(record)}
-                      disabled={countFiles(record) === 0}
-                      className={`inline-flex items-center gap-1 px-2 py-1 rounded transition-all duration-200 ${
-                        countFiles(record) > 0
-                          ? 'bg-purple-100 hover:bg-purple-200 text-purple-700 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 dark:text-purple-400 cursor-pointer'
-                          : 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600'
-                      }`}
-                      title={countFiles(record) > 0 ? `Ver ${countFiles(record)} archivo(s)` : 'Sin archivos'}
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                      </svg>
-                      {countFiles(record) > 0 && (
-                        <span className="text-xs font-semibold">{countFiles(record)}</span>
-                      )}
-                    </button>
-                  </td>
-                  
-                  {/* Columna Creato da */}
-                  <td className="w-[100px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 truncate">
-                    {record.creator?.firstName 
-                      ? `${record.creator.firstName}${record.creator.lastName ? ` ${record.creator.lastName}` : ''}`.trim()
-                      : record.creator?.email || 'N/A'}
-                  </td>
-                  
-                  <td className="w-[140px] px-3 py-2 text-start sticky right-0 bg-white dark:bg-gray-900 z-10 border-l border-gray-200 dark:border-gray-700 shadow-lg">
-                    <div className="flex items-center gap-1">
-                      {/* Botón Ver Detalles */}
-                      <button
-                        onClick={() => handleViewDetails(record)}
-                        className="p-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 hover:text-purple-800 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 dark:text-purple-400 dark:hover:text-purple-300 rounded transition-all duration-200 transform hover:scale-105"
-                        title="Ver detalles completos"
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </button>
-
-                      {/* Botón Editar */}
-                      <button
-                        onClick={() => handleEditRecord(record)}
-                        className="p-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 hover:text-blue-800 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-400 dark:hover:text-blue-300 rounded transition-all duration-200 transform hover:scale-105"
-                        title="Modifica"
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                      </button>
-
-                      {/* Botón Recibo */}
-                      <button
-                        onClick={() => handleGenerateRicevuta(record.id)}
-                        className="p-1.5 bg-green-100 hover:bg-green-200 text-green-700 hover:text-green-800 dark:bg-green-900/20 dark:hover:bg-green-900/30 dark:text-green-400 dark:hover:text-green-300 rounded transition-all duration-200 transform hover:scale-105"
-                        title="Ricevuta"
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                      </button>
-
-                      {/* Botón Eliminar */}
-                      <button
-                        onClick={() => handleDeleteRecord(record.id)}
-                        disabled={deletingRecordId === record.id}
-                        className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 hover:text-red-800 dark:bg-red-900/20 dark:hover:bg-red-900/30 dark:text-red-400 dark:hover:text-red-300 rounded transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-                        title="Elimina"
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              {currentData.length === 0 ? (
+                <tr>
+                  <td colSpan={16} className="px-5 py-8 text-center text-gray-500 dark:text-gray-400">
+                    {searchTerm ? 'Nessun record trovato con i criteri di ricerca' : 'Nessun record registrato'}
                   </td>
                 </tr>
-              ))
-            )}
-            
-            {/* Fila de Total */}
-            {currentData.length > 0 && (
-              <tr className="bg-blue-50 dark:bg-blue-900/20 border-t-2 border-blue-200 dark:border-blue-700">
-                <td colSpan={6} className="px-6 py-4 text-right font-semibold text-blue-800 dark:text-blue-200 text-sm">
-                  TOTAL:
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-800 dark:text-blue-200">
-                  €{totales.totalNeto.toFixed(2)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-800 dark:text-blue-200">
-                  €{totales.totalVenduto.toFixed(2)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-800 dark:text-blue-200">
-                  €{totales.totalAcconto.toFixed(2)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-800 dark:text-blue-200">
-                  €{totales.totalDaPagare.toFixed(2)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                  -
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-800 dark:text-blue-200">
-                  €{totales.totalFeeAgv.toFixed(2)}
-                </td>
-                <td colSpan={3} className="px-6 py-4 text-center text-sm text-gray-600 dark:text-gray-300">
-                  -
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-      
-      {/* Footer de paginación (igual que TOUR GRUPPO) */}
-      <div className="border border-t-0 rounded-b-xl border-gray-100 py-4 pl-[18px] pr-4 dark:border-white/[0.05]">
-        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between">
-          {/* Información de registros mostrados */}
-          <div className="pb-3 xl:pb-0">
-            <p className="pb-3 text-sm font-medium text-center text-gray-500 border-b border-gray-100 dark:border-gray-800 dark:text-gray-400 xl:border-b-0 xl:pb-0 xl:text-left">
-              Mostrando {startIndex + 1} a {endIndex} di {totalItems} registri
-            </p>
-          </div>
+              ) : (
+                currentData.map((record) => (
+                  <tr key={record.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      <button
+                        onClick={() => handleClientClick(record.cliente)}
+                        disabled={loadingClientData}
+                        className="block font-medium text-gray-800 dark:text-white/90 text-xs truncate transition-colors cursor-pointer hover:underline disabled:opacity-50 disabled:cursor-not-allowed text-left w-full"
+                        title={`Ver datos completos de ${record.cliente}`}
+                      >
+                        {record.cliente}
+                      </button>
+                    </td>
+                    {/* <TableCell className="w-[140px] sm:w-[160px] xl:w-[180px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300">
+                    {record.codiceFiscale}
+                  </td> */}
+                    <td className="w-[120px] px-3 py-2">
+                      {editingPagamentoId === record.id ? (
+                        <select
+                          value={record.pagamento}
+                          autoFocus
+                          onBlur={() => setEditingPagamentoId(null)}
+                          onChange={async (e) => {
+                            const newValue = e.target.value;
+                            setEditingPagamentoId(null);
 
-          {/* Controles de paginación */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:hover:bg-gray-700 dark:text-white"
-            >
-              Precedente
-            </button>
-            
-            <div className="flex items-center gap-1">
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                let pageNum;
-                if (totalPages <= 5) {
-                  pageNum = i + 1;
-                } else if (currentPage <= 3) {
-                  pageNum = i + 1;
-                } else if (currentPage >= totalPages - 2) {
-                  pageNum = totalPages - 4 + i;
-                } else {
-                  pageNum = currentPage - 2 + i;
-                }
-                
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => setCurrentPage(pageNum)}
-                    className={`px-3 py-1 text-sm rounded-md ${
-                      currentPage === pageNum
-                        ? 'bg-brand-500 text-white'
-                        : 'border border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700 dark:text-white'
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              })}
+                            try {
+                              const response = await fetch(`/api/biglietteria/${record.id}`, {
+                                method: 'PATCH',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({ pagamento: newValue }),
+                              });
+
+                              if (response.ok) {
+                                // OPTIMIZACIÓN: Procesar registro actualizado
+                                setRecords(prev => prev.map(r =>
+                                  r.id === record.id ? processRecord({ ...r, pagamento: newValue }) : r
+                                ));
+                                setMessage({
+                                  type: 'success',
+                                  text: 'Pagamento aggiornato'
+                                });
+                                setTimeout(() => setMessage(null), 3000);
+                              } else {
+                                throw new Error('Error al actualizar');
+                              }
+                            } catch (error) {
+                              console.error('Error actualizando pagamento', error);
+                              setMessage({
+                                type: 'error',
+                                text: 'Error al actualizar pagamento'
+                              });
+                              setTimeout(() => setMessage(null), 3000);
+                            }
+                          }}
+                          className="w-full px-2 py-1 text-xs border border-brand-500 rounded focus:ring-2 focus:ring-brand-500 focus:outline-none dark:bg-gray-800 dark:border-brand-400 dark:text-white"
+                        >
+                          {getAvailablePagamentos.map((pag) => (
+                            <option key={pag} value={pag}>
+                              {pag}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div
+                          onClick={() => {
+                            // Si es USER y el valor actual no es Acconto ni Ricevuto, no permitir edición
+                            if (isUser && record.pagamento !== 'Acconto' && record.pagamento !== 'Ricevuto') {
+                              setMessage({
+                                type: 'error',
+                                text: 'No tienes permisos para editar este valor de pagamento'
+                              });
+                              setTimeout(() => setMessage(null), 3000);
+                              return;
+                            }
+                            setEditingPagamentoId(record.id);
+                          }}
+                          className={`text-xs truncate px-2 py-1 rounded text-center font-medium ${record.pagamento === 'Acconto' ? 'bg-gray-500 text-white' :
+                              record.pagamento === 'Acconto V' ? 'bg-purple-400 text-white' :
+                                record.pagamento === 'Ricevuto' ? 'bg-green-500 text-white' :
+                                  record.pagamento === 'Verificato' ? 'bg-purple-600 text-white' :
+                                    'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                            } ${
+                            // Si es USER y el valor no es editable, mostrar cursor no permitido
+                            isUser && record.pagamento !== 'Acconto' && record.pagamento !== 'Ricevuto'
+                              ? 'cursor-not-allowed opacity-75'
+                              : 'cursor-pointer'
+                            }`}
+                          title={
+                            isUser && record.pagamento !== 'Acconto' && record.pagamento !== 'Ricevuto'
+                              ? 'No tienes permisos para editar este valor'
+                              : 'Clic para editar'
+                          }
+                        >
+                          {record.pagamento}
+                        </div>
+                      )}
+                    </td>
+                    <td className="w-[100px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 truncate">
+                      {new Date(record.data).toLocaleDateString('it-IT')}
+                    </td>
+                    <td className="w-[100px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono truncate">
+                      {record.pnr || '-'}
+                    </td>
+                    <td className="w-[150px] px-3 py-2 text-gray-600 text-start text-[10px] dark:text-gray-300">
+                      {(() => {
+                        // Extraer todos los servicios únicos de todos los pasajeros
+                        const serviciosSet = new Set<string>();
+                        if (record.pasajeros && Array.isArray(record.pasajeros)) {
+                          record.pasajeros.forEach((pasajero: PasajeroApi) => {
+                            if (pasajero.servicios && Array.isArray(pasajero.servicios)) {
+                              pasajero.servicios.forEach((servicio: string) => {
+                                serviciosSet.add(servicio.trim());
+                              });
+                            } else if (typeof pasajero.servizio === 'string') {
+                              // Compatibilidad con formato antiguo
+                              const servicios = pasajero.servizio.split(',').map((s) => s.trim());
+                              servicios.forEach((servicio: string) => {
+                                serviciosSet.add(servicio);
+                              });
+                            }
+                          });
+                        }
+                        const serviciosArray = Array.from(serviciosSet);
+                        const isExpanded = expandedServiciosRows.has(record.id);
+
+                        const toggleExpand = () => {
+                          setExpandedServiciosRows(prev => {
+                            const newSet = new Set(prev);
+                            if (newSet.has(record.id)) {
+                              newSet.delete(record.id);
+                            } else {
+                              newSet.add(record.id);
+                            }
+                            return newSet;
+                          });
+                        };
+
+                        if (serviciosArray.length === 0) {
+                          return <span className="text-gray-400">-</span>;
+                        }
+
+                        // Si hay un solo servicio, mostrarlo directamente sin colapsar
+                        if (serviciosArray.length === 1) {
+                          return (
+                            <span className="inline-block px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded text-[10px]">
+                              {serviciosArray[0].length > 20 ? `${serviciosArray[0].substring(0, 20)}...` : serviciosArray[0]}
+                            </span>
+                          );
+                        }
+
+                        // Si hay múltiples servicios, mostrar colapsable
+                        return (
+                          <span className="inline-flex items-center gap-1.5 flex-nowrap">
+                            {isExpanded ? (
+                              <>
+                                {serviciosArray.map((servicio, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="inline-block px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded text-[10px] whitespace-nowrap"
+                                    title={servicio}
+                                  >
+                                    {servicio.length > 10 ? `${servicio.substring(0, 10)}...` : servicio}
+                                  </span>
+                                ))}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleExpand();
+                                  }}
+                                  className="text-blue-600 dark:text-blue-400 hover:underline text-[10px] whitespace-nowrap"
+                                >
+                                  Menos
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <span className="inline-block px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded text-[10px] whitespace-nowrap">
+                                  {serviciosArray[0].length > 10 ? `${serviciosArray[0].substring(0, 10)}...` : serviciosArray[0]}
+                                  {serviciosArray.length > 1 && ` +${serviciosArray.length - 1}`}
+                                </span>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleExpand();
+                                  }}
+                                  className="text-blue-600 dark:text-blue-400 hover:underline text-[10px] whitespace-nowrap"
+                                  title={`Mostrar todos los ${serviciosArray.length} servicios`}
+                                >
+                                  Ver más
+                                </button>
+                              </>
+                            )}
+                          </span>
+                        );
+                      })()}
+                    </td>
+                    <td className="w-[120px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 truncate">
+                      {record.itinerario}
+                    </td>
+                    <td className="w-[80px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono truncate">
+                      €{record.netoPrincipal.toFixed(2)}
+                    </td>
+                    <td className="w-[80px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono truncate">
+                      €{record.vendutoTotal.toFixed(2)}
+                    </td>
+                    <td className="w-[80px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono truncate">
+                      €{record.acconto.toFixed(2)}
+                    </td>
+                    <td className="w-[80px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono truncate">
+                      €{record.daPagare.toFixed(2)}
+                    </td>
+                    <td className="w-[100px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 truncate">
+                      {(() => {
+                        try {
+                          const parsed = typeof record.metodoPagamento === 'string'
+                            ? JSON.parse(record.metodoPagamento)
+                            : record.metodoPagamento;
+                          return Array.isArray(parsed) ? parsed.join(', ') : record.metodoPagamento;
+                        } catch {
+                          return record.metodoPagamento;
+                        }
+                      })()}
+                    </td>
+                    <td className="w-[80px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono truncate">
+                      €{record.feeAgv.toFixed(2)}
+                    </td>
+
+                    {/* Columna Files */}
+                    <td className="w-[80px] px-3 py-2 text-center">
+                      <button
+                        onClick={() => handleViewFiles(record)}
+                        disabled={countFiles(record) === 0}
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded transition-all duration-200 ${countFiles(record) > 0
+                            ? 'bg-purple-100 hover:bg-purple-200 text-purple-700 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 dark:text-purple-400 cursor-pointer'
+                            : 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600'
+                          }`}
+                        title={countFiles(record) > 0 ? `Ver ${countFiles(record)} archivo(s)` : 'Sin archivos'}
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                        </svg>
+                        {countFiles(record) > 0 && (
+                          <span className="text-xs font-semibold">{countFiles(record)}</span>
+                        )}
+                      </button>
+                    </td>
+
+                    {/* Columna Creato da */}
+                    <td className="w-[100px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 truncate">
+                      {record.creator?.firstName
+                        ? `${record.creator.firstName}${record.creator.lastName ? ` ${record.creator.lastName}` : ''}`.trim()
+                        : record.creator?.email || 'N/A'}
+                    </td>
+
+                    <td className="w-[140px] px-3 py-2 text-start sticky right-0 bg-white dark:bg-gray-900 z-10 border-l border-gray-200 dark:border-gray-700 shadow-lg">
+                      <div className="flex items-center gap-1">
+                        {/* Botón Ver Detalles */}
+                        <button
+                          onClick={() => handleViewDetails(record)}
+                          className="p-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 hover:text-purple-800 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 dark:text-purple-400 dark:hover:text-purple-300 rounded transition-all duration-200 transform hover:scale-105"
+                          title="Ver detalles completos"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </button>
+
+                        {/* Botón Editar */}
+                        <button
+                          onClick={() => handleEditRecord(record)}
+                          className="p-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 hover:text-blue-800 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-400 dark:hover:text-blue-300 rounded transition-all duration-200 transform hover:scale-105"
+                          title="Modifica"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+
+                        {/* Botón Recibo */}
+                        <button
+                          onClick={() => handleGenerateRicevuta(record.id)}
+                          className="p-1.5 bg-green-100 hover:bg-green-200 text-green-700 hover:text-green-800 dark:bg-green-900/20 dark:hover:bg-green-900/30 dark:text-green-400 dark:hover:text-green-300 rounded transition-all duration-200 transform hover:scale-105"
+                          title="Ricevuta"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </button>
+
+                        {/* Botón Eliminar */}
+                        <button
+                          onClick={() => handleDeleteRecord(record.id)}
+                          disabled={deletingRecordId === record.id}
+                          className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 hover:text-red-800 dark:bg-red-900/20 dark:hover:bg-red-900/30 dark:text-red-400 dark:hover:text-red-300 rounded transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Elimina"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+
+              {/* Fila de Total */}
+              {currentData.length > 0 && (
+                <tr className="bg-blue-50 dark:bg-blue-900/20 border-t-2 border-blue-200 dark:border-blue-700">
+                  <td colSpan={6} className="px-6 py-4 text-right font-semibold text-blue-800 dark:text-blue-200 text-sm">
+                    TOTAL:
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-800 dark:text-blue-200">
+                    €{totales.totalNeto.toFixed(2)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-800 dark:text-blue-200">
+                    €{totales.totalVenduto.toFixed(2)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-800 dark:text-blue-200">
+                    €{totales.totalAcconto.toFixed(2)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-800 dark:text-blue-200">
+                    €{totales.totalDaPagare.toFixed(2)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                    -
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-800 dark:text-blue-200">
+                    €{totales.totalFeeAgv.toFixed(2)}
+                  </td>
+                  <td colSpan={3} className="px-6 py-4 text-center text-sm text-gray-600 dark:text-gray-300">
+                    -
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Footer de paginación (igual que TOUR GRUPPO) */}
+        <div className="border border-t-0 rounded-b-xl border-gray-100 py-4 pl-[18px] pr-4 dark:border-white/[0.05]">
+          <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between">
+            {/* Información de registros mostrados */}
+            <div className="pb-3 xl:pb-0">
+              <p className="pb-3 text-sm font-medium text-center text-gray-500 border-b border-gray-100 dark:border-gray-800 dark:text-gray-400 xl:border-b-0 xl:pb-0 xl:text-left">
+                Mostrando {startIndex + 1} a {endIndex} di {totalItems} registri
+              </p>
             </div>
 
-            <button
-              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:hover:bg-gray-700 dark:text-white"
-            >
-              Successivo
-            </button>
+            {/* Controles de paginación */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:hover:bg-gray-700 dark:text-white"
+              >
+                Precedente
+              </button>
+
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`px-3 py-1 text-sm rounded-md ${currentPage === pageNum
+                          ? 'bg-brand-500 text-white'
+                          : 'border border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700 dark:text-white'
+                        }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:hover:bg-gray-700 dark:text-white"
+              >
+                Successivo
+              </button>
+            </div>
           </div>
         </div>
       </div>
-      </div>
-      
+
       {/* Modal del formulario */}
       {isMounted && isModalOpen && createPortal(
         <Modal isOpen={isModalOpen} onClose={handleCancelEdit} className="p-6 md:p-8">
@@ -3068,11 +3117,11 @@ const getEstadoVisual = (estado?: string | null) => {
             </h2>
           </div>
           <form onSubmit={handleSubmit} className="space-y-6 max-h-[80vh] overflow-y-auto">
-            
+
             {/* Sección: Información del Cliente */}
             <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Información del Cliente</h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {/* Cliente Dropdown */}
                 <div className="relative client-dropdown-container">
@@ -3100,7 +3149,7 @@ const getEstadoVisual = (estado?: string | null) => {
                       </svg>
                     </div>
                   </div>
-                  
+
                   {showClientDropdown && (
                     <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                       {filteredClients.length > 0 ? (
@@ -3122,7 +3171,7 @@ const getEstadoVisual = (estado?: string | null) => {
                       )}
                     </div>
                   )}
-                  
+
                   {/* Mensaje cuando no hay resultados */}
                   {showClientDropdown && clientSearchTerm && filteredClients.length === 0 && (
                     <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg">
@@ -3132,7 +3181,7 @@ const getEstadoVisual = (estado?: string | null) => {
                     </div>
                   )}
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Codice Fiscale *
@@ -3146,7 +3195,7 @@ const getEstadoVisual = (estado?: string | null) => {
                     readOnly={!!selectedClientId}
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Indirizzo *
@@ -3160,7 +3209,7 @@ const getEstadoVisual = (estado?: string | null) => {
                     readOnly={!!selectedClientId}
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Email *
@@ -3174,7 +3223,7 @@ const getEstadoVisual = (estado?: string | null) => {
                     readOnly={!!selectedClientId}
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Numero di Telefono *
@@ -3190,11 +3239,11 @@ const getEstadoVisual = (estado?: string | null) => {
                 </div>
               </div>
             </div>
-            
+
             {/* Sección: Información del Viaje */}
             <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Información del Viaje</h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {/* Pagamento Dropdown (igual que Cliente) */}
                 <div className="relative pagamento-dropdown-container">
@@ -3222,7 +3271,7 @@ const getEstadoVisual = (estado?: string | null) => {
                       </svg>
                     </div>
                   </div>
-                  
+
                   {showPagamentoDropdown && (
                     <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                       {filteredPagamentos.length > 0 ? (
@@ -3244,7 +3293,7 @@ const getEstadoVisual = (estado?: string | null) => {
                       )}
                     </div>
                   )}
-                  
+
                   {/* Mensaje cuando no hay resultados */}
                   {showPagamentoDropdown && pagamentoSearchTerm && filteredPagamentos.length === 0 && (
                     <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg">
@@ -3254,7 +3303,7 @@ const getEstadoVisual = (estado?: string | null) => {
                     </div>
                   )}
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Data *
@@ -3267,8 +3316,8 @@ const getEstadoVisual = (estado?: string | null) => {
                     required
                   />
                 </div>
-                
-                
+
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     PNR
@@ -3280,7 +3329,7 @@ const getEstadoVisual = (estado?: string | null) => {
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                   />
                 </div>
-                
+
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Itinerario *
@@ -3296,7 +3345,7 @@ const getEstadoVisual = (estado?: string | null) => {
                 </div>
               </div>
             </div>
-            
+
             {/* Sección: Pasajeros */}
             <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
               <div className="flex justify-between items-center mb-4">
@@ -3316,18 +3365,18 @@ const getEstadoVisual = (estado?: string | null) => {
                   <span className="text-xs text-gray-500">(max: 20)</span>
                 </div>
               </div>
-              
+
               {/* Lista de Pasajeros */}
               <div className="space-y-6">
                 {formData.pasajeros.map((pasajero, index) => {
                   const fieldsToShow = shouldShowFieldsForPasajero(pasajero);
-                  
+
                   return (
                     <div key={index} className="border border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
                       <h4 className="font-semibold text-gray-900 dark:text-white mb-3">
                         Pasajero {index + 1}
                       </h4>
-                      
+
                       {/* Nombre del Pasajero y Servicios en la misma fila */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         {/* Nombre del Pasajero */}
@@ -3344,77 +3393,77 @@ const getEstadoVisual = (estado?: string | null) => {
                             required
                           />
                         </div>
-                        
+
                         {/* Servicios */}
                         <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Servizi * (seleccionar uno o más)
-                        </label>
-                        
-                        {/* Input con chips dentro */}
-                        <div className="relative servizi-dropdown-container">
-                          <div className="min-h-[40px] px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 flex flex-wrap gap-1 items-center cursor-text"
-                               onClick={() => setShowServiziDropdown(index)}>
-                            {/* Chips de servicios seleccionados */}
-                            {pasajero.servicios.map(servicio => (
-                              <div
-                                key={servicio}
-                                className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
-                              >
-                                <span className="mr-1">{servicio}</span>
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleServicioToggle(index, servicio);
-                                  }}
-                                  className="text-blue-600 hover:text-blue-800 focus:outline-none ml-1"
-                                >
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                  </svg>
-                                </button>
-                              </div>
-                            ))}
-                            
-                            {/* Placeholder cuando no hay servicios */}
-                            {pasajero.servicios.length === 0 && (
-                              <span className="text-gray-500 dark:text-gray-400 text-sm">
-                                Seleziona servizi...
-                              </span>
-                            )}
-                          </div>
-                          
-                          {/* Dropdown de servicios (dentro del contenedor relativo) */}
-                          {showServiziDropdown === index && (
-                            <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                            {serviciosDisponibles
-                              .filter(servicio => !pasajero.servicios.includes(servicio))
-                              .map(servizio => (
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Servizi * (seleccionar uno o más)
+                          </label>
+
+                          {/* Input con chips dentro */}
+                          <div className="relative servizi-dropdown-container">
+                            <div className="min-h-[40px] px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 flex flex-wrap gap-1 items-center cursor-text"
+                              onClick={() => setShowServiziDropdown(index)}>
+                              {/* Chips de servicios seleccionados */}
+                              {pasajero.servicios.map(servicio => (
                                 <div
-                                  key={servizio}
-                                  onClick={() => {
-                                    handleServicioToggle(index, servizio);
-                                    setShowServiziDropdown(null);
-                                  }}
-                                  className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+                                  key={servicio}
+                                  className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
                                 >
-                                  <div className="font-medium text-gray-900 dark:text-white">
-                                    {servizio}
-                                  </div>
+                                  <span className="mr-1">{servicio}</span>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleServicioToggle(index, servicio);
+                                    }}
+                                    className="text-blue-600 hover:text-blue-800 focus:outline-none ml-1"
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                  </button>
                                 </div>
                               ))}
+
+                              {/* Placeholder cuando no hay servicios */}
+                              {pasajero.servicios.length === 0 && (
+                                <span className="text-gray-500 dark:text-gray-400 text-sm">
+                                  Seleziona servizi...
+                                </span>
+                              )}
                             </div>
-                          )}
-                        </div>
-                        
+
+                            {/* Dropdown de servicios (dentro del contenedor relativo) */}
+                            {showServiziDropdown === index && (
+                              <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                {serviciosDisponibles
+                                  .filter(servicio => !pasajero.servicios.includes(servicio))
+                                  .map(servizio => (
+                                    <div
+                                      key={servizio}
+                                      onClick={() => {
+                                        handleServicioToggle(index, servizio);
+                                        setShowServiziDropdown(null);
+                                      }}
+                                      className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+                                    >
+                                      <div className="font-medium text-gray-900 dark:text-white">
+                                        {servizio}
+                                      </div>
+                                    </div>
+                                  ))}
+                              </div>
+                            )}
+                          </div>
+
                           {/* Mensaje de error */}
                           {pasajero.servicios.length === 0 && (
                             <p className="text-xs text-red-500 mt-1">Debe seleccionar al menos un servicio</p>
                           )}
                         </div>
                       </div>
-                      
+
                       {/* Fechas (solo si tiene Volo) */}
                       {fieldsToShow.showDateFields && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -3429,7 +3478,7 @@ const getEstadoVisual = (estado?: string | null) => {
                               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                             />
                           </div>
-                          
+
                           <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                               Ritorno
@@ -3443,7 +3492,7 @@ const getEstadoVisual = (estado?: string | null) => {
                           </div>
                         </div>
                       )}
-                      
+
                       {/* Campos de Volo */}
                       {fieldsToShow.showBiglietteriaFields && (
                         <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg mb-4">
@@ -3469,7 +3518,7 @@ const getEstadoVisual = (estado?: string | null) => {
                                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                                   required
                                 />
-                                
+
                                 {/* Dropdown de IATA */}
                                 {isIndividualIataDropdownOpen(index, 'Volo') && getFilteredIndividualIata(index, 'Volo').length > 0 && (
                                   <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto">
@@ -3486,7 +3535,7 @@ const getEstadoVisual = (estado?: string | null) => {
                                     ))}
                                   </div>
                                 )}
-                                
+
                                 {/* Mensaje cuando no hay resultados */}
                                 {isIndividualIataDropdownOpen(index, 'Volo') && getFilteredIndividualIata(index, 'Volo').length === 0 && (
                                   <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg">
@@ -3497,7 +3546,7 @@ const getEstadoVisual = (estado?: string | null) => {
                                 )}
                               </div>
                             </div>
-                            
+
                             <div>
                               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Neto
@@ -3510,7 +3559,7 @@ const getEstadoVisual = (estado?: string | null) => {
                                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                               />
                             </div>
-                            
+
                             <div>
                               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Venduto
@@ -3524,7 +3573,7 @@ const getEstadoVisual = (estado?: string | null) => {
                               />
                             </div>
                             <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Metodo di acquisto
                               </label>
                               <select
@@ -3543,14 +3592,14 @@ const getEstadoVisual = (estado?: string | null) => {
                           </div>
                         </div>
                       )}
-                      
+
                       {/* Servicios Adicionales */}
                       {fieldsToShow.showAdditionalServiceFields && (
                         <div className="space-y-3">
                           <h5 className="text-sm font-semibold text-gray-900 dark:text-white">
                             Servicios Adicionales
                           </h5>
-                          
+
                           {/* Express */}
                           {pasajero.tieneExpress && (
                             <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg">
@@ -3576,7 +3625,7 @@ const getEstadoVisual = (estado?: string | null) => {
                                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                                       required
                                     />
-                                    
+
                                     {/* Dropdown de IATA */}
                                     {isIndividualIataDropdownOpen(index, 'EXPRESS') && getFilteredIndividualIata(index, 'EXPRESS').length > 0 && (
                                       <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto">
@@ -3591,7 +3640,7 @@ const getEstadoVisual = (estado?: string | null) => {
                                         ))}
                                       </div>
                                     )}
-                                    
+
                                     {isIndividualIataDropdownOpen(index, 'EXPRESS') && getFilteredIndividualIata(index, 'EXPRESS').length === 0 && (
                                       <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg">
                                         <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
@@ -3645,7 +3694,7 @@ const getEstadoVisual = (estado?: string | null) => {
                               </div>
                             </div>
                           )}
-                          
+
                           {/* Polizza */}
                           {pasajero.tienePolizza && (
                             <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
@@ -3671,7 +3720,7 @@ const getEstadoVisual = (estado?: string | null) => {
                                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                                       required
                                     />
-                                    
+
                                     {/* Dropdown de IATA */}
                                     {isIndividualIataDropdownOpen(index, 'POLIZZA') && getFilteredIndividualIata(index, 'POLIZZA').length > 0 && (
                                       <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto">
@@ -3686,7 +3735,7 @@ const getEstadoVisual = (estado?: string | null) => {
                                         ))}
                                       </div>
                                     )}
-                                    
+
                                     {isIndividualIataDropdownOpen(index, 'POLIZZA') && getFilteredIndividualIata(index, 'POLIZZA').length === 0 && (
                                       <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg">
                                         <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
@@ -3740,7 +3789,7 @@ const getEstadoVisual = (estado?: string | null) => {
                               </div>
                             </div>
                           )}
-                          
+
                           {/* L.invito */}
                           {pasajero.tieneLetteraInvito && (
                             <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg">
@@ -3766,7 +3815,7 @@ const getEstadoVisual = (estado?: string | null) => {
                                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                                       required
                                     />
-                                    
+
                                     {/* Dropdown de IATA */}
                                     {isIndividualIataDropdownOpen(index, 'L.INVITO') && getFilteredIndividualIata(index, 'L.INVITO').length > 0 && (
                                       <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto">
@@ -3781,7 +3830,7 @@ const getEstadoVisual = (estado?: string | null) => {
                                         ))}
                                       </div>
                                     )}
-                                    
+
                                     {isIndividualIataDropdownOpen(index, 'L.INVITO') && getFilteredIndividualIata(index, 'L.INVITO').length === 0 && (
                                       <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg">
                                         <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
@@ -3835,7 +3884,7 @@ const getEstadoVisual = (estado?: string | null) => {
                               </div>
                             </div>
                           )}
-                          
+
                           {/* Hotel */}
                           {pasajero.tieneHotel && (
                             <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
@@ -3861,7 +3910,7 @@ const getEstadoVisual = (estado?: string | null) => {
                                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                                       required
                                     />
-                                    
+
                                     {/* Dropdown de IATA */}
                                     {isIndividualIataDropdownOpen(index, 'HOTEL') && getFilteredIndividualIata(index, 'HOTEL').length > 0 && (
                                       <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto">
@@ -3876,7 +3925,7 @@ const getEstadoVisual = (estado?: string | null) => {
                                         ))}
                                       </div>
                                     )}
-                                    
+
                                     {isIndividualIataDropdownOpen(index, 'HOTEL') && getFilteredIndividualIata(index, 'HOTEL').length === 0 && (
                                       <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg">
                                         <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
@@ -3930,13 +3979,13 @@ const getEstadoVisual = (estado?: string | null) => {
                               </div>
                             </div>
                           )}
-                          
+
                           {/* Servicios Dinámicos - Para todos los servicios que no están en la lista de conocidos */}
                           {obtenerServiciosDinamicos(pasajero.servicios).map((servicio) => {
                             // Normalizar el nombre del servicio para usar como clave
                             const servicioKey = normalizarServicio(servicio);
                             const servicioData = pasajero.serviciosData?.[servicioKey] || { iata: '', neto: '', venduto: '', metodoDiAcquisto: '' };
-                            
+
                             // Colores diferentes para cada servicio (usando hash simple)
                             const colores = [
                               { bg: 'bg-cyan-50', dark: 'dark:bg-cyan-900/20', text: 'text-cyan-900', darkText: 'dark:text-cyan-300' },
@@ -3947,7 +3996,7 @@ const getEstadoVisual = (estado?: string | null) => {
                             ];
                             const colorIndex = servicioKey.length % colores.length;
                             const color = colores[colorIndex];
-                            
+
                             return (
                               <div key={servicioKey} className={`${color.bg} ${color.dark} p-3 rounded-lg`}>
                                 <h6 className={`text-sm font-semibold ${color.text} ${color.darkText} mb-2`}>
@@ -3974,7 +4023,7 @@ const getEstadoVisual = (estado?: string | null) => {
                                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                                         required
                                       />
-                                      
+
                                       {/* Dropdown de IATA */}
                                       {isIndividualIataDropdownOpen(index, servicioKey) && getFilteredIndividualIata(index, servicioKey).length > 0 && (
                                         <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto">
@@ -3994,7 +4043,7 @@ const getEstadoVisual = (estado?: string | null) => {
                                           ))}
                                         </div>
                                       )}
-                                      
+
                                       {isIndividualIataDropdownOpen(index, servicioKey) && getFilteredIndividualIata(index, servicioKey).length === 0 && (
                                         <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg">
                                           <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
@@ -4040,22 +4089,22 @@ const getEstadoVisual = (estado?: string | null) => {
                                     <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                                       Metodo di acquisto
                                     </label>
-                                <select
-                                  value={servicioData.metodoDiAcquisto || ''}
-                                  onChange={(e) => {
-                                    const newData = { ...servicioData, metodoDiAcquisto: e.target.value };
-                                    const updatedData = { ...(pasajero.serviciosData || {}), [servicioKey]: newData };
-                                    handlePasajeroChange(index, 'serviciosData', updatedData);
-                                  }}
-                                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                                >
-                                  <option value="">Seleziona...</option>
-                                  {acquistoOptions.map(option => (
-                                    <option key={`${servicioKey}-${option}`} value={option}>
-                                      {option}
-                                    </option>
-                                  ))}
-                                </select>
+                                    <select
+                                      value={servicioData.metodoDiAcquisto || ''}
+                                      onChange={(e) => {
+                                        const newData = { ...servicioData, metodoDiAcquisto: e.target.value };
+                                        const updatedData = { ...(pasajero.serviciosData || {}), [servicioKey]: newData };
+                                        handlePasajeroChange(index, 'serviciosData', updatedData);
+                                      }}
+                                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                                    >
+                                      <option value="">Seleziona...</option>
+                                      {acquistoOptions.map(option => (
+                                        <option key={`${servicioKey}-${option}`} value={option}>
+                                          {option}
+                                        </option>
+                                      ))}
+                                    </select>
                                   </div>
                                 </div>
                               </div>
@@ -4068,11 +4117,11 @@ const getEstadoVisual = (estado?: string | null) => {
                 })}
               </div>
             </div>
-            
+
             {/* Sección: Totales Calculados */}
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-4 rounded-lg">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Totales</h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -4085,7 +4134,7 @@ const getEstadoVisual = (estado?: string | null) => {
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Venduto (calculado)
@@ -4097,7 +4146,7 @@ const getEstadoVisual = (estado?: string | null) => {
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Pagato/Acconto (calculado)
@@ -4110,7 +4159,7 @@ const getEstadoVisual = (estado?: string | null) => {
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Da Pagare (calcolato)
@@ -4123,7 +4172,7 @@ const getEstadoVisual = (estado?: string | null) => {
                   />
                 </div>
               </div>
-              
+
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -4136,7 +4185,7 @@ const getEstadoVisual = (estado?: string | null) => {
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold"
                   />
                 </div>
-                
+
                 {/* MetodoPagamento Dropdown (selección múltiple como Servizi) */}
                 <div className="relative metodo-pagamento-dropdown-container">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -4144,7 +4193,7 @@ const getEstadoVisual = (estado?: string | null) => {
                   </label>
                   <div className="relative">
                     <div className="min-h-[40px] px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 flex flex-wrap gap-1 items-center cursor-text"
-                         onClick={() => setShowMetodoPagamentoDropdown(true)}>
+                      onClick={() => setShowMetodoPagamentoDropdown(true)}>
                       {/* Chips de métodos seleccionados */}
                       {formData.metodoPagamento.map(metodo => (
                         <div
@@ -4166,7 +4215,7 @@ const getEstadoVisual = (estado?: string | null) => {
                           </button>
                         </div>
                       ))}
-                      
+
                       {/* Input de búsqueda cuando hay métodos seleccionados */}
                       {formData.metodoPagamento.length > 0 && (
                         <input
@@ -4182,7 +4231,7 @@ const getEstadoVisual = (estado?: string | null) => {
                           onClick={(e) => e.stopPropagation()}
                         />
                       )}
-                      
+
                       {/* Placeholder cuando no hay métodos */}
                       {formData.metodoPagamento.length === 0 && (
                         <span className="text-gray-500 dark:text-gray-400 text-sm">
@@ -4190,7 +4239,7 @@ const getEstadoVisual = (estado?: string | null) => {
                         </span>
                       )}
                     </div>
-                    
+
                     {/* Ícono de búsqueda */}
                     <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                       <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -4198,7 +4247,7 @@ const getEstadoVisual = (estado?: string | null) => {
                       </svg>
                     </div>
                   </div>
-                  
+
                   {showMetodoPagamentoDropdown && (
                     <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                       {filteredMetodoPagamento
@@ -4224,13 +4273,13 @@ const getEstadoVisual = (estado?: string | null) => {
                       )}
                     </div>
                   )}
-                  
+
                   {/* Mensaje de error */}
                   {formData.metodoPagamento.length === 0 && (
                     <p className="text-xs text-red-500 mt-1">Debe seleccionar al menos un método de pago</p>
                   )}
                 </div>
-                
+
                 {/* Campos de Notas - lado a lado */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Campo Nota di vendita */}
@@ -4246,7 +4295,7 @@ const getEstadoVisual = (estado?: string | null) => {
                       placeholder="Nota interna della vendita..."
                     />
                   </div>
-                  
+
                   {/* Campo Note di ricevuta */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -4263,147 +4312,147 @@ const getEstadoVisual = (estado?: string | null) => {
                 </div>
               </div>
             </div>
-            
+
             {/* Sección: Archivo Adjunto */}
             <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Archivo Adjunto (opcional)</h3>
-              
+
               <input
                 type="file"
                 onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
                 accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
               />
-              
+
               {selectedFile && (
                 <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                   Archivo seleccionado: {selectedFile.name}
                 </div>
               )}
             </div>
-            
+
             {/* Sección: Sistema de Cuotas - REPLICANDO LÓGICA DE TOUR GRUPPO */}
             {(() => {
               const daPagareValue = parseFloat(formData.daPagare) || 0;
               const shouldShow = daPagareValue > 0 || numeroCuotas > 0;
               return shouldShow;
             })() && (
-              <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  Sistema de Cuotas (opcional - máximo 2 cuotas)
-                </h3>
-                
-                {/* Selector de número de cuotas - REPLICANDO TOUR GRUPPO */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Número de cuotas
-                  </label>
-                  <select
-                    value={numeroCuotas}
-                    onChange={(e) => setNumeroCuotas(parseInt(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  >
-                    <option value={0}>Sin cuotas</option>
-                    <option value={1}>1 cuota</option>
-                    <option value={2}>2 cuotas</option>
-                  </select>
+                <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    Sistema de Cuotas (opcional - máximo 2 cuotas)
+                  </h3>
+
+                  {/* Selector de número de cuotas - REPLICANDO TOUR GRUPPO */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Número de cuotas
+                    </label>
+                    <select
+                      value={numeroCuotas}
+                      onChange={(e) => setNumeroCuotas(parseInt(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    >
+                      <option value={0}>Sin cuotas</option>
+                      <option value={1}>1 cuota</option>
+                      <option value={2}>2 cuotas</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-4">
+                    {(() => {
+                      if (cuotas.length === 0) {
+                        return <div className="text-gray-500 text-center py-4">No hay cuotas registradas</div>;
+                      }
+                      return cuotas.map((cuota, index) => (
+                        <div key={index} className="border border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
+                          <div className="flex justify-between items-center mb-3">
+                            <h4 className="font-semibold text-gray-900 dark:text-white">
+                              Cuota {cuota.numeroCuota}
+                            </h4>
+                            <button
+                              type="button"
+                              onClick={() => setCuotas(prev => prev.filter((_, i) => i !== index))}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              🗑️ Eliminar
+                            </button>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Data
+                              </label>
+                              <input
+                                type="date"
+                                value={cuota.data}
+                                onChange={(e) => {
+                                  const newCuotas = [...cuotas];
+                                  newCuotas[index].data = e.target.value;
+                                  setCuotas(newCuotas);
+                                }}
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Prezzo
+                              </label>
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={cuota.prezzo}
+                                onChange={(e) => {
+                                  const newCuotas = [...cuotas];
+                                  newCuotas[index].prezzo = e.target.value;
+                                  setCuotas(newCuotas);
+                                }}
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                              />
+                            </div>
+
+                            <div className="flex flex-col justify-end">
+                              <label className="flex items-center gap-2 cursor-pointer mb-2">
+                                <input
+                                  type="checkbox"
+                                  checked={!!cuota.isPagato}
+                                  onChange={(e) => {
+                                    const newCuotas = [...cuotas];
+                                    newCuotas[index].isPagato = e.target.checked;
+                                    setCuotas(newCuotas);
+                                  }}
+                                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
+                                />
+                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                  Pagado
+                                </span>
+                              </label>
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Archivo de la cuota (opcional)
+                              </label>
+                              <input
+                                type="file"
+                                onChange={(e) => {
+                                  const newCuotas = [...cuotas];
+                                  newCuotas[index].file = e.target.files?.[0] || null;
+                                  setCuotas(newCuotas);
+                                }}
+                                accept=".pdf,.jpg,.jpeg,.png"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ));
+                    })()}
+                  </div>
                 </div>
-                
-                <div className="space-y-4">
-                  {(() => {
-                    if (cuotas.length === 0) {
-                      return <div className="text-gray-500 text-center py-4">No hay cuotas registradas</div>;
-                    }
-                    return cuotas.map((cuota, index) => (
-                    <div key={index} className="border border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
-                      <div className="flex justify-between items-center mb-3">
-                        <h4 className="font-semibold text-gray-900 dark:text-white">
-                          Cuota {cuota.numeroCuota}
-                        </h4>
-                        <button
-                          type="button"
-                          onClick={() => setCuotas(prev => prev.filter((_, i) => i !== index))}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          🗑️ Eliminar
-                        </button>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Data
-                          </label>
-                          <input
-                            type="date"
-                            value={cuota.data}
-                            onChange={(e) => {
-                              const newCuotas = [...cuotas];
-                              newCuotas[index].data = e.target.value;
-                              setCuotas(newCuotas);
-                            }}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                          />
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Prezzo
-                          </label>
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={cuota.prezzo}
-                            onChange={(e) => {
-                              const newCuotas = [...cuotas];
-                              newCuotas[index].prezzo = e.target.value;
-                              setCuotas(newCuotas);
-                            }}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                          />
-                        </div>
-                        
-                        <div className="flex flex-col justify-end">
-                          <label className="flex items-center gap-2 cursor-pointer mb-2">
-                            <input
-                              type="checkbox"
-                              checked={!!cuota.isPagato}
-                              onChange={(e) => {
-                                const newCuotas = [...cuotas];
-                                newCuotas[index].isPagato = e.target.checked;
-                                setCuotas(newCuotas);
-                              }}
-                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
-                            />
-                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                              Pagado
-                            </span>
-                          </label>
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Archivo de la cuota (opcional)
-                          </label>
-                          <input
-                            type="file"
-                            onChange={(e) => {
-                              const newCuotas = [...cuotas];
-                              newCuotas[index].file = e.target.files?.[0] || null;
-                              setCuotas(newCuotas);
-                            }}
-                            accept=".pdf,.jpg,.jpeg,.png"
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ));
-                  })()}
-                </div>
-              </div>
-            )}
-            
+              )}
+
             {/* Botones de acción */}
             <div className="flex justify-center gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
               <button
@@ -4432,107 +4481,107 @@ const getEstadoVisual = (estado?: string | null) => {
         <>
           <div className="fixed inset-0 bg-gray-400/50 backdrop-blur-[32px] z-[9999999998]" onClick={handleCloseFileViewer}></div>
           <div className="fixed inset-0 flex items-center justify-center z-[9999999999] p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Comprobantes de Pago</h2>
-              <button
-                onClick={handleCloseFileViewer}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Comprobantes de Pago</h2>
+                <button
+                  onClick={handleCloseFileViewer}
+                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="p-6 space-y-4">
+
+                {/* Archivo Principal */}
+                {viewingFiles.attachedFile && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Archivo Principal</p>
+                    {(() => {
+                      // Usar el nombre del archivo para detectar el tipo
+                      const fileName = viewingFiles.attachedFileName || viewingFiles.attachedFile;
+
+                      if (fileName.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+                        return (
+                          <img
+                            src={viewingFiles.attachedFile}
+                            alt="Archivo principal"
+                            className="w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                            onClick={() => handleDownload(viewingFiles.attachedFile!, viewingFiles.attachedFileName || 'archivo_principal.jpg')}
+                          />
+                        );
+                      } else {
+                        return (
+                          <button
+                            onClick={() => handleDownload(viewingFiles.attachedFile!, viewingFiles.attachedFileName || 'documento')}
+                            className="block w-full p-4 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left"
+                          >
+                            <p className="text-sm text-gray-900 dark:text-white">{viewingFiles.attachedFileName}</p>
+                            <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Clic para descargar</p>
+                          </button>
+                        );
+                      }
+                    })()}
+                  </div>
+                )}
+
+                {/* Archivos de Cuotas */}
+                {viewingFiles.cuotas && viewingFiles.cuotas.filter(c => c.attachedFile).map((cuota) => (
+                  <div key={cuota.id}>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Cuota {cuota.numeroCuota}
+                    </p>
+                    {(() => {
+                      // Usar el nombre del archivo para detectar el tipo
+                      const fileName = cuota.attachedFileName || cuota.attachedFile!;
+
+                      if (fileName.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+                        return (
+                          <img
+                            src={cuota.attachedFile!}
+                            alt={`Cuota ${cuota.numeroCuota}`}
+                            className="w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                            onClick={() => handleDownload(cuota.attachedFile!, cuota.attachedFileName || `cuota_${cuota.numeroCuota}.jpg`)}
+                          />
+                        );
+                      } else {
+                        return (
+                          <button
+                            onClick={() => handleDownload(cuota.attachedFile!, cuota.attachedFileName || `cuota_${cuota.numeroCuota}`)}
+                            className="block w-full p-4 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left"
+                          >
+                            <p className="text-sm text-gray-900 dark:text-white">{cuota.attachedFileName}</p>
+                            <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Clic para descargar</p>
+                          </button>
+                        );
+                      }
+                    })()}
+                  </div>
+                ))}
+
+                {/* Sin archivos */}
+                {!viewingFiles.attachedFile && (!viewingFiles.cuotas || viewingFiles.cuotas.filter(c => c.attachedFile).length === 0) && (
+                  <div className="text-center py-12">
+                    <p className="text-gray-500 dark:text-gray-400">No hay archivos adjuntos</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="border-t border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-end">
+                <button
+                  onClick={handleCloseFileViewer}
+                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"
+                >
+                  Chiudi
+                </button>
+              </div>
             </div>
-
-            {/* Content */}
-            <div className="p-6 space-y-4">
-
-              {/* Archivo Principal */}
-              {viewingFiles.attachedFile && (
-                <div>
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Archivo Principal</p>
-                  {(() => {
-                    // Usar el nombre del archivo para detectar el tipo
-                    const fileName = viewingFiles.attachedFileName || viewingFiles.attachedFile;
-                    
-                    if (fileName.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-                      return (
-                        <img 
-                          src={viewingFiles.attachedFile} 
-                          alt="Archivo principal" 
-                          className="w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                          onClick={() => handleDownload(viewingFiles.attachedFile!, viewingFiles.attachedFileName || 'archivo_principal.jpg')}
-                        />
-                      );
-                    } else {
-                      return (
-                        <button
-                          onClick={() => handleDownload(viewingFiles.attachedFile!, viewingFiles.attachedFileName || 'documento')}
-                          className="block w-full p-4 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left"
-                        >
-                          <p className="text-sm text-gray-900 dark:text-white">{viewingFiles.attachedFileName}</p>
-                          <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Clic para descargar</p>
-                        </button>
-                      );
-                    }
-                  })()}
-                </div>
-              )}
-
-              {/* Archivos de Cuotas */}
-              {viewingFiles.cuotas && viewingFiles.cuotas.filter(c => c.attachedFile).map((cuota) => (
-                <div key={cuota.id}>
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Cuota {cuota.numeroCuota}
-                  </p>
-                  {(() => {
-                    // Usar el nombre del archivo para detectar el tipo
-                    const fileName = cuota.attachedFileName || cuota.attachedFile!;
-                    
-                    if (fileName.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-                      return (
-                        <img 
-                          src={cuota.attachedFile!} 
-                          alt={`Cuota ${cuota.numeroCuota}`} 
-                          className="w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                          onClick={() => handleDownload(cuota.attachedFile!, cuota.attachedFileName || `cuota_${cuota.numeroCuota}.jpg`)}
-                        />
-                      );
-                    } else {
-                      return (
-                        <button
-                          onClick={() => handleDownload(cuota.attachedFile!, cuota.attachedFileName || `cuota_${cuota.numeroCuota}`)}
-                          className="block w-full p-4 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left"
-                        >
-                          <p className="text-sm text-gray-900 dark:text-white">{cuota.attachedFileName}</p>
-                          <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Clic para descargar</p>
-                        </button>
-                      );
-                    }
-                  })()}
-                </div>
-              ))}
-
-              {/* Sin archivos */}
-              {!viewingFiles.attachedFile && (!viewingFiles.cuotas || viewingFiles.cuotas.filter(c => c.attachedFile).length === 0) && (
-                <div className="text-center py-12">
-                  <p className="text-gray-500 dark:text-gray-400">No hay archivos adjuntos</p>
-                </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="border-t border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-end">
-              <button
-                onClick={handleCloseFileViewer}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"
-              >
-                Chiudi
-              </button>
-            </div>
-          </div>
           </div>
         </>,
         document.body
@@ -4875,230 +4924,230 @@ const getEstadoVisual = (estado?: string | null) => {
         document.body
       )}
 
-        {/* Modal de información del cliente */}
-        {isMounted && isClientModalOpen && selectedClient && createPortal(
-          <>
-            <div className="fixed inset-0 bg-gray-400/50 backdrop-blur-[32px] z-[9999999998]" onClick={() => setIsClientModalOpen(false)} />
-            <div className="fixed inset-0 modal z-[9999999999] flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-gray-900 rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col">
-                {/* Header */}
-                <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center flex-shrink-0">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                    Información del Cliente - {selectedClient.firstName} {selectedClient.lastName}
-                  </h2>
-                  <button
-                    onClick={() => setIsClientModalOpen(false)}
-                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full p-2 transition-colors"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
+      {/* Modal de información del cliente */}
+      {isMounted && isClientModalOpen && selectedClient && createPortal(
+        <>
+          <div className="fixed inset-0 bg-gray-400/50 backdrop-blur-[32px] z-[9999999998]" onClick={() => setIsClientModalOpen(false)} />
+          <div className="fixed inset-0 modal z-[9999999999] flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+              {/* Header */}
+              <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center flex-shrink-0">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                  Información del Cliente - {selectedClient.firstName} {selectedClient.lastName}
+                </h2>
+                <button
+                  onClick={() => setIsClientModalOpen(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full p-2 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
 
-                {/* Contenido */}
-                <div className="flex-1 overflow-y-auto p-6">
-                  {/* Información Personal */}
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                      Información Personal
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Contenido */}
+              <div className="flex-1 overflow-y-auto p-6">
+                {/* Información Personal */}
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    Información Personal
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Nombre Completo
+                      </label>
+                      <p className="text-sm text-gray-900 dark:text-white">
+                        {selectedClient.firstName} {selectedClient.lastName}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Email
+                      </label>
+                      <p className="text-sm text-gray-900 dark:text-white">
+                        {selectedClient.email}
+                      </p>
+                    </div>
+                    {selectedClient.birthDate && (
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Nombre Completo
+                          Fecha de Nacimiento
                         </label>
                         <p className="text-sm text-gray-900 dark:text-white">
-                          {selectedClient.firstName} {selectedClient.lastName}
+                          {selectedClient.birthDate}
                         </p>
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Email
-                        </label>
-                        <p className="text-sm text-gray-900 dark:text-white">
-                          {selectedClient.email}
-                        </p>
-                      </div>
-                      {selectedClient.birthDate && (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Fecha de Nacimiento
-                          </label>
-                          <p className="text-sm text-gray-900 dark:text-white">
-                            {selectedClient.birthDate}
-                          </p>
-                        </div>
-                      )}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Dirección
-                        </label>
-                        <p className="text-sm text-gray-900 dark:text-white">
-                          {selectedClient.address}
-                        </p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Código Fiscal
-                        </label>
-                        <p className="text-sm text-gray-900 dark:text-white">
-                          {selectedClient.fiscalCode}
-                        </p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Teléfono
-                        </label>
-                        <p className="text-sm text-gray-900 dark:text-white">
-                          {selectedClient.phoneNumber}
-                        </p>
-                      </div>
+                    )}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Dirección
+                      </label>
+                      <p className="text-sm text-gray-900 dark:text-white">
+                        {selectedClient.address}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Código Fiscal
+                      </label>
+                      <p className="text-sm text-gray-900 dark:text-white">
+                        {selectedClient.fiscalCode}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Teléfono
+                      </label>
+                      <p className="text-sm text-gray-900 dark:text-white">
+                        {selectedClient.phoneNumber}
+                      </p>
                     </div>
                   </div>
+                </div>
 
-                  {/* Documentos Adjuntos */}
-                  {(selectedClient.document1 || selectedClient.document2 || selectedClient.document3 || selectedClient.document4) && (
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                        Documentos Adjuntos
-                      </h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {selectedClient.document1 && (
-                          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-3">
-                            <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
-                              Documento 1
-                            </h4>
-                            <div className="flex items-center justify-center h-24 bg-gray-50 dark:bg-gray-800 rounded">
-                              {selectedClient.document1.includes('/image/') ? (
-                                <img
-                                  src={selectedClient.document1}
-                                  alt="Documento 1"
-                                  className="max-h-full max-w-full object-contain rounded"
-                                />
-                              ) : (
-                                <button
-                                  onClick={() => handleDownload(selectedClient.document1!, selectedClient.document1Name || 'documento1')}
-                                  className="flex flex-col items-center gap-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                                >
-                                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                  </svg>
-                                  <span className="text-xs">Descargar</span>
-                                </button>
-                              )}
-                            </div>
+                {/* Documentos Adjuntos */}
+                {(selectedClient.document1 || selectedClient.document2 || selectedClient.document3 || selectedClient.document4) && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                      Documentos Adjuntos
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {selectedClient.document1 && (
+                        <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                          <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
+                            Documento 1
+                          </h4>
+                          <div className="flex items-center justify-center h-24 bg-gray-50 dark:bg-gray-800 rounded">
+                            {selectedClient.document1.includes('/image/') ? (
+                              <img
+                                src={selectedClient.document1}
+                                alt="Documento 1"
+                                className="max-h-full max-w-full object-contain rounded"
+                              />
+                            ) : (
+                              <button
+                                onClick={() => handleDownload(selectedClient.document1!, selectedClient.document1Name || 'documento1')}
+                                className="flex flex-col items-center gap-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                              >
+                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <span className="text-xs">Descargar</span>
+                              </button>
+                            )}
                           </div>
-                        )}
-                        {selectedClient.document2 && (
-                          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-3">
-                            <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
-                              Documento 2
-                            </h4>
-                            <div className="flex items-center justify-center h-24 bg-gray-50 dark:bg-gray-800 rounded">
-                              {selectedClient.document2.includes('/image/') ? (
-                                <img
-                                  src={selectedClient.document2}
-                                  alt="Documento 2"
-                                  className="max-h-full max-w-full object-contain rounded"
-                                />
-                              ) : (
-                                <button
-                                  onClick={() => handleDownload(selectedClient.document2!, selectedClient.document2Name || 'documento2')}
-                                  className="flex flex-col items-center gap-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                                >
-                                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                  </svg>
-                                  <span className="text-xs">Descargar</span>
-                                </button>
-                              )}
-                            </div>
+                        </div>
+                      )}
+                      {selectedClient.document2 && (
+                        <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                          <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
+                            Documento 2
+                          </h4>
+                          <div className="flex items-center justify-center h-24 bg-gray-50 dark:bg-gray-800 rounded">
+                            {selectedClient.document2.includes('/image/') ? (
+                              <img
+                                src={selectedClient.document2}
+                                alt="Documento 2"
+                                className="max-h-full max-w-full object-contain rounded"
+                              />
+                            ) : (
+                              <button
+                                onClick={() => handleDownload(selectedClient.document2!, selectedClient.document2Name || 'documento2')}
+                                className="flex flex-col items-center gap-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                              >
+                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <span className="text-xs">Descargar</span>
+                              </button>
+                            )}
                           </div>
-                        )}
-                        {selectedClient.document3 && (
-                          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-3">
-                            <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
-                              Documento 3
-                            </h4>
-                            <div className="flex items-center justify-center h-24 bg-gray-50 dark:bg-gray-800 rounded">
-                              {selectedClient.document3.includes('/image/') ? (
-                                <img
-                                  src={selectedClient.document3}
-                                  alt="Documento 3"
-                                  className="max-h-full max-w-full object-contain rounded"
-                                />
-                              ) : (
-                                <button
-                                  onClick={() => handleDownload(selectedClient.document3!, selectedClient.document3Name || 'documento3')}
-                                  className="flex flex-col items-center gap-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                                >
-                                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                  </svg>
-                                  <span className="text-xs">Descargar</span>
-                                </button>
-                              )}
-                            </div>
+                        </div>
+                      )}
+                      {selectedClient.document3 && (
+                        <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                          <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
+                            Documento 3
+                          </h4>
+                          <div className="flex items-center justify-center h-24 bg-gray-50 dark:bg-gray-800 rounded">
+                            {selectedClient.document3.includes('/image/') ? (
+                              <img
+                                src={selectedClient.document3}
+                                alt="Documento 3"
+                                className="max-h-full max-w-full object-contain rounded"
+                              />
+                            ) : (
+                              <button
+                                onClick={() => handleDownload(selectedClient.document3!, selectedClient.document3Name || 'documento3')}
+                                className="flex flex-col items-center gap-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                              >
+                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <span className="text-xs">Descargar</span>
+                              </button>
+                            )}
                           </div>
-                        )}
-                        {selectedClient.document4 && (
-                          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-3">
-                            <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
-                              Documento 4
-                            </h4>
-                            <div className="flex items-center justify-center h-24 bg-gray-50 dark:bg-gray-800 rounded">
-                              {selectedClient.document4.includes('/image/') ? (
-                                <img
-                                  src={selectedClient.document4}
-                                  alt="Documento 4"
-                                  className="max-h-full max-w-full object-contain rounded"
-                                />
-                              ) : (
-                                <button
-                                  onClick={() => handleDownload(selectedClient.document4!, selectedClient.document4Name || 'documento4')}
-                                  className="flex flex-col items-center gap-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                                >
-                                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                  </svg>
-                                  <span className="text-xs">Descargar</span>
-                                </button>
-                              )}
-                            </div>
+                        </div>
+                      )}
+                      {selectedClient.document4 && (
+                        <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                          <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
+                            Documento 4
+                          </h4>
+                          <div className="flex items-center justify-center h-24 bg-gray-50 dark:bg-gray-800 rounded">
+                            {selectedClient.document4.includes('/image/') ? (
+                              <img
+                                src={selectedClient.document4}
+                                alt="Documento 4"
+                                className="max-h-full max-w-full object-contain rounded"
+                              />
+                            ) : (
+                              <button
+                                onClick={() => handleDownload(selectedClient.document4!, selectedClient.document4Name || 'documento4')}
+                                className="flex flex-col items-center gap-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                              >
+                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <span className="text-xs">Descargar</span>
+                              </button>
+                            )}
                           </div>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
+              </div>
 
-                {/* Footer */}
-                <div className="border-t border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-end flex-shrink-0">
-                  <button
-                    onClick={() => setIsClientModalOpen(false)}
-                    className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors"
-                  >
-                    Cerrar
-                  </button>
-                </div>
+              {/* Footer */}
+              <div className="border-t border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-end flex-shrink-0">
+                <button
+                  onClick={() => setIsClientModalOpen(false)}
+                  className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                >
+                  Cerrar
+                </button>
               </div>
             </div>
-          </>,
-          document.body
-        )}
+          </div>
+        </>,
+        document.body
+      )}
 
-        {/* Tabla de detalles de pasajeros */}
-        <PassengerDetailsTable
-          isOpen={isPassengerDetailsOpen}
-          onClose={handleClosePassengerDetails}
-        />
+      {/* Tabla de detalles de pasajeros */}
+      <PassengerDetailsTable
+        isOpen={isPassengerDetailsOpen}
+        onClose={handleClosePassengerDetails}
+      />
 
-        {/* Tabla simplificada de detalles de pasajeros */}
-        <PassengerDetailsTableSimple
-          isOpen={isPassengerDetailsSimpleOpen}
-          onClose={handleClosePassengerDetailsSimple}
-        />
+      {/* Tabla simplificada de detalles de pasajeros */}
+      <PassengerDetailsTableSimple
+        isOpen={isPassengerDetailsSimpleOpen}
+        onClose={handleClosePassengerDetailsSimple}
+      />
     </div>
   );
 }

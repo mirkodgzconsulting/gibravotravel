@@ -4,6 +4,7 @@ import Image from "next/image"
 import { Users, Target, Heart, Globe, Award, Zap, ChevronRight } from "lucide-react"
 import { RevealOnScroll } from "@/components/website/ui/reveal-on-scroll"
 import { cn } from "@/lib/website/utils"
+import { Button } from "@/components/website/ui/button"
 
 export default function ChiSiamoPage() {
     // TIP FOR USER: Replace these URLs with your Cloudinary links
@@ -247,13 +248,13 @@ export default function ChiSiamoPage() {
                             <span className="text-[#004BA5]">Prossima Avventura?</span>
                         </h2>
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <button className="h-10 bg-[#004BA5] hover:bg-[#FE8008] text-white font-[500] px-8 rounded-2xl shadow-xl shadow-blue-900/20 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2">
+                            <Button className="h-10 w-auto bg-[#004BA5] hover:bg-[#FE8008] text-white font-[500] px-8 rounded-2xl shadow-xl shadow-blue-900/20 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2">
                                 Scopri i Viaggi
                                 <ChevronRight className="h-4 w-4" />
-                            </button>
-                            <button className="h-10 bg-slate-50 hover:bg-slate-100 text-[#323232] font-[500] px-8 rounded-2xl transition-all border border-slate-200">
+                            </Button>
+                            <Button variant="outline" className="h-10 w-auto bg-slate-50 hover:bg-slate-100 text-[#323232] font-[500] px-8 rounded-2xl transition-all border border-slate-200 shadow-none">
                                 Contattaci
-                            </button>
+                            </Button>
                         </div>
                     </RevealOnScroll>
                 </div>

@@ -48,7 +48,7 @@ function OrderConfirmationContent() {
 
             <div className="space-y-3">
                 <Link href="/area-riservata">
-                    <Button className="w-full bg-[#004BA5] hover:bg-[#003580] h-12 text-lg">
+                    <Button className="w-full h-12 text-lg">
                         Vai alla tua Area Riservata <ArrowRight className="ml-2 w-4 h-4" />
                     </Button>
                 </Link>

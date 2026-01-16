@@ -9,6 +9,7 @@ import { TourFAQ } from '@/components/tour/TourFAQ';
 import { TourStickyNav } from '@/components/tour/TourStickyNav';
 import { TourOverview } from '@/components/tour/TourOverview';
 import { TourHorizontalCard } from '@/components/tour/TourHorizontalCard';
+import { Button } from "@/components/website/ui/button";
 
 // Simple Icons (Lucide-like SVG inline for zero-dep dependencies if needed, or lucide-react if installed)
 // Assuming lucide-react is available based on previous context (XIcon etc used in Admin)
@@ -27,6 +28,7 @@ import {
     Phone,
     Mail,
     FileText,
+    ShieldCheck,
     HelpCircle,
     Plane,
     Bus,
@@ -249,7 +251,7 @@ export default async function TourPage({ params }: TourPageProps) {
             <TourStickyNav />
 
             {/* --- MAIN CONTENT GRID --- */}
-            <div className="max-w-7xl mx-auto px-4 md:px-6 mt-12 relative z-10">
+            <div className="max-w-7xl mx-auto px-4 md:px-6 mt-6 relative z-10">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
 
                     {/* LEFT COLUMN (Details) */}
@@ -280,13 +282,13 @@ export default async function TourPage({ params }: TourPageProps) {
                                 {/* Includes */}
                                 <div>
                                     <h3 className="font-bold text-[#323232] mb-4 flex items-center gap-2 text-lg">
-                                        <CheckCircle2 className="w-5 h-5 text-[#FE8008]" />
+                                        <CheckCircle2 className="w-5 h-5 text-green-600" />
                                         La Quota Include
                                     </h3>
                                     <ul className="space-y-3">
                                         {(tour.incluye as string[] || []).map((item, i) => (
                                             <li key={i} className="flex gap-3 text-gray-600 text-sm leading-relaxed">
-                                                <span className="w-1.5 h-1.5 bg-[#FE8008] rounded-full mt-2 flex-shrink-0" />
+                                                <span className="w-1.5 h-1.5 bg-green-600 rounded-full mt-2 flex-shrink-0" />
                                                 <span>{item}</span>
                                             </li>
                                         ))}
@@ -472,13 +474,19 @@ export default async function TourPage({ params }: TourPageProps) {
                                     </div>
 
                                     <Link href={`/prenotazione/${tour.slug || tour.id}`} className="w-full block">
-                                        <button className="w-full py-4 bg-[#004BA5] hover:bg-[#003a80] text-white font-bold rounded-2xl shadow-xl shadow-blue-900/20 hover:shadow-blue-900/30 transition-all transform hover:-translate-y-0.5 mb-6 text-xl">
+                                        <Button className="w-full py-4 h-auto font-bold rounded-2xl shadow-xl shadow-blue-900/20 hover:shadow-blue-900/30 transition-all transform hover:-translate-y-0.5 mb-6 text-xl">
                                             Prenota Ora
-                                        </button>
+                                        </Button>
                                     </Link>
-                                    <button className="w-full py-2 text-gray-400 font-bold hover:text-[#004BA5] transition-colors text-sm mb-6">
-                                        Scarica Programma PDF
-                                    </button>
+                                    <a
+                                        href={tour.type === 'aereo' ? 'https://res.cloudinary.com/dskliu1ig/image/upload/v1768526058/toruaereo_tyc_omfouj.pdf' : 'https://res.cloudinary.com/dskliu1ig/image/upload/v1768526058/tourbus_tyc_fuyqbf.pdf'}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center justify-center gap-2 w-full py-2 text-gray-400 font-medium hover:text-[#004BA5] transition-colors text-xs mb-6 group"
+                                    >
+                                        <ShieldCheck className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                                        <span>Condizioni di Viaggio</span>
+                                    </a>
                                 </div>
                                 {/* Moved Up */}
 

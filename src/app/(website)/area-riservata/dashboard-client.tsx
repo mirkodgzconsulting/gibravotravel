@@ -167,30 +167,30 @@ export function DashboardClient({ userData, bookings }: DashboardClientProps) {
                     <div className="lg:col-span-3">
                         <RevealOnScroll delay={100}>
                             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-2 overflow-hidden sticky top-24">
-                                <button
+                                <Button
                                     onClick={() => setActiveTab("TRIPS")}
                                     className={cn(
-                                        "w-full h-10 flex items-center gap-3 px-4 rounded-xl font-[500] transition-colors mb-1 text-left",
+                                        "w-full h-10 flex items-center justify-start gap-3 px-4 rounded-xl font-[500] transition-colors mb-1 text-left border-0",
                                         activeTab === "TRIPS"
-                                            ? "bg-[#004BA5] text-white shadow-md"
-                                            : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+                                            ? "bg-[#004BA5] text-white shadow-md hover:bg-[#004BA5]/90"
+                                            : "bg-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-700 shadow-none"
                                     )}
                                 >
                                     <Calendar className="h-5 w-5" />
                                     I miei viaggi
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                     onClick={() => setActiveTab("PROFILE")}
                                     className={cn(
-                                        "w-full h-10 flex items-center gap-3 px-4 rounded-xl font-[500] transition-colors text-left",
+                                        "w-full h-10 flex items-center justify-start gap-3 px-4 rounded-xl font-[500] transition-colors text-left border-0",
                                         activeTab === "PROFILE"
-                                            ? "bg-[#004BA5] text-white shadow-md"
-                                            : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+                                            ? "bg-[#004BA5] text-white shadow-md hover:bg-[#004BA5]/90"
+                                            : "bg-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-700 shadow-none"
                                     )}
                                 >
                                     <User className="h-5 w-5" />
                                     Dati Personali
-                                </button>
+                                </Button>
                             </div>
                         </RevealOnScroll>
                     </div>

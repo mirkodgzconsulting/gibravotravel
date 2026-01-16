@@ -169,7 +169,7 @@ export function HomeClient({ flightTours, busTours }: HomeClientProps) {
                             <Link href="/partenze">
                                 <Button
                                     size="lg"
-                                    className="rounded-full text-lg px-8 py-6 font-bold shadow-2xl hover:scale-105 transition-transform duration-300 bg-[#FE8008] hover:bg-[#004BA5] text-white border-2 border-transparent hover:border-white/20"
+                                    className="rounded-full text-lg px-8 py-6 shadow-2xl"
                                 >
                                     Scopri le Partenze
                                 </Button>

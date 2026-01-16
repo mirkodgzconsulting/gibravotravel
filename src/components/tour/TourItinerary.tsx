@@ -49,8 +49,8 @@ export function TourItinerary({ itinerary }: FooterItineraryProps) {
                                 </div>
 
                                 {/* Text */}
-                                <div className="text-base md:text-lg font-medium leading-tight">
-                                    <span className={cn("block md:inline font-black mr-3 uppercase tracking-wide text-sm md:text-base mb-1 md:mb-0", isOpen ? "text-white" : "text-[#FE8008]")}>
+                                <div className="text-sm md:text-base font-medium leading-tight">
+                                    <span className={cn("block md:inline font-black mr-3 uppercase tracking-wide text-xs md:text-sm mb-1 md:mb-0", isOpen ? "text-white" : "text-[#FE8008]")}>
                                         Giorno {i + 1}
                                     </span>
                                     <span className={isOpen ? "text-blue-50" : "text-gray-700"}>

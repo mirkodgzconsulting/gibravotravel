@@ -82,25 +82,13 @@ export async function POST(
 
     // Usar transacción para asegurar consistencia
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Eliminar todas las asignaciones existentes del tour
-      const stanzeExistentes = await tx.stanzaTourAereo.findMany({
-        where: { tourAereoId: tourId },
-        select: { id: true },
-      });
-
-      if (stanzeExistentes.length > 0) {
-        const stanzaIds = stanzeExistentes.map((s) => s.id);
-        await tx.asignacionStanza.deleteMany({
-          where: { stanzaId: { in: stanzaIds } },
-        });
-      }
-
-      // 2. Eliminar todas las habitaciones existentes del tour
+      // 1. Eliminar todas las habitaciones existentes del tour
+      // Gracias a 'onDelete: Cascade' en el schema, esto eliminará automáticamente las asignaciones
       await tx.stanzaTourAereo.deleteMany({
         where: { tourAereoId: tourId },
       });
 
-      // 3. Crear las nuevas habitaciones y asignaciones
+      // 2. Crear las nuevas habitaciones y asignaciones
       for (const habitacion of habitaciones) {
         // Mapear el tipo a la versión de BD (Family Room -> FamilyRoom)
         const tipoBD = habitacion.tipo === 'Family Room' ? 'FamilyRoom' : habitacion.tipo;
@@ -120,7 +108,7 @@ export async function POST(
         });
       }
 
-      // 4. Obtener todas las habitaciones creadas con sus asignaciones en una sola consulta
+      // 3. Obtener todas las habitaciones creadas con sus asignaciones en una sola consulta
       return await tx.stanzaTourAereo.findMany({
         where: { tourAereoId: tourId },
         include: {
@@ -145,6 +133,8 @@ export async function POST(
           createdAt: 'asc',
         },
       });
+    }, {
+      timeout: 20000 // Aumentar el tiempo de espera a 20 segundos para evitar errores en producción
     });
 
     return NextResponse.json({

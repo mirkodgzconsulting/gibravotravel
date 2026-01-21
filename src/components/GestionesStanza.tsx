@@ -145,13 +145,19 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
             });
           setPasajerosSinAsignar(sinAsignar);
 
-          // Guardar estado inicial para comparar cambios
+          // Guardar estado inicial para comparar cambios de forma estable
           const estadoInicialData = JSON.stringify({
             habitaciones: habitacionesCargadas.map(h => ({
               tipo: h.tipo,
-              pasajeros: h.pasajeros.map(p => p.id).sort(),
-              note: h.note || '', // <--- Sincronizar nota en estado inicial
-            })).sort((a, b) => a.tipo.localeCompare(b.tipo)),
+              pasajeros: [...h.pasajeros.map(p => p.id)].sort(),
+              note: h.note || '',
+            })).sort((a, b) => {
+              const typeComp = a.tipo.localeCompare(b.tipo);
+              if (typeComp !== 0) return typeComp;
+              const p1 = a.pasajeros[0] || '';
+              const p2 = b.pasajeros[0] || '';
+              return p1.localeCompare(p2);
+            }),
           });
           setEstadoInicial(estadoInicialData);
         } else {
@@ -291,13 +297,20 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
   const hayCambios = useCallback(() => {
     if (!estadoInicial) return false; // Si no hay estado inicial, no guardar (aún está cargando)
 
-    // Preparar el estado actual para comparar
+    // Preparar el estado actual para comparar de forma estable
     const estadoActual = JSON.stringify({
       habitaciones: habitaciones.map(h => ({
         tipo: h.tipo,
-        pasajeros: h.pasajeros.map(p => p.id).sort(),
-        note: h.note || '', // <--- Comparar con nota
-      })).sort((a, b) => a.tipo.localeCompare(b.tipo)),
+        pasajeros: [...h.pasajeros.map(p => p.id)].sort(),
+        note: h.note || '',
+      })).sort((a, b) => {
+        // Ordenar por tipo primero, luego por el primer pasajero (estabilidad)
+        const typeComp = a.tipo.localeCompare(b.tipo);
+        if (typeComp !== 0) return typeComp;
+        const p1 = a.pasajeros[0] || '';
+        const p2 = b.pasajeros[0] || '';
+        return p1.localeCompare(p2);
+      }),
     });
 
     return estadoActual !== estadoInicial;
@@ -340,10 +353,12 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
       });
 
       if (!response.ok) {
-        throw new Error('Error al guardar las habitaciones');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Error al guardar las habitaciones');
       }
 
       const data = await response.json();
+      alert('Organizzazione stanze salvata con successo');
 
       // Actualizar los IDs de las habitaciones con los IDs reales de la BD
       if (data.stanze && data.stanze.length > 0) {
@@ -384,19 +399,25 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
           });
         setPasajerosSinAsignar(sinAsignar);
 
-        // Actualizar el estado inicial con el nuevo estado guardado
+        // Actualizar el estado inicial con el nuevo estado guardado de forma estable
         const nuevoEstadoInicial = JSON.stringify({
           habitaciones: habitacionesActualizadas.map(h => ({
             tipo: h.tipo,
-            pasajeros: h.pasajeros.map(p => p.id).sort(),
-            note: h.note || '', // <--- Sincronizar nota en estado inicial
-          })).sort((a, b) => a.tipo.localeCompare(b.tipo)),
+            pasajeros: [...h.pasajeros.map(p => p.id)].sort(),
+            note: h.note || '',
+          })).sort((a, b) => {
+            const typeComp = a.tipo.localeCompare(b.tipo);
+            if (typeComp !== 0) return typeComp;
+            const p1 = a.pasajeros[0] || '';
+            const p2 = b.pasajeros[0] || '';
+            return p1.localeCompare(p2);
+          }),
         });
         setEstadoInicial(nuevoEstadoInicial);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving stanze:', error);
-      // No mostrar alert para no interrumpir la experiencia del usuario
+      alert(error.message || 'Errore durante il salvataggio');
     } finally {
       setSaving(false);
       isSavingRef.current = false;

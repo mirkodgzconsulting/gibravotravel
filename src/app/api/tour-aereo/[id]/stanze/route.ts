@@ -101,59 +101,50 @@ export async function POST(
       });
 
       // 3. Crear las nuevas habitaciones y asignaciones
-      const stanzeCreadas = [];
-
       for (const habitacion of habitaciones) {
-        // Crear la habitación
-        const stanza = await tx.stanzaTourAereo.create({
+        // Mapear el tipo a la versión de BD (Family Room -> FamilyRoom)
+        const tipoBD = habitacion.tipo === 'Family Room' ? 'FamilyRoom' : habitacion.tipo;
+
+        // Crear la habitación con sus asignaciones en un solo paso
+        await tx.stanzaTourAereo.create({
           data: {
             tourAereoId: tourId,
-            tipo: habitacion.tipo,
-            note: habitacion.note, // <--- Guardar nota
+            tipo: tipoBD,
+            note: habitacion.note || '',
+            asignaciones: {
+              create: (habitacion.pasajeros || []).map((pasajeroId: string) => ({
+                ventaTourAereoId: pasajeroId,
+              })),
+            },
           },
         });
+      }
 
-        // Crear las asignaciones de pasajeros
-        if (habitacion.pasajeros && habitacion.pasajeros.length > 0) {
-          for (const pasajeroId of habitacion.pasajeros) {
-            await tx.asignacionStanza.create({
-              data: {
-                stanzaId: stanza.id,
-                ventaTourAereoId: pasajeroId,
-              },
-            });
-          }
-        }
-
-        // Obtener la habitación con sus asignaciones para retornarla
-        const stanzaCompleta = await tx.stanzaTourAereo.findUnique({
-          where: { id: stanza.id },
-          include: {
-            asignaciones: {
-              include: {
-                ventaTourAereo: {
-                  select: {
-                    id: true,
-                    pasajero: true,
-                    email: true,
-                    numeroTelefono: true,
-                    paisOrigen: true,
-                    iata: true,
-                    pnr: true,
-                    stato: true,
-                  },
+      // 4. Obtener todas las habitaciones creadas con sus asignaciones en una sola consulta
+      return await tx.stanzaTourAereo.findMany({
+        where: { tourAereoId: tourId },
+        include: {
+          asignaciones: {
+            include: {
+              ventaTourAereo: {
+                select: {
+                  id: true,
+                  pasajero: true,
+                  email: true,
+                  numeroTelefono: true,
+                  paisOrigen: true,
+                  iata: true,
+                  pnr: true,
+                  stato: true,
                 },
               },
             },
           },
-        });
-
-        if (stanzaCompleta) {
-          stanzeCreadas.push(stanzaCompleta);
-        }
-      }
-
-      return stanzeCreadas;
+        },
+        orderBy: {
+          createdAt: 'asc',
+        },
+      });
     });
 
     return NextResponse.json({

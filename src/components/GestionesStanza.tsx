@@ -116,6 +116,7 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
           const habitacionesCargadas: Habitacion[] = stanze.map((stanza: any) => ({
             id: stanza.id,
             tipo: stanza.tipo === 'FamilyRoom' ? 'Family Room' : stanza.tipo,
+            note: stanza.note || '', // <--- Cargar nota de la BD
             pasajeros: stanza.asignaciones.map((asignacion: any) => ({
               id: asignacion.ventaTourAereo.id,
               nombre: asignacion.ventaTourAereo.pasajero,
@@ -149,6 +150,7 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
             habitaciones: habitacionesCargadas.map(h => ({
               tipo: h.tipo,
               pasajeros: h.pasajeros.map(p => p.id).sort(),
+              note: h.note || '', // <--- Sincronizar nota en estado inicial
             })).sort((a, b) => a.tipo.localeCompare(b.tipo)),
           });
           setEstadoInicial(estadoInicialData);
@@ -294,6 +296,7 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
       habitaciones: habitaciones.map(h => ({
         tipo: h.tipo,
         pasajeros: h.pasajeros.map(p => p.id).sort(),
+        note: h.note || '', // <--- Comparar con nota
       })).sort((a, b) => a.tipo.localeCompare(b.tipo)),
     });
 
@@ -322,6 +325,7 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
       // Preparar los datos para enviar
       const habitacionesParaGuardar = habitaciones.map(habitacion => ({
         tipo: habitacion.tipo === 'Family Room' ? 'FamilyRoom' : habitacion.tipo,
+        note: habitacion.note || '', // <--- Enviar nota a la API
         pasajeros: habitacion.pasajeros.map(p => p.id),
       }));
 
@@ -346,6 +350,7 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
         const habitacionesActualizadas: Habitacion[] = data.stanze.map((stanza: any) => ({
           id: stanza.id,
           tipo: stanza.tipo === 'FamilyRoom' ? 'Family Room' : stanza.tipo,
+          note: stanza.note || '', // <--- Recuperar nota de la respuesta
           pasajeros: stanza.asignaciones
             .map((asignacion: any) => ({
               id: asignacion.ventaTourAereo.id,
@@ -384,6 +389,7 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
           habitaciones: habitacionesActualizadas.map(h => ({
             tipo: h.tipo,
             pasajeros: h.pasajeros.map(p => p.id).sort(),
+            note: h.note || '', // <--- Sincronizar nota en estado inicial
           })).sort((a, b) => a.tipo.localeCompare(b.tipo)),
         });
         setEstadoInicial(nuevoEstadoInicial);

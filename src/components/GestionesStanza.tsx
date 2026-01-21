@@ -27,6 +27,7 @@ interface Habitacion {
   tipo: TipoHabitacion;
   numero?: string; // Número de habitación (opcional)
   pasajeros: Pasajero[];
+  note?: string; // <--- Añadir campo nota
 }
 
 interface GestionesStanzaProps {
@@ -106,7 +107,7 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
       try {
         setLoading(true);
         const response = await fetch(`/api/tour-aereo/${tourId}/stanze`);
-        
+
         if (response.ok) {
           const data = await response.json();
           const stanze = data.stanze || [];
@@ -142,7 +143,7 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
               return ordenA - ordenB;
             });
           setPasajerosSinAsignar(sinAsignar);
-          
+
           // Guardar estado inicial para comparar cambios
           const estadoInicialData = JSON.stringify({
             habitaciones: habitacionesCargadas.map(h => ({
@@ -244,8 +245,8 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
     if (draggedFrom?.type === 'unassigned') {
       setPasajerosSinAsignar(prev => prev.filter(p => p.id !== pasajero.id));
     } else if (draggedFrom?.roomId) {
-      setHabitaciones(prev => prev.map(h => 
-        h.id === draggedFrom.roomId 
+      setHabitaciones(prev => prev.map(h =>
+        h.id === draggedFrom.roomId
           ? { ...h, pasajeros: h.pasajeros.filter(p => p.id !== pasajero.id) }
           : h
       ));
@@ -287,7 +288,7 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
   // Función para comparar el estado actual con el inicial
   const hayCambios = useCallback(() => {
     if (!estadoInicial) return false; // Si no hay estado inicial, no guardar (aún está cargando)
-    
+
     // Preparar el estado actual para comparar
     const estadoActual = JSON.stringify({
       habitaciones: habitaciones.map(h => ({
@@ -295,14 +296,14 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
         pasajeros: h.pasajeros.map(p => p.id).sort(),
       })).sort((a, b) => a.tipo.localeCompare(b.tipo)),
     });
-    
+
     return estadoActual !== estadoInicial;
   }, [habitaciones, estadoInicial]);
 
   // Función para guardar las habitaciones en la BD
   const guardarStanze = useCallback(async () => {
     if (!isOpen || loading || saving) return;
-    
+
     // Solo guardar si hay cambios reales
     if (!hayCambios()) {
       return;
@@ -317,7 +318,7 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
     try {
       isSavingRef.current = true;
       setSaving(true);
-      
+
       // Preparar los datos para enviar
       const habitacionesParaGuardar = habitaciones.map(habitacion => ({
         tipo: habitacion.tipo === 'Family Room' ? 'FamilyRoom' : habitacion.tipo,
@@ -339,7 +340,7 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
       }
 
       const data = await response.json();
-      
+
       // Actualizar los IDs de las habitaciones con los IDs reales de la BD
       if (data.stanze && data.stanze.length > 0) {
         const habitacionesActualizadas: Habitacion[] = data.stanze.map((stanza: any) => ({
@@ -364,7 +365,7 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
             }),
         }));
         setHabitaciones(habitacionesActualizadas);
-        
+
         // Actualizar pasajeros sin asignar manteniendo el orden
         const pasajerosAsignadosIds = new Set(
           habitacionesActualizadas.flatMap(h => h.pasajeros.map(p => p.id))
@@ -377,7 +378,7 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
             return ordenA - ordenB;
           });
         setPasajerosSinAsignar(sinAsignar);
-        
+
         // Actualizar el estado inicial con el nuevo estado guardado
         const nuevoEstadoInicial = JSON.stringify({
           habitaciones: habitacionesActualizadas.map(h => ({
@@ -447,6 +448,7 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
         // Si la habitación está vacía, agregar una fila indicando que está vacía
         dataToExport.push({
           'Tipo Stanza': habitacion.tipo,
+          'Nota': habitacion.note || '', // <--- Incluir Nota
           'Passeggero': '(Vuota)',
           'Telefono': '',
         });
@@ -454,7 +456,8 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
         // Agregar cada pasajero de la habitación
         habitacion.pasajeros.forEach((pasajero, pasajeroIndex) => {
           dataToExport.push({
-            'Tipo Stanza': pasajeroIndex === 0 ? habitacion.tipo : '', // Solo mostrar tipo en la primera fila
+            'Tipo Stanza': pasajeroIndex === 0 ? habitacion.tipo : '',
+            'Nota': pasajeroIndex === 0 ? (habitacion.note || '') : '', // <--- Incluir Nota
             'Passeggero': pasajero.nombre,
             'Telefono': pasajero.telefono,
           });
@@ -487,11 +490,11 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
     const ws = XLSX.utils.json_to_sheet(dataToExport);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Organizzazione Stanze');
-    
+
     // Generar nombre del archivo con fecha
     const fecha = new Date().toISOString().split('T')[0];
     const fileName = `Organizzazione_Stanze_${fecha}.xlsx`;
-    
+
     // Descargar el archivo
     XLSX.writeFile(wb, fileName);
   };
@@ -501,235 +504,248 @@ export default function GestionesStanza({ isOpen, onClose, tourId, ventas = [] }
   return createPortal(
     <>
       {/* Backdrop con blur */}
-      <div 
-        className="fixed inset-0 bg-gray-400/50 backdrop-blur-[32px] z-[9999999998]" 
+      <div
+        className="fixed inset-0 bg-gray-400/50 backdrop-blur-[32px] z-[9999999998]"
         onClick={onClose}
       />
-      
+
       <Modal
         isOpen={isOpen}
         onClose={onClose}
         isFullscreen={true}
         className="bg-white dark:bg-gray-900 flex flex-col overflow-hidden p-0"
       >
-      <div className="flex flex-col h-full overflow-hidden">
-        {/* Encabezado fijo - Título, barra de herramientas y pasajeros sin asignar */}
-        <div className="flex-shrink-0 p-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-          {/* Título */}
-          <div className="mb-4 px-2">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-              Gestione Stanze - Organizzazione Passeggeri
-            </h2>
-          </div>
-          
-          {!loading && (
-            <>
-              {/* Barra de herramientas */}
-              <div className="mb-3 flex flex-wrap items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                  Crea nuova stanza:
-                </span>
-                {Object.keys(LIMITES_HABITACION).map((tipo) => (
-                  <button
-                    key={tipo}
-                    onClick={() => crearHabitacion(tipo as TipoHabitacion)}
-                    className={`px-2 py-1 text-xs font-medium rounded transition-colors ${
-                      COLORES_HABITACION[tipo as TipoHabitacion].bg
-                    } ${COLORES_HABITACION[tipo as TipoHabitacion].border} border ${
-                      COLORES_HABITACION[tipo as TipoHabitacion].text
-                    } hover:opacity-80`}
-                  >
-                    <span className="mr-1">{LIMITES_HABITACION[tipo as TipoHabitacion].icon}</span>
-                    {tipo}
-                  </button>
-                ))}
-                <div className="ml-auto flex items-center gap-2">
-                  <div className="flex items-center gap-2">
-                    {hayCambios() && !saving && (
-                      <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
-                        Cambios sin guardar
-                      </span>
-                    )}
-                    {saving && (
-                      <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                        <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Salvando...
-                      </span>
-                    )}
+        <div className="flex flex-col h-full overflow-hidden">
+          {/* Encabezado fijo - Título, barra de herramientas y pasajeros sin asignar */}
+          <div className="flex-shrink-0 p-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+            {/* Título */}
+            <div className="mb-4 px-2">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                Gestione Stanze - Organizzazione Passeggeri
+              </h2>
+            </div>
+
+            {!loading && (
+              <>
+                {/* Barra de herramientas */}
+                <div className="mb-3 flex flex-wrap items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                    Crea nuova stanza:
+                  </span>
+                  {Object.keys(LIMITES_HABITACION).map((tipo) => (
                     <button
-                      onClick={guardarStanze}
-                      disabled={!hayCambios() || saving || loading}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md text-xs font-medium ${
-                        hayCambios() && !saving && !loading
+                      key={tipo}
+                      onClick={() => crearHabitacion(tipo as TipoHabitacion)}
+                      className={`px-2 py-1 text-xs font-medium rounded transition-colors ${COLORES_HABITACION[tipo as TipoHabitacion].bg
+                        } ${COLORES_HABITACION[tipo as TipoHabitacion].border} border ${COLORES_HABITACION[tipo as TipoHabitacion].text
+                        } hover:opacity-80`}
+                    >
+                      <span className="mr-1">{LIMITES_HABITACION[tipo as TipoHabitacion].icon}</span>
+                      {tipo}
+                    </button>
+                  ))}
+                  <div className="ml-auto flex items-center gap-2">
+                    <div className="flex items-center gap-2">
+                      {hayCambios() && !saving && (
+                        <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                          Cambios sin guardar
+                        </span>
+                      )}
+                      {saving && (
+                        <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                          <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Salvando...
+                        </span>
+                      )}
+                      <button
+                        onClick={guardarStanze}
+                        disabled={!hayCambios() || saving || loading}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md text-xs font-medium ${hayCambios() && !saving && !loading
                           ? 'bg-blue-600 hover:bg-blue-700 text-white'
                           : 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
-                      }`}
-                      title={hayCambios() ? 'Guardar cambios' : 'No hay cambios para guardar'}
+                          }`}
+                        title={hayCambios() ? 'Guardar cambios' : 'No hay cambios para guardar'}
+                      >
+                        <Save className="w-4 h-4" />
+                        Guardar
+                      </button>
+                    </div>
+                    <button
+                      onClick={handleExportToExcel}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md text-xs font-medium"
+                      title="Esporta organizzazione stanze in Excel"
                     >
-                      <Save className="w-4 h-4" />
-                      Guardar
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Excel
                     </button>
                   </div>
-                  <button
-                    onClick={handleExportToExcel}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md text-xs font-medium"
-                    title="Esporta organizzazione stanze in Excel"
+                </div>
+
+                {/* Pasajeros sin asignar - Con scroll propio */}
+                <div className="mb-3">
+                  <div
+                    className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600"
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    Excel
-                  </button>
-                </div>
-              </div>
-
-              {/* Pasajeros sin asignar - Con scroll propio */}
-              <div className="mb-3">
-                <div
-                  className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600"
-                  onDragOver={handleDragOver}
-                  onDrop={handleDrop}
-                >
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <Users className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                    <h3 className="text-sm font-semibold text-gray-800 dark:text-white">
-                      Passeggeri senza stanza ({pasajerosDisponibles.length})
-                    </h3>
-                  </div>
-                  <div className="max-h-[120px] overflow-y-auto overflow-x-hidden">
-                    <div className="flex flex-wrap gap-1.5">
-                      {pasajerosDisponibles.map((pasajero) => (
-                        <div
-                          key={pasajero.id}
-                          draggable
-                          onDragStart={() => handleDragStart(pasajero, { type: 'unassigned' })}
-                          className="flex items-center gap-1.5 px-2 py-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-sm cursor-move hover:shadow-md transition-shadow"
-                        >
-                          <GripVertical className="w-3 h-3 text-gray-400" />
-                          <p className="text-xs font-medium text-gray-900 dark:text-white">
-                            {pasajero.nombre}
-                          </p>
-                        </div>
-                      ))}
-                      {pasajerosDisponibles.length === 0 && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 italic">
-                          Nessun passeggero senza stanza
-                        </p>
-                      )}
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <Users className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                      <h3 className="text-sm font-semibold text-gray-800 dark:text-white">
+                        Passeggeri senza stanza ({pasajerosDisponibles.length})
+                      </h3>
                     </div>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Contenido con scroll - Solo las habitaciones */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden p-3" style={{ minHeight: 0 }}>
-          {loading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500 mx-auto mb-4"></div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Caricamento organizzazione stanze...</p>
-            </div>
-          ) : (
-            <>
-
-        {/* Habitaciones organizadas por tipo */}
-        <div className="space-y-3">
-          {Object.entries(habitacionesPorTipo).map(([tipo, habitacionesTipo]) => {
-            if (habitacionesTipo.length === 0) return null;
-
-            const limite = LIMITES_HABITACION[tipo as TipoHabitacion];
-            const color = COLORES_HABITACION[tipo as TipoHabitacion];
-
-            return (
-              <div key={tipo} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <h3 className={`text-sm font-semibold ${color.text} flex items-center gap-1.5`}>
-                    <span className="text-base">{limite.icon}</span>
-                    {tipo} ({habitacionesTipo.length} stanza{habitacionesTipo.length !== 1 ? 'e' : 'a'})
-                  </h3>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    Capacità: {limite.min}-{limite.max} passeggero{limite.max !== 1 ? 'i' : ''}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
-                  {habitacionesTipo.map((habitacion) => (
-                    <div
-                      key={habitacion.id}
-                      className={`${color.bg} ${color.border} border-2 rounded-lg p-2`}
-                      onDragOver={handleDragOver}
-                      onDrop={(e) => handleDrop(e, habitacion.id)}
-                    >
-                      {/* Header de la habitación */}
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-sm">{limite.icon}</span>
-                          <div>
-                            <p className={`text-xs font-semibold ${color.text}`}>
-                              {tipo}
-                            </p>
-                            <p className="text-xs text-gray-600 dark:text-gray-400">
-                              {habitacion.pasajeros.length}/{limite.max}
-                            </p>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => eliminarHabitacion(habitacion.id)}
-                          className="p-0.5 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                          title="Elimina stanza"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-
-                      {/* Lista de pasajeros en la habitación */}
-                      <div className="space-y-1">
-                        {habitacion.pasajeros.map((pasajero) => (
+                    <div className="max-h-[120px] overflow-y-auto overflow-x-hidden">
+                      <div className="flex flex-wrap gap-1.5">
+                        {pasajerosDisponibles.map((pasajero) => (
                           <div
                             key={pasajero.id}
                             draggable
-                            onDragStart={() => handleDragStart(pasajero, { type: 'room', roomId: habitacion.id })}
-                            className="flex items-center gap-1.5 p-1.5 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 cursor-move hover:shadow-sm transition-shadow"
+                            onDragStart={() => handleDragStart(pasajero, { type: 'unassigned' })}
+                            className="flex items-center gap-1.5 px-2 py-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-sm cursor-move hover:shadow-md transition-shadow"
                           >
-                            <GripVertical className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                            <GripVertical className="w-3 h-3 text-gray-400" />
                             <p className="text-xs font-medium text-gray-900 dark:text-white">
                               {pasajero.nombre}
                             </p>
                           </div>
                         ))}
-                        {habitacion.pasajeros.length === 0 && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400 italic text-center py-2">
-                            Trascina i passeggeri qui
+                        {pasajerosDisponibles.length === 0 && (
+                          <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+                            Nessun passeggero senza stanza
                           </p>
                         )}
                       </div>
                     </div>
-                  ))}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              </>
+            )}
+          </div>
 
-              {/* Mensaje si no hay habitaciones */}
-              {habitaciones.length === 0 && (
-                <div className="text-center py-6">
-                  <User className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Nessuna stanza creata. Crea una nuova stanza per iniziare.
-                  </p>
+          {/* Contenido con scroll - Solo las habitaciones */}
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-3" style={{ minHeight: 0 }}>
+            {loading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500 mx-auto mb-4"></div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Caricamento organizzazione stanze...</p>
+              </div>
+            ) : (
+              <>
+
+                {/* Habitaciones organizadas por tipo */}
+                <div className="space-y-3">
+                  {Object.entries(habitacionesPorTipo).map(([tipo, habitacionesTipo]) => {
+                    if (habitacionesTipo.length === 0) return null;
+
+                    const limite = LIMITES_HABITACION[tipo as TipoHabitacion];
+                    const color = COLORES_HABITACION[tipo as TipoHabitacion];
+
+                    return (
+                      <div key={tipo} className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h3 className={`text-sm font-semibold ${color.text} flex items-center gap-1.5`}>
+                            <span className="text-base">{limite.icon}</span>
+                            {tipo} ({habitacionesTipo.length} stanza{habitacionesTipo.length !== 1 ? 'e' : 'a'})
+                          </h3>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            Capacità: {limite.min}-{limite.max} passeggero{limite.max !== 1 ? 'i' : ''}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
+                          {habitacionesTipo.map((habitacion) => (
+                            <div
+                              key={habitacion.id}
+                              className={`${color.bg} ${color.border} border-2 rounded-lg p-2`}
+                              onDragOver={handleDragOver}
+                              onDrop={(e) => handleDrop(e, habitacion.id)}
+                            >
+                              {/* Header de la habitación */}
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-sm">{limite.icon}</span>
+                                  <div>
+                                    <p className={`text-xs font-semibold ${color.text}`}>
+                                      {tipo}
+                                    </p>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                                      {habitacion.pasajeros.length}/{limite.max}
+                                    </p>
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() => eliminarHabitacion(habitacion.id)}
+                                  className="p-0.5 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                                  title="Elimina stanza"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+
+                              {/* Nota de la habitación */}
+                              <div className="mb-2">
+                                <input
+                                  type="text"
+                                  value={habitacion.note || ''}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setHabitaciones(prev => prev.map(h =>
+                                      h.id === habitacion.id ? { ...h, note: val } : h
+                                    ));
+                                  }}
+                                  placeholder="Nota (ej: Amici, Coppia...)"
+                                  className="w-full px-2 py-1 text-[10px] bg-white/50 dark:bg-black/20 border border-gray-200 dark:border-gray-700 rounded focus:border-blue-400 outline-none transition-colors"
+                                />
+                              </div>
+
+                              {/* Lista de pasajeros en la habitación */}
+                              <div className="space-y-1">
+                                {habitacion.pasajeros.map((pasajero) => (
+                                  <div
+                                    key={pasajero.id}
+                                    draggable
+                                    onDragStart={() => handleDragStart(pasajero, { type: 'room', roomId: habitacion.id })}
+                                    className="flex items-center gap-1.5 p-1.5 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 cursor-move hover:shadow-sm transition-shadow"
+                                  >
+                                    <GripVertical className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                                    <p className="text-xs font-medium text-gray-900 dark:text-white">
+                                      {pasajero.nombre}
+                                    </p>
+                                  </div>
+                                ))}
+                                {habitacion.pasajeros.length === 0 && (
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 italic text-center py-2">
+                                    Trascina i passeggeri qui
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              )}
-            </>
-          )}
+
+                {/* Mensaje si no hay habitaciones */}
+                {habitaciones.length === 0 && (
+                  <div className="text-center py-6">
+                    <User className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Nessuna stanza creata. Crea una nuova stanza per iniziare.
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
-      </div>
-    </Modal>
+      </Modal>
     </>,
     document.body
   );

@@ -776,6 +776,7 @@ model StanzaTourAereo {
   id          String            @id @default(cuid())
   tourAereoId String
   tipo        TipoStanza
+  note        String?
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
   tourAereo   TourAereo         @relation(fields: [tourAereoId], references: [id], onDelete: Cascade)

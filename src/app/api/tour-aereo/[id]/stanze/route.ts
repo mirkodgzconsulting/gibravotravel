@@ -109,6 +109,7 @@ export async function POST(
           data: {
             tourAereoId: tourId,
             tipo: habitacion.tipo,
+            note: habitacion.note, // <--- Guardar nota
           },
         });
 

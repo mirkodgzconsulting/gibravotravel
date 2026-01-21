@@ -134,7 +134,7 @@ export async function POST(
         },
       });
     }, {
-      timeout: 20000 // Aumentar el tiempo de espera a 20 segundos para evitar errores en producción
+      timeout: 14000 // Aumentar a 14s (Límite máximo de Prisma Accelerate es 15s)
     });
 
     return NextResponse.json({

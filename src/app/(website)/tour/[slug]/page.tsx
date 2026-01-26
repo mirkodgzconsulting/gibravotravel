@@ -222,7 +222,8 @@ export default async function TourPage({ params }: TourPageProps) {
     return (
         <div className="min-h-screen bg-white pb-20 md:pb-0">
             {/* --- HERO SECTION --- */}
-            <div className="relative h-[60vh] md:h-[70vh] w-full overflow-hidden">
+            {/* Reduced height slightly to 55vh per preference, or keep 60/70. Let's do 55vh to be safe for overlap */}
+            <div className="relative h-[55vh] md:h-[65vh] w-full overflow-hidden">
                 <Image
                     src={heroImage}
                     alt={tour.titulo}
@@ -232,17 +233,25 @@ export default async function TourPage({ params }: TourPageProps) {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-                {/* Hero Content */}
-                <div className="absolute inset-0 flex items-center justify-center text-center p-4 pt-20">
-                    <div className="max-w-4xl space-y-4">
-                        {/* Tags removed by user request */}
+                {/* Hero Content - Aligned Bottom Left */}
+                <div className="absolute inset-0 flex items-end pb-12 md:pb-24 px-4">
+                    <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-3 gap-12">
+                        <div className="lg:col-span-2 text-left space-y-4">
+                            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white leading-tight drop-shadow-lg tracking-tight">
+                                {tour.titulo}
+                            </h1>
+                            <p className="text-lg md:text-2xl text-white/90 font-medium max-w-2xl leading-relaxed drop-shadow-md">
+                                {tour.subtitulo}
+                            </p>
 
-                        <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white leading-tight drop-shadow-lg tracking-tight">
-                            {tour.titulo}
-                        </h1>
-                        <p className="text-lg md:text-2xl text-white/90 font-medium max-w-2xl mx-auto leading-relaxed drop-shadow-md">
-                            {tour.subtitulo}
-                        </p>
+                            {/* Optional Metadata Badge (Huakai style) - Re-added as preserved from previous context if desired, or kept simple */}
+                            <div className="flex items-center gap-4 text-white/90 text-sm font-bold uppercase tracking-wider pt-2">
+                                <span className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-3 py-1 rounded-full">
+                                    <Calendar className="w-4 h-4" />
+                                    {formatDate(tour.fechaViaje)}
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -251,14 +260,14 @@ export default async function TourPage({ params }: TourPageProps) {
             <TourStickyNav />
 
             {/* --- MAIN CONTENT GRID --- */}
-            <div className="max-w-7xl mx-auto px-4 md:px-6 mt-6 relative z-10">
+            <div className="max-w-7xl mx-auto px-4 md:px-6 mt-6 relative">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
 
                     {/* LEFT COLUMN (Details) */}
                     <div className="lg:col-span-2 space-y-12">
 
                         {/* Consolidated Overview Section - With Gallery 1 */}
-                        <div className="border-b border-gray-100 pb-12">
+                        <div id="panoramica" className="scroll-mt-32 border-b border-gray-100 pb-12">
                             <TourOverview
                                 date={tour.fechaViaje}
                                 duration={tour.duracionTexto}
@@ -270,14 +279,14 @@ export default async function TourPage({ params }: TourPageProps) {
                         </div>
 
                         {/* Dynamic Itinerary */}
-                        <div className="border-b border-gray-100 pb-12">
-                            <h2 className="text-2xl font-black text-[#004BA5] mb-8 uppercase tracking-tight">Itinerario di Viaggio</h2>
+                        <div id="itinerario" className="scroll-mt-32 border-b border-gray-100 pb-12">
+                            <h2 className="text-xl font-black text-[#004BA5] mb-8 uppercase tracking-tight">Itinerario di Viaggio</h2>
                             <TourItinerary itinerary={itinerary} />
                         </div>
 
                         {/* Inclusions / Exclusions - Clean Columns */}
                         <div id="incluso" className="scroll-mt-32 border-b border-gray-100 pb-12">
-                            <h2 className="text-2xl font-black text-[#004BA5] mb-8 uppercase tracking-tight">Cosa è compreso</h2>
+                            <h2 className="text-xl font-black text-[#004BA5] mb-8 uppercase tracking-tight">Cosa è compreso</h2>
                             <div className="grid md:grid-cols-2 gap-x-12 gap-y-8">
                                 {/* Includes */}
                                 <div>
@@ -316,7 +325,7 @@ export default async function TourPage({ params }: TourPageProps) {
                         {/* Coordinator - Minimalist */}
                         {tour.coordinadorNombre && (
                             <div id="coordinatore" className="scroll-mt-32 border-b border-gray-100 pb-12">
-                                <h2 className="text-2xl font-black text-[#004BA5] mb-8 uppercase tracking-tight">Il Coordinatore</h2>
+                                <h2 className="text-xl font-black text-[#004BA5] mb-8 uppercase tracking-tight">Il Coordinatore</h2>
                                 <div className="flex flex-col sm:flex-row gap-8 items-center sm:items-start text-center sm:text-left">
                                     <div className="relative w-28 h-28 rounded-full overflow-hidden border-4 border-white shadow-lg shadow-blue-900/10 flex-shrink-0">
                                         {tour.coordinadorFoto ? (
@@ -360,7 +369,7 @@ export default async function TourPage({ params }: TourPageProps) {
 
                         {/* Gallery 2 - Tighter Grid */}
                         <div id="galleria" className="space-y-6 scroll-mt-32">
-                            <h2 className="text-2xl font-black text-[#004BA5] uppercase tracking-tight">Galleria</h2>
+                            <h2 className="text-xl font-black text-[#004BA5] uppercase tracking-tight">Galleria</h2>
 
                             {gallery2.length > 0 ? (
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 h-96 md:h-80">
@@ -385,7 +394,7 @@ export default async function TourPage({ params }: TourPageProps) {
                         {/* Map Embed - Standard & Visible */}
                         {tour.mapaEmbed && (
                             <div className="pt-8 border-t border-gray-100">
-                                <h2 className="text-2xl font-black text-[#004BA5] mb-8 uppercase tracking-tight">Mappa</h2>
+                                <h2 className="text-xl font-black text-[#004BA5] mb-8 uppercase tracking-tight">Mappa</h2>
                                 <div className="rounded-2xl overflow-hidden bg-gray-100 h-96 w-full relative shadow-sm border border-gray-200">
                                     <iframe
                                         src={tour.mapaEmbed.includes('<iframe') ? (tour.mapaEmbed.match(/src=["']([^"']+)["']/) || [])[1] : tour.mapaEmbed}
@@ -402,17 +411,18 @@ export default async function TourPage({ params }: TourPageProps) {
                         )}
 
                         {/* Dynamic FAQ - Divider only */}
-                        <div className="pt-8">
-                            <h2 className="text-2xl font-black text-[#004BA5] mb-8 uppercase tracking-tight">Domande Frequenti</h2>
+                        <div id="faq" className="scroll-mt-32 pt-8">
+                            <h2 className="text-xl font-black text-[#004BA5] mb-8 uppercase tracking-tight">Domande Frequenti</h2>
                             <TourFAQ faq={tour.faq as unknown as FAQItem[]} />
                         </div>
 
                     </div>
 
 
-                    {/* RIGHT COLUMN (Sticky Sidebar) */}
-                    <div className="lg:col-span-1">
-                        <div className="sticky top-24 space-y-8">
+                    {/* RIGHT COLUMN (Sticky Sidebar) - FLOATING OVERLAP */}
+                    <div className="lg:col-span-1 relative z-50">
+                        {/* Negative margin (-mt-32) - Midpoint adjustment for perfect overlap */}
+                        <div className="-mt-0 lg:-mt-32 space-y-6">
                             {/* Price Card - Clean White */}
                             <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-gray-100 overflow-hidden p-8">
                                 <div className="text-center">

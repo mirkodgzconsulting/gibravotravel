@@ -20,7 +20,7 @@ export function TourOverview({ date, duration, daysCount, type, description, gal
     return (
         <div id="panoramica" className="scroll-mt-32">
             {/* Header - Aligned with other sections (No padding, No Icon) */}
-            <h2 className="text-2xl font-black text-[#004BA5] mb-8 flex items-center gap-3 uppercase tracking-tight">
+            <h2 className="text-xl font-black text-[#004BA5] mb-8 flex items-center gap-3 uppercase tracking-tight">
                 Panoramica
             </h2>
 

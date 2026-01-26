@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ClockIcon, Trash2Icon, Bus, Plane, Users, CheckCircle2, Minus, Plus } from "lucide-react"
+import { ClockIcon, Trash2Icon, Bus, Plane, Users, CheckCircle2, Minus, Plus, Bed, BedDouble } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -32,6 +32,31 @@ interface ShoppingCartProps {
     }
 }
 
+// Custom Icons matching reference
+const IconTwinBeds = ({ className }: { className?: string }) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M2 8h8v12H2z" />
+        <path d="M2 10h8" />
+        <path d="M2 6h8" />
+        <path d="M4 10v-3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3" />
+
+        <path d="M14 8h8v12h-8z" />
+        <path d="M14 10h8" />
+        <path d="M14 6h8" />
+        <path d="M16 10v-3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3" />
+    </svg>
+)
+
+const IconDoubleBed = ({ className }: { className?: string }) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M2 8h20v12H2z" />
+        <path d="M2 10h20" />
+        <path d="M2 6h20" />
+        <path d="M5 10v-3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3" />
+        <path d="M13 10v-3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3" />
+    </svg>
+)
+
 // Mock Stops for Bus
 const BUS_STOPS = [
     { id: "cologno", name: "Cologno Nord" },
@@ -49,10 +74,9 @@ export const ShoppingCart = ({ tour }: ShoppingCartProps) => {
 
     const [selectedStop, setSelectedStop] = useState<string>("")
 
-    // New Options State
-    const [selectedSharedRoom, setSelectedSharedRoom] = useState(false)
+    // New Options State - UNIFIED
+    const [selectedRoom, setSelectedRoom] = useState<'shared' | 'double' | 'private' | null>(null)
     const [selectedFlexibleCancel, setSelectedFlexibleCancel] = useState(false)
-    const [selectedPrivateRoom, setSelectedPrivateRoom] = useState(false)
 
     // Dynamic Passenger State
     const [passengers, setPassengers] = useState<{ firstName: string, lastName: string, cf: string }[]>([
@@ -86,7 +110,9 @@ export const ShoppingCart = ({ tour }: ShoppingCartProps) => {
     // Pricing Logic
     const basePrice = tour.price * quantity;
     const flexibleCancelCost = selectedFlexibleCancel && tour.priceFlexibleCancel ? tour.priceFlexibleCancel * quantity : 0;
-    const privateRoomCost = selectedPrivateRoom && tour.priceCameraPrivata ? tour.priceCameraPrivata * quantity : 0;
+
+    // Private room cost only applies if 'private' is selected
+    const privateRoomCost = selectedRoom === 'private' && tour.priceCameraPrivata ? tour.priceCameraPrivata * quantity : 0;
 
     const subtotal = basePrice + flexibleCancelCost + privateRoomCost;
     const total = subtotal;
@@ -100,6 +126,11 @@ export const ShoppingCart = ({ tour }: ShoppingCartProps) => {
         if (quantity === 0) {
             alert("Seleziona almeno un passeggero");
             return;
+        }
+
+        if (!selectedRoom && tour.optionCameraSingola) {
+            // Optional validation: force room selection? 
+            // If implicit default is needed, handle here. For now, proceeding is allowed (defaults to standard distribution if null).
         }
 
         // Validate names
@@ -120,9 +151,11 @@ export const ShoppingCart = ({ tour }: ShoppingCartProps) => {
             passengers,
             total,
             options: {
-                sharedRoom: selectedSharedRoom,
+                sharedRoom: selectedRoom === 'shared',
+                doubleRoom: selectedRoom === 'double',
+                privateRoom: selectedRoom === 'private',
                 flexibleCancel: selectedFlexibleCancel,
-                privateRoom: selectedPrivateRoom
+                roomType: selectedRoom // Explicit type
             }
         }));
 
@@ -210,25 +243,43 @@ export const ShoppingCart = ({ tour }: ShoppingCartProps) => {
                                             </div>
                                         </div>
 
-                                        {/* Camera Mista Option */}
+                                        {/* ROOM TYPE SELECTION - 2 BOXES */}
+                                        {/* Only show if tour supports shared rooms (Camera Singola in this context) */}
                                         {tour.optionCameraSingola && (
-                                            <div className="bg-blue-50/50 border border-blue-100 p-4 rounded-xl">
-                                                <div className="flex items-start space-x-3">
-                                                    <Checkbox
-                                                        id="cameraMista"
-                                                        checked={selectedSharedRoom}
-                                                        onCheckedChange={(c) => setSelectedSharedRoom(!!c)}
-                                                        className="mt-1"
-                                                    />
-                                                    <div className="space-y-1">
-                                                        <label
-                                                            htmlFor="cameraMista"
-                                                            className="text-sm font-bold text-[#004BA5] leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                                                        >
-                                                            Abilita opzione Mi va bene camera singola
-                                                        </label>
+                                            <div>
+                                                <label className="text-xs font-bold uppercase text-slate-400 mb-3 block">Sistemazione</label>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    {/* Option 1: Camera Singola (Shared Logic) */}
+                                                    <div
+                                                        onClick={() => setSelectedRoom(selectedRoom === 'shared' ? null : 'shared')}
+                                                        className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${selectedRoom === 'shared' ? 'border-[#FE8008] bg-orange-50' : 'border-slate-100 hover:border-slate-200'} h-full`}
+                                                    >
+                                                        <div className="flex items-center gap-3 mb-2">
+                                                            <div className={`h-10 w-14 flex items-center justify-center rounded-lg transition-colors ${selectedRoom === 'shared' ? 'bg-[#FE8008] text-white' : 'bg-slate-100 text-slate-500'}`}>
+                                                                <IconTwinBeds className="w-8 h-8" />
+                                                            </div>
+                                                            <span className={`font-bold ${selectedRoom === 'shared' ? 'text-[#FE8008]' : 'text-slate-700'}`}>Camera Singola</span>
+                                                        </div>
                                                         <p className="text-xs text-slate-500 leading-snug">
-                                                            Scegliendo questa opzione, accetti di condividere la camera con altri viaggiatori. È un modo fantastico per fare nuove amicizie e risparmiare!
+                                                            Per chi viaggia da solo.
+                                                            <br /><span className="italic text-[10px]">(Condividi la camera con un altro viaggiatore)</span>
+                                                        </p>
+                                                    </div>
+
+                                                    {/* Option 2: Camera Matrimoniale */}
+                                                    <div
+                                                        onClick={() => setSelectedRoom(selectedRoom === 'double' ? null : 'double')}
+                                                        className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${selectedRoom === 'double' ? 'border-[#004BA5] bg-blue-50' : 'border-slate-100 hover:border-slate-200'} h-full`}
+                                                    >
+                                                        <div className="flex items-center gap-3 mb-2">
+                                                            <div className={`h-10 w-14 flex items-center justify-center rounded-lg transition-colors ${selectedRoom === 'double' ? 'bg-[#004BA5] text-white' : 'bg-slate-100 text-slate-500'}`}>
+                                                                <IconDoubleBed className="w-8 h-8" />
+                                                            </div>
+                                                            <span className={`font-bold ${selectedRoom === 'double' ? 'text-[#004BA5]' : 'text-slate-700'}`}>Camera Matrimoniale</span>
+                                                        </div>
+                                                        <p className="text-xs text-slate-500 leading-snug">
+                                                            Ideale per coppie o amici.
+                                                            <br /><span className="italic text-[10px]">(Una camera per due persone)</span>
                                                         </p>
                                                     </div>
                                                 </div>
@@ -284,13 +335,16 @@ export const ShoppingCart = ({ tour }: ShoppingCartProps) => {
                                         </div>
                                     )}
 
-                                    {/* Private Room */}
+                                    {/* Private Room - NOW EXCLUSIVE */}
                                     {tour.optionCameraPrivata && (
-                                        <div className="flex items-center justify-between p-4 border border-slate-100 rounded-xl hover:border-blue-100 transition-colors cursor-pointer" onClick={() => setSelectedPrivateRoom(!selectedPrivateRoom)}>
+                                        <div
+                                            className={`flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-colors ${selectedRoom === 'private' ? 'border-[#FE8008] bg-orange-50/50' : 'border-slate-100 hover:border-blue-100'}`}
+                                            onClick={() => setSelectedRoom(selectedRoom === 'private' ? null : 'private')}
+                                        >
                                             <div className="flex items-center gap-3">
                                                 <Checkbox
-                                                    checked={selectedPrivateRoom}
-                                                    onCheckedChange={(c) => setSelectedPrivateRoom(!!c)}
+                                                    checked={selectedRoom === 'private'}
+                                                    onCheckedChange={(c) => setSelectedRoom(c ? 'private' : null)}
                                                 />
                                                 <div>
                                                     <p className="font-bold text-slate-700">Camera Privata</p>
@@ -394,10 +448,24 @@ export const ShoppingCart = ({ tour }: ShoppingCartProps) => {
                                             </div>
                                         )}
 
-                                        {selectedPrivateRoom && (
+                                        {selectedRoom === 'private' && (
                                             <div className="flex items-center justify-between text-slate-600">
                                                 <span className="font-medium text-xs">Camera Privata</span>
                                                 <span className="font-bold text-xs">+ €{(tour.priceCameraPrivata || 0) * quantity}</span>
+                                            </div>
+                                        )}
+
+                                        {/* Optional: Show selection type in summary if desired */}
+                                        {selectedRoom === 'shared' && (
+                                            <div className="flex items-center justify-between text-slate-400 italic">
+                                                <span className="font-medium text-xs">Camera:</span>
+                                                <span className="text-xs">Singola (Shared)</span>
+                                            </div>
+                                        )}
+                                        {selectedRoom === 'double' && (
+                                            <div className="flex items-center justify-between text-slate-400 italic">
+                                                <span className="font-medium text-xs">Camera:</span>
+                                                <span className="text-xs">Matrimoniale</span>
                                             </div>
                                         )}
 

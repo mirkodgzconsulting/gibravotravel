@@ -33,7 +33,7 @@ export function TourItinerary({ itinerary }: FooterItineraryProps) {
                             <div
                                 onClick={() => toggleDay(i)}
                                 className={cn(
-                                    "cursor-pointer flex items-center gap-4 md:gap-6 px-5 md:px-8 py-4 md:py-5 rounded-2xl transition-all duration-200 group select-none",
+                                    "cursor-pointer flex items-center gap-4 md:gap-6 px-5 md:px-8 py-3 md:py-4 rounded-xl transition-all duration-200 group select-none",
                                     isOpen
                                         ? "bg-[#004BA5] text-white shadow-lg shadow-blue-900/10"
                                         : "bg-[#F7F9FB] hover:bg-slate-100 text-[#323232]"
@@ -42,15 +42,15 @@ export function TourItinerary({ itinerary }: FooterItineraryProps) {
                                 {/* Icon */}
                                 <div className="flex-shrink-0">
                                     {isOpen ? (
-                                        <Minus className="w-5 h-5 font-bold" />
+                                        <Minus className="w-4 h-4 font-bold" />
                                     ) : (
-                                        <Plus className="w-5 h-5 font-bold text-gray-400 group-hover:text-gray-600" />
+                                        <Plus className="w-4 h-4 font-bold text-gray-400 group-hover:text-gray-600" />
                                     )}
                                 </div>
 
                                 {/* Text */}
-                                <div className="text-sm md:text-base font-medium leading-tight">
-                                    <span className={cn("block md:inline font-black mr-3 uppercase tracking-wide text-xs md:text-sm mb-1 md:mb-0", isOpen ? "text-white" : "text-[#FE8008]")}>
+                                <div className="text-xs md:text-sm font-medium leading-tight flex-1">
+                                    <span className={cn("block md:inline font-black mr-3 uppercase tracking-wide text-[10px] md:text-xs mb-1 md:mb-0", isOpen ? "text-white" : "text-[#FE8008]")}>
                                         Giorno {i + 1}
                                     </span>
                                     <span className={isOpen ? "text-blue-50" : "text-gray-700"}>

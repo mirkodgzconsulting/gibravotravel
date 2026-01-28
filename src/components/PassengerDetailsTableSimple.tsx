@@ -12,6 +12,14 @@ import {
 } from "@/components/ui/table";
 import usePassengerServiceDetails, { PassengerServiceUpdatePayload } from '@/hooks/usePassengerServiceDetails';
 import { useUserRole } from '@/hooks/useUserRole';
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { ChevronsUpDown } from "lucide-react";
 
 type ItemsPerPageOption = number | 'ALL';
 
@@ -127,7 +135,7 @@ const PassengerDetailsTableSimple: React.FC<PassengerDetailsTableSimpleProps> = 
   const [fechaActivacionDesde, setFechaActivacionDesde] = useState('');
   const [fechaActivacionHasta, setFechaActivacionHasta] = useState('');
   const [estadoFilter, setEstadoFilter] = useState('');
-  const [servicioFilter, setServicioFilter] = useState('');
+  const [servicioFilter, setServicioFilter] = useState<string[]>([]);
   const [metodoCompraFilter, setMetodoCompraFilter] = useState('');
   const [metodoCompraOptions, setMetodoCompraOptions] = useState<string[]>([]);
 
@@ -140,7 +148,23 @@ const PassengerDetailsTableSimple: React.FC<PassengerDetailsTableSimpleProps> = 
   const [tempNotas, setTempNotas] = useState<string>('');
 
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+      const start = new Date(year, month, 1);
+      const end = new Date(year, month + 1, 0);
+
+      const formatDateInput = (d: Date) => {
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+      };
+
+      setFechaDesde(formatDateInput(start));
+      setFechaHasta(formatDateInput(end));
+    } else {
       setCurrentPage(1);
       setSearchTerm('');
       setFiltroIata('');
@@ -154,7 +178,7 @@ const PassengerDetailsTableSimple: React.FC<PassengerDetailsTableSimpleProps> = 
       setFechaActivacionDesde('');
       setFechaActivacionHasta('');
       setEstadoFilter('');
-      setServicioFilter('');
+      setServicioFilter([]);
       setMetodoCompraFilter('');
       setEditingEstadoId(null);
       setEditingFechaPagoId(null);
@@ -242,7 +266,7 @@ const PassengerDetailsTableSimple: React.FC<PassengerDetailsTableSimpleProps> = 
     const filtroIataLower = filtroIata.toLowerCase();
     const filtroPnrLower = filtroPnr.toLowerCase();
     const metodoCompraLower = metodoCompraFilter.toLowerCase();
-    const servicioUpper = servicioFilter.toUpperCase();
+    // Removed unused servicioUpper which caused type error on array
     const fechaDesdeDate = fechaDesde ? new Date(fechaDesde) : null;
     const fechaHastaDate = fechaHasta ? new Date(fechaHasta) : null;
     const fechaIdaDesdeDate = fechaIdaDesde ? new Date(fechaIdaDesde) : null;
@@ -263,8 +287,11 @@ const PassengerDetailsTableSimple: React.FC<PassengerDetailsTableSimpleProps> = 
         if (!matchesSearch) return false;
       }
 
+
+      // Multi-select logic
       const detailServicioUpper = detail.servicio ? detail.servicio.toUpperCase() : '';
-      if (servicioFilter && detailServicioUpper !== servicioUpper) return false;
+      if (servicioFilter.length > 0 && !servicioFilter.includes(detailServicioUpper)) return false;
+
       if (estadoFilter && detail.estado !== estadoFilter) return false;
       if (metodoCompraLower && (!detail.metodoDiAcquisto || !detail.metodoDiAcquisto.toLowerCase().includes(metodoCompraLower))) return false;
 
@@ -491,35 +518,62 @@ const PassengerDetailsTableSimple: React.FC<PassengerDetailsTableSimpleProps> = 
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Servizio
                 </label>
-                <select
-                  value={servicioFilter}
-                  onChange={(e) => setServicioFilter(e.target.value)}
-                  className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-purple-500 focus-border-transparent"
-                >
-                  <option value="">Tutti</option>
-                  {servicioOptions.map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className="w-full justify-between text-xs h-[30px] px-2 font-normal border-gray-300 bg-white"
+                    >
+                      {servicioFilter.length > 0
+                        ? `${servicioFilter.length} selezionati`
+                        : "Tutti"}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[200px] p-0 z-[99999999999]" align="start">
+                    <div className="p-2 space-y-2 max-h-[300px] overflow-y-auto">
+                      {servicioOptions.map(([value, label]) => (
+                        <div key={value} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`srv-simple-${value}`}
+                            checked={servicioFilter.includes(value)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setServicioFilter([...servicioFilter, value]);
+                              } else {
+                                setServicioFilter(servicioFilter.filter((v) => v !== value));
+                              }
+                            }}
+                          />
+                          <label
+                            htmlFor={`srv-simple-${value}`}
+                            className="text-xs leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer w-full py-1"
+                          >
+                            {label}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Metodo di acquisto
                 </label>
-              <select
-                value={metodoCompraFilter}
-                onChange={(e) => setMetodoCompraFilter(e.target.value)}
-                className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-purple-500 focus-border-transparent"
-              >
-                <option value="">Tutti</option>
-                {metodoCompraOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
+                <select
+                  value={metodoCompraFilter}
+                  onChange={(e) => setMetodoCompraFilter(e.target.value)}
+                  className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-purple-500 focus-border-transparent"
+                >
+                  <option value="">Tutti</option>
+                  {metodoCompraOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -662,7 +716,7 @@ const PassengerDetailsTableSimple: React.FC<PassengerDetailsTableSimpleProps> = 
                     setSearchTerm('');
                     setFiltroIata('');
                     setFiltroPnr('');
-                    setServicioFilter('');
+                    setServicioFilter([]);
                     setMetodoCompraFilter('');
                     setEstadoFilter('');
                     setFechaDesde('');
@@ -757,9 +811,8 @@ const PassengerDetailsTableSimple: React.FC<PassengerDetailsTableSimpleProps> = 
                       paginatedData.map((item, index) => (
                         <TableRow
                           key={item.id}
-                          className={`hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors duration-200 ${
-                            index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/50 dark:bg-gray-700/50'
-                          }`}
+                          className={`hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors duration-200 ${index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/50 dark:bg-gray-700/50'
+                            }`}
                         >
                           <TableCell className="py-2 px-3 text-xs text-gray-700 dark:text-gray-300">
                             {item.cliente}
@@ -788,10 +841,10 @@ const PassengerDetailsTableSimple: React.FC<PassengerDetailsTableSimpleProps> = 
                             {item.pnr || '-'}
                           </TableCell>
                           <TableCell className="py-2 px-3 text-xs text-gray-700 dark:text-gray-300">
-                        {item.servicio && ['volo', 'express', 'polizza'].some(keyword => item.servicio.toLowerCase().includes(keyword)) ? formatDate(item.andata) : '-'}
+                            {item.servicio && ['volo', 'express', 'polizza'].some(keyword => item.servicio.toLowerCase().includes(keyword)) ? formatDate(item.andata) : '-'}
                           </TableCell>
                           <TableCell className="py-2 px-3 text-xs text-gray-700 dark:text-gray-300">
-                        {item.servicio && ['volo', 'express', 'polizza'].some(keyword => item.servicio.toLowerCase().includes(keyword)) ? formatDate(item.ritorno) : '-'}
+                            {item.servicio && ['volo', 'express', 'polizza'].some(keyword => item.servicio.toLowerCase().includes(keyword)) ? formatDate(item.ritorno) : '-'}
                           </TableCell>
                           <TableCell className="py-2 px-3 text-xs text-gray-700 dark:text-gray-300 truncate max-w-[160px]">
                             <span title={item.itinerario || ''}>
@@ -820,22 +873,20 @@ const PassengerDetailsTableSimple: React.FC<PassengerDetailsTableSimpleProps> = 
                                   e.stopPropagation();
                                   setEditingEstadoId(item.id);
                                 }}
-                                className={`text-xs px-2 py-1 rounded text-center font-medium ${
-                                  item.estado === 'Pagado'
-                                    ? 'bg-green-500 text-white'
-                                    : 'bg-yellow-500 text-white'
-                                } hover:opacity-80`}
+                                className={`text-xs px-2 py-1 rounded text-center font-medium ${item.estado === 'Pagado'
+                                  ? 'bg-green-500 text-white'
+                                  : 'bg-yellow-500 text-white'
+                                  } hover:opacity-80`}
                                 title="Clicca per modificare"
                               >
                                 {translateEstado(item.estado)}
                               </button>
                             ) : (
                               <span
-                                className={`inline-block text-xs px-2 py-1 rounded text-center font-medium ${
-                                  item.estado === 'Pagado'
-                                    ? 'bg-green-500 text-white'
-                                    : 'bg-yellow-500 text-white'
-                                }`}
+                                className={`inline-block text-xs px-2 py-1 rounded text-center font-medium ${item.estado === 'Pagado'
+                                  ? 'bg-green-500 text-white'
+                                  : 'bg-yellow-500 text-white'
+                                  }`}
                               >
                                 {translateEstado(item.estado)}
                               </span>
@@ -1023,8 +1074,8 @@ const PassengerDetailsTableSimple: React.FC<PassengerDetailsTableSimpleProps> = 
               {filteredData.length === 0
                 ? 0
                 : itemsPerPage === 'ALL'
-                ? 1
-                : startIndex + 1}{' '}
+                  ? 1
+                  : startIndex + 1}{' '}
               -{' '}
               {itemsPerPage === 'ALL'
                 ? filteredData.length

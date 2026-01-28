@@ -429,7 +429,7 @@ export default async function TourPage({ params }: TourPageProps) {
                                     <p className="text-xs text-[#323232]/80 uppercase tracking-widest font-black mb-2">Prezzo a persona</p>
                                     <div className="flex flex-col items-center justify-center mb-6">
                                         <div className="flex items-center gap-1 mb-2">
-                                            <span className="text-3xl font-bold text-gray-300 font-light">€</span>
+                                            <span className="text-3xl text-gray-300 font-light">€</span>
                                             <span className="text-6xl font-black text-[#FE8008] tracking-tighter shadow-orange-100">{tour.precioAdulto}</span>
                                         </div>
                                         <p className="text-sm text-gray-500 font-medium bg-gray-50 px-4 py-2 rounded-lg text-center max-w-[200px] leading-snug">

@@ -12,6 +12,14 @@ import {
 } from "@/components/ui/table";
 import usePassengerServiceDetails, { PassengerServiceUpdatePayload } from '@/hooks/usePassengerServiceDetails';
 import { useUserRole } from '@/hooks/useUserRole';
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { ChevronsUpDown } from "lucide-react";
 
 type ItemsPerPageOption = number | 'ALL';
 
@@ -127,10 +135,10 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ isOpen, o
   const [fechaActivacionDesde, setFechaActivacionDesde] = useState('');
   const [fechaActivacionHasta, setFechaActivacionHasta] = useState('');
   const [estadoFilter, setEstadoFilter] = useState('');
-  const [servicioFilter, setServicioFilter] = useState('');
+  const [servicioFilter, setServicioFilter] = useState<string[]>([]);
   const [metodoCompraFilter, setMetodoCompraFilter] = useState('');
   const [metodoCompraOptions, setMetodoCompraOptions] = useState<string[]>([]);
-  
+
   const [editingEstadoId, setEditingEstadoId] = useState<string | null>(null);
   const [editingFechaPagoId, setEditingFechaPagoId] = useState<string | null>(null);
   const [editingFechaActivacionId, setEditingFechaActivacionId] = useState<string | null>(null);
@@ -140,7 +148,23 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ isOpen, o
   const [tempNotas, setTempNotas] = useState<string>('');
 
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+      const start = new Date(year, month, 1);
+      const end = new Date(year, month + 1, 0);
+
+      const formatDateInput = (d: Date) => {
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+      };
+
+      setFechaDesde(formatDateInput(start));
+      setFechaHasta(formatDateInput(end));
+    } else {
       setCurrentPage(1);
       setSearchTerm('');
       setFiltroIata('');
@@ -154,9 +178,9 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ isOpen, o
       setFechaActivacionDesde('');
       setFechaActivacionHasta('');
       setEstadoFilter('');
-      setServicioFilter('');
+      setServicioFilter([]);
       setMetodoCompraFilter('');
-    setEditingEstadoId(null);
+      setEditingEstadoId(null);
       setEditingFechaPagoId(null);
       setEditingFechaActivacionId(null);
       setEditingNotasId(null);
@@ -165,7 +189,7 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ isOpen, o
       setTempNotas('');
     }
   }, [isOpen]);
-  
+
   useEffect(() => {
     if (!canEditEstado) {
       setEditingEstadoId(null);
@@ -236,7 +260,7 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ isOpen, o
       isMounted = false;
     };
   }, [isOpen]);
-  
+
   const filteredData = useMemo(() => {
     const searchLower = searchTerm.toLowerCase();
     const filtroIataLower = filtroIata.toLowerCase();
@@ -262,8 +286,8 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ isOpen, o
         if (!matchesSearch) return false;
       }
 
-      const servicioUpper = detail.servicio ? detail.servicio.toUpperCase() : '';
-      if (servicioFilter && servicioUpper !== servicioFilter) return false;
+      const detailServicioUpper = detail.servicio ? detail.servicio.toUpperCase() : '';
+      if (servicioFilter.length > 0 && !servicioFilter.includes(detailServicioUpper)) return false;
       if (estadoFilter && detail.estado !== estadoFilter) return false;
       if (metodoLower && (!detail.metodoDiAcquisto || !detail.metodoDiAcquisto.toLowerCase().includes(metodoLower))) return false;
 
@@ -492,18 +516,45 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ isOpen, o
               <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Servicio
               </label>
-              <select
-                value={servicioFilter}
-                onChange={(e) => setServicioFilter(e.target.value)}
-                className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-purple-500 focus-border-transparent"
-              >
-                <option value="">Tutti</option>
-                {servicioOptions.map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className="w-full justify-between text-xs h-[30px] px-2 font-normal border-gray-300 bg-white"
+                  >
+                    {servicioFilter.length > 0
+                      ? `${servicioFilter.length} selezionati`
+                      : "Tutti"}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0 z-[99999999999]" align="start">
+                  <div className="p-2 space-y-2 max-h-[300px] overflow-y-auto">
+                    {servicioOptions.map(([value, label]) => (
+                      <div key={value} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`srv-${value}`}
+                          checked={servicioFilter.includes(value)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setServicioFilter([...servicioFilter, value]);
+                            } else {
+                              setServicioFilter(servicioFilter.filter((v) => v !== value));
+                            }
+                          }}
+                        />
+                        <label
+                          htmlFor={`srv-${value}`}
+                          className="text-xs leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer w-full py-1"
+                        >
+                          {label}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -655,7 +706,7 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ isOpen, o
                   setSearchTerm('');
                   setFiltroIata('');
                   setFiltroPnr('');
-                  setServicioFilter('');
+                  setServicioFilter([]);
                   setMetodoCompraFilter('');
                   setEstadoFilter('');
                   setFechaDesde('');
@@ -728,7 +779,7 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ isOpen, o
                       })}
                     </TableRow>
                   </TableHeader>
-                <TableBody>
+                  <TableBody>
                     {loading ? (
                       <TableRow>
                         <TableCell colSpan={20} className="py-12 text-center text-gray-500 dark:text-gray-400">
@@ -748,57 +799,56 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ isOpen, o
                         </TableCell>
                       </TableRow>
                     ) : (
-                    currentData.map((item, index) => (
-                      <TableRow 
+                      currentData.map((item, index) => (
+                        <TableRow
                           key={item.id}
-                        className={`hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors duration-200 ${
-                          index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/50 dark:bg-gray-700/50'
-                        }`}
-                      >
+                          className={`hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors duration-200 ${index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/50 dark:bg-gray-700/50'
+                            }`}
+                        >
                           <TableCell className="py-2 px-3 text-xs text-gray-700 dark:text-gray-300">
                             {item.cliente}
-                        </TableCell>
+                          </TableCell>
                           <TableCell className="py-2 px-3 text-xs text-gray-700 dark:text-gray-300">
                             {item.pagamento || '-'}
-                        </TableCell>
+                          </TableCell>
                           <TableCell className="py-2 px-3 text-xs text-gray-700 dark:text-gray-300">
                             {item.metodoPag || '-'}
-                        </TableCell>
+                          </TableCell>
                           <TableCell className="py-2 px-3 text-xs font-semibold text-gray-900 dark:text-white">
                             {item.pasajero}
-                        </TableCell>
-                        <TableCell className="py-2 px-3">
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 dark:from-blue-900 dark:to-blue-800 dark:text-blue-200 shadow-sm">
-                            {item.servicio}
-                          </span>
-                        </TableCell>
+                          </TableCell>
+                          <TableCell className="py-2 px-3">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 dark:from-blue-900 dark:to-blue-800 dark:text-blue-200 shadow-sm">
+                              {item.servicio}
+                            </span>
+                          </TableCell>
                           <TableCell className="py-2 px-3 text-xs text-right text-gray-900 dark:text-white font-semibold">
                             {formatCurrency(item.neto)}
-                        </TableCell>
+                          </TableCell>
                           <TableCell className="py-2 px-3 text-xs font-mono text-gray-700 dark:text-gray-300">
                             {item.iata || '-'}
-                        </TableCell>
+                          </TableCell>
                           <TableCell className="py-2 px-3 text-xs font-mono text-gray-700 dark:text-gray-300">
                             {item.pnr || '-'}
-                        </TableCell>
+                          </TableCell>
                           <TableCell className="py-2 px-3 text-xs text-gray-700 dark:text-gray-300">
-                        {item.servicio && ['volo', 'express', 'polizza'].some(keyword => item.servicio.toLowerCase().includes(keyword))
-                          ? formatDate(item.andata)
-                          : '-'}
-                        </TableCell>
+                            {item.servicio && ['volo', 'express', 'polizza'].some(keyword => item.servicio.toLowerCase().includes(keyword))
+                              ? formatDate(item.andata)
+                              : '-'}
+                          </TableCell>
                           <TableCell className="py-2 px-3 text-xs text-gray-700 dark:text-gray-300">
-                        {item.servicio && ['volo', 'express', 'polizza'].some(keyword => item.servicio.toLowerCase().includes(keyword))
-                          ? formatDate(item.ritorno)
-                          : '-'}
-                        </TableCell>
+                            {item.servicio && ['volo', 'express', 'polizza'].some(keyword => item.servicio.toLowerCase().includes(keyword))
+                              ? formatDate(item.ritorno)
+                              : '-'}
+                          </TableCell>
                           <TableCell className="py-2 px-3 text-xs text-gray-700 dark:text-gray-300 truncate max-w-[160px]">
                             <span title={item.itinerario || ''}>
                               {item.itinerario || '-'}
                             </span>
-                        </TableCell>
+                          </TableCell>
                           <TableCell className="py-2 px-3 text-xs text-gray-700 dark:text-gray-300">
                             {item.metodoDiAcquisto || '-'}
-                        </TableCell>
+                          </TableCell>
                           <TableCell className="py-2 px-3 text-xs text-right text-gray-900 dark:text-white font-semibold">
                             {formatCurrency(item.venduto)}
                           </TableCell>
@@ -821,22 +871,20 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ isOpen, o
                                   e.stopPropagation();
                                   setEditingEstadoId(item.id);
                                 }}
-                                className={`text-xs px-2 py-1 rounded text-center font-medium ${
-                                  item.estado === 'Pagado'
-                                    ? 'bg-green-500 text-white'
-                                    : 'bg-yellow-500 text-white'
-                                } hover:opacity-80`}
+                                className={`text-xs px-2 py-1 rounded text-center font-medium ${item.estado === 'Pagado'
+                                  ? 'bg-green-500 text-white'
+                                  : 'bg-yellow-500 text-white'
+                                  } hover:opacity-80`}
                                 title="Clicca per modificare"
                               >
                                 {translateEstado(item.estado)}
                               </button>
                             ) : (
                               <span
-                                className={`inline-block text-xs px-2 py-1 rounded text-center font-medium ${
-                                  item.estado === 'Pagado'
-                                    ? 'bg-green-500 text-white'
-                                    : 'bg-yellow-500 text-white'
-                                }`}
+                                className={`inline-block text-xs px-2 py-1 rounded text-center font-medium ${item.estado === 'Pagado'
+                                  ? 'bg-green-500 text-white'
+                                  : 'bg-yellow-500 text-white'
+                                  }`}
                               >
                                 {translateEstado(item.estado)}
                               </span>
@@ -988,7 +1036,7 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ isOpen, o
                                 )}
                               </button>
                             ) : (
-                              <span className="text-xs px-2 py-1 block text-gray-700 dark:text-gray-300 min-h-[32px] flex items-center">
+                              <span className="text-xs px-2 py-1 text-gray-700 dark:text-gray-300 min-h-[32px] flex items-center">
                                 {getReadableNotes(item.notas) ? (
                                   <span className="truncate max-w-[180px]" title={getReadableNotes(item.notas)}>
                                     {getReadableNotes(item.notas)}
@@ -1001,34 +1049,34 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ isOpen, o
                           </TableCell>
                           <TableCell className="py-2 px-3 text-xs text-gray-700 dark:text-gray-300">
                             {formatDate(item.dataRegistro)}
-                        </TableCell>
+                          </TableCell>
                           <TableCell className="py-2 px-3 text-xs text-gray-700 dark:text-gray-300">
                             {item.creador || '-'}
-                        </TableCell>
-                      </TableRow>
-                    ))
+                          </TableCell>
+                        </TableRow>
+                      ))
                     )}
 
                     {!loading && !error && currentData.length > 0 && (
-                    <TableRow className="bg-purple-50 dark:bg-purple-900/20 border-t-2 border-purple-200 dark:border-purple-700">
+                      <TableRow className="bg-purple-50 dark:bg-purple-900/20 border-t-2 border-purple-200 dark:border-purple-700">
                         <TableCell colSpan={5} className="py-2 px-3 text-left font-semibold text-purple-800 dark:text-purple-200 text-xs">
                           Totali filtrati
-                      </TableCell>
+                        </TableCell>
                         <TableCell className="py-2 px-3 text-right text-sm font-bold text-purple-900 dark:text-purple-100">
                           {formatCurrency(totalNeto)}
-                      </TableCell>
+                        </TableCell>
                         <TableCell colSpan={6}>
                           &nbsp;
-                      </TableCell>
+                        </TableCell>
                         <TableCell className="py-2 px-3 text-right text-sm font-bold text-purple-900 dark:text-purple-100">
                           {formatCurrency(totalVenduto)}
-                      </TableCell>
-                      <TableCell colSpan={5}>
-                        &nbsp;
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
+                        </TableCell>
+                        <TableCell colSpan={5}>
+                          &nbsp;
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
                 </Table>
               </div>
             </div>
@@ -1042,8 +1090,8 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ isOpen, o
               {filteredData.length === 0
                 ? 0
                 : itemsPerPage === 'ALL'
-                ? 1
-                : startIndex + 1}{' '}
+                  ? 1
+                  : startIndex + 1}{' '}
               -{' '}
               {itemsPerPage === 'ALL'
                 ? filteredData.length

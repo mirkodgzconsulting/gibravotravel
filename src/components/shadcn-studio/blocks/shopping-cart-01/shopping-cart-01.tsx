@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ClockIcon, Trash2Icon, Bus, Plane, Users, CheckCircle2, Minus, Plus, Bed, BedDouble } from "lucide-react"
+import { ClockIcon, Trash2Icon, Bus, Plane, Users, CheckCircle2, Minus, Plus, Bed, BedDouble, User, Info } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -67,7 +67,7 @@ export const ShoppingCart = ({ tour }: ShoppingCartProps) => {
     const router = useRouter()
 
     // Split Counters
-    const [countDonna, setCountDonna] = useState(1)
+    const [countDonna, setCountDonna] = useState(0)
     const [countUomo, setCountUomo] = useState(0)
 
     const quantity = countDonna + countUomo
@@ -75,7 +75,7 @@ export const ShoppingCart = ({ tour }: ShoppingCartProps) => {
     const [selectedStop, setSelectedStop] = useState<string>("")
 
     // New Options State - UNIFIED
-    const [selectedRoom, setSelectedRoom] = useState<'shared' | 'double' | 'private' | null>(null)
+    const [selectedRoom, setSelectedRoom] = useState<'shared' | 'double' | 'private' | 'twin' | 'triple' | 'triple_request' | null>(null)
     const [selectedFlexibleCancel, setSelectedFlexibleCancel] = useState(false)
 
     // Dynamic Passenger State
@@ -154,6 +154,8 @@ export const ShoppingCart = ({ tour }: ShoppingCartProps) => {
                 sharedRoom: selectedRoom === 'shared',
                 doubleRoom: selectedRoom === 'double',
                 privateRoom: selectedRoom === 'private',
+                twinRoom: selectedRoom === 'twin',
+                tripleRoom: selectedRoom === 'triple',
                 flexibleCancel: selectedFlexibleCancel,
                 roomType: selectedRoom // Explicit type
             }
@@ -163,7 +165,7 @@ export const ShoppingCart = ({ tour }: ShoppingCartProps) => {
     }
 
     return (
-        <section className="bg-slate-50 pb-8 pt-40 sm:py-16 lg:py-24 min-h-screen md:pt-40">
+        <section className="bg-slate-50 min-h-screen pb-12 pt-24 sm:pt-32 lg:pt-36">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                     {/* Left Column - Product & Configuration */}
@@ -174,141 +176,219 @@ export const ShoppingCart = ({ tour }: ShoppingCartProps) => {
                         </div>
 
                         {/* Tour Card */}
-                        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-                            <div className="flex gap-6 max-sm:flex-col sm:items-start">
+                        {/* Unified Tour & Configuration Card */}
+                        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 sm:p-6 space-y-6 sm:space-y-8">
+
+                            {/* Header: Image, Title, Price */}
+                            <div className="flex gap-4 sm:gap-6 max-sm:flex-col sm:items-start">
                                 <div className="relative aspect-video w-full md:w-48 rounded-xl overflow-hidden shrink-0">
                                     <img src={tour.image} alt={tour.title} className="object-cover h-full w-full" />
                                 </div>
 
-                                <div className="space-y-4 flex-grow">
-                                    <div className="flex flex-col gap-1">
-                                        <div className="flex justify-between items-start">
-                                            <h3 className="font-bold text-xl text-[#323232]">{tour.title}</h3>
-                                            <p className="text-xl font-black text-[#004BA5]">€{tour.price}</p>
+                                <div className="space-y-2 flex-grow">
+                                    <div className="flex justify-between items-start">
+                                        <h3 className="font-bold text-2xl text-[#323232] uppercase">{tour.title}</h3>
+                                        <p className="text-2xl font-black text-[#004BA5]">€{tour.price}</p>
+                                    </div>
+                                    <p className="text-slate-500 flex items-center gap-2 text-sm">
+                                        <ClockIcon className="h-4 w-4" /> {tour.duration} • {new Date(tour.date).toLocaleDateString('it-IT')}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Passengers Section - Pill Design */}
+                            <div>
+                                <label className="text-xs font-bold uppercase text-slate-400 mb-4 block">Passeggeri</label>
+                                <div className="flex flex-col sm:flex-row gap-6">
+                                    {/* Donna Pill */}
+                                    <div className="flex items-center justify-between p-2 pl-6 pr-2 bg-slate-50 rounded-full border border-slate-100 flex-1">
+                                        <span className="font-medium text-slate-700">Donna</span>
+                                        <div className="flex items-center gap-4">
+                                            <Button
+                                                variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-slate-200"
+                                                onClick={() => setCountDonna(Math.max(0, countDonna - 1))}
+                                                disabled={countDonna <= 0}
+                                            >
+                                                <Minus className="h-4 w-4 text-slate-400" />
+                                            </Button>
+                                            <span className="font-bold text-lg w-4 text-center">{countDonna}</span>
+                                            <Button
+                                                variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-white hover:shadow-sm"
+                                                onClick={() => setCountDonna(countDonna + 1)}
+                                            >
+                                                <Plus className="h-4 w-4 text-[#323232]" />
+                                            </Button>
                                         </div>
-                                        <p className="text-slate-500 flex items-center gap-2 text-sm">
-                                            <ClockIcon className="h-4 w-4" /> {tour.duration} • {new Date(tour.date).toLocaleDateString('it-IT')}
-                                        </p>
                                     </div>
 
-                                    <Separator />
-
-                                    {/* Configuration */}
-                                    <div className="space-y-6">
-                                        {/* Row 1: Passengers */}
-                                        <div>
-                                            <label className="text-xs font-bold uppercase text-slate-400 mb-3 block">Passeggeri</label>
-                                            <div className="flex flex-col sm:flex-row gap-4">
-                                                {/* Donna Counter */}
-                                                <div className="flex items-center justify-between p-3 border border-slate-200 rounded-xl bg-slate-50 flex-1">
-                                                    <span className="font-medium text-slate-700">Donna</span>
-                                                    <div className="flex items-center gap-3">
-                                                        <Button
-                                                            variant="outline" size="icon" className="h-8 w-8 rounded-full bg-white"
-                                                            onClick={() => setCountDonna(Math.max(0, countDonna - 1))}
-                                                            disabled={quantity <= 1 && countDonna === 1}
-                                                        >
-                                                            <Minus className="h-3 w-3" />
-                                                        </Button>
-                                                        <span className="font-bold w-4 text-center">{countDonna}</span>
-                                                        <Button
-                                                            variant="outline" size="icon" className="h-8 w-8 rounded-full bg-white"
-                                                            onClick={() => setCountDonna(countDonna + 1)}
-                                                        >
-                                                            <Plus className="h-3 w-3" />
-                                                        </Button>
-                                                    </div>
-                                                </div>
-
-                                                {/* Uomo Counter */}
-                                                <div className="flex items-center justify-between p-3 border border-slate-200 rounded-xl bg-slate-50 flex-1">
-                                                    <span className="font-medium text-slate-700">Uomo</span>
-                                                    <div className="flex items-center gap-3">
-                                                        <Button
-                                                            variant="outline" size="icon" className="h-8 w-8 rounded-full bg-white"
-                                                            onClick={() => setCountUomo(Math.max(0, countUomo - 1))}
-                                                            disabled={quantity <= 1 && countUomo === 1}
-                                                        >
-                                                            <Minus className="h-3 w-3" />
-                                                        </Button>
-                                                        <span className="font-bold w-4 text-center">{countUomo}</span>
-                                                        <Button
-                                                            variant="outline" size="icon" className="h-8 w-8 rounded-full bg-white"
-                                                            onClick={() => setCountUomo(countUomo + 1)}
-                                                        >
-                                                            <Plus className="h-3 w-3" />
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                    {/* Uomo Pill */}
+                                    <div className="flex items-center justify-between p-2 pl-6 pr-2 bg-slate-50 rounded-full border border-slate-100 flex-1">
+                                        <span className="font-medium text-slate-700">Uomo</span>
+                                        <div className="flex items-center gap-4">
+                                            <Button
+                                                variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-slate-200"
+                                                onClick={() => setCountUomo(Math.max(0, countUomo - 1))}
+                                                disabled={countUomo <= 0}
+                                            >
+                                                <Minus className="h-4 w-4 text-slate-400" />
+                                            </Button>
+                                            <span className="font-bold text-lg w-4 text-center">{countUomo}</span>
+                                            <Button
+                                                variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-white hover:shadow-sm"
+                                                onClick={() => setCountUomo(countUomo + 1)}
+                                            >
+                                                <Plus className="h-4 w-4 text-[#323232]" />
+                                            </Button>
                                         </div>
-
-                                        {/* ROOM TYPE SELECTION - 2 BOXES */}
-                                        {/* Only show if tour supports shared rooms (Camera Singola in this context) */}
-                                        {tour.optionCameraSingola && (
-                                            <div>
-                                                <label className="text-xs font-bold uppercase text-slate-400 mb-3 block">Sistemazione</label>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    {/* Option 1: Camera Singola (Shared Logic) */}
-                                                    <div
-                                                        onClick={() => setSelectedRoom(selectedRoom === 'shared' ? null : 'shared')}
-                                                        className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${selectedRoom === 'shared' ? 'border-[#FE8008] bg-orange-50' : 'border-slate-100 hover:border-slate-200'} h-full`}
-                                                    >
-                                                        <div className="flex items-center gap-3 mb-2">
-                                                            <div className={`h-10 w-14 flex items-center justify-center rounded-lg transition-colors ${selectedRoom === 'shared' ? 'bg-[#FE8008] text-white' : 'bg-slate-100 text-slate-500'}`}>
-                                                                <IconTwinBeds className="w-8 h-8" />
-                                                            </div>
-                                                            <span className={`font-bold ${selectedRoom === 'shared' ? 'text-[#FE8008]' : 'text-slate-700'}`}>Camera Singola</span>
-                                                        </div>
-                                                        <p className="text-xs text-slate-500 leading-snug">
-                                                            Per chi viaggia da solo.
-                                                            <br /><span className="italic text-[10px]">(Condividi la camera con un altro viaggiatore)</span>
-                                                        </p>
-                                                    </div>
-
-                                                    {/* Option 2: Camera Matrimoniale */}
-                                                    <div
-                                                        onClick={() => setSelectedRoom(selectedRoom === 'double' ? null : 'double')}
-                                                        className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${selectedRoom === 'double' ? 'border-[#004BA5] bg-blue-50' : 'border-slate-100 hover:border-slate-200'} h-full`}
-                                                    >
-                                                        <div className="flex items-center gap-3 mb-2">
-                                                            <div className={`h-10 w-14 flex items-center justify-center rounded-lg transition-colors ${selectedRoom === 'double' ? 'bg-[#004BA5] text-white' : 'bg-slate-100 text-slate-500'}`}>
-                                                                <IconDoubleBed className="w-8 h-8" />
-                                                            </div>
-                                                            <span className={`font-bold ${selectedRoom === 'double' ? 'text-[#004BA5]' : 'text-slate-700'}`}>Camera Matrimoniale</span>
-                                                        </div>
-                                                        <p className="text-xs text-slate-500 leading-snug">
-                                                            Ideale per coppie o amici.
-                                                            <br /><span className="italic text-[10px]">(Una camera per due persone)</span>
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Row 2: Bus Stop (if applicable) */}
-                                        {tour.type === 'bus' && (
-                                            <div className="space-y-2 pt-2">
-                                                <label className="text-xs font-bold uppercase text-slate-400">Fermata Partenza</label>
-                                                <Select value={selectedStop} onValueChange={setSelectedStop}>
-                                                    <SelectTrigger className="w-full bg-white text-black border-slate-200 h-10">
-                                                        <SelectValue placeholder="Seleziona Fermata" />
-                                                    </SelectTrigger>
-                                                    <SelectContent className="bg-white text-black border-slate-200">
-                                                        {BUS_STOPS.map(stop => (
-                                                            <SelectItem key={stop.id} value={stop.name} className="hover:bg-slate-100">{stop.name}</SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                        )}
                                     </div>
                                 </div>
                             </div>
+
+                            {/* SISTEMAZIONE - 6 Card Grid */}
+                            {/* SISTEMAZIONE - 5 Card Grid (Unified) */}
+                            <div>
+                                <label className="text-xs font-bold uppercase text-slate-400 mb-4 block">Sistemazione</label>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+
+                                    {/* 1. Camera Singola */}
+                                    <div
+                                        onClick={() => setSelectedRoom(selectedRoom === 'private' ? null : 'private')}
+                                        className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col gap-3 h-full relative group ${selectedRoom === 'private' ? 'border-[#004BA5] bg-blue-50/30 ring-1 ring-[#004BA5] shadow-sm' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/50'}`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className={`p-2 rounded-lg transition-colors ${selectedRoom === 'private' ? 'bg-[#004BA5] text-white' : 'bg-slate-100 text-slate-500 group-hover:text-[#004BA5]'}`}>
+                                                <User className="w-5 h-5" />
+                                            </div>
+                                            <span className={`font-bold text-sm ${selectedRoom === 'private' ? 'text-[#004BA5]' : 'text-[#323232]'}`}>Camera Singola</span>
+                                            {selectedRoom === 'private' && <CheckCircle2 className="w-5 h-5 text-[#004BA5] ml-auto animate-in fade-in zoom-in duration-200" />}
+                                        </div>
+                                        <div className="space-y-2">
+                                            <p className="text-xs text-slate-500 leading-snug">
+                                                Per chi viaggia da solo e desidera una camera privata.
+                                            </p>
+                                            {selectedRoom === 'private' && (
+                                                <div className="pt-2 border-t border-blue-100 animate-in fade-in slide-in-from-top-1">
+                                                    <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">Supplemento</p>
+                                                    <p className="text-sm font-black text-[#004BA5]">+ €{tour.priceCameraPrivata || 0}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* 2. Camera Matrimoniale */}
+                                    <div
+                                        onClick={() => setSelectedRoom(selectedRoom === 'double' ? null : 'double')}
+                                        className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col gap-3 h-full relative group ${selectedRoom === 'double' ? 'border-[#004BA5] bg-blue-50/30 ring-1 ring-[#004BA5] shadow-sm' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/50'}`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className={`p-2 rounded-lg transition-colors ${selectedRoom === 'double' ? 'bg-[#004BA5] text-white' : 'bg-slate-100 text-slate-500 group-hover:text-[#004BA5]'}`}>
+                                                <BedDouble className="w-5 h-5" />
+                                            </div>
+                                            <span className={`font-bold text-sm ${selectedRoom === 'double' ? 'text-[#004BA5]' : 'text-[#323232]'}`}>Matrimoniale</span>
+                                            {selectedRoom === 'double' && <CheckCircle2 className="w-5 h-5 text-[#004BA5] ml-auto animate-in fade-in zoom-in duration-200" />}
+                                        </div>
+                                        <p className="text-xs text-slate-500 leading-snug">
+                                            Ideale per coppie. Una camera con letto matrimoniale.
+                                        </p>
+                                    </div>
+
+                                    {/* 3. Camera Doppia */}
+                                    <div
+                                        onClick={() => setSelectedRoom(selectedRoom === 'twin' ? null : 'twin')}
+                                        className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col gap-3 h-full relative group ${selectedRoom === 'twin' ? 'border-[#004BA5] bg-blue-50/30 ring-1 ring-[#004BA5] shadow-sm' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/50'}`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className={`p-2 rounded-lg transition-colors ${selectedRoom === 'twin' ? 'bg-[#004BA5] text-white' : 'bg-slate-100 text-slate-500 group-hover:text-[#004BA5]'}`}>
+                                                <Bed className="w-5 h-5" />
+                                            </div>
+                                            <span className={`font-bold text-sm ${selectedRoom === 'twin' ? 'text-[#004BA5]' : 'text-[#323232]'}`}>Camera Doppia</span>
+                                            {selectedRoom === 'twin' && <CheckCircle2 className="w-5 h-5 text-[#004BA5] ml-auto animate-in fade-in zoom-in duration-200" />}
+                                        </div>
+                                        <p className="text-xs text-slate-500 leading-snug">
+                                            Per amici o familiari. Preferiscono letti separati.
+                                        </p>
+                                    </div>
+
+                                    {/* 4. Camera Condivisa */}
+                                    <div
+                                        onClick={() => setSelectedRoom(selectedRoom === 'shared' ? null : 'shared')}
+                                        className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col gap-3 h-full relative group ${selectedRoom === 'shared' ? 'border-[#004BA5] bg-blue-50/30 ring-1 ring-[#004BA5] shadow-sm' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/50'}`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className={`p-2 rounded-lg transition-colors ${selectedRoom === 'shared' ? 'bg-[#004BA5] text-white' : 'bg-slate-100 text-slate-500 group-hover:text-[#004BA5]'}`}>
+                                                <Users className="w-5 h-5" />
+                                            </div>
+                                            <span className={`font-bold text-sm ${selectedRoom === 'shared' ? 'text-[#004BA5]' : 'text-[#323232]'}`}>Condivisa</span>
+                                            {selectedRoom === 'shared' && <CheckCircle2 className="w-5 h-5 text-[#004BA5] ml-auto animate-in fade-in zoom-in duration-200" />}
+                                        </div>
+                                        <p className="text-xs text-slate-500 leading-snug">
+                                            Viaggi da solo ma vuoi condividere la camera (stesso sesso).
+                                        </p>
+                                    </div>
+
+                                    {/* 5. Camera Tripla */}
+                                    <div
+                                        onClick={() => setSelectedRoom(selectedRoom === 'triple' ? null : 'triple')}
+                                        className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col gap-3 h-full relative group ${selectedRoom === 'triple' ? 'border-[#004BA5] bg-blue-50/30 ring-1 ring-[#004BA5] shadow-sm' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/50'}`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className={`p-2 rounded-lg transition-colors ${selectedRoom === 'triple' ? 'bg-[#004BA5] text-white' : 'bg-slate-100 text-slate-500 group-hover:text-[#004BA5]'}`}>
+                                                <Users className="w-5 h-5" />
+                                            </div>
+                                            <span className={`font-bold text-sm ${selectedRoom === 'triple' ? 'text-[#004BA5]' : 'text-[#323232]'}`}>Camera Tripla</span>
+                                            {selectedRoom === 'triple' && <CheckCircle2 className="w-5 h-5 text-[#004BA5] ml-auto animate-in fade-in zoom-in duration-200" />}
+                                        </div>
+                                        <p className="text-xs text-slate-500 leading-snug">
+                                            Per tre persone nella stessa camera.
+                                        </p>
+                                    </div>
+
+                                    {/* 6. Camera Tripla (Richiesta) */}
+                                    {/* 6. Camera Tripla (Richiesta) */}
+                                    <div
+                                        onClick={() => setSelectedRoom(selectedRoom === 'triple_request' ? null : 'triple_request')}
+                                        className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col gap-2 h-full relative group ${selectedRoom === 'triple_request' ? 'border-[#004BA5] bg-blue-50/30 ring-1 ring-[#004BA5] shadow-sm' : 'border-dashed border-slate-300 hover:border-slate-400 hover:bg-slate-50/50'}`}
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <div className={`p-2 rounded-lg transition-colors ${selectedRoom === 'triple_request' ? 'bg-[#004BA5] text-white' : 'bg-slate-100 text-slate-500 group-hover:text-[#004BA5]'}`}>
+                                                <Users className="w-5 h-5" />
+                                            </div>
+                                            <span className={`font-bold text-sm ${selectedRoom === 'triple_request' ? 'text-[#004BA5]' : 'text-[#323232]'}`}>
+                                                Camera Tripla <span className="font-normal text-slate-500 ml-1">(su richiesta)</span>
+                                            </span>
+                                            {selectedRoom === 'triple_request' && <CheckCircle2 className="w-5 h-5 text-[#004BA5] ml-auto animate-in fade-in zoom-in duration-200" />}
+                                        </div>
+                                        <p className="text-xs text-slate-500 leading-snug">
+                                            Per tre persone.
+                                        </p>
+                                        <div className={`mt-auto pt-1 flex items-center gap-1.5 ${selectedRoom === 'triple_request' ? 'text-[#004BA5]' : 'text-slate-400'}`}>
+                                            <Info className="w-3 h-3" />
+                                            <span className="text-[10px] font-medium">Soggetta a riconferma</span>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            {/* Row 2: Bus Stop (if applicable) */}
+                            {tour.type === 'bus' && (
+                                <div className="space-y-2 pt-2">
+                                    <label className="text-xs font-bold uppercase text-slate-400">Fermata Partenza</label>
+                                    <Select value={selectedStop} onValueChange={setSelectedStop}>
+                                        <SelectTrigger className="w-full bg-white text-black border-slate-200 h-10">
+                                            <SelectValue placeholder="Seleziona Fermata" />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-white text-black border-slate-200">
+                                            {BUS_STOPS.map(stop => (
+                                                <SelectItem key={stop.id} value={stop.name} className="hover:bg-slate-100">{stop.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
                         </div>
 
-                        {/* Additional Options Section (New) */}
-                        {(tour.optionFlexibleCancel || tour.optionCameraPrivata) && (
+                        {tour.optionFlexibleCancel && (
                             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 space-y-4">
                                 <h4 className="font-bold text-lg flex items-center gap-2 text-[#323232]">
                                     <CheckCircle2 className="h-5 w-5 text-[#FE8008]" />
@@ -317,45 +397,21 @@ export const ShoppingCart = ({ tour }: ShoppingCartProps) => {
 
                                 <div className="space-y-4">
                                     {/* Flexible Cancellation */}
-                                    {tour.optionFlexibleCancel && (
-                                        <div className="flex items-center justify-between p-4 border border-slate-100 rounded-xl hover:border-blue-100 transition-colors cursor-pointer" onClick={() => setSelectedFlexibleCancel(!selectedFlexibleCancel)}>
-                                            <div className="flex items-center gap-3">
-                                                <Checkbox
-                                                    checked={selectedFlexibleCancel}
-                                                    onCheckedChange={(c) => setSelectedFlexibleCancel(!!c)}
-                                                />
-                                                <div>
-                                                    <p className="font-bold text-slate-700">Cancella senza pensieri</p>
-                                                    <p className="text-xs text-slate-500">Rimborso garantito fino a 48h prima</p>
-                                                </div>
-                                            </div>
-                                            <div className="font-bold text-[#323232]">
-                                                + €{tour.priceFlexibleCancel} <span className="text-xs font-normal text-slate-400">/pers</span>
+                                    <div className="flex items-center justify-between p-4 border border-slate-100 rounded-xl hover:border-blue-100 transition-colors cursor-pointer" onClick={() => setSelectedFlexibleCancel(!selectedFlexibleCancel)}>
+                                        <div className="flex items-center gap-3">
+                                            <Checkbox
+                                                checked={selectedFlexibleCancel}
+                                                onCheckedChange={(c) => setSelectedFlexibleCancel(!!c)}
+                                            />
+                                            <div>
+                                                <p className="font-bold text-slate-700">Cancella senza pensieri</p>
+                                                <p className="text-xs text-slate-500">Rimborso garantito fino a 48h prima</p>
                                             </div>
                                         </div>
-                                    )}
-
-                                    {/* Private Room - NOW EXCLUSIVE */}
-                                    {tour.optionCameraPrivata && (
-                                        <div
-                                            className={`flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-colors ${selectedRoom === 'private' ? 'border-[#FE8008] bg-orange-50/50' : 'border-slate-100 hover:border-blue-100'}`}
-                                            onClick={() => setSelectedRoom(selectedRoom === 'private' ? null : 'private')}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <Checkbox
-                                                    checked={selectedRoom === 'private'}
-                                                    onCheckedChange={(c) => setSelectedRoom(c ? 'private' : null)}
-                                                />
-                                                <div>
-                                                    <p className="font-bold text-slate-700">Camera Privata</p>
-                                                    <p className="text-xs text-slate-500">Goditi la tua privacy durante il viaggio</p>
-                                                </div>
-                                            </div>
-                                            <div className="font-bold text-[#323232]">
-                                                + €{tour.priceCameraPrivata} <span className="text-xs font-normal text-slate-400">/pers</span>
-                                            </div>
+                                        <div className="font-bold text-[#323232]">
+                                            + €{tour.priceFlexibleCancel} <span className="text-xs font-normal text-slate-400">/pers</span>
                                         </div>
-                                    )}
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -412,7 +468,7 @@ export const ShoppingCart = ({ tour }: ShoppingCartProps) => {
 
                     {/* Right Column - Summary */}
                     <div className="space-y-6">
-                        <Card className="w-full border-0 shadow-lg sticky top-24 rounded-2xl overflow-hidden bg-white">
+                        <Card className="w-full border-0 shadow-lg lg:sticky lg:top-24 rounded-2xl overflow-hidden bg-white">
                             <div className="bg-white p-6 border-b border-slate-100">
                                 <CardTitle className="text-lg text-[#323232] font-bold">Riepilogo</CardTitle>
                             </div>
@@ -468,6 +524,24 @@ export const ShoppingCart = ({ tour }: ShoppingCartProps) => {
                                                 <span className="text-xs">Matrimoniale</span>
                                             </div>
                                         )}
+                                        {selectedRoom === 'twin' && (
+                                            <div className="flex items-center justify-between text-slate-400 italic">
+                                                <span className="font-medium text-xs">Camera:</span>
+                                                <span className="text-xs">Doppia (Letti Singoli)</span>
+                                            </div>
+                                        )}
+                                        {selectedRoom === 'triple' && (
+                                            <div className="flex items-center justify-between text-slate-400 italic">
+                                                <span className="font-medium text-xs">Camera:</span>
+                                                <span className="text-xs">Tripla</span>
+                                            </div>
+                                        )}
+                                        {selectedRoom === 'triple_request' && (
+                                            <div className="flex items-center justify-between text-slate-400 italic">
+                                                <span className="font-medium text-xs">Camera:</span>
+                                                <span className="text-xs">Tripla (Su Richiesta)</span>
+                                            </div>
+                                        )}
 
                                         {tour.type === 'bus' && selectedStop && (
                                             <div className="flex items-center justify-between text-[#004BA5] pt-2">
@@ -499,9 +573,9 @@ export const ShoppingCart = ({ tour }: ShoppingCartProps) => {
                             </CardFooter>
                         </Card>
                     </div>
-                </div>
-            </div>
-        </section>
+                </div >
+            </div >
+        </section >
     )
 }
 

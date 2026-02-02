@@ -75,7 +75,7 @@ export function Navbar() {
     const partenzeRef = useRef<HTMLDivElement>(null)
     const pathname = usePathname()
 
-    const effectiveScrolled = scrolled || mobileMenuOpen
+    const effectiveScrolled = scrolled || mobileMenuOpen || pathname?.includes('/prenotazione') || pathname?.includes('/checkout')
 
     useEffect(() => {
         const handleScroll = () => {

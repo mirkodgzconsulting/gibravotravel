@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { v2 as cloudinary } from 'cloudinary';
+import { UploadApiResponse, v2 as cloudinary } from 'cloudinary';
 import { auth } from '@clerk/nextjs/server';
+import { Prisma } from '@prisma/client';
 
 // Config Cloudinary
 cloudinary.config({
@@ -66,6 +67,7 @@ export async function GET(
     }
 
     // Normalizar documentoViaggio (Legacy support)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const tourAny = tour as any;
     if (tourAny.documentoViaggio) {
       if (typeof tourAny.documentoViaggio === 'string') {
@@ -169,6 +171,7 @@ export async function PUT(
         coordinadorFoto: true,
         galeria: true,
         galeria2: true, // Existing gallery 2 URLs
+        documentoViaggio: true,
       }
     });
 
@@ -203,16 +206,16 @@ export async function PUT(
     const newGallery2Images = formData.getAll('gallery2Images') as File[];
 
     // INIT PARALLEL UPLOADS
-    const uploadPromises: Promise<any>[] = [];
+    const uploadPromises: Promise<{ type: string; url: string; name?: string }>[] = [];
 
     // 1. Cover Image
     if (coverImage && coverImage.size > 0) {
       uploadPromises.push((async () => {
         const bytes = await coverImage.arrayBuffer();
         const buffer = Buffer.from(bytes);
-        const res: any = await new Promise((resolve, reject) => {
+        const res: UploadApiResponse = await new Promise((resolve, reject) => {
           cloudinary.uploader.upload_stream({ folder: 'gibravotravel/tour_aereo/covers', resource_type: 'image' },
-            (err, res) => { if (err) reject(err); else resolve(res); }).end(buffer);
+            (err, res) => { if (err) reject(err); else resolve(res!); }).end(buffer);
         });
         return { type: 'cover', url: res.secure_url, name: coverImage.name };
       })());
@@ -223,9 +226,9 @@ export async function PUT(
       uploadPromises.push((async () => {
         const bytes = await webCoverImage.arrayBuffer();
         const buffer = Buffer.from(bytes);
-        const res: any = await new Promise((resolve, reject) => {
+        const res: UploadApiResponse = await new Promise((resolve, reject) => {
           cloudinary.uploader.upload_stream({ folder: 'gibravotravel/tour_aereo/web_covers', resource_type: 'image' },
-            (err, res) => { if (err) reject(err); else resolve(res); }).end(buffer);
+            (err, res) => { if (err) reject(err); else resolve(res!); }).end(buffer);
         });
         return { type: 'webCover', url: res.secure_url, name: webCoverImage.name };
       })());
@@ -236,9 +239,9 @@ export async function PUT(
       uploadPromises.push((async () => {
         const bytes = await pdfFile.arrayBuffer();
         const buffer = Buffer.from(bytes);
-        const res: any = await new Promise((resolve, reject) => {
+        const res: UploadApiResponse = await new Promise((resolve, reject) => {
           cloudinary.uploader.upload_stream({ folder: 'gibravotravel/tour_aereo/pdfs', resource_type: 'raw' },
-            (err, res) => { if (err) reject(err); else resolve(res); }).end(buffer);
+            (err, res) => { if (err) reject(err); else resolve(res!); }).end(buffer);
         });
         return { type: 'pdf', url: res.secure_url, name: pdfFile.name };
       })());
@@ -250,9 +253,9 @@ export async function PUT(
       uploadPromises.push((async () => {
         const bytes = await coordinadorFoto.arrayBuffer();
         const buffer = Buffer.from(bytes);
-        const res: any = await new Promise((resolve, reject) => {
+        const res: UploadApiResponse = await new Promise((resolve, reject) => {
           cloudinary.uploader.upload_stream({ folder: 'gibravotravel/tour_aereo/coordinators', resource_type: 'image' },
-            (err, res) => { if (err) reject(err); else resolve(res); }).end(buffer);
+            (err, res) => { if (err) reject(err); else resolve(res!); }).end(buffer);
         });
         return { type: 'coordinator', url: res.secure_url };
       })());
@@ -265,9 +268,9 @@ export async function PUT(
           uploadPromises.push((async () => {
             const bytes = await file.arrayBuffer();
             const buffer = Buffer.from(bytes);
-            const res: any = await new Promise((resolve, reject) => {
+            const res: UploadApiResponse = await new Promise((resolve, reject) => {
               cloudinary.uploader.upload_stream({ folder: 'gibravotravel/tour_aereo/gallery', resource_type: 'image' },
-                (err, res) => { if (err) reject(err); else resolve(res); }).end(buffer);
+                (err, res) => { if (err) reject(err); else resolve(res!); }).end(buffer);
             });
             return { type: 'gallery', url: res.secure_url };
           })());
@@ -282,11 +285,29 @@ export async function PUT(
           uploadPromises.push((async () => {
             const bytes = await file.arrayBuffer();
             const buffer = Buffer.from(bytes);
-            const res: any = await new Promise((resolve, reject) => {
+            const res: UploadApiResponse = await new Promise((resolve, reject) => {
               cloudinary.uploader.upload_stream({ folder: 'gibravotravel/tour_aereo/gallery2', resource_type: 'image' },
-                (err, res) => { if (err) reject(err); else resolve(res); }).end(buffer);
+                (err, res) => { if (err) reject(err); else resolve(res!); }).end(buffer);
             });
             return { type: 'gallery2', url: res.secure_url };
+          })());
+        }
+      });
+    }
+
+    // 6. Documento Viaggio Files (Multiple) - NEW
+    const newDocumentoViaggioFiles = formData.getAll('documentoViaggio') as File[];
+    if (newDocumentoViaggioFiles.length > 0) {
+      newDocumentoViaggioFiles.forEach((file) => {
+        if (file.size > 0) {
+          uploadPromises.push((async () => {
+            const bytes = await file.arrayBuffer();
+            const buffer = Buffer.from(bytes);
+            const res: UploadApiResponse = await new Promise((resolve, reject) => {
+              cloudinary.uploader.upload_stream({ folder: 'gibravotravel/tour_aereo/docs', resource_type: 'auto' },
+                (err, res) => { if (err) reject(err); else resolve(res!); }).end(buffer);
+            });
+            return { type: 'documentoViaggio', url: res.secure_url, name: file.name };
           })());
         }
       });
@@ -297,7 +318,8 @@ export async function PUT(
 
 
     // BUILD DYNAMIC UPDATE OBJECT
-    const dataToUpdate: any = {};
+    const dataToUpdate: Prisma.TourAereoUpdateInput = {};
+
 
     // --- INTERNAL FIELDS (Update only if present in formData) ---
     if (formData.has('titulo')) dataToUpdate.titulo = formData.get('titulo') as string;
@@ -499,6 +521,46 @@ export async function PUT(
 
       const newUrls2 = results.filter(r => r.type === 'gallery2').map(r => r.url);
       dataToUpdate.galeria2 = [...keptImages2, ...newUrls2];
+    }
+
+    // 6. Documento Viaggio (Merge with existing)
+    // If 'documentoViaggioExisting' is present in FormData, we use it (it contains the list of files the user kept).
+    // If we have new files, we add them.
+    const hasDocumentoViaggioExisting = formData.has('documentoViaggioExisting');
+    // newDocumentoViaggioFiles is already defined above
+    const hasNewDocs = newDocumentoViaggioFiles.length > 0;
+
+    if (hasDocumentoViaggioExisting || hasNewDocs) {
+      let keptDocs: { url: string; name: string }[] = [];
+      
+      if (hasDocumentoViaggioExisting) {
+        try {
+          const s = formData.get('documentoViaggioExisting');
+          if (typeof s === 'string') keptDocs = JSON.parse(s);
+        } catch { }
+      } else {
+        // If not provided but we have new docs, we should probably append to existing?
+        // But frontend Logic says it ALWAYS sends 'documentoViaggioExisting' if there are files.
+        // If it's missing, it technically means "keep current" OR "user didn't touch it".
+        // HOWEVER, since we are dealing with a specific "upload" or "delete" action, strictly speaking we should probably default to "current" if missing, 
+        // unlike the gallery logic where missing means "no changes".
+        // Let's assume safe default: if we are adding new files but missing the 'existing' list, append to current.
+        const currentDocs = currentTour.documentoViaggio as unknown as { url: string; name: string }[] | null;
+        // Handle legacy cases (string, object, array)
+        if (Array.isArray(currentDocs)) {
+            keptDocs = currentDocs;
+        } else if (typeof currentDocs === 'string') {
+            keptDocs = [{ url: currentDocs, name: 'documento' }];
+        } else if (currentDocs && typeof currentDocs === 'object') {
+            keptDocs = [currentDocs];
+        }
+      }
+
+      const newDocs = results
+        .filter(r => r.type === 'documentoViaggio')
+        .map(r => ({ url: r.url, name: r.name }));
+        
+      dataToUpdate.documentoViaggio = [...keptDocs, ...newDocs];
     }
 
     // UPDATE DB

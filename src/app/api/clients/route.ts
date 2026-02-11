@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
 }
 
 // Helper para subir archivos de forma segura
-const uploadSafe = async (file: File | null): Promise<{ url: string | null, name: string | null }> => {
+const uploadSafe = async (file: File | null): Promise<{ url: string | null, name: string | null, error?: string }> => {
   if (!file || file.size === 0) return { url: null, name: null };
   
   try {
@@ -158,9 +158,10 @@ const uploadSafe = async (file: File | null): Promise<{ url: string | null, name
     // Verificar si es error de credenciales
     if (err?.http_code === 401 || err?.message?.includes('disabled')) {
       console.error('CLOUDINARY AUTH ERROR: Verifique las variables de entorno CLOUDINARY_CLOUD_NAME, API_KEY, API_SECRET');
+      return { url: null, name: null, error: 'Hubo un error de autenticación con Cloudinary (Cuenta deshabilitada o credenciales inválidas).' };
     }
     // Retornamos null pero NO lanzamos error para no abortar todo el proceso
-    return { url: null, name: null };
+    return { url: null, name: null, error: 'Hubo un error inesperado al subir el archivo.' };
   }
 };
 
@@ -266,6 +267,16 @@ export async function POST(request: NextRequest) {
       uploadSafe(document3),
       uploadSafe(document4)
     ]);
+
+    // Check for critical upload errors
+    const uploadError = results.find(r => r.error);
+    if (uploadError) {
+      console.error('Upload Error Found:', uploadError);
+      return NextResponse.json({ 
+        error: 'Error subiendo archivos. Verifique la cuenta de Cloudinary (Posiblemente deshabilitada).',
+        details: uploadError.error
+      }, { status: 500 });
+    }
 
     const documentData = {
       document1: results[0].url ?? undefined,

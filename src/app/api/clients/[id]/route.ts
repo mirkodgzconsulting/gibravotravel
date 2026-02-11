@@ -80,7 +80,7 @@ export async function GET(
 }
 
 // Helper para subir archivos de forma segura
-const uploadSafe = async (file: File | null): Promise<{ url: string | null, name: string | null }> => {
+const uploadSafe = async (file: File | null): Promise<{ url: string | null, name: string | null, error?: string }> => {
   if (!file || file.size === 0) return { url: null, name: null };
   
   try {
@@ -115,8 +115,9 @@ const uploadSafe = async (file: File | null): Promise<{ url: string | null, name
     // Verificar si es error de credenciales
     if (err?.http_code === 401 || err?.message?.includes('disabled')) {
       console.error('CLOUDINARY AUTH ERROR: Verifique las variables de entorno CLOUDINARY_CLOUD_NAME, API_KEY, API_SECRET');
+      return { url: null, name: null, error: 'Hubo un error de autenticación con Cloudinary (Cuenta deshabilitada o credenciales inválidas).' };
     }
-    return { url: null, name: null };
+    return { url: null, name: null, error: 'Hubo un error inesperado al subir el archivo.' };
   }
 };
 
@@ -223,6 +224,18 @@ export async function PUT(
       uploadSafe(document4)
     ]);
 
+    // Check for critical upload errors
+    const uploadError = results.find(r => r.error);
+    if (uploadError) {
+      // If there's a specific error (like auth disabled), we should return it
+      // Cloudinary 'disabled' usually comes as part of the error log, but let's check if we can pass it
+      console.error('Upload Error Found:', uploadError);
+      return NextResponse.json({ 
+        error: 'Error subiendo archivos. Verifique la cuenta de Cloudinary (Posiblemente deshabilitada).',
+        details: uploadError.error
+      }, { status: 500 });
+    }
+
     // Preparar datos de documentos (mantener existentes si no se suben nuevos, o si la subida nueva falló o no se intentó)
     // uploadSafe retorna url: null si no hubo archivo o falló.
     // Si url es null, debemos mantener el valor existente SOLO si no se intentó subir un archivo nuevo. 
@@ -236,6 +249,7 @@ export async function PUT(
        if (newRes.url) {
          return { url: newRes.url, name: newRes.name };
        }
+       // If no new url, keep old
        return { url: existingUrl, name: existingName };
     };
 

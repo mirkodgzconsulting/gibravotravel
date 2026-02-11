@@ -2,18 +2,28 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { v2 as cloudinary } from 'cloudinary';
 import { prisma } from '@/lib/prisma';
+import type { UploadApiResponse } from 'cloudinary';
+import { parseUploadResult } from '@/lib/biglietteria/parsers';
+import type { Prisma } from '@prisma/client';
 
-// Configurar Cloudinary
-if (process.env.CLOUDINARY_URL) {
+// Configuración robusta de Cloudinary
+const cloudName = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+const apiKey = process.env.CLOUDINARY_API_KEY;
+const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+if (cloudName && apiKey && apiSecret) {
+  cloudinary.config({
+    cloud_name: cloudName,
+    api_key: apiKey,
+    api_secret: apiSecret,
+    secure: true,
+  });
+} else if (process.env.CLOUDINARY_URL) {
   cloudinary.config({
     secure: true
   });
 } else {
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-  });
+  console.warn('⚠️ Cloudinary no está configurado correctamente. Faltan variables de entorno.');
 }
 
 // GET - Obtener un cliente específico
@@ -60,14 +70,55 @@ export async function GET(
 
     return NextResponse.json({ client });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching client:', error);
     return NextResponse.json({
       error: 'Error interno del servidor',
-      details: error.message
+      details: error instanceof Error ? error.message : 'Error desconocido'
     }, { status: 500 });
   }
 }
+
+// Helper para subir archivos de forma segura
+const uploadSafe = async (file: File | null): Promise<{ url: string | null, name: string | null }> => {
+  if (!file || file.size === 0) return { url: null, name: null };
+  
+  try {
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const fileExtension = file.name.toLowerCase().split('.').pop();
+    const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension || '');
+    const resourceType = isImage ? 'image' : 'raw'; 
+
+    const result = await new Promise<UploadApiResponse>((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'gibravotravel/clients/documents',
+          resource_type: resourceType,
+        },
+        parseUploadResult(resolve, reject)
+      );
+      
+      // Manejar errores del stream directamente
+      uploadStream.on('error', (error) => {
+        console.error(`Stream error uploading ${file.name}:`, error);
+        reject(error);
+      });
+
+      uploadStream.end(buffer);
+    });
+
+    return { url: result.secure_url, name: file.name };
+  } catch (error: unknown) {
+    const err = error as { http_code?: number; message?: string };
+    console.error(`Error uploading file ${file.name}:`, err);
+    // Verificar si es error de credenciales
+    if (err?.http_code === 401 || err?.message?.includes('disabled')) {
+      console.error('CLOUDINARY AUTH ERROR: Verifique las variables de entorno CLOUDINARY_CLOUD_NAME, API_KEY, API_SECRET');
+    }
+    return { url: null, name: null };
+  }
+};
 
 // PUT - Actualizar un cliente
 export async function PUT(
@@ -98,8 +149,7 @@ export async function PUT(
     const document3 = formData.get('document3') as File | null;
     const document4 = formData.get('document4') as File | null;
 
-    // Validaciones - Solo firstName, lastName y phoneNumber son obligatorios
-    // fiscalCode, address, email y birthDate ahora son opcionales
+    // Validaciones
     if (!firstName || !lastName || !phoneNumber) {
       return NextResponse.json({ error: 'Faltan campos obligatorios (Nombre, Apellido y Teléfono son requeridos)' }, { status: 400 });
     }
@@ -113,7 +163,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 404 });
     }
 
-    // Verificar si ya existe otro cliente activo con el mismo código fiscal (solo si se proporciona)
+    // Validaciones de duplicados (fiscalCode, email, phoneNumber) excluyendo el ID actual
     if (fiscalCode && fiscalCode.trim() !== '') {
       const duplicateClientByFiscal = await prisma.client.findFirst({
         where: {
@@ -122,28 +172,25 @@ export async function PUT(
           isActive: true
         }
       });
-
       if (duplicateClientByFiscal) {
         return NextResponse.json({ error: 'Ya existe otro cliente con este código fiscal' }, { status: 400 });
       }
     }
 
-    // Verificar si ya existe otro cliente activo con el mismo email (solo si se proporciona)
-    if (email && email.trim() !== '') {
+    if (email && email.trim() !== '' && !email.startsWith('temp-email-')) {
       const duplicateClientByEmail = await prisma.client.findFirst({
         where: {
           email: email.trim(),
           id: { not: id },
-          isActive: true
+          isActive: true,
+          NOT: { email: { startsWith: 'temp-email-' } }
         }
       });
-
       if (duplicateClientByEmail) {
         return NextResponse.json({ error: 'Ya existe otro cliente con este email' }, { status: 400 });
       }
     }
 
-    // Verificar si ya existe otro cliente activo con el mismo número de teléfono
     if (phoneNumber && phoneNumber.trim() !== '') {
       const duplicateClientByPhone = await prisma.client.findFirst({
         where: {
@@ -152,17 +199,15 @@ export async function PUT(
           isActive: true
         }
       });
-
       if (duplicateClientByPhone) {
         return NextResponse.json({ error: 'Ya existe otro cliente con este número de teléfono' }, { status: 400 });
       }
     }
 
-    // Validar tamaños de archivos
+    // Size validation
     const maxFileSize = 10 * 1024 * 1024; // 10MB
-    const files = [document1, document2, document3, document4].filter(f => f && f.size > 0);
-
-    for (const file of files) {
+    const filesToValidate = [document1, document2, document3, document4].filter(f => f && f.size > 0);
+    for (const file of filesToValidate) {
       if (file && file.size > maxFileSize) {
         return NextResponse.json({
           error: `El archivo ${file.name} es demasiado grande. Máximo 10MB por archivo.`
@@ -170,114 +215,55 @@ export async function PUT(
       }
     }
 
-    // Preparar datos de documentos (mantener existentes si no se suben nuevos)
-    const documentData: {
-      document1?: string | null;
-      document1Name?: string | null;
-      document2?: string | null;
-      document2Name?: string | null;
-      document3?: string | null;
-      document3Name?: string | null;
-      document4?: string | null;
-      document4Name?: string | null;
-    } = {
-      document1: existingClient.document1,
-      document1Name: existingClient.document1Name,
-      document2: existingClient.document2,
-      document2Name: existingClient.document2Name,
-      document3: existingClient.document3,
-      document3Name: existingClient.document3Name,
-      document4: existingClient.document4,
-      document4Name: existingClient.document4Name,
+    // Subir archivos nuevos de forma segura
+    const results = await Promise.all([
+      uploadSafe(document1),
+      uploadSafe(document2),
+      uploadSafe(document3),
+      uploadSafe(document4)
+    ]);
+
+    // Preparar datos de documentos (mantener existentes si no se suben nuevos, o si la subida nueva falló o no se intentó)
+    // uploadSafe retorna url: null si no hubo archivo o falló.
+    // Si url es null, debemos mantener el valor existente SOLO si no se intentó subir un archivo nuevo. 
+    // Pero si se intentó y falló, ¿qué hacemos? Aquí 'fail safe' significa que no actualizamos el campo si falló la subida.
+    
+    // Lógica: Si results[i].url existe, actualizamos. Si no, mantenemos el valor anterior.
+    // NOTA: Si quisiéramos borrar un archivo, necesitaríamos una lógica explícita (e.g. un flag 'deleteDocument1'). 
+    // Por ahora, asumimos que si no se envía archivo, se mantiene el anterior.
+    
+    const updateDoc = (existingUrl: string | null | undefined, existingName: string | null | undefined, newRes: { url: string | null, name: string | null }) => {
+       if (newRes.url) {
+         return { url: newRes.url, name: newRes.name };
+       }
+       return { url: existingUrl, name: existingName };
     };
 
-    // Función helper para subir archivo
-    const uploadFile = async (file: File, index: number) => {
-      try {
-        const bytes = await file.arrayBuffer();
-        const buffer = Buffer.from(bytes);
+    const doc1 = updateDoc(existingClient.document1, existingClient.document1Name, results[0]);
+    const doc2 = updateDoc(existingClient.document2, existingClient.document2Name, results[1]);
+    const doc3 = updateDoc(existingClient.document3, existingClient.document3Name, results[2]);
+    const doc4 = updateDoc(existingClient.document4, existingClient.document4Name, results[3]);
 
-        // Detectar el tipo de archivo para usar el resource_type correcto
-        const fileExtension = file.name.toLowerCase().split('.').pop();
-        const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension || '');
-        const resourceType = isImage ? 'image' : 'raw'; // PDFs y otros archivos usan 'raw'
-
-        const result = await new Promise<any>((resolve, reject) => {
-          cloudinary.uploader.upload_stream(
-            {
-              folder: 'gibravotravel/clients/documents',
-              resource_type: resourceType, // Usar 'raw' para PDFs, 'image' para imágenes
-            },
-            (error, result) => {
-              if (error) reject(error);
-              else resolve(result);
-            }
-          ).end(buffer);
-        });
-
-        return {
-          index,
-          url: result.secure_url,
-          name: file.name
-        };
-      } catch (error) {
-        throw new Error(`Error subiendo archivo ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      }
+    const documentData: Prisma.ClientUpdateInput = {
+      document1: doc1.url,
+      document1Name: doc1.name,
+      document2: doc2.url,
+      document2Name: doc2.name,
+      document3: doc3.url,
+      document3Name: doc3.name,
+      document4: doc4.url,
+      document4Name: doc4.name,
     };
 
-    // Subir archivos nuevos en paralelo
-    const uploadPromises = [];
-    if (document1 && document1.size > 0) uploadPromises.push(uploadFile(document1, 1));
-    if (document2 && document2.size > 0) uploadPromises.push(uploadFile(document2, 2));
-    if (document3 && document3.size > 0) uploadPromises.push(uploadFile(document3, 3));
-    if (document4 && document4.size > 0) uploadPromises.push(uploadFile(document4, 4));
-
-    if (uploadPromises.length > 0) {
-      try {
-        const uploadResults = await Promise.all(uploadPromises);
-
-        uploadResults.forEach(result => {
-          if (result.index === 1) {
-            documentData.document1 = result.url;
-            documentData.document1Name = result.name;
-          } else if (result.index === 2) {
-            documentData.document2 = result.url;
-            documentData.document2Name = result.name;
-          } else if (result.index === 3) {
-            documentData.document3 = result.url;
-            documentData.document3Name = result.name;
-          } else if (result.index === 4) {
-            documentData.document4 = result.url;
-            documentData.document4Name = result.name;
-          }
-        });
-      } catch (uploadError) {
-        return NextResponse.json({
-          error: 'Error subiendo archivos a Cloudinary',
-          details: uploadError instanceof Error ? uploadError.message : 'Unknown error'
-        }, { status: 500 });
-      }
-    }
-
-    // Actualizar el cliente
-    // Nota: fiscalCode, address, email y birthDate ahora son opcionales
-    // Para email vacío, verificar si el cliente actual tiene un email temporal y mantenerlo, o generar uno nuevo
+    // Actualizar cliente
     let emailValue = email?.trim() || '';
-
-    // Si el email está vacío, verificar si el cliente actual tiene un email temporal
     if (!emailValue) {
-      const currentClient = await prisma.client.findUnique({
-        where: { id },
-        select: { email: true }
-      });
-
-      // Si el cliente actual tiene un email temporal (empieza con "temp-email-"), mantenerlo
-      // Si no, generar uno nuevo
-      if (currentClient?.email && currentClient.email.startsWith('temp-email-')) {
-        emailValue = currentClient.email;
-      } else {
-        emailValue = `temp-email-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
-      }
+       // Mantener si ya tenía temp, o generar nuevo
+       if (existingClient.email && existingClient.email.startsWith('temp-email-')) {
+         emailValue = existingClient.email;
+       } else {
+         emailValue = `temp-email-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+       }
     }
 
     const updatedClient = await prisma.client.update({
@@ -290,7 +276,7 @@ export async function PUT(
         email: emailValue,
         phoneNumber,
         birthPlace: birthPlace || '',
-        birthDate: birthDate && birthDate.trim() !== '' ? new Date(birthDate) : new Date('1900-01-01'), // Usar fecha por defecto si no se proporciona
+        birthDate: birthDate && birthDate.trim() !== '' ? new Date(birthDate) : new Date('1900-01-01'),
         ...documentData
       }
     });
@@ -300,42 +286,36 @@ export async function PUT(
       message: 'Cliente aggiornato con successo!'
     });
 
-  } catch (error: any) {
-    console.error('Error updating client:', error);
-
-    // Detectar errores de Prisma relacionados con constraints únicos
-    if (error.code === 'P2002') {
-      // Error de unique constraint en Prisma
-      const target = error.meta?.target;
-
+  } catch (error: unknown) {
+    const err = error as { code?: string; meta?: { target?: string[] }; message?: string };
+    console.error('Error updating client:', err);
+    
+    if (err.code === 'P2002') {
+      // similar validation error logic
+      const target = err.meta?.target;
       if (Array.isArray(target)) {
         const field = target[0];
-
-        // Mapear nombres de campos a mensajes más amigables
         const fieldMessages: Record<string, string> = {
-          'email': 'Ya existe otro cliente con este email. Por favor, verifica el email ingresado.',
-          'fiscalCode': 'Ya existe otro cliente con este código fiscal. Por favor, verifica el código fiscal ingresado.',
-          'phoneNumber': 'Ya existe otro cliente con este número de teléfono. Por favor, verifica el teléfono ingresado.',
+            'email': 'Ya existe otro cliente con este email.',
+            'fiscalCode': 'Ya existe otro cliente con este código fiscal.',
+            'phoneNumber': 'Ya existe otro cliente con este número de teléfono.',
         };
-
-        const message = fieldMessages[field] || `Ya existe otro cliente con este ${field}. Por favor, verifica el campo ${field}.`;
-
+        const message = fieldMessages[field] || `Ya existe otro cliente con este ${field}.`;
         return NextResponse.json({
-          error: message,
-          field: field,
-          details: `El campo '${field}' ya está registrado en otro cliente`
+            error: message,
+            field: field,
+            details: `El campo '${field}' ya está registrado`
         }, { status: 400 });
       }
-
       return NextResponse.json({
-        error: 'Ya existe otro cliente con estos datos. Por favor, verifica la información ingresada.',
-        details: 'Los datos ingresados ya están registrados en otro cliente'
+          error: 'Ya existe otro cliente con estos datos.',
+          details: 'Los datos ya están registrados.'
       }, { status: 400 });
     }
 
     return NextResponse.json({
       error: 'Error interno del servidor',
-      details: error.message || 'Error desconocido al actualizar el cliente'
+      details: err.message || 'Error desconocido'
     }, { status: 500 });
   }
 }
@@ -353,16 +333,11 @@ export async function DELETE(
 
     const { id } = await params;
 
-    // Verificar si el cliente existe
-    const existingClient = await prisma.client.findUnique({
-      where: { id }
-    });
-
+    const existingClient = await prisma.client.findUnique({ where: { id } });
     if (!existingClient) {
       return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 404 });
     }
 
-    // Soft delete
     await prisma.client.update({
       where: { id },
       data: { isActive: false }
@@ -372,11 +347,11 @@ export async function DELETE(
       message: 'Cliente eliminado exitosamente'
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error deleting client:', error);
     return NextResponse.json({
       error: 'Error interno del servidor',
-      details: error.message
+      details: error instanceof Error ? error.message : 'Error desconocido'
     }, { status: 500 });
   }
 }

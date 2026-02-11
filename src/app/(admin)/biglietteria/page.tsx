@@ -425,6 +425,21 @@ function normalizeMetodoPagamentoArray(value: unknown): string[] {
 
 // ==================== COMPONENTE PRINCIPAL ====================
 
+// Helper para determinar si una URL es una imagen renderizable
+const isRenderableImage = (url: string | null | undefined): boolean => {
+  if (!url) return false;
+  const lower = url.toLowerCase();
+
+  // Excluir explícitamente documentos no renderizables como imagen
+  if (/\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt|csv|zip|rar)$/i.test(lower)) return false;
+
+  // Aceptar extensiones de imagen explícitas
+  if (/\.(jpg|jpeg|png|gif|webp|bmp|svg|ico|tiff)$/i.test(lower)) return true;
+
+  // Si tiene /image/ en el path y no es un documento conocido, intentar renderizar
+  return lower.includes('/image/') || lower.includes('/img/');
+};
+
 export default function BiglietteriaPage() {
   const {
     canAccessGestione,
@@ -461,6 +476,7 @@ export default function BiglietteriaPage() {
   // Estados para modal de cliente
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [imageLoadErrors, setImageLoadErrors] = useState<Record<string, boolean>>({}); // Estado para manejar errores de carga de imágenes
 
   // Estados para tabla de detalles de pasajeros
   const [isPassengerDetailsOpen, setIsPassengerDetailsOpen] = useState(false);
@@ -1800,6 +1816,7 @@ export default function BiglietteriaPage() {
 
     if (client) {
       setSelectedClient(client);
+      setImageLoadErrors({}); // Resetear errores al abrir nuevo cliente
       setIsClientModalOpen(true);
     } else {
     }
@@ -6585,12 +6602,14 @@ export default function BiglietteriaPage() {
                             <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
                               Documento 1
                             </h4>
-                            <div className="flex items-center justify-center h-24 bg-gray-50 dark:bg-gray-800 rounded">
-                              {selectedClient.document1.includes("/image/") ? (
+                            <div className="flex items-center justify-center h-24 bg-gray-50 dark:bg-gray-800 rounded relative overflow-hidden group">
+                              {isRenderableImage(selectedClient.document1) && !imageLoadErrors['doc1'] ? (
                                 <img
                                   src={selectedClient.document1}
                                   alt="Documento 1"
-                                  className="max-h-full max-w-full object-contain rounded"
+                                  className="max-h-full max-w-full object-contain rounded cursor-pointer transition-transform hover:scale-105"
+                                  onClick={() => window.open(selectedClient.document1!, "_blank")}
+                                  onError={() => setImageLoadErrors(prev => ({ ...prev, doc1: true }))}
                                 />
                               ) : (
                                 <button
@@ -6601,7 +6620,7 @@ export default function BiglietteriaPage() {
                                         "documento1",
                                     )
                                   }
-                                  className="flex flex-col items-center gap-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                                  className="flex flex-col items-center gap-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 w-full h-full justify-center"
                                 >
                                   <svg
                                     className="w-8 h-8"
@@ -6616,7 +6635,9 @@ export default function BiglietteriaPage() {
                                       d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                                     />
                                   </svg>
-                                  <span className="text-xs">Descargar</span>
+                                  <span className="text-xs">
+                                    {isRenderableImage(selectedClient.document1) ? "Ver Imagen" : "Descargar"}
+                                  </span>
                                 </button>
                               )}
                             </div>
@@ -6627,12 +6648,14 @@ export default function BiglietteriaPage() {
                             <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
                               Documento 2
                             </h4>
-                            <div className="flex items-center justify-center h-24 bg-gray-50 dark:bg-gray-800 rounded">
-                              {selectedClient.document2.includes("/image/") ? (
+                            <div className="flex items-center justify-center h-24 bg-gray-50 dark:bg-gray-800 rounded relative overflow-hidden group">
+                              {isRenderableImage(selectedClient.document2) && !imageLoadErrors['doc2'] ? (
                                 <img
                                   src={selectedClient.document2}
                                   alt="Documento 2"
-                                  className="max-h-full max-w-full object-contain rounded"
+                                  className="max-h-full max-w-full object-contain rounded cursor-pointer transition-transform hover:scale-105"
+                                  onClick={() => window.open(selectedClient.document2!, "_blank")}
+                                  onError={() => setImageLoadErrors(prev => ({ ...prev, doc2: true }))}
                                 />
                               ) : (
                                 <button
@@ -6643,7 +6666,7 @@ export default function BiglietteriaPage() {
                                         "documento2",
                                     )
                                   }
-                                  className="flex flex-col items-center gap-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                                  className="flex flex-col items-center gap-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 w-full h-full justify-center"
                                 >
                                   <svg
                                     className="w-8 h-8"
@@ -6658,7 +6681,9 @@ export default function BiglietteriaPage() {
                                       d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                                     />
                                   </svg>
-                                  <span className="text-xs">Descargar</span>
+                                  <span className="text-xs">
+                                    {isRenderableImage(selectedClient.document2) ? "Ver Imagen" : "Descargar"}
+                                  </span>
                                 </button>
                               )}
                             </div>
@@ -6669,12 +6694,14 @@ export default function BiglietteriaPage() {
                             <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
                               Documento 3
                             </h4>
-                            <div className="flex items-center justify-center h-24 bg-gray-50 dark:bg-gray-800 rounded">
-                              {selectedClient.document3.includes("/image/") ? (
+                            <div className="flex items-center justify-center h-24 bg-gray-50 dark:bg-gray-800 rounded relative overflow-hidden group">
+                              {isRenderableImage(selectedClient.document3) && !imageLoadErrors['doc3'] ? (
                                 <img
                                   src={selectedClient.document3}
                                   alt="Documento 3"
-                                  className="max-h-full max-w-full object-contain rounded"
+                                  className="max-h-full max-w-full object-contain rounded cursor-pointer transition-transform hover:scale-105"
+                                  onClick={() => window.open(selectedClient.document3!, "_blank")}
+                                  onError={() => setImageLoadErrors(prev => ({ ...prev, doc3: true }))}
                                 />
                               ) : (
                                 <button
@@ -6685,7 +6712,7 @@ export default function BiglietteriaPage() {
                                         "documento3",
                                     )
                                   }
-                                  className="flex flex-col items-center gap-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                                  className="flex flex-col items-center gap-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 w-full h-full justify-center"
                                 >
                                   <svg
                                     className="w-8 h-8"
@@ -6700,7 +6727,9 @@ export default function BiglietteriaPage() {
                                       d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                                     />
                                   </svg>
-                                  <span className="text-xs">Descargar</span>
+                                  <span className="text-xs">
+                                    {isRenderableImage(selectedClient.document3) ? "Ver Imagen" : "Descargar"}
+                                  </span>
                                 </button>
                               )}
                             </div>
@@ -6711,12 +6740,14 @@ export default function BiglietteriaPage() {
                             <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
                               Documento 4
                             </h4>
-                            <div className="flex items-center justify-center h-24 bg-gray-50 dark:bg-gray-800 rounded">
-                              {selectedClient.document4.includes("/image/") ? (
+                            <div className="flex items-center justify-center h-24 bg-gray-50 dark:bg-gray-800 rounded relative overflow-hidden group">
+                              {isRenderableImage(selectedClient.document4) && !imageLoadErrors['doc4'] ? (
                                 <img
                                   src={selectedClient.document4}
                                   alt="Documento 4"
-                                  className="max-h-full max-w-full object-contain rounded"
+                                  className="max-h-full max-w-full object-contain rounded cursor-pointer transition-transform hover:scale-105"
+                                  onClick={() => window.open(selectedClient.document4!, "_blank")}
+                                  onError={() => setImageLoadErrors(prev => ({ ...prev, doc4: true }))}
                                 />
                               ) : (
                                 <button
@@ -6727,7 +6758,7 @@ export default function BiglietteriaPage() {
                                         "documento4",
                                     )
                                   }
-                                  className="flex flex-col items-center gap-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                                  className="flex flex-col items-center gap-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 w-full h-full justify-center"
                                 >
                                   <svg
                                     className="w-8 h-8"
@@ -6742,7 +6773,9 @@ export default function BiglietteriaPage() {
                                       d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                                     />
                                   </svg>
-                                  <span className="text-xs">Descargar</span>
+                                  <span className="text-xs">
+                                    {isRenderableImage(selectedClient.document4) ? "Ver Imagen" : "Descargar"}
+                                  </span>
                                 </button>
                               )}
                             </div>

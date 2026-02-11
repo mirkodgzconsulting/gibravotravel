@@ -2,18 +2,28 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { v2 as cloudinary } from 'cloudinary';
 import { prisma } from '@/lib/prisma';
+import type { UploadApiResponse } from 'cloudinary';
+import { parseUploadResult } from '@/lib/biglietteria/parsers';
+import type { Prisma } from '@prisma/client';
 
-// Configurar Cloudinary
-if (process.env.CLOUDINARY_URL) {
+// Configuración robusta de Cloudinary
+const cloudName = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+const apiKey = process.env.CLOUDINARY_API_KEY;
+const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+if (cloudName && apiKey && apiSecret) {
+  cloudinary.config({
+    cloud_name: cloudName,
+    api_key: apiKey,
+    api_secret: apiSecret,
+    secure: true,
+  });
+} else if (process.env.CLOUDINARY_URL) {
   cloudinary.config({
     secure: true
   });
 } else {
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-  });
+  console.warn('⚠️ Cloudinary no está configurado correctamente. Faltan variables de entorno.');
 }
 
 // GET - Listar todos los clientes activos
@@ -37,7 +47,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
     }
 
-    let whereCondition: any = { isActive: true };
+    let whereCondition: Prisma.ClientWhereInput = { isActive: true };
 
     // Si se solicita userOnly, mostrar solo los clientes creados por este usuario
     if (userOnly) {
@@ -112,6 +122,48 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// Helper para subir archivos de forma segura
+const uploadSafe = async (file: File | null): Promise<{ url: string | null, name: string | null }> => {
+  if (!file || file.size === 0) return { url: null, name: null };
+  
+  try {
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const fileExtension = file.name.toLowerCase().split('.').pop();
+    const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension || '');
+    const resourceType = isImage ? 'image' : 'raw'; 
+
+    const result = await new Promise<UploadApiResponse>((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'gibravotravel/clients/documents',
+          resource_type: resourceType,
+        },
+        parseUploadResult(resolve, reject)
+      );
+
+      // Manejar errores del stream directamente
+      uploadStream.on('error', (error) => {
+        console.error(`Stream error uploading ${file.name}:`, error);
+        reject(error);
+      });
+
+      uploadStream.end(buffer);
+    });
+
+    return { url: result.secure_url, name: file.name };
+  } catch (error: unknown) {
+    const err = error as { http_code?: number; message?: string };
+    console.error(`Error uploading file ${file.name}:`, err);
+    // Verificar si es error de credenciales
+    if (err?.http_code === 401 || err?.message?.includes('disabled')) {
+      console.error('CLOUDINARY AUTH ERROR: Verifique las variables de entorno CLOUDINARY_CLOUD_NAME, API_KEY, API_SECRET');
+    }
+    // Retornamos null pero NO lanzamos error para no abortar todo el proceso
+    return { url: null, name: null };
+  }
+};
+
 // POST - Crear nuevo cliente
 export async function POST(request: NextRequest) {
   try {
@@ -136,25 +188,21 @@ export async function POST(request: NextRequest) {
     const document3 = formData.get('document3') as File | null;
     const document4 = formData.get('document4') as File | null;
 
-    // Validaciones - Solo firstName, lastName y phoneNumber son obligatorios
-    // fiscalCode, address, email y birthDate ahora son opcionales
+    // Validaciones
     if (!firstName || !lastName || !phoneNumber) {
       return NextResponse.json({ error: 'Faltan campos obligatorios (Nombre, Apellido y Teléfono son requeridos)' }, { status: 400 });
     }
 
-    // document1 es opcional (como los demás documentos)
-
-    // Verificar si ya existe un cliente activo con el mismo código fiscal (solo si se proporciona y no está vacío)
+    // Checking duplicates...
     const fiscalCodeTrimmed = fiscalCode?.trim() || '';
     if (fiscalCodeTrimmed !== '') {
       const existingClientByFiscal = await prisma.client.findFirst({
         where: {
           fiscalCode: fiscalCodeTrimmed,
           isActive: true,
-          NOT: { fiscalCode: '' } // Excluir strings vacíos
+          NOT: { fiscalCode: '' }
         }
       });
-
       if (existingClientByFiscal) {
         return NextResponse.json({
           error: 'Ya existe un cliente con este código fiscal',
@@ -164,17 +212,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Verificar si ya existe un cliente activo con el mismo email (solo si se proporciona y no está vacío)
     const emailTrimmed = email?.trim() || '';
     if (emailTrimmed !== '' && !emailTrimmed.startsWith('temp-email-')) {
       const existingClientByEmail = await prisma.client.findFirst({
         where: {
           email: emailTrimmed,
           isActive: true,
-          NOT: { email: { startsWith: 'temp-email-' } } // Excluir emails temporales
+          NOT: { email: { startsWith: 'temp-email-' } }
         }
       });
-
       if (existingClientByEmail) {
         return NextResponse.json({
           error: 'Ya existe un cliente con este email',
@@ -184,17 +230,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Verificar si ya existe un cliente activo con el mismo número de teléfono (siempre verificar porque es obligatorio)
     const phoneNumberTrimmed = phoneNumber?.trim() || '';
     if (phoneNumberTrimmed !== '') {
       const existingClientByPhone = await prisma.client.findFirst({
         where: {
           phoneNumber: phoneNumberTrimmed,
           isActive: true,
-          NOT: { phoneNumber: '' } // Excluir strings vacíos
+          NOT: { phoneNumber: '' }
         }
       });
-
       if (existingClientByPhone) {
         return NextResponse.json({
           error: 'Ya existe un cliente con este número de teléfono',
@@ -204,11 +248,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Validar tamaños de archivos (10MB máximo por archivo)
+    // Size validation
     const maxFileSize = 10 * 1024 * 1024; // 10MB
-    const files = [document1, document2, document3, document4].filter(f => f && f.size > 0);
-
-    for (const file of files) {
+    const filesToValidate = [document1, document2, document3, document4].filter(f => f && f.size > 0);
+    for (const file of filesToValidate) {
       if (file && file.size > maxFileSize) {
         return NextResponse.json({
           error: `El archivo ${file.name} es demasiado grande. Máximo 10MB por archivo.`
@@ -216,94 +259,31 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Subir archivos a Cloudinary en paralelo
-    const uploadPromises = [];
-    const documentData: {
-      document1?: string;
-      document1Name?: string;
-      document2?: string;
-      document2Name?: string;
-      document3?: string;
-      document3Name?: string;
-      document4?: string;
-      document4Name?: string;
-    } = {};
+    // Subir archivos de forma segura
+    const results = await Promise.all([
+      uploadSafe(document1),
+      uploadSafe(document2),
+      uploadSafe(document3),
+      uploadSafe(document4)
+    ]);
 
-    // Función helper para subir archivo
-    const uploadFile = async (file: File, index: number) => {
-      try {
-        const bytes = await file.arrayBuffer();
-        const buffer = Buffer.from(bytes);
-
-        // Detectar el tipo de archivo para usar el resource_type correcto
-        const fileExtension = file.name.toLowerCase().split('.').pop();
-        const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension || '');
-        const resourceType = isImage ? 'image' : 'raw'; // PDFs y otros archivos usan 'raw'
-
-        const result = await new Promise<any>((resolve, reject) => {
-          cloudinary.uploader.upload_stream(
-            {
-              folder: 'gibravotravel/clients/documents',
-              resource_type: resourceType, // Usar 'raw' para PDFs, 'image' para imágenes
-            },
-            (error, result) => {
-              if (error) reject(error);
-              else resolve(result);
-            }
-          ).end(buffer);
-        });
-
-        return {
-          index,
-          url: result.secure_url,
-          name: file.name
-        };
-      } catch (error) {
-        throw new Error(`Error subiendo archivo ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      }
+    const documentData = {
+      document1: results[0].url ?? undefined,
+      document1Name: results[0].url ? results[0].name : undefined,
+      document2: results[1].url ?? undefined,
+      document2Name: results[1].url ? results[1].name : undefined,
+      document3: results[2].url ?? undefined,
+      document3Name: results[2].url ? results[2].name : undefined,
+      document4: results[3].url ?? undefined,
+      document4Name: results[3].url ? results[3].name : undefined,
     };
 
-    // Subir todos los archivos en paralelo
-    if (document1 && document1.size > 0) uploadPromises.push(uploadFile(document1, 1));
-    if (document2 && document2.size > 0) uploadPromises.push(uploadFile(document2, 2));
-    if (document3 && document3.size > 0) uploadPromises.push(uploadFile(document3, 3));
-    if (document4 && document4.size > 0) uploadPromises.push(uploadFile(document4, 4));
-
-    try {
-      const uploadResults = await Promise.all(uploadPromises);
-
-      uploadResults.forEach(result => {
-        if (result.index === 1) {
-          documentData.document1 = result.url;
-          documentData.document1Name = result.name;
-        } else if (result.index === 2) {
-          documentData.document2 = result.url;
-          documentData.document2Name = result.name;
-        } else if (result.index === 3) {
-          documentData.document3 = result.url;
-          documentData.document3Name = result.name;
-        } else if (result.index === 4) {
-          documentData.document4 = result.url;
-          documentData.document4Name = result.name;
-        }
-      });
-    } catch (uploadError) {
-      return NextResponse.json({
-        error: 'Error subiendo archivos a Cloudinary',
-        details: uploadError instanceof Error ? uploadError.message : 'Unknown error'
-      }, { status: 500 });
-    }
-
-    // Crear el cliente
-    // Nota: fiscalCode, address y email ahora son opcionales
-    // Para email vacío, usar un valor único temporal para evitar conflictos con @unique
-    // emailTrimmed ya está definido arriba en las validaciones
+    // Crear cliente
     const emailValue = emailTrimmed !== ''
       ? emailTrimmed
       : `temp-email-${Date.now()}-${Math.random().toString(36).substring(2, 15)}-${userId.substring(0, 8)}`;
 
-    // Preparar datos para crear el cliente
-    const clientData: any = {
+    const clientData = {
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       fiscalCode: fiscalCode?.trim() || '',
@@ -325,47 +305,36 @@ export async function POST(request: NextRequest) {
       message: 'Cliente creato con successo!'
     });
 
-  } catch (error: any) {
-    console.error('Error creating client:', error);
-    console.error('Error code:', error.code);
-    console.error('Error meta:', error.meta);
-    console.error('Error message:', error.message);
-
-    // Detectar errores de Prisma relacionados con constraints únicos
-    if (error.code === 'P2002') {
-      // Error de unique constraint en Prisma
-      const target = error.meta?.target;
-
-      console.error('P2002 error - Unique constraint violation on:', target);
-
+  } catch (error: unknown) {
+    const err = error as { code?: string; meta?: { target?: string[] }; message?: string };
+    console.error('Error creating client:', err);
+    
+    // P2002 handling
+    if (err.code === 'P2002') {
+      const target = err.meta?.target;
       if (Array.isArray(target) && target.length > 0) {
         const field = target[0];
-
-        // Mapear nombres de campos a mensajes más amigables
         const fieldMessages: Record<string, string> = {
-          'email': 'Ya existe un cliente activo con este email. Por favor, verifica el email ingresado.',
-          'fiscalCode': 'Ya existe un cliente activo con este código fiscal. Por favor, verifica el código fiscal ingresado.',
-          'phoneNumber': 'Ya existe un cliente activo con este número de teléfono. Por favor, verifica el teléfono ingresado.',
+          'email': 'Ya existe un cliente activo con este email.',
+          'fiscalCode': 'Ya existe un cliente activo con este código fiscal.',
+          'phoneNumber': 'Ya existe un cliente activo con este número de teléfono.',
         };
-
-        const message = fieldMessages[field] || `Ya existe un cliente activo con este ${field}. Por favor, verifica el campo ${field}.`;
-
+        const message = fieldMessages[field] || `Ya existe un cliente activo con este ${field}.`;
         return NextResponse.json({
           error: message,
           field: field,
-          details: `El campo '${field}' ya está registrado en el sistema (cliente activo)`
+          details: `El campo '${field}' ya está registrado`
         }, { status: 400 });
       }
-
       return NextResponse.json({
-        error: 'Ya existe un cliente activo con estos datos. Por favor, verifica la información ingresada.',
-        details: 'Los datos ingresados ya están registrados en el sistema (cliente activo)'
+        error: 'Ya existe un cliente activo con estos datos.',
+        details: 'Los datos ya están registrados.'
       }, { status: 400 });
     }
 
     return NextResponse.json({
       error: 'Error interno del servidor',
-      details: error.message || 'Error desconocido al crear el cliente'
+      details: err instanceof Error ? err.message : 'Error desconocido'
     }, { status: 500 });
   }
 }

@@ -108,7 +108,7 @@ export default function FAQPage() {
             <FAQ tabsData={tabsData} />
 
             {/* 3. FINAL CTA */}
-            <div className="container mx-auto px-4 max-w-7xl">
+            <div className="container mx-auto px-4 max-w-6xl">
                 <RevealOnScroll delay={300}>
                     <div className="mt-8 p-8 md:p-12 bg-gradient-to-br from-[#004BA5] to-[#003580] rounded-[2rem] md:rounded-[3rem] text-white flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl shadow-blue-900/20">
                         <div className="text-center md:text-left">

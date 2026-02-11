@@ -21,7 +21,7 @@ type FAQTab = {
 const FAQ = ({ tabsData }: { tabsData: FAQTab[] }) => {
     return (
         <section className='py-8 sm:py-16 lg:py-24'>
-            <div className='mx-auto max-w-7xl px-4 sm:px-6 lg:px-8'>
+            <div className='mx-auto max-w-6xl px-4 sm:px-6 lg:px-8'>
                 {/* FAQ Header */}
                 <div className='mb-12 space-y-4 md:mb-16 lg:mb-24 text-center lg:text-left'>
                     <div className='text-[#FE8008] text-sm font-bold uppercase tracking-wider font-outfit'>FAQ&apos;s</div>

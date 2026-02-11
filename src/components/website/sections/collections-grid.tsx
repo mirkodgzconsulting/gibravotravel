@@ -53,8 +53,8 @@ const collections = [
 
 export function CollectionsGrid() {
     return (
-        <section className="py-12 bg-white">
-            <div className="container px-4 mx-auto max-w-7xl">
+        <section className="py-16 bg-white">
+            <div className="container px-4 mx-auto max-w-6xl">
                 <h2 className="section-title mb-8">
                     Abbiamo di tutto per te viaggiatore
                 </h2>

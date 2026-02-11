@@ -17,7 +17,7 @@ export function Footer() {
                 <section className="bg-white py-16 md:py-20 border-t border-slate-100">
                     <div className="container mx-auto px-4">
                         <RevealOnScroll>
-                            <div className="grid grid-cols-1 lg:grid-cols-2 items-center gap-12 max-w-7xl mx-auto">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 items-center gap-12 max-w-6xl mx-auto">
                                 <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
                                     <div className="h-14 w-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 text-[#004ba5]">
                                         <Send className="h-7 w-7" />
@@ -60,7 +60,7 @@ export function Footer() {
 
             {/* 2. MAIN FOOTER - Blue Gradient */}
             <footer className="w-full bg-gradient-to-r from-[#004ba5] to-[#003580] pt-16 pb-8 border-t border-white/10 text-white font-[var(--font-outfit)]">
-                <div className="container mx-auto px-4">
+                <div className="container mx-auto px-4 max-w-6xl">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-10 lg:gap-16">
 
                         {/* Col 1: Brand & Social */}

@@ -4,7 +4,7 @@ import React from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { RevealOnScroll } from "@/components/website/ui/reveal-on-scroll"
-import { Facebook, Instagram } from "lucide-react"
+import { Facebook, Instagram, ArrowRight } from "lucide-react"
 
 const features = [
     {
@@ -35,8 +35,8 @@ const features = [
 
 export function HowItWorks() {
     return (
-        <section className="py-20 bg-slate-50 relative overflow-hidden">
-            <div className="container px-4 mx-auto max-w-7xl relative z-10">
+        <section className="py-16 bg-white relative overflow-hidden">
+            <div className="container px-4 mx-auto max-w-6xl relative z-10">
                 {/* Header */}
                 <div className="text-center mb-12">
                     <RevealOnScroll>
@@ -54,48 +54,45 @@ export function HowItWorks() {
                             key={index}
                             href={feature.socialLink}
                             target="_blank"
-                            className="relative group overflow-hidden rounded-[32px] h-[450px] w-full transition-all duration-500 cursor-pointer shadow-lg hover:shadow-2xl border border-slate-100/10"
+                            className="group relative flex flex-col h-[480px] w-full rounded-xl overflow-hidden bg-white shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border border-slate-100"
                         >
-                            {/* Background Image - Cinematic Zoom */}
-                            <Image
-                                src={feature.image}
-                                alt={feature.title}
-                                fill
-                                className="object-cover transition-transform duration-1000 ease-out group-hover:scale-110"
-                            />
-
-                            {/* Gradient Overlay (Always visible for readability) */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent transition-opacity duration-500 group-hover:from-black/90 group-hover:via-black/50" />
-
-                            {/* Content Container */}
-                            <div className="absolute h-full w-full inset-0 flex flex-col justify-end items-center text-center p-8 transition-transform duration-500 group-hover:-translate-y-2">
-
-                                {/* Text Content */}
-                                <div className="w-full max-w-xs mx-auto mb-auto flex flex-col justify-end h-full pb-4">
-                                    <h3 className="section-title text-3xl font-bold !text-white mb-3 w-full drop-shadow-lg">
-                                        {feature.title}
-                                    </h3>
-                                    <p className="text-white/90 text-[15px] leading-relaxed font-medium mb-5 line-clamp-3 drop-shadow-md">
-                                        {feature.description}
-                                    </p>
-                                </div>
-
-                                {/* Social Icon */}
-                                <div className={`h-12 w-12 shrink-0 rounded-full flex items-center justify-center shadow-xl transition-all duration-300 transform group-hover:scale-110 ${feature.socialColor} border border-white/20 backdrop-blur-sm mt-1 mb-8`}>
-                                    {feature.socialIcon === "tiktok" ? (
-                                        <svg
-                                            width="20"
-                                            height="20"
-                                            viewBox="0 0 24 24"
-                                            fill="currentColor"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                        >
+                            {/* 1. TOP IMAGE SECTION (55% height) */}
+                            <div className="relative h-[55%] w-full overflow-hidden">
+                                <Image
+                                    src={feature.image}
+                                    alt={feature.title}
+                                    fill
+                                    className="object-cover transition-transform duration-1000 ease-out group-hover:scale-110"
+                                />
+                                {/* Gradient overlay only at the bottom of image for blending */}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                                
+                                {/* Social Badge Floating Button */}
+                                <div className={`absolute bottom-4 right-4 h-12 w-12 rounded-full flex items-center justify-center shadow-lg text-white ${feature.socialColor} z-10 group-hover:scale-110 transition-transform duration-300`}>
+                                     {feature.socialIcon === "tiktok" ? (
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                                             <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.06-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z" />
                                         </svg>
                                     ) : (
                                         /* @ts-ignore */
                                         <feature.socialIcon className="h-6 w-6" />
                                     )}
+                                </div>
+                            </div>
+
+                            {/* 2. BOTTOM CONTENT SECTION (White Background) */}
+                            <div className="flex flex-col justify-between flex-1 p-8 bg-white relative">
+                                <div>
+                                    <h3 className="text-2xl font-bold text-slate-900 mb-3 leading-tight group-hover:text-[#004BA5] transition-colors">
+                                        {feature.title}
+                                    </h3>
+                                    <p className="text-slate-600 text-[15px] leading-relaxed line-clamp-3">
+                                        {feature.description}
+                                    </p>
+                                </div>
+
+                                <div className="flex items-center gap-2 text-[#004BA5] font-semibold text-sm pt-4 group-hover:gap-3 transition-all duration-300">
+                                    Unisciti ora <ArrowRight className="h-4 w-4" />
                                 </div>
                             </div>
                         </Link>

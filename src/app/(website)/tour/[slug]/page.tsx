@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { prisma } from '@/lib/prisma'; // Adjust import based on your project structure, e.g., '@/lib/db' or '@/lib/prisma'
@@ -15,18 +16,14 @@ import { Button } from "@/components/website/ui/button";
 // Assuming lucide-react is available based on previous context (XIcon etc used in Admin)
 import {
     Calendar,
-    MapPin,
+
     Clock,
     Users,
     Star,
     CheckCircle2,
     XCircle,
-    Info,
-    ChevronDown,
-    ChevronUp,
-    Share2,
     Phone,
-    Mail,
+
     FileText,
     ShieldCheck,
     HelpCircle,
@@ -211,7 +208,7 @@ export default async function TourPage({ params }: TourPageProps) {
     const heroImage = tour.webCoverImage || tour.coverImage || gallery[0] || '/images/placeholder-tour.jpg';
 
     // Status Config (Lucide Icons)
-    const travelStatusConfig: Record<string, { label: string; icon: any; color: string; bg: string }> = {
+    const travelStatusConfig: Record<string, { label: string; icon: React.ElementType; color: string; bg: string }> = {
         SOGNANDO: { label: 'Sognando', icon: Sparkles, color: 'text-purple-600', bg: 'bg-purple-100' },
         QUASI_FAMIGLIA: { label: 'Quasi in Famiglia', icon: Users, color: 'text-blue-600', bg: 'bg-blue-100' },
         CONFERMATO: { label: 'Confermato', icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-100' },
@@ -234,23 +231,47 @@ export default async function TourPage({ params }: TourPageProps) {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
                 {/* Hero Content - Aligned Bottom Left */}
-                <div className="absolute inset-0 flex items-end pb-12 md:pb-24 px-4">
+                <div className="absolute inset-0 flex items-end pb-6 md:pb-10 px-4">
                     <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-3 gap-12">
                         <div className="lg:col-span-2 text-left space-y-4">
-                            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white leading-tight drop-shadow-lg tracking-tight">
+                            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-[#FE8008] leading-tight drop-shadow-lg tracking-tight">
                                 {tour.titulo}
                             </h1>
                             <p className="text-lg md:text-2xl text-white/90 font-medium max-w-2xl leading-relaxed drop-shadow-md">
                                 {tour.subtitulo}
                             </p>
 
-                            {/* Optional Metadata Badge (Huakai style) - Re-added as preserved from previous context if desired, or kept simple */}
-                            <div className="flex items-center gap-4 text-white/90 text-sm font-bold uppercase tracking-wider pt-2">
-                                <span className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-3 py-1 rounded-full">
-                                    <Calendar className="w-4 h-4" />
-                                    {formatDate(tour.fechaViaje)}
-                                </span>
+
+                            {/* Tour Details Badges - Glassmorphism */}
+                            <div className="flex flex-wrap gap-3 mt-8">
+                                {/* Date */}
+                                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md border border-white/10 px-4 py-2.5 rounded-xl transition-transform hover:scale-105">
+                                    <Calendar className="w-5 h-5 text-[#004BA5]" />
+                                    <div className="flex flex-col leading-none">
+                                        <span className="text-[10px] text-white/80 font-bold uppercase tracking-wider mb-0.5">Partenza</span>
+                                        <span className="font-black text-sm tracking-wide text-white">{formatDate(tour.fechaViaje)}</span>
+                                    </div>
+                                </div>
+
+                                {/* Duration */}
+                                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md border border-white/10 px-4 py-2.5 rounded-xl transition-transform hover:scale-105">
+                                    <Clock className="w-5 h-5 text-[#004BA5]" />
+                                    <div className="flex flex-col leading-none">
+                                        <span className="text-[10px] text-white/80 font-bold uppercase tracking-wider mb-0.5">Durata</span>
+                                        <span className="font-black text-sm tracking-wide text-white">{tour.duracionTexto || (daysCount ? `${daysCount} Giorni` : 'N/A')}</span>
+                                    </div>
+                                </div>
+
+                                {/* Type */}
+                                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md border border-white/10 px-4 py-2.5 rounded-xl transition-transform hover:scale-105">
+                                    {tour.type === 'aereo' ? <Plane className="w-5 h-5 text-[#004BA5]" /> : <Bus className="w-5 h-5 text-[#004BA5]" />}
+                                    <div className="flex flex-col leading-none">
+                                        <span className="text-[10px] text-white/80 font-bold uppercase tracking-wider mb-0.5">Tipo</span>
+                                        <span className="font-black text-sm tracking-wide uppercase text-white">{tour.type === 'aereo' ? 'Tour Aereo' : 'Tour Bus'}</span>
+                                    </div>
+                                </div>
                             </div>
+
                         </div>
                     </div>
                 </div>
@@ -269,10 +290,6 @@ export default async function TourPage({ params }: TourPageProps) {
                         {/* Consolidated Overview Section - With Gallery 1 */}
                         <div id="panoramica" className="scroll-mt-32 border-b border-gray-100 pb-12">
                             <TourOverview
-                                date={tour.fechaViaje}
-                                duration={tour.duracionTexto}
-                                daysCount={daysCount}
-                                type={tour.type as 'aereo' | 'bus'}
                                 description={tour.infoGeneral}
                                 gallery={gallery}
                             />
@@ -338,7 +355,7 @@ export default async function TourPage({ params }: TourPageProps) {
                                         <h3 className="text-xl font-bold text-[#323232] mb-1">{tour.coordinadorNombre}</h3>
                                         <p className="text-[#FE8008] font-[700] mb-4 text-xs uppercase tracking-widest">Coordinatore Gibravo</p>
                                         <div className="relative pl-6">
-                                            <span className="absolute left-0 top-0 text-3xl text-gray-200 font-serif">"</span>
+                                            <span className="absolute left-0 top-0 text-3xl text-gray-200 font-serif">&quot;</span>
                                             <div
                                                 className="text-gray-600 italic leading-relaxed prose prose-sm max-w-none"
                                                 dangerouslySetInnerHTML={{ __html: tour.coordinadorDescripcion || 'Pronto a guidarvi in questa fantastica avventura!' }}
@@ -522,7 +539,7 @@ export default async function TourPage({ params }: TourPageProps) {
                                         Serve aiuto?
                                     </h4>
                                     <p className="text-gray-500 text-sm mb-3 leading-relaxed">
-                                        Hai dubbi sull'itinerario o sui pagamenti?
+                                        Hai dubbi sull&apos;itinerario o sui pagamenti?
                                     </p>
                                     <a href="https://wa.me/393282197645" target="_blank" className="text-[#004BA5] font-bold text-sm hover:underline flex items-center gap-2">
                                         <Phone className="w-4 h-4" /> Parla con noi su WhatsApp

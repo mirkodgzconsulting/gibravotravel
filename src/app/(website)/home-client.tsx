@@ -133,7 +133,7 @@ export function HomeClient({ flightTours, busTours }: HomeClientProps) {
     return (
         <div className="flex flex-col min-h-screen">
             {/* Hero Section - GiBravo Design */}
-            <section className="relative h-[90vh] min-h-[500px] w-full flex items-center justify-center overflow-hidden">
+            <section className="relative h-[60vh] min-h-[500px] w-full flex items-center justify-center overflow-hidden">
                 {/* Background */}
                 <div className="absolute inset-0 z-0">
                     {heroImages.map((src, index) => (
@@ -186,9 +186,7 @@ export function HomeClient({ flightTours, busTours }: HomeClientProps) {
             </div>
 
             <RevealOnScroll delay={100}>
-                <div className="pt-20">
-                    <TestimonialsComponent />
-                </div>
+                <TestimonialsComponent />
             </RevealOnScroll>
 
             <RevealOnScroll delay={100}>

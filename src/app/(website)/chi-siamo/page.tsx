@@ -70,8 +70,8 @@ export default function ChiSiamoPage() {
             </section>
 
             {/* 2. INTRO SECTION - Minimalist & Elegant */}
-            <section className="py-24 bg-white">
-                <div className="container mx-auto px-4 max-w-7xl">
+            <section className="py-16 bg-white">
+                <div className="container mx-auto px-4 max-w-6xl">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
                         <RevealOnScroll>
                             <div className="space-y-6">

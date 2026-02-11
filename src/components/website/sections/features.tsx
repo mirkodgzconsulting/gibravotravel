@@ -28,8 +28,8 @@ const features = [
 
 export function Features() {
     return (
-        <section className="py-24 bg-white overflow-hidden">
-            <div className="container px-4 mx-auto max-w-7xl">
+        <section className="py-16 bg-slate-100 overflow-hidden">
+            <div className="container px-4 mx-auto max-w-6xl">
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
@@ -50,7 +50,7 @@ export function Features() {
                                     <div className="flex items-start gap-6 group">
 
                                         {/* Icon Bubble */}
-                                        <div className={`relative flex-shrink-0 h-14 w-14 rounded-2xl ${feature.color} flex items-center justify-center shadow-lg shadow-blue-900/5 group-hover:scale-110 transition-transform duration-300`}>
+                                        <div className={`relative flex-shrink-0 h-14 w-14 rounded-xl ${feature.color} flex items-center justify-center shadow-lg shadow-blue-900/5 group-hover:scale-110 transition-transform duration-300`}>
                                             <feature.icon className="h-7 w-7 text-white" strokeWidth={2} />
                                         </div>
 
@@ -69,7 +69,7 @@ export function Features() {
                     </div>
 
                     {/* Right Column: Inspirational Image (Desktop) / Bottom (Mobile) */}
-                    <RevealOnScroll className="relative h-[400px] lg:h-[600px] w-full rounded-[1.5rem] overflow-hidden shadow-2xl shadow-blue-900/10 order-2 lg:order-2">
+                    <RevealOnScroll className="relative h-[400px] lg:h-[600px] w-full rounded-xl overflow-hidden shadow-2xl shadow-blue-900/10 order-2 lg:order-2">
                         <Image
                             src="/imghome.webp"
                             alt="Viaggia con GiBravo"

@@ -118,7 +118,7 @@ export function Navbar() {
             <header
                 className={cn(
                     "w-full transition-all duration-300",
-                    effectiveScrolled ? "bg-white shadow-sm py-0" : "bg-transparent py-2"
+                    effectiveScrolled ? "bg-white/40 backdrop-blur-md shadow-sm py-0" : "bg-transparent py-2"
                 )}
                 onMouseLeave={() => setPartenzeOpen(false)}
             >
@@ -140,7 +140,7 @@ export function Navbar() {
                     {/* Desktop Navigation - Centered */}
                     <nav className={cn(
                         "hidden lg:flex items-center absolute left-1/2 -translate-x-1/2 gap-8 text-[15px] font-[600] tracking-wide transition-colors h-full",
-                        effectiveScrolled ? "text-[#4D4D4D]" : "text-white"
+                        effectiveScrolled ? "text-black" : "text-white"
                     )}>
                         <Link href="/chi-siamo" className="hover:text-[#FE8008] transition-colors py-2">Chi siamo</Link>
 

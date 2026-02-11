@@ -8,7 +8,7 @@
   --primary: oklch(0.205 0 0);
   --secondary: oklch(0.97 0 0);
   --text-dark: #323232;
-  --font-montserrat: 'Montserrat', sans-serif;
+  --font-montserrat: "Montserrat", sans-serif;
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -103,7 +103,7 @@
 }
 
 /* On desktop, header should not cover sidebar */
-@media (min-width:1280px) {
+@media (min-width: 1280px) {
   .admin-header {
     left: 200px !important;
     width: calc(100% - 200px) !important;
@@ -115,7 +115,7 @@
   z-index: 9999999999 !important;
 }
 
-.modal>div {
+.modal > div {
   z-index: 9999999999 !important;
 }
 
@@ -251,24 +251,29 @@
 
   --color-theme-purple-500: #7a5af8;
 
-  --shadow-theme-md: 0px 4px 8px -2px rgba(16, 24, 40, 0.1),
+  --shadow-theme-md:
+    0px 4px 8px -2px rgba(16, 24, 40, 0.1),
     0px 2px 4px -2px rgba(16, 24, 40, 0.06);
-  --shadow-theme-lg: 0px 12px 16px -4px rgba(16, 24, 40, 0.08),
+  --shadow-theme-lg:
+    0px 12px 16px -4px rgba(16, 24, 40, 0.08),
     0px 4px 6px -2px rgba(16, 24, 40, 0.03);
-  --shadow-theme-sm: 0px 1px 3px 0px rgba(16, 24, 40, 0.1),
+  --shadow-theme-sm:
+    0px 1px 3px 0px rgba(16, 24, 40, 0.1),
     0px 1px 2px 0px rgba(16, 24, 40, 0.06);
   --shadow-theme-xs: 0px 1px 2px 0px rgba(16, 24, 40, 0.05);
-  --shadow-theme-xl: 0px 20px 24px -4px rgba(16, 24, 40, 0.08),
+  --shadow-theme-xl:
+    0px 20px 24px -4px rgba(16, 24, 40, 0.08),
     0px 8px 8px -4px rgba(16, 24, 40, 0.03);
   --shadow-datepicker: -5px 0 0 #262d3c, 5px 0 0 #262d3c;
   --shadow-focus-ring: 0px 0px 0px 4px rgba(70, 95, 255, 0.12);
-  --shadow-slider-navigation: 0px 1px 2px 0px rgba(16, 24, 40, 0.1),
-    0px 1px 3px 0px rgba(16, 24, 40, 0.1);
-  --shadow-tooltip: 0px 4px 6px -2px rgba(16, 24, 40, 0.05),
+  --shadow-slider-navigation:
+    0px 1px 2px 0px rgba(16, 24, 40, 0.1), 0px 1px 3px 0px rgba(16, 24, 40, 0.1);
+  --shadow-tooltip:
+    0px 4px 6px -2px rgba(16, 24, 40, 0.05),
     -8px 0px 20px 8px rgba(16, 24, 40, 0.05);
 
-  --drop-shadow-4xl: 0 35px 35px rgba(0, 0, 0, 0.25),
-    0 45px 65px rgba(0, 0, 0, 0.15);
+  --drop-shadow-4xl:
+    0 35px 35px rgba(0, 0, 0, 0.25), 0 45px 65px rgba(0, 0, 0, 0.15);
 
   --z-index-999999: 999999;
 
@@ -302,9 +307,9 @@
   --color-border: var(--color-gray-200);
   --color-input: var(--color-gray-200);
   --color-ring: var(--color-brand-500);
-  --color-primary: #004BA5;
+  --color-primary: #004ba5;
   --color-primary-foreground: #ffffff;
-  --color-secondary: #FE8008;
+  --color-secondary: #fe8008;
   --color-secondary-foreground: #ffffff;
   --color-accent: var(--color-gray-100);
 
@@ -313,7 +318,6 @@
 
 /* Utility styles - Must be outside :root */
 @layer components {
-
   /* Rich Text Editor Content - Viewer Styles to match Editor */
   .rte-content {
     white-space: pre-wrap !important;
@@ -409,7 +413,6 @@
   color utility to any element that depends on these defaults.
 */
 @layer base {
-
   *,
   ::after,
   ::before,
@@ -430,11 +433,11 @@
 
 /* --- GLOBAL TYPOGRAPHY SYSTEM --- */
 @utility section-title {
-  @apply text-4xl md:text-5xl font-bold tracking-tight text-[#004BA5];
+  @apply text-3xl md:text-[38px] font-bold tracking-tight text-[#004BA5];
 }
 
 @utility section-subtitle {
-  @apply text-2xl text-[#FE8008] font-medium tracking-tight;
+  @apply text-[20px] text-[#FE8008] font-medium tracking-tight;
 }
 
 @utility body-text {
@@ -444,7 +447,12 @@
 /* ---------------------------------- */
 
 @utility brand-gradient {
-  background: linear-gradient(89.58deg, #3186FF .28%, #004ba5 44.45%, #4796f5 99.55%);
+  background: linear-gradient(
+    89.58deg,
+    #3186ff 0.28%,
+    #004ba5 44.45%,
+    #4796f5 99.55%
+  );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -551,15 +559,14 @@
 }
 
 @utility no-scrollbar {
-
   /* Chrome, Safari and Opera */
   &::-webkit-scrollbar {
     display: none;
   }
 
-  -ms-overflow-style:none;
+  -ms-overflow-style: none;
   /* IE and Edge */
-  scrollbar-width:none;
+  scrollbar-width: none;
   /* Firefox */
 }
 
@@ -578,7 +585,6 @@
 }
 
 @layer utilities {
-
   /* For Remove Date Icon */
   input[type="date"]::-webkit-inner-spin-button,
   input[type="time"]::-webkit-inner-spin-button,
@@ -650,7 +656,7 @@
   @apply min-w-[718px];
 }
 
-.fc .fc-scrollgrid-section>* {
+.fc .fc-scrollgrid-section > * {
   border-right-width: 0;
   border-bottom-width: 0;
 }
@@ -735,7 +741,9 @@
   }
 }
 
-.fc-header-toolbar.fc-toolbar .fc-toolbar-chunk:last-child .fc-button.fc-button-active {
+.fc-header-toolbar.fc-toolbar
+  .fc-toolbar-chunk:last-child
+  .fc-button.fc-button-active {
   @apply text-gray-900 bg-white;
 }
 
@@ -914,7 +922,6 @@
 }
 
 @media (min-width: 640px) {
-
   .carouselTwo .swiper-button-prev,
   .carouselFour .swiper-button-prev {
     @apply !left-4;
@@ -927,7 +934,6 @@
 }
 
 @media (min-width: 640px) {
-
   .carouselTwo .swiper-button-next,
   .carouselFour .swiper-button-next {
     @apply !right-4;
@@ -940,7 +946,6 @@
 }
 
 @media (min-width: 640px) {
-
   .carouselThree .swiper-pagination,
   .carouselFour .swiper-pagination {
     @apply !bottom-5;
@@ -982,19 +987,19 @@
   @apply hidden;
 }
 
-.form-check-input:checked~span {
+.form-check-input:checked ~ span {
   @apply border-[6px] border-brand-500 bg-brand-500;
 }
 
-.taskCheckbox:checked~.box span {
+.taskCheckbox:checked ~ .box span {
   @apply opacity-100 bg-brand-500;
 }
 
-.taskCheckbox:checked~p {
+.taskCheckbox:checked ~ p {
   @apply text-gray-400 line-through;
 }
 
-.taskCheckbox:checked~.box {
+.taskCheckbox:checked ~ .box {
   @apply border-brand-500 bg-brand-500;
 }
 
@@ -1005,7 +1010,8 @@
 
 .task {
   border-radius: 0.75rem;
-  box-shadow: 0px 1px 3px 0px rgba(16, 24, 40, 0.1),
+  box-shadow:
+    0px 1px 3px 0px rgba(16, 24, 40, 0.1),
     0px 1px 2px 0px rgba(16, 24, 40, 0.06);
   opacity: 0.8;
   cursor: grabbing;
@@ -1075,7 +1081,7 @@
   @apply !text-gray-400;
 }
 
-.flatpickr-months>.flatpickr-month {
+.flatpickr-months > .flatpickr-month {
   background: none !important;
 }
 
@@ -1086,7 +1092,9 @@
   font-weight: 500;
 }
 
-.flatpickr-month .flatpickr-current-month .flatpickr-monthDropdown-months:focus {
+.flatpickr-month
+  .flatpickr-current-month
+  .flatpickr-monthDropdown-months:focus {
   outline: none !important;
   border: 0 !important;
 }
@@ -1128,7 +1136,9 @@ span.flatpickr-weekday,
 }
 
 .flatpickr-day.inRange {
-  box-shadow: -5px 0 0 #f9fafb, 5px 0 0 #f9fafb !important;
+  box-shadow:
+    -5px 0 0 #f9fafb,
+    5px 0 0 #f9fafb !important;
 }
 
 .flatpickr-day.inRange,
@@ -1179,9 +1189,9 @@ span.flatpickr-weekday,
   }
 }
 
-.flatpickr-day.selected.startRange+.endRange:not(:nth-child(7n + 1)),
-.flatpickr-day.startRange.startRange+.endRange:not(:nth-child(7n + 1)),
-.flatpickr-day.endRange.startRange+.endRange:not(:nth-child(7n + 1)) {
+.flatpickr-day.selected.startRange + .endRange:not(:nth-child(7n + 1)),
+.flatpickr-day.startRange.startRange + .endRange:not(:nth-child(7n + 1)),
+.flatpickr-day.endRange.startRange + .endRange:not(:nth-child(7n + 1)) {
   box-shadow: -10px 0 0 #465fff;
 }
 
@@ -1266,7 +1276,7 @@ pre[class*="language-"].line-numbers {
 }
 
 /* Responsive table for mobile */
-@media (max-width:1279px) {
+@media (max-width: 1279px) {
   .responsive-table {
     font-size: 0.75rem;
     /* 12px */
@@ -1284,7 +1294,7 @@ pre[class*="language-"].line-numbers {
   }
 }
 
-@media (max-width:767px) {
+@media (max-width: 767px) {
   .responsive-table {
     font-size: 0.6875rem;
     /* 11px */

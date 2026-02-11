@@ -100,8 +100,8 @@ const TestimonialsComponent = () => {
     )
 
     return (
-        <section className='py-20 bg-white'>
-            <div className='container mx-auto px-4 max-w-7xl font-sans'>
+        <section className='py-16 bg-slate-100'>
+            <div className='container mx-auto px-4 max-w-6xl font-sans'>
 
                 {/* Header Section */}
                 <div className='flex flex-col items-center text-center mb-12'>
@@ -120,7 +120,7 @@ const TestimonialsComponent = () => {
                         href={GOOGLE_REVIEW_LINK}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[15px] text-black mb-2 hover:opacity-70 transition-opacity"
+                        className="text-[16px] text-black mb-2 hover:opacity-70 transition-opacity"
                     >
                         In base a <span className="underline font-bold cursor-pointer">144 recensioni</span>
                     </a>
@@ -143,13 +143,13 @@ const TestimonialsComponent = () => {
                         <CarouselContent className="-ml-4">
                             {reviews.map((review, index) => (
                                 <CarouselItem key={index} className="pl-4 md:basis-1/2 lg:basis-1/3">
-                                    <div className="bg-[#F2F2F2] rounded-[18px] p-6 flex flex-col h-[230px] relative transition-all duration-300 hover:shadow-md">
+                                    <div className="bg-white rounded-xl p-6 flex flex-col h-[290px] relative transition-all duration-300 hover:shadow-md">
 
                                         {/* Card Header */}
                                         <div className="flex items-start justify-between mb-3">
                                             <div className="flex items-center gap-3">
                                                 <div className="relative">
-                                                    <div className="w-10 h-10 rounded-full bg-[#EA4335] flex items-center justify-center text-white font-bold text-sm overflow-hidden text-center uppercase">
+                                                    <div className="w-12 h-12 rounded-full bg-[#EA4335] flex items-center justify-center text-white font-bold text-sm overflow-hidden text-center uppercase">
                                                         {review.avatar}
                                                     </div>
                                                     <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
@@ -161,8 +161,8 @@ const TestimonialsComponent = () => {
                                                     </div>
                                                 </div>
                                                 <div className="flex flex-col">
-                                                    <span className="font-bold text-black text-[13px] leading-tight">{review.name}</span>
-                                                    <span className="text-[11px] text-[#70757a]">{review.date}</span>
+                                                    <span className="font-bold text-black text-[18px] leading-tight">{review.name}</span>
+                                                    <span className="text-[14px] text-[#70757a]">{review.date}</span>
                                                 </div>
                                             </div>
                                             <a href={GOOGLE_REVIEW_LINK} target="_blank" rel="noopener noreferrer">
@@ -174,7 +174,7 @@ const TestimonialsComponent = () => {
                                         <div className="flex items-center gap-1.5 mb-2">
                                             <div className="flex gap-0.5">
                                                 {[...Array(5)].map((_, i) => (
-                                                    <StarIcon key={i} className="w-[14px] h-[14px]" />
+                                                    <StarIcon key={i} className="w-5 h-5" />
                                                 ))}
                                             </div>
                                             <div className="bg-[#4285F4] rounded-full p-0.5 flex items-center justify-center">
@@ -185,14 +185,14 @@ const TestimonialsComponent = () => {
                                         {/* Content Area */}
                                         <div className="flex gap-3 items-start flex-grow overflow-hidden relative">
                                             <div className="flex-grow">
-                                                <p className="text-black text-[12px] leading-[1.5] line-clamp-3">
+                                                <p className="text-black text-[15px] leading-relaxed line-clamp-4">
                                                     {review.review}
                                                 </p>
                                                 <a
                                                     href={GOOGLE_REVIEW_LINK}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="text-[#70757a] text-[11px] mt-1 block font-bold hover:underline cursor-pointer"
+                                                    className="text-[#70757a] text-[14px] mt-2 block font-bold hover:underline cursor-pointer"
                                                 >
                                                     Leggi di più
                                                 </a>

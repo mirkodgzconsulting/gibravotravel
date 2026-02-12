@@ -15,7 +15,7 @@ export default function WebsiteLayout({
             <WelcomeLoader />
             <WhatsAppButton />
             <div className="fixed top-0 z-50 w-full bg-transparent">
-                <StickyBanner className="bg-gradient-to-r from-[#004ba5]/80 to-[#003580]/80 text-white backdrop-blur-md py-1" hideOnScroll>
+                <StickyBanner className="bg-[#003EA3] text-white py-1" hideOnScroll>
                     <div className="flex items-center justify-center gap-2 text-xs md:text-sm font-medium w-full">
                         <span className="truncate">✨ PRENOTA PRIMA: Fino a 200€ di sconto!</span>
                         <button className="underline hover:no-underline whitespace-nowrap font-bold">

@@ -118,7 +118,7 @@ export function TravelCard({
                         "font-[700] leading-tight transition-colors line-clamp-2 w-full",
                         isCompact ? "text-[15px]" : "text-[17px]",
                         // HTML snippet says text-base font-bold, which is usually 16px. 15px is safer for 2 lines.
-                        isDark ? "text-white group-hover:text-white/80" : "text-[#323232] group-hover:text-[#FE8008]"
+                        isDark ? "text-white group-hover:text-white/80" : "text-[#323232] group-hover:text-[#FF7000]"
                     )}>
                         {title}
                     </h3>
@@ -138,7 +138,7 @@ export function TravelCard({
                         <span className={cn(
                             "font-[700]",
                             isCompact ? "text-[16px]" : "text-[18px]",
-                            originalPrice ? (isDark ? "text-white" : "text-[#FE8008]") : (isDark ? "text-[#004BA5]" : "text-[#004BA5]")
+                            originalPrice ? (isDark ? "text-white" : "text-[#FF7000]") : (isDark ? "text-[#003ea3]" : "text-[#003ea3]")
                         )}>
                             {price.toLocaleString('it-IT')} €
                         </span>
@@ -156,7 +156,7 @@ export function TravelCard({
                                     <span className={cn(
                                         "font-[700] px-1 py-0.5 rounded ml-0.5",
                                         isCompact ? "text-[10px]" : "text-[11px]",
-                                        isDark ? "bg-white text-black" : "bg-[#E6F4F1] text-[#004BA5]"
+                                        isDark ? "bg-white text-black" : "bg-blue-50 text-[#003ea3]"
                                         // HTML snippet shows -16% in a badge. 
                                         // Screenshot shows white badge with black text or similar high contrast?
                                         // User screenshot shows white badge " -15%"

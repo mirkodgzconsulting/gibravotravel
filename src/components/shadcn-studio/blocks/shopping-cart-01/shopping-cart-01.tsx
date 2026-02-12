@@ -253,10 +253,10 @@ export const ShoppingCart = ({ tour }: ShoppingCartProps) => {
                                     {/* 1. Camera Singola */}
                                     <div
                                         onClick={() => setSelectedRoom(selectedRoom === 'private' ? null : 'private')}
-                                        className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col gap-3 h-full relative group ${selectedRoom === 'private' ? 'border-[#004BA5] bg-blue-50/30 ring-1 ring-[#004BA5] shadow-sm' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/50'}`}
+                                        className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col gap-3 h-full relative group ${selectedRoom === 'private' ? 'border-[#003ea3] bg-blue-50/30 ring-1 ring-[#003ea3] shadow-sm' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/50'}`}
                                     >
                                         <div className="flex items-center gap-3">
-                                            <div className={`p-2 rounded-lg transition-colors ${selectedRoom === 'private' ? 'bg-[#004BA5] text-white' : 'bg-slate-100 text-slate-500 group-hover:text-[#004BA5]'}`}>
+                                            <div className={`p-2 rounded-lg transition-colors ${selectedRoom === 'private' ? 'bg-[#003ea3] text-white' : 'bg-slate-100 text-slate-500 group-hover:text-[#004BA5]'}`}>
                                                 <User className="w-5 h-5" />
                                             </div>
                                             <span className={`font-bold text-sm ${selectedRoom === 'private' ? 'text-[#004BA5]' : 'text-[#323232]'}`}>Camera Singola</span>
@@ -278,10 +278,10 @@ export const ShoppingCart = ({ tour }: ShoppingCartProps) => {
                                     {/* 2. Camera Matrimoniale */}
                                     <div
                                         onClick={() => setSelectedRoom(selectedRoom === 'double' ? null : 'double')}
-                                        className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col gap-3 h-full relative group ${selectedRoom === 'double' ? 'border-[#004BA5] bg-blue-50/30 ring-1 ring-[#004BA5] shadow-sm' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/50'}`}
+                                        className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col gap-3 h-full relative group ${selectedRoom === 'double' ? 'border-[#003ea3] bg-blue-50/30 ring-1 ring-[#003ea3] shadow-sm' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/50'}`}
                                     >
                                         <div className="flex items-center gap-3">
-                                            <div className={`p-2 rounded-lg transition-colors ${selectedRoom === 'double' ? 'bg-[#004BA5] text-white' : 'bg-slate-100 text-slate-500 group-hover:text-[#004BA5]'}`}>
+                                            <div className={`p-2 rounded-lg transition-colors ${selectedRoom === 'double' ? 'bg-[#003ea3] text-white' : 'bg-slate-100 text-slate-500 group-hover:text-[#004BA5]'}`}>
                                                 <BedDouble className="w-5 h-5" />
                                             </div>
                                             <span className={`font-bold text-sm ${selectedRoom === 'double' ? 'text-[#004BA5]' : 'text-[#323232]'}`}>Matrimoniale</span>
@@ -295,10 +295,10 @@ export const ShoppingCart = ({ tour }: ShoppingCartProps) => {
                                     {/* 3. Camera Doppia */}
                                     <div
                                         onClick={() => setSelectedRoom(selectedRoom === 'twin' ? null : 'twin')}
-                                        className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col gap-3 h-full relative group ${selectedRoom === 'twin' ? 'border-[#004BA5] bg-blue-50/30 ring-1 ring-[#004BA5] shadow-sm' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/50'}`}
+                                        className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col gap-3 h-full relative group ${selectedRoom === 'twin' ? 'border-[#003ea3] bg-blue-50/30 ring-1 ring-[#003ea3] shadow-sm' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/50'}`}
                                     >
                                         <div className="flex items-center gap-3">
-                                            <div className={`p-2 rounded-lg transition-colors ${selectedRoom === 'twin' ? 'bg-[#004BA5] text-white' : 'bg-slate-100 text-slate-500 group-hover:text-[#004BA5]'}`}>
+                                            <div className={`p-2 rounded-lg transition-colors ${selectedRoom === 'twin' ? 'bg-[#003ea3] text-white' : 'bg-slate-100 text-slate-500 group-hover:text-[#004BA5]'}`}>
                                                 <Bed className="w-5 h-5" />
                                             </div>
                                             <span className={`font-bold text-sm ${selectedRoom === 'twin' ? 'text-[#004BA5]' : 'text-[#323232]'}`}>Camera Doppia</span>
@@ -312,10 +312,10 @@ export const ShoppingCart = ({ tour }: ShoppingCartProps) => {
                                     {/* 4. Camera Condivisa */}
                                     <div
                                         onClick={() => setSelectedRoom(selectedRoom === 'shared' ? null : 'shared')}
-                                        className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col gap-3 h-full relative group ${selectedRoom === 'shared' ? 'border-[#004BA5] bg-blue-50/30 ring-1 ring-[#004BA5] shadow-sm' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/50'}`}
+                                        className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col gap-3 h-full relative group ${selectedRoom === 'shared' ? 'border-[#003ea3] bg-blue-50/30 ring-1 ring-[#003ea3] shadow-sm' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/50'}`}
                                     >
                                         <div className="flex items-center gap-3">
-                                            <div className={`p-2 rounded-lg transition-colors ${selectedRoom === 'shared' ? 'bg-[#004BA5] text-white' : 'bg-slate-100 text-slate-500 group-hover:text-[#004BA5]'}`}>
+                                            <div className={`p-2 rounded-lg transition-colors ${selectedRoom === 'shared' ? 'bg-[#003ea3] text-white' : 'bg-slate-100 text-slate-500 group-hover:text-[#004BA5]'}`}>
                                                 <Users className="w-5 h-5" />
                                             </div>
                                             <span className={`font-bold text-sm ${selectedRoom === 'shared' ? 'text-[#004BA5]' : 'text-[#323232]'}`}>Condivisa</span>
@@ -329,10 +329,10 @@ export const ShoppingCart = ({ tour }: ShoppingCartProps) => {
                                     {/* 5. Camera Tripla */}
                                     <div
                                         onClick={() => setSelectedRoom(selectedRoom === 'triple' ? null : 'triple')}
-                                        className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col gap-3 h-full relative group ${selectedRoom === 'triple' ? 'border-[#004BA5] bg-blue-50/30 ring-1 ring-[#004BA5] shadow-sm' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/50'}`}
+                                        className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col gap-3 h-full relative group ${selectedRoom === 'triple' ? 'border-[#003ea3] bg-blue-50/30 ring-1 ring-[#003ea3] shadow-sm' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/50'}`}
                                     >
                                         <div className="flex items-center gap-3">
-                                            <div className={`p-2 rounded-lg transition-colors ${selectedRoom === 'triple' ? 'bg-[#004BA5] text-white' : 'bg-slate-100 text-slate-500 group-hover:text-[#004BA5]'}`}>
+                                            <div className={`p-2 rounded-lg transition-colors ${selectedRoom === 'triple' ? 'bg-[#003ea3] text-white' : 'bg-slate-100 text-slate-500 group-hover:text-[#004BA5]'}`}>
                                                 <Users className="w-5 h-5" />
                                             </div>
                                             <span className={`font-bold text-sm ${selectedRoom === 'triple' ? 'text-[#004BA5]' : 'text-[#323232]'}`}>Camera Tripla</span>
@@ -347,10 +347,10 @@ export const ShoppingCart = ({ tour }: ShoppingCartProps) => {
                                     {/* 6. Camera Tripla (Richiesta) */}
                                     <div
                                         onClick={() => setSelectedRoom(selectedRoom === 'triple_request' ? null : 'triple_request')}
-                                        className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col gap-2 h-full relative group ${selectedRoom === 'triple_request' ? 'border-[#004BA5] bg-blue-50/30 ring-1 ring-[#004BA5] shadow-sm' : 'border-dashed border-slate-300 hover:border-slate-400 hover:bg-slate-50/50'}`}
+                                        className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col gap-2 h-full relative group ${selectedRoom === 'triple_request' ? 'border-[#003ea3] bg-blue-50/30 ring-1 ring-[#003ea3] shadow-sm' : 'border-dashed border-slate-300 hover:border-slate-400 hover:bg-slate-50/50'}`}
                                     >
                                         <div className="flex items-center gap-2">
-                                            <div className={`p-2 rounded-lg transition-colors ${selectedRoom === 'triple_request' ? 'bg-[#004BA5] text-white' : 'bg-slate-100 text-slate-500 group-hover:text-[#004BA5]'}`}>
+                                            <div className={`p-2 rounded-lg transition-colors ${selectedRoom === 'triple_request' ? 'bg-[#003ea3] text-white' : 'bg-slate-100 text-slate-500 group-hover:text-[#004BA5]'}`}>
                                                 <Users className="w-5 h-5" />
                                             </div>
                                             <span className={`font-bold text-sm ${selectedRoom === 'triple_request' ? 'text-[#004BA5]' : 'text-[#323232]'}`}>
@@ -419,7 +419,7 @@ export const ShoppingCart = ({ tour }: ShoppingCartProps) => {
                         {/* Passenger Details Form */}
                         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 space-y-4">
                             <h4 className="font-bold text-lg flex items-center gap-2 text-[#323232]">
-                                <Users className="h-5 w-5 text-[#004BA5]" />
+                                <Users className="h-5 w-5 text-[#003ea3]" />
                                 Dati Passeggeri
                             </h4>
                             <p className="text-sm text-slate-500 mb-4">Inserisci i dati di chi parteciperà al viaggio.</p>

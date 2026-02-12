@@ -25,7 +25,7 @@ const FAQ = ({ tabsData }: { tabsData: FAQTab[] }) => {
                 {/* FAQ Header */}
                 <div className='mb-12 space-y-4 md:mb-16 lg:mb-24 text-center lg:text-left'>
                     <div className='text-[#FE8008] text-sm font-bold uppercase tracking-wider font-outfit'>FAQ&apos;s</div>
-                    <h2 className='text-3xl font-bold md:text-5xl lg:text-6xl text-[#004BA5] tracking-tight'>
+                    <h2 className='text-3xl font-bold md:text-5xl lg:text-6xl text-[#003ea3] tracking-tight'>
                         Domande <span className='text-[#FE8008]'>Frequenti</span>
                     </h2>
                     <p className='text-slate-600 text-xl max-w-2xl'>
@@ -44,7 +44,7 @@ const FAQ = ({ tabsData }: { tabsData: FAQTab[] }) => {
                                     <TabsTrigger
                                         key={tab.value}
                                         value={tab.value}
-                                        className='data-[state=active]:bg-[#004BA5] data-[state=active]:text-white border border-slate-100 bg-white w-full flex items-center gap-4 rounded-2xl px-6 py-4 text-base font-bold shadow-sm transition-all duration-300 hover:border-blue-200 data-[state=active]:shadow-lg data-[state=active]:shadow-blue-200 [&>svg]:size-5'
+                                        className='data-[state=active]:bg-[#003ea3] data-[state=active]:text-white border border-slate-100 bg-white w-full flex items-center gap-4 rounded-2xl px-6 py-4 text-base font-bold shadow-sm transition-all duration-300 hover:border-blue-200 data-[state=active]:shadow-lg data-[state=active]:shadow-blue-200 [&>svg]:size-5'
                                     >
                                         <IconComponent />
                                         <span className='flex-1 text-start'>{tab.label}</span>
@@ -61,7 +61,7 @@ const FAQ = ({ tabsData }: { tabsData: FAQTab[] }) => {
                                     <Accordion type='single' collapsible className='w-full space-y-4 border-none'>
                                         {tab.faqs.map((item, index) => (
                                             <AccordionItem key={index} value={`item-${index + 1}`} className="bg-white rounded-3xl border border-slate-100 px-2 overflow-hidden shadow-sm hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-300 mb-4 last:mb-0">
-                                                <AccordionTrigger className='px-5 py-6 text-lg md:text-xl font-medium text-slate-800 hover:text-[#004BA5] hover:no-underline [&[data-state=open]]:text-[#004BA5]'>
+                                                <AccordionTrigger className='px-5 py-6 text-lg md:text-xl font-medium text-slate-800 hover:text-[#003ea3] hover:no-underline [&[data-state=open]]:text-[#003ea3]'>
                                                     {item.question}
                                                 </AccordionTrigger>
                                                 <AccordionContent className='px-5 pb-6 body-text'>

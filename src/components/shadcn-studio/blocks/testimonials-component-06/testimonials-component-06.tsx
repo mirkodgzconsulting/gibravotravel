@@ -2,6 +2,7 @@
 
 import React from "react"
 import { CheckCircle2 } from "lucide-react"
+import Image from "next/image"
 import Autoplay from "embla-carousel-autoplay"
 import {
     Carousel,
@@ -67,9 +68,11 @@ const WhiteStarIcon = ({ className = "h-4 w-4" }) => (
 )
 
 const StarIcon = ({ className = "h-4 w-4" }) => (
-    <img
+    <Image
         src="https://cdn.trustindex.io/assets/platform/Google/star/f.svg"
         alt="star"
+        width={16}
+        height={16}
         className={className}
     />
 )
@@ -101,10 +104,8 @@ const TestimonialsComponent = () => {
 
     return (
         <section className='py-16 bg-slate-100'>
-            <div className='container mx-auto px-4 max-w-6xl font-sans'>
-
-                {/* Header Section */}
-                <div className='flex flex-col items-center text-center mb-12'>
+            <div className="container px-4 mx-auto max-w-5xl">
+                <div className='flex flex-col items-center justify-center pt-5'>
                     <h3 className="text-[28px] font-bold text-black mb-4 tracking-tight uppercase">ECCELLENTE</h3>
 
                     {/* Stars row with squares */}
@@ -116,105 +117,108 @@ const TestimonialsComponent = () => {
                         ))}
                     </div>
 
-                    <a
-                        href={GOOGLE_REVIEW_LINK}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[16px] text-black mb-2 hover:opacity-70 transition-opacity"
-                    >
-                        In base a <span className="underline font-bold cursor-pointer">144 recensioni</span>
-                    </a>
-
-                    <a href={GOOGLE_REVIEW_LINK} target="_blank" rel="noopener noreferrer" className="hover:scale-105 transition-transform">
+                    <div className="flex items-center gap-1 mb-6 text-[15px]">
+                        <span className="text-black font-bold">4.9/5</span>
+                        <span className="text-black font-bold mx-1">|</span>
+                        <a
+                            href={GOOGLE_REVIEW_LINK}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-black hover:opacity-70 transition-opacity flex items-center gap-1"
+                        >
+                            In base a <span className="underline font-bold">144 recensioni</span>
+                            <div className="bg-[#4285F4] rounded-full p-0.5 w-[14px] h-[14px] flex items-center justify-center ml-1">
+                                <CheckCircle2 className="w-[8px] h-[8px] text-white fill-white" />
+                            </div>
+                        </a>
                         <GoogleLogo />
-                    </a>
-                </div>
+                    </div>
 
-                {/* Carousel wrapper */}
-                <div className="relative group w-full">
-                    <Carousel
-                        opts={{
-                            align: "start",
-                            loop: true,
-                        }}
-                        plugins={[plugin.current]}
-                        className="w-full"
-                    >
-                        <CarouselContent className="-ml-4">
-                            {reviews.map((review, index) => (
-                                <CarouselItem key={index} className="pl-4 md:basis-1/2 lg:basis-1/3">
-                                    <div className="bg-white rounded-xl p-6 flex flex-col h-[290px] relative transition-all duration-300 hover:shadow-md">
+                    {/* Carousel wrapper */}
+                    <div className="relative group w-full">
+                        <Carousel
+                            opts={{
+                                align: "start",
+                                loop: true,
+                            }}
+                            plugins={[plugin.current]}
+                            className="w-full"
+                        >
+                            <CarouselContent className="">
+                                {reviews.map((review, index) => (
+                                    <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3 pl-4">
+                                        <div className="bg-white rounded-lg p-6 flex flex-col h-[200px] relative transition-all duration-300 hover:shadow-lg border border-gray-100">
 
-                                        {/* Card Header */}
-                                        <div className="flex items-start justify-between mb-3">
-                                            <div className="flex items-center gap-3">
-                                                <div className="relative">
-                                                    <div className="w-12 h-12 rounded-full bg-[#EA4335] flex items-center justify-center text-white font-bold text-sm overflow-hidden text-center uppercase">
-                                                        {review.avatar}
-                                                    </div>
-                                                    <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
-                                                        <div className="bg-[#FF8000] rounded-full p-[1px]">
-                                                            <svg viewBox="0 0 24 24" className="w-[8px] h-[8px] text-white fill-white">
-                                                                <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                                                            </svg>
+                                            {/* Card Header */}
+                                            <div className="flex items-start justify-between mb-3">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="relative">
+                                                        <div className="w-10 h-10 rounded-full bg-[#7B1FA2] flex items-center justify-center text-white font-bold text-sm overflow-hidden text-center uppercase">
+                                                            {review.avatar}
+                                                        </div>
+                                                        <div className="absolute -bottom-1 -right-1">
+                                                            <div className="bg-white rounded-full p-[2px]">
+                                                                <GoogleG />
+                                                            </div>
                                                         </div>
                                                     </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold text-black text-[15px] leading-tight">{review.name}</span>
+                                                        <span className="text-[12px] text-[#70757a]">{review.date}</span>
+                                                    </div>
                                                 </div>
-                                                <div className="flex flex-col">
-                                                    <span className="font-bold text-black text-[18px] leading-tight">{review.name}</span>
-                                                    <span className="text-[14px] text-[#70757a]">{review.date}</span>
+                                                <div className="flex items-center gap-1">
+                                                     <div className="flex gap-0.5">
+                                                        {[...Array(5)].map((_, i) => (
+                                                            <StarIcon key={i} className="w-[14px] h-[14px] text-[#FEBB02] fill-[#FEBB02]" />
+                                                        ))}
+                                                    </div>
+                                                    <div className="bg-[#4285F4] rounded-full p-0.5 flex items-center justify-center w-[14px] h-[14px]">
+                                                        <CheckCircle2 className="w-[8px] h-[8px] text-white fill-white" />
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <a href={GOOGLE_REVIEW_LINK} target="_blank" rel="noopener noreferrer">
-                                                <GoogleG />
-                                            </a>
-                                        </div>
 
-                                        {/* Stars + Verified */}
-                                        <div className="flex items-center gap-1.5 mb-2">
-                                            <div className="flex gap-0.5">
-                                                {[...Array(5)].map((_, i) => (
-                                                    <StarIcon key={i} className="w-5 h-5" />
-                                                ))}
-                                            </div>
-                                            <div className="bg-[#4285F4] rounded-full p-0.5 flex items-center justify-center">
-                                                <CheckCircle2 className="w-[7px] h-[7px] text-white fill-white" />
-                                            </div>
-                                        </div>
-
-                                        {/* Content Area */}
-                                        <div className="flex gap-3 items-start flex-grow overflow-hidden relative">
-                                            <div className="flex-grow">
-                                                <p className="text-black text-[15px] leading-relaxed line-clamp-4">
-                                                    {review.review}
-                                                </p>
-                                                <a
-                                                    href={GOOGLE_REVIEW_LINK}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-[#70757a] text-[14px] mt-2 block font-bold hover:underline cursor-pointer"
-                                                >
-                                                    Leggi di più
-                                                </a>
-                                            </div>
-                                            {review.image && (
-                                                <div className="w-[50px] h-[50px] shrink-0 rounded-lg overflow-hidden relative border border-slate-200 mt-1">
-                                                    <img
-                                                        src={review.image}
-                                                        alt="Review thumbnail"
-                                                        className="object-cover w-full h-full"
-                                                    />
+                                            {/* Content Area */}
+                                            <div className="flex gap-3 items-start flex-grow overflow-hidden relative">
+                                                <div className="flex-grow flex flex-col justify-between h-full"> 
+                                                     <p className="text-[#4b5563] text-[14px] leading-relaxed line-clamp-5 flex-grow">
+                                                        {review.review}
+                                                    </p>
+                                                    <div className="mt-auto pt-2">
+                                                        <a
+                                                            href={GOOGLE_REVIEW_LINK}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-[#70757a] text-[13px] font-bold hover:underline cursor-pointer flex items-center gap-1"
+                                                        >
+                                                            Leggi di più
+                                                        </a>
+                                                    </div>
                                                 </div>
-                                            )}
+                            
+                                                {/* Image Thumbnail inside card */}
+                                                {review.image && (
+                                                    <div className="w-[60px] h-[60px] shrink-0 rounded-lg overflow-hidden relative border border-slate-200 mt-1">
+                                                        <Image
+                                                            src={review.image}
+                                                            fill
+                                                            sizes="60px"
+                                                            alt="Review thumbnail"
+                                                            className="object-cover"
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
-                                </CarouselItem>
-                            ))}
-                        </CarouselContent>
+                                    </CarouselItem>
+                                ))}
+                            </CarouselContent>
 
-                        <CarouselPrevious className="hidden md:flex -left-12 h-10 w-10 border border-slate-200 bg-white text-slate-400 hover:text-black hover:bg-white shadow-sm" />
-                        <CarouselNext className="hidden md:flex -right-12 h-10 w-10 border border-slate-200 bg-white text-slate-400 hover:text-black hover:bg-white shadow-sm" />
-                    </Carousel>
+                            <CarouselPrevious className="hidden md:flex -left-12 h-10 w-10 border border-slate-200 bg-white text-slate-400 hover:text-black hover:bg-white shadow-sm" />
+                            <CarouselNext className="hidden md:flex -right-12 h-10 w-10 border border-slate-200 bg-white text-slate-400 hover:text-black hover:bg-white shadow-sm" />
+                        </Carousel>
+                    </div>
                 </div>
             </div>
         </section>

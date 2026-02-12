@@ -25,7 +25,7 @@ export default function ContactsPage() {
                         <div className="max-w-3xl">
                             <h1 className="text-5xl md:text-7xl font-[700] text-white tracking-tighter leading-[1.1] mb-8">
                                 Parliamo del tuo <br />
-                                <span className="text-[#FE8008]">Prossimo Viaggio</span>
+                                <span className="text-[#FF7000]">Prossimo Viaggio</span>
                             </h1>
                             <p className="text-xl md:text-2xl text-white/90 font-medium leading-relaxed max-w-2xl">
                                 Organizza il tuo viaggio ideale con GiBravo Travel. Siamo qui per trasformare i tuoi sogni in realtà.
@@ -39,10 +39,10 @@ export default function ContactsPage() {
                 {/* Intro Text */}
                 <RevealOnScroll>
                     <div className="text-center mb-12 md:mb-16">
-                        <span className="text-[#FE8008] font-bold tracking-wider text-sm uppercase mb-2 block font-outfit">
+                        <span className="text-[#FF7000] font-bold tracking-wider text-sm uppercase mb-2 block font-outfit">
                             Siamo qui per te
                         </span>
-                        <h2 className="section-title text-3xl md:text-4xl text-[#004BA5] mb-6">
+                        <h2 className="section-title text-3xl md:text-4xl text-[#003ea3] mb-6">
                             Non hai trovato quello che cercavi?
                         </h2>
                         <p className="section-subtitle max-w-3xl mx-auto">
@@ -68,18 +68,18 @@ export default function ContactsPage() {
                             <div className="space-y-8">
                                 {/* Phone */}
                                 <div className="flex items-start gap-5">
-                                    <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center shrink-0 text-[#004BA5]">
+                                    <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center shrink-0 text-[#003ea3]">
                                         <Phone className="w-6 h-6" />
                                     </div>
                                     <div>
                                         <h4 className="font-bold text-lg text-[#323232]">Telefono</h4>
-                                        <p className="text-[#004BA5] font-semibold text-xl mt-1">02 8219 7645</p>
+                                        <p className="text-[#003ea3] font-semibold text-xl mt-1">02 8219 7645</p>
                                     </div>
                                 </div>
 
                                 {/* Address */}
                                 <div className="flex items-start gap-5">
-                                    <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center shrink-0 text-[#004BA5]">
+                                    <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center shrink-0 text-[#003ea3]">
                                         <MapPin className="w-6 h-6" />
                                     </div>
                                     <div>
@@ -90,7 +90,7 @@ export default function ContactsPage() {
 
                                 {/* Hours */}
                                 <div className="flex items-start gap-5">
-                                    <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center shrink-0 text-[#004BA5]">
+                                    <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center shrink-0 text-[#003ea3]">
                                         <Clock className="w-6 h-6" />
                                     </div>
                                     <div>
@@ -104,12 +104,12 @@ export default function ContactsPage() {
 
                                 {/* Email */}
                                 <div className="flex items-start gap-5">
-                                    <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center shrink-0 text-[#004BA5]">
+                                    <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center shrink-0 text-[#003ea3]">
                                         <Mail className="w-6 h-6" />
                                     </div>
                                     <div>
                                         <h4 className="font-bold text-lg text-[#323232]">Email</h4>
-                                        <p className="text-[#004BA5] font-semibold text-lg mt-1 decoration-1 underline underline-offset-4">info@gibravo.it</p>
+                                        <p className="text-[#003ea3] font-semibold text-lg mt-1 decoration-1 underline underline-offset-4">info@gibravo.it</p>
                                     </div>
                                 </div>
                             </div>

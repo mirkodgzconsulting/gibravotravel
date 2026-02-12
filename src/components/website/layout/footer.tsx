@@ -19,7 +19,7 @@ export function Footer() {
                         <RevealOnScroll>
                             <div className="grid grid-cols-1 lg:grid-cols-2 items-center gap-12 max-w-6xl mx-auto">
                                 <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
-                                    <div className="h-14 w-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 text-[#004ba5]">
+                                    <div className="h-14 w-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 text-[#003ea3]">
                                         <Send className="h-7 w-7" />
                                     </div>
                                     <h2 className="section-title mb-4">
@@ -59,7 +59,7 @@ export function Footer() {
             )}
 
             {/* 2. MAIN FOOTER - Blue Gradient */}
-            <footer className="w-full bg-gradient-to-r from-[#004ba5] to-[#003580] pt-16 pb-8 border-t border-white/10 text-white font-[var(--font-outfit)]">
+            <footer className="w-full bg-[#003ea3] pt-16 pb-8 border-t border-white/10 text-white font-[var(--font-outfit)]">
                 <div className="container mx-auto px-4 max-w-6xl">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-10 lg:gap-16">
 
@@ -79,13 +79,13 @@ export function Footer() {
                                 Viaggi di gruppo on the road per giovani professionisti. Prepara lo zaino, al resto pensiamo noi.
                             </p>
                             <div className="flex gap-4">
-                                <Link href="https://www.instagram.com/gibravo.travel" target="_blank" className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-[#FE8008] transition-all">
+                                <Link href="https://www.instagram.com/gibravo.travel" target="_blank" className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FF7000] text-white hover:bg-white hover:text-[#FF7000] transition-all">
                                     <Instagram className="h-5 w-5" />
                                 </Link>
-                                <Link href="https://www.facebook.com/GiBravoTravelAgenzia" target="_blank" className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-[#FE8008] transition-all">
+                                <Link href="https://www.facebook.com/GiBravoTravelAgenzia" target="_blank" className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FF7000] text-white hover:bg-white hover:text-[#FF7000] transition-all">
                                     <Facebook className="h-5 w-5" />
                                 </Link>
-                                <Link href="https://www.tiktok.com/@gibravotravel" target="_blank" className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-[#FE8008] transition-all">
+                                <Link href="https://www.tiktok.com/@gibravotravel" target="_blank" className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FF7000] text-white hover:bg-white hover:text-[#FF7000] transition-all">
                                     <svg
                                         width="20"
                                         height="20"
@@ -101,23 +101,23 @@ export function Footer() {
 
                         {/* Col 2: GiBravo Travel (Main Links) */}
                         <div className="flex flex-col items-center md:items-start text-center md:text-left">
-                            <h3 className="font-[500] text-white text-lg mb-6 tracking-tight">Menu</h3>
+                            <h3 className="font-[600] text-white text-lg mb-6 tracking-tight">Menu</h3>
                             <div className="flex flex-col gap-3">
-                                <Link href="/chi-siamo" className="text-[16px] font-medium text-white/80 hover:text-white transition-colors">Chi siamo</Link>
-                                <Link href="/partenze" className="text-[16px] font-medium text-white/80 hover:text-white transition-colors">Partenze</Link>
+                                <Link href="/chi-siamo" className="text-[16px] font-medium text-white/90 hover:text-white transition-colors">Chi siamo</Link>
+                                <Link href="/partenze" className="text-[16px] font-medium text-white/90 hover:text-white transition-colors">Partenze</Link>
                             </div>
                         </div>
 
                         {/* Col 3: Supporto & Legal */}
                         <div className="flex flex-col items-center md:items-start text-center md:text-left">
-                            <h3 className="font-[500] text-white text-lg mb-6 tracking-tight">Supporto</h3>
+                            <h3 className="font-[600] text-white text-lg mb-6 tracking-tight">Supporto</h3>
                             <div className="flex flex-col gap-3">
-                                <Link href="/contatti" className="text-[16px] font-medium text-white/80 hover:text-white transition-colors">Contattaci</Link>
-                                <Link href="#" className="text-[16px] font-medium text-white/80 hover:text-white transition-colors">Domande Frequenti (FAQ)</Link>
+                                <Link href="/contatti" className="text-[16px] font-medium text-white/90 hover:text-white transition-colors">Contattaci</Link>
+                                <Link href="#" className="text-[16px] font-medium text-white/90 hover:text-white transition-colors">Domande Frequenti (FAQ)</Link>
                                 <div className="h-px w-10 bg-white/20 my-2 mx-auto md:mx-0"></div>
-                                <Link href="/informativa-privacy" className="text-[14px] font-medium text-white/60 hover:text-white transition-colors">Privacy Policy</Link>
-                                <Link href="/termini-e-condizioni" className="text-[14px] font-medium text-white/60 hover:text-white transition-colors">Termini e Condizioni</Link>
-                                <Link href="/informativa-cookie" className="text-[14px] font-medium text-white/60 hover:text-white transition-colors">Cookie Policy</Link>
+                                <Link href="/informativa-privacy" className="text-[14px] font-medium text-white/70 hover:text-white transition-colors">Privacy Policy</Link>
+                                <Link href="/termini-e-condizioni" className="text-[14px] font-medium text-white/70 hover:text-white transition-colors">Termini e Condizioni</Link>
+                                <Link href="/informativa-cookie" className="text-[14px] font-medium text-white/70 hover:text-white transition-colors">Cookie Policy</Link>
                             </div>
                         </div>
 

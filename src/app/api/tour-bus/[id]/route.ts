@@ -15,6 +15,10 @@ if (process.env.CLOUDINARY_URL) {
     api_secret: process.env.CLOUDINARY_API_SECRET,
   });
 }
+// Interfaces
+
+
+
 
 // GET - Obtener un tour de bus específico
 export async function GET(
@@ -74,7 +78,8 @@ export async function GET(
     }
 
     // Normalizar documentoViaggio: convertir formato legacy (string) a array
-    const tourAny = tour as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tourAny = tour as Record<string, any>;
     if (tourAny.documentoViaggio) {
       if (typeof tourAny.documentoViaggio === 'string') {
         // Formato legacy: convertir a array
@@ -147,7 +152,7 @@ export async function PUT(
     const webCoverImage = formData.get('webCoverImage') as File; // New
     const pdfFile = formData.get('pdfFile') as File;
 
-    const updateData: any = {}; // Moved up to valid reference error
+    const updateData: Prisma.TourBusUpdateInput = {}; // Typed correctly
 
     // Verificar que el tour existe
     const tourExistente = await prisma.tourBus.findUnique({
@@ -305,7 +310,7 @@ export async function PUT(
     const infoGeneral = formData.get('infoGeneral') as string;
     // Programa removed
     // Itinerario is now JSON
-    let itinerario: any = undefined;
+    let itinerario: Prisma.InputJsonValue | undefined = undefined;
     try { itinerario = JSON.parse(formData.get('itinerario') as string); } catch { }
     const mapaEmbed = formData.get('mapaEmbed') as string;
     const coordinadorNombre = formData.get('coordinadorNombre') as string;
@@ -324,13 +329,23 @@ export async function PUT(
     let galeria: string[] = [];
     try { galeria = JSON.parse(formData.get('galeria') as string || '[]'); } catch { }
 
+    let galeria2: string[] = [];
+    try { galeria2 = JSON.parse(formData.get('galeria2') as string || '[]'); } catch { }
+
     // FAQ (JSON)
     let faq = null;
     try { faq = JSON.parse(formData.get('faq') as string || 'null'); } catch { }
 
+    // Info Utile (JSON) - Added 2026-02-12
+    let infoUtile: Prisma.InputJsonValue | undefined = undefined;
+    if (formData.has('infoUtile')) {
+      try { infoUtile = JSON.parse(formData.get('infoUtile') as string); } catch { infoUtile = []; }
+    }
+
+    // Coordinador Foto
     // Coordinador Foto
     const coordinadorFotoFile = formData.get('coordinadorFoto') as File | string;
-    let coordinadorFotoUrl = (tourExistente as any).coordinadorFoto || null; // Utilizar foto existente por defecto
+    let coordinadorFotoUrl = tourExistente.coordinadorFoto || null; // Utilizar foto existente por defecto
 
     if (typeof coordinadorFotoFile === 'string') {
       if (coordinadorFotoFile === '') {
@@ -356,6 +371,7 @@ export async function PUT(
               (error, result) => { if (error) reject(error); else resolve(result); }
             ).end(buffer);
           });
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return { type: 'coordFoto', url: (result as any).secure_url };
         } catch (e) { console.error(e); return { type: 'error' }; }
       })();
@@ -381,10 +397,36 @@ export async function PUT(
               (error, result) => { if (error) reject(error); else resolve(result); }
             ).end(buffer);
           });
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return { type: 'gallery', url: (result as any).secure_url };
         } catch (e) { console.error(e); return { type: 'error' }; }
       })());
     });
+
+    const gallery2Files = formData.getAll('gallery2Images') as File[];
+    const validGallery2Files = gallery2Files.filter(file => file && file.size > 0);
+
+    validGallery2Files.forEach(file => {
+      uploadPromises.push((async () => {
+        try {
+          const bytes = await file.arrayBuffer();
+          const buffer = Buffer.from(bytes);
+          const result = await new Promise((resolve, reject) => {
+            cloudinary.uploader.upload_stream(
+              {
+                folder: 'gibravotravel/tours/gallery2',
+                resource_type: 'image',
+                transformation: [{ width: 1200, height: 800, crop: 'limit' }]
+              },
+              (error, result) => { if (error) reject(error); else resolve(result); }
+            ).end(buffer);
+          });
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          return { type: 'gallery2', url: (result as any).secure_url };
+        } catch (e) { console.error(e); return { type: 'error' }; }
+      })());
+    });
+
 
     // Ejecutar todos los uploads en paralelo
     let coverImageUrl = tourExistente.coverImage;
@@ -396,21 +438,24 @@ export async function PUT(
     if (uploadPromises.length > 0) {
       try {
         const uploadResults = await Promise.all(uploadPromises);
-
-        uploadResults.forEach((result: any) => {
-          if (result.type === 'image') {
-            coverImageUrl = result.url;
-            coverImageName = result.name;
-          } else if (result.type === 'webImage') {
-            updateData.webCoverImage = result.url;
-            updateData.webCoverImageName = result.name;
-          } else if (result.type === 'pdf') {
-            pdfFileUrl = result.url;
-            pdfFileName = result.name;
-          } else if (result.type === 'coordFoto') {
-            finalCoordinadorFotoUrl = result.url;
-          } else if (result.type === 'gallery') {
-            galeria.push(result.url); // Append new gallery image URL
+        
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        uploadResults.forEach((res: any) => {
+          if (res.type === 'image' && res.url) {
+            coverImageUrl = res.url;
+            coverImageName = res.name || null;
+          } else if (res.type === 'webImage' && res.url) {
+            updateData.webCoverImage = res.url;
+            updateData.webCoverImageName = res.name || null;
+          } else if (res.type === 'pdf' && res.url) {
+            pdfFileUrl = res.url;
+            pdfFileName = res.name || null;
+          } else if (res.type === 'coordFoto' && res.url) {
+            finalCoordinadorFotoUrl = res.url;
+          } else if (res.type === 'gallery' && res.url) {
+            galeria.push(res.url); // Append new gallery image URL
+          } else if (res.type === 'gallery2' && res.url) {
+            galeria2.push(res.url); // Append new gallery 2 image URL
           }
         });
       } catch (uploadError) {
@@ -435,25 +480,26 @@ export async function PUT(
       } catch (error) {
         console.error('Error parsing existing documents:', error);
         // Si hay un documento antiguo (formato legacy), convertirlo
-        if ((tourExistente as any).documentoViaggio && typeof (tourExistente as any).documentoViaggio === 'string') {
+        if (tourExistente.documentoViaggio && typeof tourExistente.documentoViaggio === 'string') {
           documentoViaggioArray = [{
-            url: (tourExistente as any).documentoViaggio,
-            name: (tourExistente as any).documentoViaggioName || 'documento'
+            url: tourExistente.documentoViaggio as string,
+            name: tourExistente.documentoViaggioName || 'documento'
           }];
         }
       }
     } else {
       // Si no se proporcionan archivos existentes, verificar si hay formato legacy
-      if ((tourExistente as any).documentoViaggio) {
-        if (typeof (tourExistente as any).documentoViaggio === 'string') {
+      if (tourExistente.documentoViaggio) {
+        if (typeof tourExistente.documentoViaggio === 'string') {
           // Formato legacy: convertir a array
           documentoViaggioArray = [{
-            url: (tourExistente as any).documentoViaggio,
-            name: (tourExistente as any).documentoViaggioName || 'documento'
+            url: tourExistente.documentoViaggio as string,
+            name: tourExistente.documentoViaggioName || 'documento'
           }];
-        } else if (Array.isArray((tourExistente as any).documentoViaggio)) {
+        } else if (Array.isArray(tourExistente.documentoViaggio)) {
           // Ya es un array
-          documentoViaggioArray = (tourExistente as any).documentoViaggio;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          documentoViaggioArray = tourExistente.documentoViaggio as any;
         }
       }
     }
@@ -482,6 +528,8 @@ export async function PUT(
           const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension || '');
           const resourceType = isImage ? 'image' : 'raw'; // PDFs y otros archivos usan 'raw'
 
+          
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const result = await new Promise<any>((resolve, reject) => {
             cloudinary.uploader.upload_stream(
               {
@@ -507,8 +555,8 @@ export async function PUT(
 
     // Si no hay archivos, dejar como array vacío o null
     // Convertir a Prisma.JsonValue para que Prisma lo acepte
-    const documentoViaggioFinal = documentoViaggioArray.length > 0
-      ? (documentoViaggioArray as any)
+    const documentoViaggioFinal: Prisma.InputJsonValue | null = documentoViaggioArray.length > 0
+      ? (documentoViaggioArray as unknown as Prisma.InputJsonValue)
       : null;
 
     // Cantidad de asientos siempre es 53 (no se puede cambiar)
@@ -577,7 +625,12 @@ export async function PUT(
     if (formData.has('itinerario')) updateData.itinerario = itinerario;
     if (formData.has('incluye')) updateData.incluye = incluye;
     if (formData.has('noIncluye')) updateData.noIncluye = noIncluye;
-    if (formData.has('faq')) updateData.faq = faq ? faq : Prisma.JsonNull;
+    if (formData.has('faq')) updateData.faq = faq ? faq : Prisma.DbNull;
+    
+    // Info Utile
+    if (infoUtile !== undefined) {
+        updateData.infoUtile = infoUtile;
+    }
 
     // New Fields 2026-01-14
     if (formData.has('flightRefTitle')) updateData.flightRefTitle = formData.get('flightRefTitle') as string || null;
@@ -588,6 +641,8 @@ export async function PUT(
     if (formData.has('optionCameraPrivata')) updateData.optionCameraPrivata = formData.get('optionCameraPrivata') === 'true';
     if (formData.has('priceCameraPrivata')) updateData.priceCameraPrivata = parseFloat(formData.get('priceCameraPrivata') as string) || 0;
     if (formData.has('travelStatus')) updateData.travelStatus = formData.get('travelStatus') as string;
+    if (formData.has('isFlightIncluded')) updateData.isFlightIncluded = formData.get('isFlightIncluded') === 'true';
+    if (formData.has('flightDetails')) updateData.flightDetails = formData.get('flightDetails') as string || null;
 
     // Coordinador Foto Logic
     // If finalCoordinadorFotoUrl is different or explicitly cleared?
@@ -595,7 +650,8 @@ export async function PUT(
     // If NOT in results, check formData string.
     // If form data HAS 'coordinadorFoto' string -> update.
     // If form data missing 'coordinadorFoto' -> ignore.
-    const hasCoordFile = uploadPromises.some(p => (p as any).then && false); // Promises already awaited in 'results' but we lost strict typing map.
+    // If form data missing 'coordinadorFoto' -> ignore.
+    // hasCoordFile removed as it was unused
     // Better: check if finalCoordinadorFotoUrl changed from default
     // Or simpler:
     // We already calculated `finalCoordinadorFotoUrl`.
@@ -629,13 +685,25 @@ export async function PUT(
       }
     }
 
+    // Galeria 2
+    const hasGallery2Field = formData.has('galeria2');
+    const hasNewGallery2Images = validGallery2Files.length > 0;
+    if (hasGallery2Field || hasNewGallery2Images) {
+        if (!hasGallery2Field) {
+             const currentDbGallery2 = (tourExistente.galeria2 as string[]) || [];
+             updateData.galeria2 = [...currentDbGallery2, ...galeria2];
+        } else {
+             updateData.galeria2 = galeria2;
+        }
+    }
+
     // Documento Viaggio
     // Same logic.
     if (formData.has('documentoViaggioExisting') || formData.has('documentoViaggio')) {
       if (documentoViaggioFinal !== null) {
         updateData.documentoViaggio = documentoViaggioFinal;
       } else {
-        updateData.documentoViaggio = null;
+        updateData.documentoViaggio = Prisma.DbNull;
       }
     }
 
@@ -644,7 +712,7 @@ export async function PUT(
     // Actualizar el tour
     const tourActualizado = await prisma.tourBus.update({
       where: { id },
-      data: updateData as any,
+      data: updateData, // Removed 'as any'
       include: {
         creator: {
           select: {

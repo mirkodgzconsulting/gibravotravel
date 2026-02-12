@@ -1,20 +1,28 @@
 "use client"
 
 import Image from 'next/image'
-
+import { Clock } from 'lucide-react'
 
 
 interface TourOverviewProps {
     description: string | null
     gallery?: string[]
+    title?: string | null
+    duration?: string | null
 }
 
-export function TourOverview({ description, gallery = [] }: TourOverviewProps) {
+export function TourOverview({ description, gallery = [], title, duration }: TourOverviewProps) {
     return (
         <div id="panoramica" className="scroll-mt-32">
             {/* Header - Aligned with other sections (No padding, No Icon) */}
-            <h2 className="text-xl font-black text-[#004BA5] mb-8 flex items-center gap-3 uppercase tracking-tight">
-                Panoramica
+            <h2 className="text-xl font-black text-[#004BA5] mb-8 flex flex-col md:flex-row md:items-center gap-4 tracking-tight">
+                <span>{title || 'Panoramica'}</span>
+                {duration && (
+                    <div className="inline-flex items-center gap-2 bg-[#FE8008]/10 px-4 py-1.5 rounded-full border border-[#FE8008]/20 self-start md:self-auto">
+                        <Clock className="w-4 h-4 text-[#FE8008]" />
+                        <span className="text-[#FE8008] text-sm font-black tracking-wide">{duration}</span>
+                    </div>
+                )}
             </h2>
 
 

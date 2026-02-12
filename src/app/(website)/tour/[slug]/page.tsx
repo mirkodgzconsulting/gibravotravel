@@ -11,13 +11,14 @@ import { TourStickyNav } from '@/components/tour/TourStickyNav';
 import { TourOverview } from '@/components/tour/TourOverview';
 import { TourHorizontalCard } from '@/components/tour/TourHorizontalCard';
 import { Button } from "@/components/website/ui/button";
+import { TourInfo } from '@/components/tour/TourInfo';
 
 // Simple Icons (Lucide-like SVG inline for zero-dep dependencies if needed, or lucide-react if installed)
 // Assuming lucide-react is available based on previous context (XIcon etc used in Admin)
 import {
     Calendar,
 
-    Clock,
+
     Users,
     Star,
     CheckCircle2,
@@ -32,7 +33,9 @@ import {
     ArrowUpRight,
     Sparkles,
     AlertCircle,
-    Camera
+    Camera,
+    Check,
+    X
 } from 'lucide-react';
 
 interface TourPageProps {
@@ -49,6 +52,12 @@ interface ItineraryItem {
 interface FAQItem {
     question: string;
     answer: string;
+}
+
+interface InfoItem {
+    icon: string;
+    title: string;
+    description: string;
 }
 
 // FORCE DYNAMIC to avoid static gen issues with slug param
@@ -228,18 +237,16 @@ export default async function TourPage({ params }: TourPageProps) {
                     className="object-cover"
                     priority
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
 
                 {/* Hero Content - Aligned Bottom Left */}
                 <div className="absolute inset-0 flex items-end pb-6 md:pb-10 px-4">
                     <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-3 gap-12">
                         <div className="lg:col-span-2 text-left space-y-4">
-                            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-[#FE8008] leading-tight drop-shadow-lg tracking-tight">
+                            
+                            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white leading-tight drop-shadow-[0_2px_10px_rgba(0,75,165,0.5)] tracking-tight uppercase">
                                 {tour.titulo}
                             </h1>
-                            <p className="text-lg md:text-2xl text-white/90 font-medium max-w-2xl leading-relaxed drop-shadow-md">
-                                {tour.subtitulo}
-                            </p>
 
 
                             {/* Tour Details Badges - Glassmorphism */}
@@ -253,14 +260,7 @@ export default async function TourPage({ params }: TourPageProps) {
                                     </div>
                                 </div>
 
-                                {/* Duration */}
-                                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md border border-white/10 px-4 py-2.5 rounded-xl transition-transform hover:scale-105">
-                                    <Clock className="w-5 h-5 text-[#004BA5]" />
-                                    <div className="flex flex-col leading-none">
-                                        <span className="text-[10px] text-white/80 font-bold uppercase tracking-wider mb-0.5">Durata</span>
-                                        <span className="font-black text-sm tracking-wide text-white">{tour.duracionTexto || (daysCount ? `${daysCount} Giorni` : 'N/A')}</span>
-                                    </div>
-                                </div>
+
 
                                 {/* Type */}
                                 <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md border border-white/10 px-4 py-2.5 rounded-xl transition-transform hover:scale-105">
@@ -290,32 +290,36 @@ export default async function TourPage({ params }: TourPageProps) {
                         {/* Consolidated Overview Section - With Gallery 1 */}
                         <div id="panoramica" className="scroll-mt-32 border-b border-gray-100 pb-12">
                             <TourOverview
+                                title={tour.subtitulo}
                                 description={tour.infoGeneral}
                                 gallery={gallery}
+                                duration={tour.duracionTexto || (daysCount ? `${daysCount} Giorni` : "")}
                             />
                         </div>
 
                         {/* Dynamic Itinerary */}
                         <div id="itinerario" className="scroll-mt-32 border-b border-gray-100 pb-12">
-                            <h2 className="text-xl font-black text-[#004BA5] mb-8 uppercase tracking-tight">Itinerario di Viaggio</h2>
+                            <h2 className="text-xl font-black text-[#004BA5] mb-8 tracking-tight">Itinerario di Viaggio</h2>
                             <TourItinerary itinerary={itinerary} />
                         </div>
 
                         {/* Inclusions / Exclusions - Clean Columns */}
                         <div id="incluso" className="scroll-mt-32 border-b border-gray-100 pb-12">
-                            <h2 className="text-xl font-black text-[#004BA5] mb-8 uppercase tracking-tight">Cosa è compreso</h2>
+                            <h2 className="text-xl font-black text-[#004BA5] mb-8 tracking-tight">Cosa è Compreso</h2>
                             <div className="grid md:grid-cols-2 gap-x-12 gap-y-8">
                                 {/* Includes */}
                                 <div>
-                                    <h3 className="font-bold text-[#323232] mb-4 flex items-center gap-2 text-lg">
-                                        <CheckCircle2 className="w-5 h-5 text-green-600" />
+                                    <h3 className="font-bold text-[#323232] mb-4 flex items-center gap-2 text-sm tracking-wider">
+                                        <CheckCircle2 className="w-4 h-4 text-green-600" />
                                         La Quota Include
                                     </h3>
-                                    <ul className="space-y-3">
+                                    <ul className="space-y-4">
                                         {(tour.incluye as string[] || []).map((item, i) => (
-                                            <li key={i} className="flex gap-3 text-gray-600 text-sm leading-relaxed">
-                                                <span className="w-1.5 h-1.5 bg-green-600 rounded-full mt-2 flex-shrink-0" />
-                                                <span>{item}</span>
+                                            <li key={i} className="flex gap-4 items-center">
+                                                <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-600 shadow-sm">
+                                                    <Check className="w-4 h-4" />
+                                                </div>
+                                                <span className="text-gray-600 text-sm leading-relaxed">{item}</span>
                                             </li>
                                         ))}
                                     </ul>
@@ -323,15 +327,17 @@ export default async function TourPage({ params }: TourPageProps) {
 
                                 {/* Excludes */}
                                 <div>
-                                    <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2 text-lg">
-                                        <XCircle className="w-5 h-5 text-red-500" />
+                                    <h3 className="font-bold text-[#323232] mb-4 flex items-center gap-2 text-sm tracking-wider">
+                                        <XCircle className="w-4 h-4 text-gray-400" />
                                         La Quota Non Include
                                     </h3>
-                                    <ul className="space-y-3">
+                                    <ul className="space-y-4">
                                         {(tour.noIncluye as string[] || []).map((item, i) => (
-                                            <li key={i} className="flex gap-3 text-gray-600 text-sm leading-relaxed">
-                                                <span className="w-1.5 h-1.5 bg-red-400 rounded-full mt-2 flex-shrink-0" />
-                                                <span>{item}</span>
+                                            <li key={i} className="flex gap-4 items-center">
+                                                <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-600 shadow-sm">
+                                                    <X className="w-4 h-4" />
+                                                </div>
+                                                <span className="text-gray-600 text-sm leading-relaxed">{item}</span>
                                             </li>
                                         ))}
                                     </ul>
@@ -342,7 +348,7 @@ export default async function TourPage({ params }: TourPageProps) {
                         {/* Coordinator - Minimalist */}
                         {tour.coordinadorNombre && (
                             <div id="coordinatore" className="scroll-mt-32 border-b border-gray-100 pb-12">
-                                <h2 className="text-xl font-black text-[#004BA5] mb-8 uppercase tracking-tight">Il Coordinatore</h2>
+                                <h2 className="text-xl font-black text-[#004BA5] mb-8 tracking-tight">Il Coordinatore</h2>
                                 <div className="flex flex-col sm:flex-row gap-8 items-center sm:items-start text-center sm:text-left">
                                     <div className="relative w-28 h-28 rounded-full overflow-hidden border-4 border-white shadow-lg shadow-blue-900/10 flex-shrink-0">
                                         {tour.coordinadorFoto ? (
@@ -369,10 +375,10 @@ export default async function TourPage({ params }: TourPageProps) {
                         {/* Documentation & Info - Simple List */}
                         {tour.requisitosDocumentacion && Array.isArray(tour.requisitosDocumentacion) && tour.requisitosDocumentacion.length > 0 && (
                             <div className="border-b border-gray-100 pb-12">
-                                <h3 className="font-bold text-gray-900 mb-6 flex items-center gap-2 text-xl">
-                                    <FileText className="w-5 h-5" />
+                                <h2 className="text-xl font-black text-[#004BA5] mb-8 tracking-tight flex items-center gap-3">
+                                    <FileText className="w-6 h-6" />
                                     Documenti Richiesti
-                                </h3>
+                                </h2>
                                 <ul className="grid md:grid-cols-2 gap-4">
                                     {tour.requisitosDocumentacion.map((req: string, i: number) => (
                                         <li key={i} className="flex gap-3 text-gray-600 text-sm bg-gray-50 p-3 rounded-lg">
@@ -386,7 +392,7 @@ export default async function TourPage({ params }: TourPageProps) {
 
                         {/* Gallery 2 - Tighter Grid */}
                         <div id="galleria" className="space-y-6 scroll-mt-32">
-                            <h2 className="text-xl font-black text-[#004BA5] uppercase tracking-tight">Galleria</h2>
+                            <h2 className="text-xl font-black text-[#004BA5] tracking-tight">Galleria</h2>
 
                             {gallery2.length > 0 ? (
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 h-96 md:h-80">
@@ -407,11 +413,16 @@ export default async function TourPage({ params }: TourPageProps) {
                             )}
                         </div>
 
+                        {/* Info Utile Section - Added by Agent */}
+                        <div id="info-utile" className="scroll-mt-32 pt-8 border-t border-gray-100">
+                             <TourInfo items={tour.infoUtile as unknown as InfoItem[]} />
+                        </div>
+
                         {/* Map Embed - Clean */}
                         {/* Map Embed - Standard & Visible */}
                         {tour.mapaEmbed && (
                             <div className="pt-8 border-t border-gray-100">
-                                <h2 className="text-xl font-black text-[#004BA5] mb-8 uppercase tracking-tight">Mappa</h2>
+                                <h2 className="text-xl font-black text-[#004BA5] mb-8 tracking-tight">Mappa</h2>
                                 <div className="rounded-2xl overflow-hidden bg-gray-100 h-96 w-full relative shadow-sm border border-gray-200">
                                     <iframe
                                         src={tour.mapaEmbed.includes('<iframe') ? (tour.mapaEmbed.match(/src=["']([^"']+)["']/) || [])[1] : tour.mapaEmbed}
@@ -429,7 +440,7 @@ export default async function TourPage({ params }: TourPageProps) {
 
                         {/* Dynamic FAQ - Divider only */}
                         <div id="faq" className="scroll-mt-32 pt-8">
-                            <h2 className="text-xl font-black text-[#004BA5] mb-8 uppercase tracking-tight">Domande Frequenti</h2>
+                            <h2 className="text-xl font-black text-[#004BA5] mb-8 tracking-tight">Nota Informativa Utile per il Viaggio</h2>
                             <TourFAQ faq={tour.faq as unknown as FAQItem[]} />
                         </div>
 

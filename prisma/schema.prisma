@@ -371,6 +371,9 @@ model TourBus {
   // Nuevos Campos Web (Solicitud 2026-01-14)
   flightRefTitle        String?
   flightRefLink         String?
+  isFlightIncluded      Boolean        @default(false)
+  flightDetails         String?
+  infoUtile             Json?          // [{ icon: string, title: string, description: string }]
   optionCameraSingola   Boolean        @default(false)
   optionFlexibleCancel  Boolean        @default(false)
   priceFlexibleCancel   Float          @default(0)
@@ -455,6 +458,9 @@ model TourAereo {
   // Nuevos Campos Web (Solicitud 2026-01-14)
   flightRefTitle        String?
   flightRefLink         String?
+  isFlightIncluded      Boolean        @default(false)
+  flightDetails         String?
+  infoUtile             Json?          // [{ icon: string, title: string, description: string }]
   optionCameraSingola   Boolean        @default(false)
   optionFlexibleCancel  Boolean        @default(false)
   priceFlexibleCancel   Float          @default(0)

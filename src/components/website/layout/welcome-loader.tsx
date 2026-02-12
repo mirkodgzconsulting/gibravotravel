@@ -65,7 +65,7 @@ export function WelcomeLoader() {
 
                             {/* Decorative Rings */}
                             <motion.div
-                                className="absolute inset-0 rounded-full border border-[#004BA5]/10"
+                                className="absolute inset-0 rounded-full border border-[#003ea3]/10"
                                 animate={{
                                     scale: [1, 2],
                                     opacity: [0.6, 0]
@@ -108,14 +108,14 @@ export function WelcomeLoader() {
                                     cx="12"
                                     cy="12"
                                     r="10"
-                                    stroke="#004BA5"
+                                    stroke="#003ea3"
                                     strokeWidth="3"
                                     fill="none"
                                 />
                                 <path
                                     className="opacity-100"
                                     d="M12 2C6.47715 2 2 6.47715 2 12"
-                                    stroke="#004BA5"
+                                    stroke="#003ea3"
                                     strokeWidth="3"
                                     strokeLinecap="round"
                                     fill="none"

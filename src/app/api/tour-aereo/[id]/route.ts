@@ -432,6 +432,11 @@ export async function PUT(
     if (formData.has('optionCameraPrivata')) dataToUpdate.optionCameraPrivata = formData.get('optionCameraPrivata') === 'true';
     if (formData.has('priceCameraPrivata')) dataToUpdate.priceCameraPrivata = parseFloat(formData.get('priceCameraPrivata') as string) || 0;
     if (formData.has('travelStatus')) dataToUpdate.travelStatus = formData.get('travelStatus') as string;
+    if (formData.has('isFlightIncluded')) dataToUpdate.isFlightIncluded = formData.get('isFlightIncluded') === 'true';
+    if (formData.has('flightDetails')) dataToUpdate.flightDetails = formData.get('flightDetails') as string || null;
+    if (formData.has('infoUtile')) {
+      try { dataToUpdate.infoUtile = JSON.parse(formData.get('infoUtile') as string); } catch { }
+    }
 
 
     // --- FILES (Only update if uploaded OR explicit clear) ---
@@ -564,6 +569,7 @@ export async function PUT(
     }
 
     // UPDATE DB
+    console.log('Final Update Data - Galeria2:', dataToUpdate.galeria2); 
     const tour = await prisma.tourAereo.update({
       where: { id },
       data: dataToUpdate,

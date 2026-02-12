@@ -156,7 +156,7 @@ export function Navbar() {
                         <div className="hidden lg:block ml-2">
                             {isLoaded && isSignedIn ? (
                                 <Link href="/area-riservata">
-                                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#004BA5] to-[#003580] shadow-sm border-2 border-white flex items-center justify-center text-white text-[13px] font-[700] tracking-tighter shrink-0 ring-2 ring-[#004BA5]/5 uppercase hover:scale-105 transition-transform duration-200">
+                                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#003ea3] to-[#003ea3] shadow-sm border-2 border-white flex items-center justify-center text-white text-[13px] font-[700] tracking-tighter shrink-0 ring-2 ring-[#003ea3]/5 uppercase hover:scale-105 transition-transform duration-200">
                                         {getInitials(user?.firstName, user?.lastName)}
                                     </div>
                                 </Link>
@@ -181,7 +181,7 @@ export function Navbar() {
                         <div className="lg:hidden mr-2">
                             {isLoaded && isSignedIn ? (
                                 <Link href="/area-riservata">
-                                    <div className="h-9 w-9 rounded-full bg-gradient-to-br from-[#004BA5] to-[#003580] shadow-sm border-2 border-white flex items-center justify-center text-white text-[12px] font-[700] tracking-tighter shrink-0 ring-1 ring-[#004BA5]/10 uppercase active:scale-95 transition-transform duration-200">
+                                    <div className="h-9 w-9 rounded-full bg-gradient-to-br from-[#003ea3] to-[#003ea3] shadow-sm border-2 border-white flex items-center justify-center text-white text-[12px] font-[700] tracking-tighter shrink-0 ring-1 ring-[#003ea3]/10 uppercase active:scale-95 transition-transform duration-200">
                                         {getInitials(user?.firstName, user?.lastName)}
                                     </div>
                                 </Link>
@@ -278,7 +278,7 @@ export function Navbar() {
                                         <Link
                                             href="/chi-siamo"
                                             onClick={() => setMobileMenuOpen(false)}
-                                            className="text-lg font-[600] tracking-tight text-slate-900 hover:text-[#004BA5] transition-colors block py-2.5"
+                                            className="text-lg font-[600] tracking-tight text-slate-900 hover:text-[#003ea3] transition-colors block py-2.5"
                                         >
                                             Chi Siamo
                                         </Link>
@@ -299,7 +299,7 @@ export function Navbar() {
                                                         e.stopPropagation()
                                                         setMobilePartenzeOpen(!mobilePartenzeOpen)
                                                     }}
-                                                    className="p-2 -mr-2 text-slate-500 hover:text-[#004BA5] transition-colors"
+                                                    className="p-2 -mr-2 text-slate-500 hover:text-[#003ea3] transition-colors"
                                                 >
                                                     <ChevronDown className={cn("h-5 w-5 transition-transform duration-200", mobilePartenzeOpen && "rotate-180")} />
                                                 </button>
@@ -389,7 +389,7 @@ export function Navbar() {
                                         <Link
                                             href="/contatti"
                                             onClick={() => setMobileMenuOpen(false)}
-                                            className="text-lg font-[600] tracking-tight text-slate-900 hover:text-[#004BA5] transition-colors block py-2.5"
+                                            className="text-lg font-[600] tracking-tight text-slate-900 hover:text-[#003ea3] transition-colors block py-2.5"
                                         >
                                             Contatti
                                         </Link>

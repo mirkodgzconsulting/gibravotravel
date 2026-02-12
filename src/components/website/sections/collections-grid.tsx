@@ -54,7 +54,7 @@ const collections = [
 export function CollectionsGrid() {
     return (
         <section className="py-16 bg-white">
-            <div className="container px-4 mx-auto max-w-6xl">
+            <div className="container px-4 mx-auto max-w-5xl">
                 <h2 className="section-title mb-8">
                     Abbiamo di tutto per te viaggiatore
                 </h2>
@@ -69,7 +69,7 @@ export function CollectionsGrid() {
                                 href={waUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className={`relative group overflow-hidden rounded-xl ${item.className}`}
+                                className={`relative group overflow-hidden rounded-lg ${item.className}`}
                             >
                                 <Image
                                     src={item.image}
@@ -85,7 +85,7 @@ export function CollectionsGrid() {
                                         <h3 className="text-2xl font-[700] mb-1 leading-tight">{item.title}</h3>
                                         <p className="text-sm font-medium opacity-90">{item.subtitle}</p>
                                     </div>
-                                    <div className="h-10 w-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center group-hover:bg-[#FE8008] group-hover:scale-110 transition-all duration-300">
+                                    <div className="h-10 w-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center group-hover:bg-[#FF7000] group-hover:scale-110 transition-all duration-300">
                                         <ChevronRight className="text-white h-6 w-6" />
                                     </div>
                                 </div>

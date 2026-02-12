@@ -6,7 +6,7 @@ import {
     XIcon, UploadIcon, GlobeIcon, FileTextIcon,
     MapIcon, UserIcon, ListIcon, HelpCircleIcon,
     ImageIcon, PlusIcon, TrashIcon, SaveIcon, SendIcon,
-    CalendarIcon
+    CalendarIcon, PlaneIcon, BedIcon, FileIcon, UserCheckIcon, UtensilsIcon, AlertTriangleIcon, InfoIcon, CameraIcon
 } from "lucide-react";
 import Image from "next/image";
 import SimpleRichTextEditor from "@/components/form/SimpleRichTextEditor";
@@ -23,6 +23,12 @@ interface WebContentModalProps {
 type TabType = 'general' | 'details' | 'content' | 'media' | 'lists' | 'coordinator' | 'faq';
 
 interface ItineraryItem {
+    title: string;
+    description: string;
+}
+
+interface InfoItem {
+    icon: string;
     title: string;
     description: string;
 }
@@ -58,12 +64,15 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
         // 2026-01-14 New Fields
         flightRefTitle: "",
         flightRefLink: "",
+        isFlightIncluded: false,
+        flightDetails: "",
         optionCameraSingola: false,
         optionFlexibleCancel: false,
         priceFlexibleCancel: "",
         optionCameraPrivata: false,
         priceCameraPrivata: "",
         travelStatus: "SOGNANDO",
+        infoUtile: [] as InfoItem[],
     });
 
     // File States
@@ -86,7 +95,11 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
     const [newTag, setNewTag] = useState("");
     const [newIncluye, setNewIncluye] = useState("");
     const [newNoIncluye, setNewNoIncluye] = useState("");
-    const [newRequisito, setNewRequisito] = useState("");
+
+    // Useful Info State
+    const [newInfoTitle, setNewInfoTitle] = useState("");
+    const [newInfoDesc, setNewInfoDesc] = useState("");
+    const [newInfoIcon, setNewInfoIcon] = useState("info");
 
     // Initialize Data
     useEffect(() => {
@@ -133,12 +146,21 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
                 // 2026-01-14 New Fields
                 flightRefTitle: tour.flightRefTitle || "",
                 flightRefLink: tour.flightRefLink || "",
+                isFlightIncluded: tour.isFlightIncluded || false,
+                flightDetails: tour.flightDetails || "",
                 optionCameraSingola: tour.optionCameraSingola || false,
                 optionFlexibleCancel: tour.optionFlexibleCancel || false,
                 priceFlexibleCancel: tour.priceFlexibleCancel?.toString() || "",
                 optionCameraPrivata: tour.optionCameraPrivata || false,
                 priceCameraPrivata: tour.priceCameraPrivata?.toString() || "",
                 travelStatus: tour.travelStatus || "SOGNANDO",
+                infoUtile: (() => {
+                    if (Array.isArray(tour.infoUtile)) return tour.infoUtile;
+                    if (typeof tour.infoUtile === 'string') {
+                        try { return JSON.parse(tour.infoUtile); } catch { return []; }
+                    }
+                    return [];
+                })(),
                 galeria2: Array.isArray(tour.galeria2) ? tour.galeria2 : [],
             });
 
@@ -343,12 +365,15 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
             // 2026-01-14 New Fields
             data.append('flightRefTitle', formData.flightRefTitle);
             data.append('flightRefLink', formData.flightRefLink);
+            data.append('isFlightIncluded', formData.isFlightIncluded ? 'true' : 'false');
+            data.append('flightDetails', formData.flightDetails);
             data.append('optionCameraSingola', formData.optionCameraSingola ? 'true' : 'false');
             data.append('optionFlexibleCancel', formData.optionFlexibleCancel ? 'true' : 'false');
             data.append('priceFlexibleCancel', formData.priceFlexibleCancel);
             data.append('optionCameraPrivata', formData.optionCameraPrivata ? 'true' : 'false');
             data.append('priceCameraPrivata', formData.priceCameraPrivata);
             data.append('travelStatus', formData.travelStatus);
+            data.append('infoUtile', JSON.stringify(formData.infoUtile));
 
             // JSON Fields
             data.append('etiquetas', JSON.stringify(formData.etiquetas));
@@ -530,19 +555,108 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
                                     <input type="text" value={formData.duracionTexto} onChange={(e) => handleInputChange('duracionTexto', e.target.value)} className="w-full p-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:text-white" placeholder="Es: 5 Giorni / 4 Notti" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Documentazione Richiesta</label>
-                                    <div className="flex gap-2 mb-2">
-                                        <input type="text" value={newRequisito} onChange={(e) => setNewRequisito(e.target.value)} className="flex-1 p-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:text-white" placeholder="Es: Passaporto validità 6 mesi" />
-                                        <button onClick={() => addItem('requisitosDocumentacion', newRequisito, setNewRequisito)} className="p-2 bg-brand-500 text-white rounded-md"><PlusIcon className="w-5 h-5" /></button>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cose da sapere</label>
+                                    <p className="text-xs text-gray-500 mb-2">Aggiungi informazioni utili con icona e descrizione (Trasporti, Alloggio, etc.)</p>
+                                    
+                                    <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-12 gap-2 mb-2">
+                                            {/* Icon Selector */}
+                                            <div className="md:col-span-12 flex gap-2 overflow-x-auto pb-2">
+                                                {[
+                                                    { id: 'plane', icon: PlaneIcon, label: 'Voli' },
+                                                    { id: 'transport', icon: MapIcon, label: 'Trasporti' },
+                                                    { id: 'bed', icon: BedIcon, label: 'Alloggio' },
+                                                    { id: 'file', icon: FileIcon, label: 'Doc' },
+                                                    { id: 'food', icon: UtensilsIcon, label: 'Cibo' },
+                                                    { id: 'alert', icon: AlertTriangleIcon, label: 'Importante' },
+                                                    { id: 'info', icon: InfoIcon, label: 'Info' },
+                                                    { id: 'user', icon: UserCheckIcon, label: 'Gruppo' },
+                                                    { id: 'camera', icon: CameraIcon, label: 'Foto' },
+                                                ].map((ic) => (
+                                                    <button
+                                                        key={ic.id}
+                                                        onClick={() => setNewInfoIcon(ic.id)}
+                                                        className={`p-2 rounded-md border flex flex-col items-center justify-center min-w-[60px] ${newInfoIcon === ic.id ? 'bg-brand-100 border-brand-500 text-brand-700' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-100'}`}
+                                                        title={ic.label}
+                                                    >
+                                                        <ic.icon className="w-5 h-5 mb-1" />
+                                                        <span className="text-[10px]">{ic.label}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            
+                                            {/* Inputs */}
+                                            <div className="md:col-span-4">
+                                                <input
+                                                    type="text"
+                                                    value={newInfoTitle}
+                                                    onChange={(e) => setNewInfoTitle(e.target.value)}
+                                                    className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                                                    placeholder="Titolo (es. Trasporti)"
+                                                />
+                                            </div>
+                                            <div className="md:col-span-7">
+                                                 <input
+                                                    type="text"
+                                                    value={newInfoDesc}
+                                                    onChange={(e) => setNewInfoDesc(e.target.value)}
+                                                    className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                                                    placeholder="Descrizione breve..."
+                                                />
+                                            </div>
+                                            <div className="md:col-span-1 flex items-center">
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        console.log("Adding item:", newInfoIcon, newInfoTitle, newInfoDesc);
+                                                        if (newInfoTitle && newInfoDesc) {
+                                                            const newItem: InfoItem = { icon: newInfoIcon, title: newInfoTitle, description: newInfoDesc };
+                                                            setFormData(prev => ({ ...prev, infoUtile: [...prev.infoUtile, newItem] }));
+                                                            setNewInfoTitle("");
+                                                            setNewInfoDesc("");
+                                                        } else {
+                                                            alert("Inserisci Titolo e Descrizione");
+                                                        }
+                                                    }}
+                                                    className="w-full h-full flex items-center justify-center bg-brand-500 text-white rounded-md hover:bg-brand-600 transition-colors"
+                                                    title="Aggiungi Informazione"
+                                                >
+                                                    <PlusIcon className="w-5 h-5" />
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <ul className="space-y-1">
-                                        {formData.requisitosDocumentacion.map((item, i) => (
-                                            <li key={i} className="flex justify-between items-center bg-gray-50 p-2 rounded">
-                                                <span>{item}</span>
-                                                <button onClick={() => removeItem('requisitosDocumentacion', i)} className="text-red-500"><XIcon className="w-4 h-4" /></button>
-                                            </li>
+
+                                    {/* List */}
+                                    <div className="space-y-2">
+                                        {formData.infoUtile.map((item, i) => (
+                                            <div key={i} className="flex gap-3 bg-white p-3 rounded-lg border border-gray-200 items-start shadow-sm">
+                                                <div className="p-2 bg-gray-100 rounded-full text-gray-600">
+                                                    {item.icon === 'plane' && <PlaneIcon className="w-4 h-4" />}
+                                                    {item.icon === 'transport' && <MapIcon className="w-4 h-4" />}
+                                                    {item.icon === 'bed' && <BedIcon className="w-4 h-4" />}
+                                                    {item.icon === 'file' && <FileIcon className="w-4 h-4" />}
+                                                    {item.icon === 'food' && <UtensilsIcon className="w-4 h-4" />}
+                                                    {item.icon === 'alert' && <AlertTriangleIcon className="w-4 h-4" />}
+                                                    {item.icon === 'info' && <InfoIcon className="w-4 h-4" />}
+                                                    {item.icon === 'user' && <UserCheckIcon className="w-4 h-4" />}
+                                                    {item.icon === 'camera' && <CameraIcon className="w-4 h-4" />}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <h4 className="font-bold text-sm text-gray-900">{item.title}</h4>
+                                                    <p className="text-xs text-gray-500">{item.description}</p>
+                                                </div>
+                                                <button
+                                                    onClick={() => setFormData(prev => ({ ...prev, infoUtile: prev.infoUtile.filter((_, idx) => idx !== i) }))}
+                                                    className="text-red-400 hover:text-red-600 p-1"
+                                                >
+                                                    <TrashIcon className="w-4 h-4" />
+                                                </button>
+                                            </div>
                                         ))}
-                                    </ul>
+                                        {formData.infoUtile.length === 0 && <p className="text-center text-xs text-gray-400 py-2">Nessuna informazione aggiunta.</p>}
+                                    </div>
                                 </div>
 
                                 {/* --- NEW SECTION: Extra & Options --- */}
@@ -550,15 +664,67 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
                                     <h3 className="font-medium text-gray-900 border-b pb-2">Opzioni e Supplementi</h3>
 
                                     {/* Flight Reference */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Titolo Volo / Operativo</label>
-                                            <input type="text" value={formData.flightRefTitle} onChange={(e) => handleInputChange('flightRefTitle', e.target.value)} className="w-full p-2 border border-gray-300 rounded-md" placeholder="Es: Voli Turkish Airlines" />
+                                    {/* Flight Option Logic */}
+                                    <div className="bg-blue-50/50 p-4 rounded-lg border border-blue-100">
+                                        <label className="block text-sm font-bold text-gray-700 mb-3">Gestione Volo</label>
+                                        <div className="flex gap-6 mb-4">
+                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="flightOption"
+                                                    checked={!formData.isFlightIncluded}
+                                                    onChange={() => handleInputChange('isFlightIncluded', false)}
+                                                    className="w-4 h-4 text-brand-600 border-gray-300 focus:ring-brand-500"
+                                                />
+                                                <span className="text-sm text-gray-700">Tour Senza Volo (Volo non incluso)</span>
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="flightOption"
+                                                    checked={formData.isFlightIncluded}
+                                                    onChange={() => handleInputChange('isFlightIncluded', true)}
+                                                    className="w-4 h-4 text-brand-600 border-gray-300 focus:ring-brand-500"
+                                                />
+                                                <span className="text-sm text-gray-700 font-bold text-brand-600">Tour con Volo Incluso</span>
+                                            </label>
                                         </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Link Volo (Opzionale)</label>
-                                            <input type="text" value={formData.flightRefLink} onChange={(e) => handleInputChange('flightRefLink', e.target.value)} className="w-full p-2 border border-gray-300 rounded-md" placeholder="https://..." />
-                                        </div>
+
+                                        {/* Conditional Fields */}
+                                        {!formData.isFlightIncluded ? (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in zoom-in duration-300">
+                                                <div>
+                                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Titolo Volo / Operativo (Consigliato)</label>
+                                                    <input
+                                                        type="text"
+                                                        value={formData.flightRefTitle}
+                                                        onChange={(e) => handleInputChange('flightRefTitle', e.target.value)}
+                                                        className="w-full p-2 border border-gray-300 rounded-md bg-white"
+                                                        placeholder="Es: Volo Consigliato Turkish Airlines"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Link Volo (Opzionale)</label>
+                                                    <input
+                                                        type="text"
+                                                        value={formData.flightRefLink}
+                                                        onChange={(e) => handleInputChange('flightRefLink', e.target.value)}
+                                                        className="w-full p-2 border border-gray-300 rounded-md bg-white"
+                                                        placeholder="https://..."
+                                                    />
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="animate-in fade-in zoom-in duration-300">
+                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Dettagli Operativo Volo Incluso</label>
+                                                <SimpleRichTextEditor
+                                                    value={formData.flightDetails}
+                                                    onChange={(val) => handleInputChange('flightDetails', val)}
+                                                    placeholder="Inserisci qui i dettagli del volo incluso (Orari, Compagnia, Bagagli...)"
+                                                    rows={5}
+                                                />
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Checkboxes & Costs */}
@@ -859,15 +1025,35 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
                         {/* FAQ */}
                         {activeTab === 'faq' && (
                             <div className="space-y-4">
-                                <div className="flex justify-between items-center"><h3 className="font-medium">Domande Frequenti (FAQ)</h3><Button onClick={addFAQ} size="sm" variant="outline"><PlusIcon className="w-4 h-4 mr-2" /> Aggiungi</Button></div>
+                                <div className="flex justify-between items-center">
+                                    <h3 className="font-medium">Nota Informativa Utile per il Viaggio</h3>
+                                    <Button onClick={addFAQ} size="sm" variant="outline"><PlusIcon className="w-4 h-4 mr-2" /> Aggiungi</Button>
+                                </div>
                                 {formData.faq.map((item, i) => (
-                                    <div key={i} className="p-4 border border-gray-200 rounded-lg relative">
-                                        <button onClick={() => removeFAQ(i)} className="absolute top-2 right-2 text-red-500"><TrashIcon className="w-4 h-4" /></button>
-                                        <div className="mb-2"><label className="text-xs font-bold text-gray-500 uppercase">Domanda</label><input type="text" value={item.question} onChange={(e) => updateFAQ(i, 'question', e.target.value)} className="w-full p-2 border border-gray-300 rounded-md" /></div>
-                                        <div><label className="text-xs font-bold text-gray-500 uppercase">Risposta</label><textarea rows={2} value={item.answer} onChange={(e) => updateFAQ(i, 'answer', e.target.value)} className="w-full p-2 border border-gray-300 rounded-md" /></div>
+                                    <div key={i} className="p-4 border border-gray-200 rounded-lg relative bg-white">
+                                        <button onClick={() => removeFAQ(i)} className="absolute top-2 right-2 text-red-500 hover:text-red-700 z-10 p-1"><TrashIcon className="w-4 h-4" /></button>
+                                        <div className="mb-4">
+                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Domanda / Titolo</label>
+                                            <input
+                                                type="text"
+                                                value={item.question}
+                                                onChange={(e) => updateFAQ(i, 'question', e.target.value)}
+                                                className="w-full p-2 border border-gray-300 rounded-md font-medium"
+                                                placeholder="Es: Documenti Necessari"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Risposta / Contenuto</label>
+                                            <SimpleRichTextEditor
+                                                value={item.answer}
+                                                onChange={(val) => updateFAQ(i, 'answer', val)}
+                                                placeholder="Dettagli..."
+                                                rows={4}
+                                            />
+                                        </div>
                                     </div>
                                 ))}
-                                {formData.faq.length === 0 && <p className="text-center text-gray-500 py-8 italic">Nessuna domanda frequente.</p>}
+                                {formData.faq.length === 0 && <p className="text-center text-gray-500 py-8 italic">Nessuna nota informativa registrata.</p>}
                             </div>
                         )}
                     </div>

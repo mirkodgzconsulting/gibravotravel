@@ -3,7 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import { motion } from "motion/react";
-import { MapPin, ArrowUpRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { RevealOnScroll } from "@/components/website/ui/reveal-on-scroll";
 import { cn } from "@/lib/website/utils";
 
@@ -55,7 +55,7 @@ const destinations = [
 export function DraggableCardsSection() {
     return (
         <section className="py-16 bg-white overflow-hidden relative">
-            <div className="container px-4 mx-auto relative z-10 max-w-6xl">
+            <div className="container px-4 mx-auto relative z-10 max-w-5xl">
                 <div className="text-center mb-12 lg:mb-16">
                     <RevealOnScroll>
                         <h2 className="section-title mb-4">Ispirazione per il tuo viaggio</h2>
@@ -72,7 +72,7 @@ export function DraggableCardsSection() {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.5 }}
-                        className="md:col-span-2 relative rounded-xl overflow-hidden group cursor-pointer"
+                        className="md:col-span-2 relative rounded-lg overflow-hidden group cursor-pointer"
                     >
                          <GalleryCard item={destinations[0]} />
                     </motion.div>
@@ -82,7 +82,7 @@ export function DraggableCardsSection() {
                          whileInView={{ opacity: 1, y: 0 }}
                          viewport={{ once: true }}
                          transition={{ duration: 0.5, delay: 0.1 }}
-                        className="md:col-span-1 relative rounded-xl overflow-hidden group cursor-pointer"
+                        className="md:col-span-1 relative rounded-lg overflow-hidden group cursor-pointer"
                     >
                         <GalleryCard item={destinations[1]} />
                     </motion.div>
@@ -92,7 +92,7 @@ export function DraggableCardsSection() {
                          whileInView={{ opacity: 1, y: 0 }}
                          viewport={{ once: true }}
                          transition={{ duration: 0.5, delay: 0.2 }}
-                        className="md:col-span-1 relative rounded-xl overflow-hidden group cursor-pointer"
+                        className="md:col-span-1 relative rounded-lg overflow-hidden group cursor-pointer"
                     >
                         <GalleryCard item={destinations[2]} />
                     </motion.div>
@@ -103,7 +103,7 @@ export function DraggableCardsSection() {
                          whileInView={{ opacity: 1, y: 0 }}
                          viewport={{ once: true }}
                          transition={{ duration: 0.5, delay: 0.3 }}
-                        className="md:col-span-1 relative rounded-xl overflow-hidden group cursor-pointer"
+                        className="md:col-span-1 relative rounded-lg overflow-hidden group cursor-pointer"
                     >
                         <GalleryCard item={destinations[4]} /> {/* Egitto moved here */}
                     </motion.div>
@@ -113,7 +113,7 @@ export function DraggableCardsSection() {
                          whileInView={{ opacity: 1, y: 0 }}
                          viewport={{ once: true }}
                          transition={{ duration: 0.5, delay: 0.4 }}
-                        className="md:col-span-1 relative rounded-xl overflow-hidden group cursor-pointer"
+                        className="md:col-span-1 relative rounded-lg overflow-hidden group cursor-pointer"
                     >
                        <GalleryCard item={destinations[5]} /> {/* Livigno moved here */}
                     </motion.div>
@@ -123,7 +123,7 @@ export function DraggableCardsSection() {
                          whileInView={{ opacity: 1, y: 0 }}
                          viewport={{ once: true }}
                          transition={{ duration: 0.5, delay: 0.5 }}
-                        className="md:col-span-2 relative rounded-xl overflow-hidden group cursor-pointer"
+                        className="md:col-span-2 relative rounded-lg overflow-hidden group cursor-pointer"
                     >
                         <GalleryCard item={destinations[3]} /> {/* Praga (Wide) moved here */}
                     </motion.div>
@@ -147,18 +147,14 @@ function GalleryCard({ item }: { item: any }) {
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300" />
             
             {/* Content */}
-            <div className="absolute bottom-0 left-0 p-6 w-full flex flex-col justify-end translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-                <div className="flex items-center gap-2 mb-1 opacity-80 group-hover:opacity-100 transition-opacity">
-                    <MapPin className="h-3 w-3 text-[#FE8008]" />
-                    <span className="text-xs font-bold text-white uppercase tracking-wider">{item.subtitle}</span>
+            <div className="absolute bottom-0 left-0 p-6 w-full flex justify-between items-end">
+                <div className="text-white">
+                    <h3 className="text-2xl font-[700] mb-1 leading-tight">{item.title}</h3>
+                    <p className="text-sm font-medium opacity-90">{item.subtitle}</p>
                 </div>
                 
-                <div className="flex justify-between items-end">
-                    <h3 className="text-2xl md:text-3xl font-bold text-white leading-tight">{item.title}</h3>
-                    
-                    <div className="h-10 w-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100 transition-all duration-300">
-                        <ArrowUpRight className="h-5 w-5 text-white" />
-                    </div>
+                <div className="h-10 w-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center group-hover:bg-[#FF7000] group-hover:scale-110 transition-all duration-300">
+                    <ChevronRight className="text-white h-6 w-6" />
                 </div>
             </div>
         </>

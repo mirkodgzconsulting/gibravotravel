@@ -43,7 +43,7 @@
 
 /* Table header styling - scalable and maintainable */
 .table-header-custom {
-  @apply px-3 py-0 font-bold text-white text-start text-xs bg-[#0366D6];
+  @apply px-3 py-0 font-bold text-white text-start text-xs bg-[#003ea3];
   padding-top: 0.55rem !important;
   padding-bottom: 0.55rem !important;
 }
@@ -433,11 +433,11 @@
 
 /* --- GLOBAL TYPOGRAPHY SYSTEM --- */
 @utility section-title {
-  @apply text-3xl md:text-[38px] font-bold tracking-tight text-[#004BA5];
+  @apply text-3xl md:text-[38px] font-bold tracking-tight text-[#003ea3];
 }
 
 @utility section-subtitle {
-  @apply text-[20px] text-[#FE8008] font-medium tracking-tight;
+  @apply text-[20px] text-[#FF7000] font-medium tracking-tight;
 }
 
 @utility body-text {
@@ -450,7 +450,7 @@
   background: linear-gradient(
     89.58deg,
     #3186ff 0.28%,
-    #004ba5 44.45%,
+    #003ea3 44.45%,
     #4796f5 99.55%
   );
   -webkit-background-clip: text;

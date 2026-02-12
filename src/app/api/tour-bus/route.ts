@@ -126,6 +126,27 @@ export async function GET(request: NextRequest) {
         priceCameraPrivata: true,
         travelStatus: true,
 
+        // WEB CONTENT FIELDS (Missing previously)
+        slug: true,
+        subtitulo: true,
+        duracionTexto: true,
+        infoGeneral: true,
+        requisitosDocumentacion: true,
+        itinerario: true,
+        etiquetas: true,
+        incluye: true,
+        noIncluye: true,
+        galeria: true,
+        galeria2: true,
+        mapaEmbed: true,
+        coordinadorNombre: true,
+        coordinadorDescripcion: true,
+        coordinadorFoto: true,
+        faq: true,
+        infoUtile: true,
+        webCoverImage: true,
+        webCoverImageName: true,
+
         pdfFile: true,
         pdfFileName: true,
         descripcion: true,
@@ -184,10 +205,7 @@ export async function GET(request: NextRequest) {
       ],
     });
 
-    const res = NextResponse.json({ tours });
-    // Cache privada corta para mejorar retorno a la vista
-    res.headers.set('Cache-Control', 'private, max-age=15, must-revalidate');
-    return res;
+    return NextResponse.json({ tours });
 
   } catch (error) {
     console.error('Error fetching tour buses:', error);

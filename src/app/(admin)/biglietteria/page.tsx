@@ -3282,9 +3282,6 @@ export default function BiglietteriaPage() {
                   Cliente
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                  Pagamento
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                   Data
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
@@ -3310,6 +3307,9 @@ export default function BiglietteriaPage() {
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                   MetodoPag.
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                  Pagamento
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                   FEE/AGV
@@ -3357,116 +3357,7 @@ export default function BiglietteriaPage() {
                     {/* <TableCell className="w-[140px] sm:w-[160px] xl:w-[180px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300">
                     {record.codiceFiscale}
                   </td> */}
-                    <td className="w-[120px] px-3 py-2">
-                      {editingPagamentoId === record.id ? (
-                        <select
-                          value={record.pagamento}
-                          autoFocus
-                          onBlur={() => setEditingPagamentoId(null)}
-                          onChange={async (e) => {
-                            const newValue = e.target.value;
-                            setEditingPagamentoId(null);
 
-                            try {
-                              const response = await fetch(
-                                `/api/biglietteria/${record.id}`,
-                                {
-                                  method: "PATCH",
-                                  headers: {
-                                    "Content-Type": "application/json",
-                                  },
-                                  body: JSON.stringify({ pagamento: newValue }),
-                                },
-                              );
-
-                              if (response.ok) {
-                                // OPTIMIZACIÓN: Procesar registro actualizado
-                                setRecords((prev) =>
-                                  prev.map((r) =>
-                                    r.id === record.id
-                                      ? processRecord({
-                                          ...r,
-                                          pagamento: newValue,
-                                        })
-                                      : r,
-                                  ),
-                                );
-                                setMessage({
-                                  type: "success",
-                                  text: "Pagamento aggiornato",
-                                });
-                                setTimeout(() => setMessage(null), 3000);
-                              } else {
-                                throw new Error("Error al actualizar");
-                              }
-                            } catch (error) {
-                              console.error(
-                                "Error actualizando pagamento",
-                                error,
-                              );
-                              setMessage({
-                                type: "error",
-                                text: "Error al actualizar pagamento",
-                              });
-                              setTimeout(() => setMessage(null), 3000);
-                            }
-                          }}
-                          className="w-full px-2 py-1 text-xs border border-brand-500 rounded focus:ring-2 focus:ring-brand-500 focus:outline-none dark:bg-gray-800 dark:border-brand-400 dark:text-white"
-                        >
-                          {getAvailablePagamentos.map((pag) => (
-                            <option key={pag} value={pag}>
-                              {pag}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <div
-                          onClick={() => {
-                            // Si es USER y el valor actual no es Acconto ni Ricevuto, no permitir edición
-                            if (
-                              isUser &&
-                              record.pagamento !== "Acconto" &&
-                              record.pagamento !== "Ricevuto"
-                            ) {
-                              setMessage({
-                                type: "error",
-                                text: "No tienes permisos para editar este valor de pagamento",
-                              });
-                              setTimeout(() => setMessage(null), 3000);
-                              return;
-                            }
-                            setEditingPagamentoId(record.id);
-                          }}
-                          className={`text-xs truncate px-2 py-1 rounded text-center font-medium ${
-                            record.pagamento === "Acconto"
-                              ? "bg-gray-500 text-white"
-                              : record.pagamento === "Acconto V"
-                                ? "bg-purple-400 text-white"
-                                : record.pagamento === "Ricevuto"
-                                  ? "bg-green-500 text-white"
-                                  : record.pagamento === "Verificato"
-                                    ? "bg-purple-600 text-white"
-                                    : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
-                          } ${
-                            // Si es USER y el valor no es editable, mostrar cursor no permitido
-                            isUser &&
-                            record.pagamento !== "Acconto" &&
-                            record.pagamento !== "Ricevuto"
-                              ? "cursor-not-allowed opacity-75"
-                              : "cursor-pointer"
-                          }`}
-                          title={
-                            isUser &&
-                            record.pagamento !== "Acconto" &&
-                            record.pagamento !== "Ricevuto"
-                              ? "No tienes permisos para editar este valor"
-                              : "Clic para editar"
-                          }
-                        >
-                          {record.pagamento}
-                        </div>
-                      )}
-                    </td>
                     <td className="w-[100px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 truncate">
                       {new Date(record.data).toLocaleDateString("it-IT")}
                     </td>
@@ -3610,6 +3501,116 @@ export default function BiglietteriaPage() {
                           return record.metodoPagamento;
                         }
                       })()}
+                    </td>
+                    <td className="w-[120px] px-3 py-2">
+                      {editingPagamentoId === record.id ? (
+                        <select
+                          value={record.pagamento}
+                          autoFocus
+                          onBlur={() => setEditingPagamentoId(null)}
+                          onChange={async (e) => {
+                            const newValue = e.target.value;
+                            setEditingPagamentoId(null);
+
+                            try {
+                              const response = await fetch(
+                                `/api/biglietteria/${record.id}`,
+                                {
+                                  method: "PATCH",
+                                  headers: {
+                                    "Content-Type": "application/json",
+                                  },
+                                  body: JSON.stringify({ pagamento: newValue }),
+                                },
+                              );
+
+                              if (response.ok) {
+                                // OPTIMIZACIÓN: Procesar registro actualizado
+                                setRecords((prev) =>
+                                  prev.map((r) =>
+                                    r.id === record.id
+                                      ? processRecord({
+                                          ...r,
+                                          pagamento: newValue,
+                                        })
+                                      : r,
+                                  ),
+                                );
+                                setMessage({
+                                  type: "success",
+                                  text: "Pagamento aggiornato",
+                                });
+                                setTimeout(() => setMessage(null), 3000);
+                              } else {
+                                throw new Error("Error al actualizar");
+                              }
+                            } catch (error) {
+                              console.error(
+                                "Error actualizando pagamento",
+                                error,
+                              );
+                              setMessage({
+                                type: "error",
+                                text: "Error al actualizar pagamento",
+                              });
+                              setTimeout(() => setMessage(null), 3000);
+                            }
+                          }}
+                          className="w-full px-2 py-1 text-xs border border-brand-500 rounded focus:ring-2 focus:ring-brand-500 focus:outline-none dark:bg-gray-800 dark:border-brand-400 dark:text-white"
+                        >
+                          {getAvailablePagamentos.map((pag) => (
+                            <option key={pag} value={pag}>
+                              {pag}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div
+                          onClick={() => {
+                            // Si es USER y el valor actual no es Acconto ni Ricevuto, no permitir edición
+                            if (
+                              isUser &&
+                              record.pagamento !== "Acconto" &&
+                              record.pagamento !== "Ricevuto"
+                            ) {
+                              setMessage({
+                                type: "error",
+                                text: "No tienes permisos para editar este valor de pagamento",
+                              });
+                              setTimeout(() => setMessage(null), 3000);
+                              return;
+                            }
+                            setEditingPagamentoId(record.id);
+                          }}
+                          className={`text-xs truncate px-2 py-1 rounded text-center font-medium ${
+                            record.pagamento === "Acconto"
+                              ? "bg-gray-500 text-white"
+                              : record.pagamento === "Acconto V"
+                                ? "bg-purple-400 text-white"
+                                : record.pagamento === "Ricevuto"
+                                  ? "bg-green-500 text-white"
+                                  : record.pagamento === "Verificato"
+                                    ? "bg-purple-600 text-white"
+                                    : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+                          } ${
+                            // Si es USER y el valor no es editable, mostrar cursor no permitido
+                            isUser &&
+                            record.pagamento !== "Acconto" &&
+                            record.pagamento !== "Ricevuto"
+                              ? "cursor-not-allowed opacity-75"
+                              : "cursor-pointer"
+                          }`}
+                          title={
+                            isUser &&
+                            record.pagamento !== "Acconto" &&
+                            record.pagamento !== "Ricevuto"
+                              ? "No tienes permisos para editar este valor"
+                              : "Clic para editar"
+                          }
+                        >
+                          {record.pagamento}
+                        </div>
+                      )}
                     </td>
                     <td className="w-[80px] px-3 py-2 text-gray-600 text-start text-xs dark:text-gray-300 font-mono truncate">
                       €{record.feeAgv.toFixed(2)}
@@ -3755,7 +3756,7 @@ export default function BiglietteriaPage() {
               {currentData.length > 0 && (
                 <tr className="bg-blue-50 dark:bg-blue-900/20 border-t-2 border-blue-200 dark:border-blue-700">
                   <td
-                    colSpan={6}
+                    colSpan={5}
                     className="px-6 py-4 text-right font-semibold text-blue-800 dark:text-blue-200 text-sm"
                   >
                     TOTAL:
@@ -3771,6 +3772,9 @@ export default function BiglietteriaPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-800 dark:text-blue-200">
                     €{totales.totalDaPagare.toFixed(2)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                    -
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
                     -

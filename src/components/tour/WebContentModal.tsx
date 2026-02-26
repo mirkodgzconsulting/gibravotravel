@@ -686,7 +686,7 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
                                                     onChange={() => handleInputChange('isFlightIncluded', true)}
                                                     className="w-4 h-4 text-brand-600 border-gray-300 focus:ring-brand-500"
                                                 />
-                                                <span className="text-sm text-gray-700 font-bold text-brand-600">Tour con Volo Incluso</span>
+                                                <span className="text-sm font-bold text-brand-600">Tour con Volo Incluso</span>
                                             </label>
                                         </div>
 

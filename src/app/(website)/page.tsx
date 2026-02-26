@@ -8,28 +8,29 @@ import { HomeClient } from "./home-client"
 export const dynamic = 'force-dynamic'
 
 export default async function HomePage() {
-    // Fetch Data
+    // Fetch Data in parallel for better performance
     const today = new Date()
 
-    const flightToursData = await prisma.tourAereo.findMany({
-        where: {
-            isActive: true,
-            isPublic: true,
-            fechaViaje: { gte: today }
-        },
-        orderBy: { fechaViaje: 'asc' },
-        take: 6
-    })
-
-    const busToursData = await prisma.tourBus.findMany({
-        where: {
-            isActive: true,
-            isPublic: true,
-            fechaViaje: { gte: today }
-        },
-        orderBy: { fechaViaje: 'asc' },
-        take: 6
-    })
+    const [flightToursData, busToursData] = await Promise.all([
+        prisma.tourAereo.findMany({
+            where: {
+                isActive: true,
+                isPublic: true,
+                fechaViaje: { gte: today }
+            },
+            orderBy: { fechaViaje: 'asc' },
+            take: 6
+        }),
+        prisma.tourBus.findMany({
+            where: {
+                isActive: true,
+                isPublic: true,
+                fechaViaje: { gte: today }
+            },
+            orderBy: { fechaViaje: 'asc' },
+            take: 6
+        })
+    ]);
 
     // Helper to generate mock aesthetic data
     const getMockAesthetics = (index: number) => {

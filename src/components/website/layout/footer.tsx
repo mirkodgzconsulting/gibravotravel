@@ -75,9 +75,14 @@ export function Footer() {
                                     priority
                                 />
                             </Link>
-                            <p className="text-[16px] font-medium text-white/80 max-w-xs mb-8 leading-relaxed">
+                            <p className="text-[16px] font-medium text-white/80 max-w-xs mb-6 leading-relaxed">
                                 Viaggi di gruppo on the road per giovani professionisti. Prepara lo zaino, al resto pensiamo noi.
                             </p>
+                            <div className="text-[13px] font-medium text-white/60 mb-8 flex flex-col items-center md:items-start gap-1">
+                                <p>Via Eustachi 30, cap 20129 Milano</p>
+                                <p>Partita Iva n. 10382150968</p>
+                                <p>PEC: <a href="mailto:gibravo@pec.it" className="underline hover:text-white transition-colors">gibravo@pec.it</a></p>
+                            </div>
                             <div className="flex gap-4">
                                 <Link href="https://www.instagram.com/gibravo.travel" target="_blank" className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FF7000] text-white hover:bg-white hover:text-[#FF7000] transition-all">
                                     <Instagram className="h-5 w-5" />

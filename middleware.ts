@@ -59,17 +59,17 @@ export default clerkMiddleware(async (auth, req) => {
     ];
 
     const isPublic = publicPaths.some(path => pathname.startsWith(path));
-    if (isPublic) return;
+    if (isPublic) return NextResponse.next();
 
     // Everything else on systems is protected
     await auth.protect();
-    return;
+    return NextResponse.next();
   }
 
   // 3. MAIN DOMAIN / LOCALHOST LOGIC
   // If it is a known Main Website Route, allow access (return empty)
   if (isWebsitePublicRoute) {
-    return;
+    return NextResponse.next();
   }
 
   // 4. FALLBACK PROTECTION
@@ -85,6 +85,7 @@ export default clerkMiddleware(async (auth, req) => {
 
   // If localhost and not public route (e.g. testing admin pages locally), require auth
   await auth.protect();
+  return NextResponse.next();
 });
 
 export const config = {

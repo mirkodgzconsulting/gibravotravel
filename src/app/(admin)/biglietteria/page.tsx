@@ -2034,6 +2034,11 @@ export default function BiglietteriaPage() {
 
         const creatorName = getCreatorName(record.creator);
 
+        // Extraer nombres de pasajeros para la búsqueda
+        const nombresPasajeros = record.pasajeros
+          ? record.pasajeros.map((p) => p.nombrePasajero || "").join(" ")
+          : "";
+
         const searchFields = [
           record.cliente,
           record.codiceFiscale,
@@ -2045,6 +2050,7 @@ export default function BiglietteriaPage() {
           record.itinerario,
           metodoPagamentoText,
           creatorName,
+          nombresPasajeros, // Incluir nombres de pasajeros en la búsqueda
         ];
 
         const matchesSearch = searchFields.some(
@@ -2056,9 +2062,12 @@ export default function BiglietteriaPage() {
       }
 
       // Filtro por mes y año - OPTIMIZADO: usar fechas memoizadas
-      const recordDate = new Date(record.data);
-      if (recordDate < fechaDesdeDate || recordDate > fechaHastaDate)
-        return false;
+      // Si mesSeleccionado es -1 (Tutti), no filtrar por fecha
+      if (mesSeleccionado !== -1) {
+        const recordDate = new Date(record.data);
+        if (recordDate < fechaDesdeDate || recordDate > fechaHastaDate)
+          return false;
+      }
 
       // Filtro por creador - solo para TI/ADMIN
       if (canUseAgentFilter && filtroCreador) {
@@ -2071,6 +2080,7 @@ export default function BiglietteriaPage() {
   }, [
     records,
     searchTerm,
+    mesSeleccionado,
     fechaDesdeDate,
     fechaHastaDate,
     filtroCreador,
@@ -3044,6 +3054,7 @@ export default function BiglietteriaPage() {
                 }}
                 className="py-2 pl-3 pr-8 text-xs text-gray-800 bg-transparent border border-gray-300 rounded-lg appearance-none dark:bg-dark-900 h-9 bg-none shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800 w-[140px]"
               >
+                <option value={-1}>Tutti</option>
                 <option value={0}>Gennaio</option>
                 <option value={1}>Febbraio</option>
                 <option value={2}>Marzo</option>

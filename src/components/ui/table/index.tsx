@@ -25,12 +25,10 @@ interface TableRowProps {
 }
 
 // Props for TableCell
-interface TableCellProps {
+interface TableCellProps extends React.TdHTMLAttributes<HTMLTableCellElement> {
   children: ReactNode; // Cell content
   isHeader?: boolean; // If true, renders as <th>, otherwise <td>
-  className?: string; // Optional className for styling
   colSpan?: number; // Number of columns to span
-  style?: React.CSSProperties; // Inline style support
 }
 
 // Table Component
@@ -60,10 +58,16 @@ const TableCell: React.FC<TableCellProps> = ({
   className,
   colSpan,
   style,
+  ...props
 }) => {
   const CellTag = isHeader ? "th" : "td";
   return (
-    <CellTag className={` ${className}`} colSpan={colSpan} style={style}>
+    <CellTag 
+      className={` ${className}`} 
+      colSpan={colSpan} 
+      style={style}
+      {...props}
+    >
       {children}
     </CellTag>
   );

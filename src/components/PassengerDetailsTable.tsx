@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import usePassengerServiceDetails, { PassengerServiceUpdatePayload } from '@/hooks/usePassengerServiceDetails';
+import usePassengerServiceDetails, { PassengerServiceUpdatePayload, PassengerServiceDetail } from '@/hooks/usePassengerServiceDetails';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -146,9 +146,22 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ isOpen, o
   const [tempFechaPago, setTempFechaPago] = useState<string>('');
   const [tempFechaActivacion, setTempFechaActivacion] = useState<string>('');
   const [tempNotas, setTempNotas] = useState<string>('');
+  const [sortConfig, setSortConfig] = useState<{ key: keyof PassengerServiceDetail; direction: 'asc' | 'desc' } | null>({
+    key: 'dataRegistro',
+    direction: 'asc',
+  });
+
+  const handleSort = (key: keyof PassengerServiceDetail) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
 
   useEffect(() => {
     if (isOpen) {
+      /*
       const now = new Date();
       const year = now.getFullYear();
       const month = now.getMonth();
@@ -162,8 +175,9 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ isOpen, o
         return `${yyyy}-${mm}-${dd}`;
       };
 
-      setFechaDesde(formatDateInput(start));
-      setFechaHasta(formatDateInput(end));
+      // setFechaDesde(formatDateInput(start));
+      // setFechaHasta(formatDateInput(end));
+      */
     } else {
       setCurrentPage(1);
       setSearchTerm('');
@@ -275,7 +289,7 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ isOpen, o
     const fechaActivacionDesdeDate = fechaActivacionDesde ? new Date(fechaActivacionDesde) : null;
     const fechaActivacionHastaDate = fechaActivacionHasta ? new Date(fechaActivacionHasta) : null;
 
-    return details.filter(detail => {
+    const filtered = details.filter(detail => {
       if (searchLower) {
         const matchesSearch =
           detail.pasajero.toLowerCase().includes(searchLower) ||
@@ -311,6 +325,28 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ isOpen, o
 
       return true;
     });
+
+    if (sortConfig) {
+      filtered.sort((a, b) => {
+        const aValue = a[sortConfig.key];
+        const bValue = b[sortConfig.key];
+
+        if (aValue === bValue) return 0;
+        if (aValue === null || aValue === undefined) return 1;
+        if (bValue === null || bValue === undefined) return -1;
+
+        let comparison = 0;
+        if (typeof aValue === 'number' && typeof bValue === 'number') {
+          comparison = aValue - bValue;
+        } else {
+          comparison = String(aValue).localeCompare(String(bValue), undefined, { numeric: true, sensitivity: 'base' });
+        }
+
+        return sortConfig.direction === 'asc' ? comparison : -comparison;
+      });
+    }
+
+    return filtered;
   }, [
     details,
     searchTerm,
@@ -327,6 +363,7 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ isOpen, o
     estadoFilter,
     servicioFilter,
     metodoCompraFilter,
+    sortConfig,
   ]);
 
   useEffect(() => {
@@ -743,37 +780,58 @@ const PassengerDetailsTable: React.FC<PassengerDetailsTableProps> = ({ isOpen, o
                   <TableHeader className="bg-gray-700">
                     <TableRow className="bg-gray-700 border-b-2 border-gray-600">
                       {[
-                        'Cliente',
-                        'Pagamento',
-                        'Metodo Pagamento',
-                        'Passeggero',
-                        'Servizio',
-                        'Netto Servizio',
-                        'IATA',
-                        'PNR',
-                        'Data Andata',
-                        'Data Ritorno',
-                        'Itinerario',
-                        'Metodo di acquisto',
-                        'Venduto',
-                        'Stato',
-                        'Data Pagamento',
-                        'Data Attivazione',
-                        'Note',
-                        'Data Registrazione',
-                        'Creato da',
+                        { label: 'Cliente', key: 'cliente' },
+                        { label: 'Pagamento', key: 'pagamento' },
+                        { label: 'Metodo Pagamento', key: 'metodoPag' },
+                        { label: 'Passeggero', key: 'pasajero' },
+                        { label: 'Servizio', key: 'servicio' },
+                        { label: 'Netto Servizio', key: 'neto' },
+                        { label: 'IATA', key: 'iata' },
+                        { label: 'PNR', key: 'pnr' },
+                        { label: 'Data Andata', key: 'andata' },
+                        { label: 'Data Ritorno', key: 'ritorno' },
+                        { label: 'Itinerario', key: 'itinerario' },
+                        { label: 'Metodo di acquisto', key: 'metodoDiAcquisto' },
+                        { label: 'Venduto', key: 'venduto' },
+                        { label: 'Stato', key: 'estado' },
+                        { label: 'Data Pagamento', key: 'fechaPago' },
+                        { label: 'Data Attivazione', key: 'fechaActivacion' },
+                        { label: 'Note', key: 'notas' },
+                        { label: 'Data Registrazione', key: 'dataRegistro' },
+                        { label: 'Creato da', key: 'creador' },
                       ].map((header) => {
-                        const baseClasses = 'bg-gray-700 text-white uppercase tracking-wide text-xs font-bold py-3 px-4';
-                        const alignmentClass = ['Netto Servizio', 'Venduto'].includes(header) ? 'text-right' : 'text-left';
+                        const baseClasses = 'bg-gray-700 text-white uppercase tracking-wide text-xs font-bold py-3 px-4 cursor-pointer hover:bg-gray-600 transition-colors whitespace-nowrap group';
+                        const alignmentClass = ['Netto Servizio', 'Venduto'].includes(header.label) ? 'text-right' : 'text-left';
                         const shadowClass = 'shadow-sm';
+                        const isSorted = sortConfig?.key === header.key;
+                        
                         return (
                           <TableCell
-                            key={header}
+                            key={header.label}
                             isHeader={true}
                             className={`${baseClasses} ${alignmentClass} ${shadowClass}`}
                             style={{ position: 'sticky', top: 0, zIndex: 50 }}
+                            onClick={() => handleSort(header.key as keyof PassengerServiceDetail)}
                           >
-                            {header}
+                            <div className={`flex items-center ${['Netto Servizio', 'Venduto'].includes(header.label) ? 'justify-end' : 'justify-start'} space-x-1`}>
+                              <span>{header.label}</span>
+                              <div className={`flex flex-col transition-opacity ${isSorted ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                <svg
+                                  className={`w-3 h-3 ${isSorted && sortConfig.direction === 'asc' ? 'text-blue-400' : 'text-gray-400'}`}
+                                  viewBox="0 0 24 24"
+                                  fill="currentColor"
+                                >
+                                  <path d="M7 14l5-5 5 5z" />
+                                </svg>
+                                <svg
+                                  className={`w-3 h-3 -mt-1.5 ${isSorted && sortConfig.direction === 'desc' ? 'text-blue-400' : 'text-gray-400'}`}
+                                  viewBox="0 0 24 24"
+                                  fill="currentColor"
+                                >
+                                  <path d="M7 10l5 5 5-5z" />
+                                </svg>
+                              </div>
+                            </div>
                           </TableCell>
                         );
                       })}

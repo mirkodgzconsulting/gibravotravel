@@ -9,7 +9,7 @@ import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import Button from "@/components/ui/button/Button";
 import { CopyNotification } from "@/components/ui/notification/CopyNotification";
-import { BusIcon, CalendarIcon, UsersIcon, DollarSignIcon, TrashIcon, EditIcon, EyeIcon, GlobeIcon } from "lucide-react";
+import { BusIcon, CalendarIcon, UsersIcon, DollarSignIcon, TrashIcon, EditIcon, EyeIcon, GlobeIcon, CopyIcon } from "lucide-react";
 import Image from "next/image";
 import { cachedFetch, invalidateCacheByPrefix } from "@/utils/cachedFetch";
 import WebContentModal from "@/components/tour/WebContentModal";
@@ -155,7 +155,7 @@ export default function TourBusPage() {
       setLoading(true);
       setError(null);
 
-      const data = await cachedFetch<{ tours: any[] }>(`/api/tour-bus`, { ttlMs: 30000 });
+      const data = await cachedFetch<{ tours: TourBus[] }>(`/api/tour-bus`, { ttlMs: 30000 });
       const toursData = data.tours || [];
       const sortedTours = sortToursByFechaViaje(toursData);
       setTours(sortedTours);
@@ -164,7 +164,7 @@ export default function TourBusPage() {
     } finally {
       setLoading(false);
     }
-  }, [userRole]);
+  }, []);
 
   useEffect(() => {
     if (!roleLoading) {
@@ -214,6 +214,7 @@ export default function TourBusPage() {
 
     // Finalmente ordenar por fecha
     return sortToursByFechaViaje(toursFiltradosPorEstado);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tours, searchTerm, searchResults, filtroViaje]);
 
   const processedTours = useMemo(() => {
@@ -311,7 +312,8 @@ export default function TourBusPage() {
         const errorData = await response.json();
         setError(errorData.error || 'Errore durante la creazione del tour');
       }
-    } catch (error) {
+    } catch (err) {
+      console.error(err);
       setError('Errore di connessione');
     } finally {
       setIsSubmitting(false);
@@ -395,7 +397,8 @@ export default function TourBusPage() {
         const errorData = await response.json();
         setError(errorData.error || 'Errore durante l\'aggiornamento del tour');
       }
-    } catch (error) {
+    } catch (err) {
+      console.error(err);
       setError('Errore di connessione');
     } finally {
       setIsSubmitting(false);
@@ -416,9 +419,36 @@ export default function TourBusPage() {
         const errorData = await response.json();
         setError(errorData.error || 'Errore durante l\'eliminazione del tour');
       }
-    } catch (error) {
+    } catch (err) {
+      console.error(err);
       setError('Errore di connessione');
     }
+  };
+
+  const handleDuplicateTour = (tour: TourBus) => {
+    setEditingTour(null);
+    setFormData({
+      titulo: `${tour.titulo} (Copia)`,
+      precioAdulto: tour.precioAdulto.toString(),
+      precioNino: tour.precioNino.toString(),
+      fechaViaje: tour.fechaViaje ? new Date(tour.fechaViaje).toISOString().split('T')[0] : "",
+      fechaFin: tour.fechaFin ? new Date(tour.fechaFin).toISOString().split('T')[0] : "",
+      acc: tour.acc || "",
+      bus: tour.bus?.toString() || "",
+      pasti: tour.pasti?.toString() || "",
+      parking: tour.parking?.toString() || "",
+      coordinatore1: tour.coordinatore1?.toString() || "",
+      coordinatore2: tour.coordinatore2?.toString() || "",
+      ztl: tour.ztl?.toString() || "",
+      hotel: tour.hotel?.toString() || "",
+      polizza: tour.polizza?.toString() || "",
+      tkt: tour.tkt?.toString() || "",
+      autoservicio: tour.autoservicio || "",
+      coverImage: null,
+      pdfFile: null,
+      descripcion: tour.descripcion || "",
+    });
+    openModal();
   };
 
   const handleEditTour = (tour: TourBus) => {
@@ -1102,6 +1132,14 @@ export default function TourBusPage() {
                           title="Visualizza posti"
                         >
                           <EyeIcon className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          onClick={() => handleDuplicateTour(tour)}
+                          className="p-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 hover:text-indigo-800 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/30 dark:text-indigo-400 dark:hover:text-indigo-300 rounded-lg transition-all duration-200"
+                          title="Duplica tour"
+                        >
+                          <CopyIcon className="w-4 h-4" />
                         </button>
 
                         <button

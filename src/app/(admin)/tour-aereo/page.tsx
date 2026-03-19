@@ -9,7 +9,7 @@ import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import Button from "@/components/ui/button/Button";
 import { CopyNotification } from "@/components/ui/notification/CopyNotification";
-import { PlaneIcon, TrashIcon, EditIcon, PlusIcon, GlobeIcon, EyeIcon } from "lucide-react";
+import { PlaneIcon, TrashIcon, EditIcon, PlusIcon, GlobeIcon, EyeIcon, CopyIcon } from "lucide-react";
 import Image from "next/image";
 import WebContentModal from "@/components/tour/WebContentModal";
 
@@ -341,6 +341,30 @@ export default function TourAereoPage() {
     }
   };
 
+  const handleDuplicateTour = (tour: TourAereo) => {
+    setEditingTour(null);
+    setFormData({
+      titulo: `${tour.titulo} (Copia)`,
+      precioAdulto: tour.precioAdulto.toString(),
+      precioNino: tour.precioNino.toString(),
+      fechaViaje: tour.fechaViaje ? new Date(tour.fechaViaje).toISOString().split('T')[0] : "",
+      fechaFin: tour.fechaFin ? new Date(tour.fechaFin).toISOString().split('T')[0] : "",
+      meta: tour.meta.toString(),
+      acc: tour.acc || "",
+      guidaLocale: tour.guidaLocale?.toString() || "",
+      coordinatore: tour.coordinatore?.toString() || "",
+      transporte: tour.transporte?.toString() || "",
+      hotel: tour.hotel?.toString() || "",
+      notas: tour.notas || "",
+      notasCoordinador: tour.notasCoordinador || "",
+      coverImage: null,
+      pdfFile: null,
+      documentoViaggio: null,
+      descripcion: tour.descripcion || "",
+    });
+    openModal();
+  };
+
   const handleEditTour = (tour: TourAereo) => {
     setEditingTour(tour);
     setFormData({
@@ -665,6 +689,13 @@ export default function TourAereoPage() {
                           <GlobeIcon className="w-4 h-4" />
                         </button>
                       )}
+                      <button
+                        onClick={() => handleDuplicateTour(tour)}
+                        className="p-2 text-indigo-600 hover:bg-indigo-100 dark:text-indigo-400 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
+                        title="Duplica (Copia)"
+                      >
+                        <CopyIcon className="w-4 h-4" />
+                      </button>
                       <button
                         onClick={() => handleEditTour(tour)}
                         className="p-2 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/20 rounded-lg transition-colors"

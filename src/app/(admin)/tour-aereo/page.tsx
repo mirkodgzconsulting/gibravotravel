@@ -100,6 +100,7 @@ export default function TourAereoPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingTour, setEditingTour] = useState<TourAereo | null>(null);
+  const [duplicateFromId, setDuplicateFromId] = useState<string | null>(null);
   const [webContentModalOpen, setWebContentModalOpen] = useState(false);
   const [selectedTourForWeb, setSelectedTourForWeb] = useState<TourAereo | null>(null);
   const [filtroViaje, setFiltroViaje] = useState<'proximos' | 'realizados' | 'todos'>('proximos');
@@ -218,6 +219,10 @@ export default function TourAereoPage() {
         formDataToSend.append('documentoViaggio', formData.documentoViaggio);
       }
 
+      if (duplicateFromId) {
+        formDataToSend.append('duplicateFromId', duplicateFromId);
+      }
+
       const response = await fetch('/api/tour-aereo', {
         method: 'POST',
         body: formDataToSend,
@@ -248,6 +253,7 @@ export default function TourAereoPage() {
           descripcion: "",
         });
         closeModal();
+        setDuplicateFromId(null);
         setShowCopyNotification(true);
         setTimeout(() => setShowCopyNotification(false), 3000);
       } else {
@@ -343,26 +349,9 @@ export default function TourAereoPage() {
 
   const handleDuplicateTour = (tour: TourAereo) => {
     setEditingTour(null);
-    setFormData({
-      titulo: `${tour.titulo} (Copia)`,
-      precioAdulto: tour.precioAdulto.toString(),
-      precioNino: tour.precioNino.toString(),
-      fechaViaje: tour.fechaViaje ? new Date(tour.fechaViaje).toISOString().split('T')[0] : "",
-      fechaFin: tour.fechaFin ? new Date(tour.fechaFin).toISOString().split('T')[0] : "",
-      meta: tour.meta.toString(),
-      acc: tour.acc || "",
-      guidaLocale: tour.guidaLocale?.toString() || "",
-      coordinatore: tour.coordinatore?.toString() || "",
-      transporte: tour.transporte?.toString() || "",
-      hotel: tour.hotel?.toString() || "",
-      notas: tour.notas || "",
-      notasCoordinador: tour.notasCoordinador || "",
-      coverImage: null,
-      pdfFile: null,
-      documentoViaggio: null,
-      descripcion: tour.descripcion || "",
-    });
-    openModal();
+    setDuplicateFromId(tour.id);
+    setSelectedTourForWeb(tour);
+    setWebContentModalOpen(true);
   };
 
   const handleEditTour = (tour: TourAereo) => {
@@ -430,10 +419,12 @@ export default function TourAereoPage() {
       documentoViaggio: null,
       descripcion: "",
     });
+    setDuplicateFromId(null);
     closeModal();
   };
 
   const handleOpenWebContent = (tour: TourAereo) => {
+    setDuplicateFromId(null);
     setSelectedTourForWeb(tour);
     setWebContentModalOpen(true);
   };
@@ -734,6 +725,7 @@ export default function TourAereoPage() {
           onClose={() => {
             setWebContentModalOpen(false);
             setSelectedTourForWeb(null);
+            setDuplicateFromId(null);
           }}
           tour={selectedTourForWeb}
           type="AEREO"
@@ -741,7 +733,11 @@ export default function TourAereoPage() {
             fetchTours();
             setWebContentModalOpen(false);
             setSelectedTourForWeb(null);
+            setDuplicateFromId(null);
+            setShowCopyNotification(true);
+            setTimeout(() => setShowCopyNotification(false), 3000);
           }}
+          isDuplicateMode={!!duplicateFromId}
         />
       )}
 

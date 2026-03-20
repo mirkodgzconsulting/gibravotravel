@@ -18,6 +18,7 @@ interface WebContentModalProps {
     tour: any; // TourBus | TourAereo
     type: 'BUS' | 'AEREO';
     onSuccess: () => void;
+    isDuplicateMode?: boolean;
 }
 
 type TabType = 'general' | 'details' | 'content' | 'media' | 'lists' | 'coordinator' | 'faq';
@@ -33,7 +34,13 @@ interface InfoItem {
     description: string;
 }
 
-export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess }: WebContentModalProps) {
+interface InfoItem {
+    icon: string;
+    title: string;
+    description: string;
+}
+
+export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess, isDuplicateMode = false }: WebContentModalProps) {
     const [activeTab, setActiveTab] = useState<TabType>('general');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -398,11 +405,20 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
             if (coordinadorFotoFile) data.append('coordinadorFoto', coordinadorFotoFile);
             else if (coordinadorFotoPreview === null) data.append('coordinadorFoto', '');
 
+            if (isDuplicateMode) {
+                // Post to the main route and pass the original ID so it knows what to clone
+                data.append('duplicateFromId', tour.id);
+            }
+
             // Endpoint
-            const endpoint = type === 'BUS' ? `/api/tour-bus/${tour.id}` : `/api/tour-aereo/${tour.id}`;
+            const endpoint = isDuplicateMode 
+                ? (type === 'BUS' ? `/api/tour-bus` : `/api/tour-aereo`)
+                : (type === 'BUS' ? `/api/tour-bus/${tour.id}` : `/api/tour-aereo/${tour.id}`);
+
+            const method = isDuplicateMode ? 'POST' : 'PUT';
 
             const response = await fetch(endpoint, {
-                method: 'PUT',
+                method: method,
                 body: data,
             });
 
@@ -440,10 +456,10 @@ export default function WebContentModal({ isOpen, onClose, tour, type, onSuccess
                     <div>
                         <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                             <GlobeIcon className="w-6 h-6 text-brand-500" />
-                            Gestione Contenuti Web
+                            {isDuplicateMode ? 'Duplica Contenuti Web e Crea Tour' : 'Gestione Contenuti Web'}
                         </h2>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {tour.titulo} ({type})
+                            {tour.titulo} {isDuplicateMode && '(Creazione Copia)'} ({type})
                         </p>
                     </div>
                     <button onClick={onClose} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">

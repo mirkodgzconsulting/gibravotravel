@@ -129,6 +129,7 @@ export default function TourBusPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingTour, setEditingTour] = useState<TourBus | null>(null);
+  const [duplicateFromId, setDuplicateFromId] = useState<string | null>(null);
   const [webContentModalOpen, setWebContentModalOpen] = useState(false);
   const [selectedTourForWeb, setSelectedTourForWeb] = useState<TourBus | null>(null);
   const [filtroViaje, setFiltroViaje] = useState<'proximos' | 'realizados' | 'todos'>('proximos');
@@ -275,6 +276,10 @@ export default function TourBusPage() {
         formDataToSend.append('pdfFile', formData.pdfFile);
       }
 
+      if (duplicateFromId) {
+        formDataToSend.append('duplicateFromId', duplicateFromId);
+      }
+
       const response = await fetch('/api/tour-bus', {
         method: 'POST',
         body: formDataToSend,
@@ -306,6 +311,7 @@ export default function TourBusPage() {
           descripcion: "",
         });
         closeModal();
+        setDuplicateFromId(null);
         setShowCopyNotification(true);
         setTimeout(() => setShowCopyNotification(false), 3000);
       } else {
@@ -427,28 +433,9 @@ export default function TourBusPage() {
 
   const handleDuplicateTour = (tour: TourBus) => {
     setEditingTour(null);
-    setFormData({
-      titulo: `${tour.titulo} (Copia)`,
-      precioAdulto: tour.precioAdulto.toString(),
-      precioNino: tour.precioNino.toString(),
-      fechaViaje: tour.fechaViaje ? new Date(tour.fechaViaje).toISOString().split('T')[0] : "",
-      fechaFin: tour.fechaFin ? new Date(tour.fechaFin).toISOString().split('T')[0] : "",
-      acc: tour.acc || "",
-      bus: tour.bus?.toString() || "",
-      pasti: tour.pasti?.toString() || "",
-      parking: tour.parking?.toString() || "",
-      coordinatore1: tour.coordinatore1?.toString() || "",
-      coordinatore2: tour.coordinatore2?.toString() || "",
-      ztl: tour.ztl?.toString() || "",
-      hotel: tour.hotel?.toString() || "",
-      polizza: tour.polizza?.toString() || "",
-      tkt: tour.tkt?.toString() || "",
-      autoservicio: tour.autoservicio || "",
-      coverImage: null,
-      pdfFile: null,
-      descripcion: tour.descripcion || "",
-    });
-    openModal();
+    setDuplicateFromId(tour.id);
+    setSelectedTourForWeb(tour);
+    setWebContentModalOpen(true);
   };
 
   const handleEditTour = (tour: TourBus) => {
@@ -502,6 +489,7 @@ export default function TourBusPage() {
       pdfFile: null,
       descripcion: "",
     });
+    setDuplicateFromId(null);
     closeModal();
   };
 
@@ -510,6 +498,7 @@ export default function TourBusPage() {
   };
 
   const handleOpenWebContent = (tour: TourBus) => {
+    setDuplicateFromId(null);
     setSelectedTourForWeb(tour);
     setWebContentModalOpen(true);
   };
@@ -1193,6 +1182,7 @@ export default function TourBusPage() {
           onClose={() => {
             setWebContentModalOpen(false);
             setSelectedTourForWeb(null);
+            setDuplicateFromId(null);
           }}
           tour={selectedTourForWeb}
           type="BUS"
@@ -1201,7 +1191,11 @@ export default function TourBusPage() {
             fetchTours();
             setWebContentModalOpen(false);
             setSelectedTourForWeb(null);
+            setDuplicateFromId(null);
+            setShowCopyNotification(true);
+            setTimeout(() => setShowCopyNotification(false), 3000);
           }}
+          isDuplicateMode={!!duplicateFromId}
         />
       )}
     </div>

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { v2 as cloudinary } from 'cloudinary';
@@ -137,7 +138,7 @@ export async function GET(request: NextRequest) {
               ADD COLUMN IF NOT EXISTS "documentoViaggioName_old" TEXT,
               ADD COLUMN IF NOT EXISTS "documentoViaggio_old" TEXT
             `);
-        } catch (alterError: any) {
+        } catch {
         }
 
         let whereClause = 'WHERE t."isActive" = true';
@@ -222,7 +223,7 @@ export async function GET(request: NextRequest) {
               acc[venta.tourAereoId].push(venta);
               return acc;
             }, {});
-          } catch (e) {
+          } catch {
           }
         }
 
@@ -250,7 +251,7 @@ export async function GET(request: NextRequest) {
             } else {
               tourAny.documentoViaggio = [parsed];
             }
-          } catch (e) {
+          } catch {
             tourAny.documentoViaggio = [{
               url: tourAny.documentoViaggio,
               name: tourAny.documentoViaggioName || 'documento'
@@ -419,7 +420,7 @@ export async function POST(request: NextRequest) {
       try {
         fechaViajeDate = new Date(fechaViaje);
         if (isNaN(fechaViajeDate.getTime())) fechaViajeDate = null;
-      } catch (error) { fechaViajeDate = null; }
+      } catch { fechaViajeDate = null; }
     }
 
     // New Fields 2026-01-14
@@ -432,13 +433,19 @@ export async function POST(request: NextRequest) {
     const priceCameraPrivata = parseFloat(formData.get('priceCameraPrivata') as string) || 0;
     const travelStatus = formData.get('travelStatus') as string || 'SOGNANDO';
 
+    const duplicateFromId = formData.get('duplicateFromId') as string | null;
+    let originalTour: any = null;
+    if (duplicateFromId) {
+      originalTour = await prisma.tourAereo.findUnique({ where: { id: duplicateFromId } });
+    }
+
     // Procesar fecha de fin
     let fechaFinDate = null;
     if (fechaFin) {
       try {
         fechaFinDate = new Date(fechaFin);
         if (isNaN(fechaFinDate.getTime())) fechaFinDate = null;
-      } catch (error) { fechaFinDate = null; }
+      } catch { fechaFinDate = null; }
     }
 
     // Prepare Upload Promises
@@ -520,7 +527,7 @@ export async function POST(request: NextRequest) {
     let pdfFileUrl: string | null = null;
     let pdfFileName: string | null = null;
     let finalCoordinadorFotoUrl: string | null = coordinadorFotoUrl;
-    let documentoViaggioArray: Array<{ url: string; name: string }> = [];
+    const documentoViaggioArray: Array<{ url: string; name: string }> = [];
 
     if (uploadPromises.length > 0) {
       try {
@@ -547,50 +554,51 @@ export async function POST(request: NextRequest) {
       precioNino,
       fechaViaje: fechaViajeDate,
       fechaFin: fechaFinDate,
-      meta,
-      acc: acc || null,
-      guidaLocale: (guidaLocale > 0 ? guidaLocale : null) as any,
-      coordinatore: (coordinatore > 0 ? coordinatore : null) as any,
-      transporte: (transporte > 0 ? transporte : null) as any,
-      hotel: hotel !== null ? hotel : null,
-      notas: notas || null,
-      notasCoordinador: notasCoordinador || null,
-      descripcion: descripcion || null,
-      coverImage: coverImageUrl,
-      coverImageName,
-      pdfFile: pdfFileUrl,
-      pdfFileName,
+      meta: originalTour && meta === 0 ? originalTour.meta : meta,
+      acc: originalTour && !acc ? originalTour.acc : (acc || null),
+      guidaLocale: originalTour && guidaLocale === 0 ? originalTour.guidaLocale : (guidaLocale > 0 ? guidaLocale : null) as any,
+      coordinatore: originalTour && coordinatore === 0 ? originalTour.coordinatore : (coordinatore > 0 ? coordinatore : null) as any,
+      transporte: originalTour && transporte === 0 ? originalTour.transporte : (transporte > 0 ? transporte : null) as any,
+      hotel: originalTour && hotel === null ? originalTour.hotel : (hotel !== null ? hotel : null),
+      notas: originalTour && !notas ? originalTour.notas : (notas || null),
+      notasCoordinador: originalTour && !notasCoordinador ? originalTour.notasCoordinador : (notasCoordinador || null),
+      descripcion: originalTour && !descripcion ? originalTour.descripcion : (descripcion || null),
+      coverImage: coverImageUrl || (originalTour ? originalTour.coverImage : null),
+      coverImageName: coverImageUrl ? coverImageName : (originalTour ? originalTour.coverImageName : null),
+      pdfFile: pdfFileUrl || (originalTour ? originalTour.pdfFile : null),
+      pdfFileName: pdfFileUrl ? pdfFileName : (originalTour ? originalTour.pdfFileName : null),
 
       // Web Fields
-      slug: slug && slug.trim() !== '' ? slug : undefined,
-      isPublic,
-      subtitulo,
-      etiquetas,
-      duracionTexto,
-      // Removed: nivelDificultad, rangoEdad, minGrupo, maxGrupo, tipoAlojamiento
-      requisitosDocumentacion,
-      infoGeneral,
-      // Removed: programa
-      itinerario, // JSON
-      mapaEmbed,
-      galeria,
-      galeria2, // New Field
-      incluye,
-      noIncluye,
-      coordinadorNombre,
-      coordinadorDescripcion,
-      coordinadorFoto: finalCoordinadorFotoUrl,
-      faq: faq ? (faq as any) : undefined,
+      slug: originalTour?.slug ? `${originalTour.slug}-copia-${Date.now()}` : (slug && slug.trim() !== '' ? slug : undefined),
+      isPublic: originalTour !== null ? originalTour.isPublic : isPublic,
+      subtitulo: originalTour && !subtitulo ? originalTour.subtitulo : subtitulo,
+      etiquetas: etiquetas.length === 0 && originalTour ? originalTour.etiquetas : etiquetas,
+      duracionTexto: originalTour && !duracionTexto ? originalTour.duracionTexto : duracionTexto,
+      requisitosDocumentacion: requisitosDocumentacion.length === 0 && originalTour ? originalTour.requisitosDocumentacion : requisitosDocumentacion,
+      infoGeneral: originalTour && !infoGeneral ? originalTour.infoGeneral : infoGeneral,
+      itinerario: Object.keys(itinerario || {}).length === 0 && originalTour ? originalTour.itinerario : itinerario, // JSON
+      mapaEmbed: originalTour && !mapaEmbed ? originalTour.mapaEmbed : mapaEmbed,
+      galeria: galeria.length === 0 && originalTour ? originalTour.galeria : galeria,
+      galeria2: galeria2.length === 0 && originalTour ? originalTour.galeria2 : galeria2, // New Field
+      incluye: incluye.length === 0 && originalTour ? originalTour.incluye : incluye,
+      noIncluye: noIncluye.length === 0 && originalTour ? originalTour.noIncluye : noIncluye,
+      coordinadorNombre: originalTour && !coordinadorNombre ? originalTour.coordinadorNombre : coordinadorNombre,
+      coordinadorDescripcion: originalTour && !coordinadorDescripcion ? originalTour.coordinadorDescripcion : coordinadorDescripcion,
+      coordinadorFoto: finalCoordinadorFotoUrl || (originalTour ? originalTour.coordinadorFoto : null),
+      faq: originalTour ? (originalTour.faq as any) : (faq ? (faq as any) : undefined),
+      webCoverImage: originalTour ? originalTour.webCoverImage : null,
+      webCoverImageName: originalTour ? originalTour.webCoverImageName : null,
 
       // New Fields Injection
-      flightRefTitle: flightRefTitle || null,
-      flightRefLink: flightRefLink || null,
-      optionCameraSingola,
-      optionFlexibleCancel,
-      priceFlexibleCancel,
-      optionCameraPrivata,
-      priceCameraPrivata,
-      travelStatus,
+      flightRefTitle: originalTour ? originalTour.flightRefTitle : (flightRefTitle || null),
+      flightRefLink: originalTour ? originalTour.flightRefLink : (flightRefLink || null),
+      infoUtile: originalTour ? (originalTour.infoUtile as any) : null,
+      optionCameraSingola: originalTour !== null ? originalTour.optionCameraSingola : optionCameraSingola,
+      optionFlexibleCancel: originalTour !== null ? originalTour.optionFlexibleCancel : optionFlexibleCancel,
+      priceFlexibleCancel: originalTour !== null ? originalTour.priceFlexibleCancel : priceFlexibleCancel,
+      optionCameraPrivata: originalTour !== null ? originalTour.optionCameraPrivata : optionCameraPrivata,
+      priceCameraPrivata: originalTour !== null ? originalTour.priceCameraPrivata : priceCameraPrivata,
+      travelStatus: originalTour ? originalTour.travelStatus : travelStatus,
 
       createdBy: userId,
     };

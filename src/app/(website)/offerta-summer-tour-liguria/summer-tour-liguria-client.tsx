@@ -4,7 +4,6 @@ import type { ReactNode } from "react"
 import { useMemo } from "react"
 import Image from "next/image"
 import Script from "next/script"
-import { useSearchParams } from "next/navigation"
 import {
     Bus,
     CalendarDays,
@@ -65,7 +64,7 @@ const heroVariants = {
 }
 
 const instantBenefits = [
-    
+    "9 ore di mare e tempo libero",
     "Pullman GT A/R incluso",
     "Coordinatore GiBravo",
 ]
@@ -220,9 +219,14 @@ function WhatsAppCta({ section, placement, children, className }: CtaProps) {
     )
 }
 
-export function SummerTourLiguriaClient() {
-    const searchParams = useSearchParams()
-    const variantKey = searchParams.get("v") === "b" ? "b" : "a"
+type SummerTourVariant = "a" | "b"
+
+interface SummerTourLiguriaClientProps {
+    variant?: SummerTourVariant
+}
+
+export function SummerTourLiguriaClient({ variant = "a" }: SummerTourLiguriaClientProps) {
+    const variantKey: SummerTourVariant = variant === "b" ? "b" : "a"
     const heroCopy = heroVariants[variantKey]
 
     return (
@@ -437,7 +441,7 @@ export function SummerTourLiguriaClient() {
                                 </div>
                             ))}
 
-                                
+
 
                             <h3 className="pt-2 text-2xl font-[800]">Perche scegliere GiBravo</h3>
                             {whyChooseUs.map((reason) => (

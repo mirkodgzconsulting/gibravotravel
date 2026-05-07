@@ -25,6 +25,17 @@ export const metadata: Metadata = {
     },
 }
 
-export default function SummerTourLiguriaPage() {
-    return <SummerTourLiguriaClient />
+interface SummerTourLiguriaPageProps {
+    searchParams?: Promise<Record<string, string | string[] | undefined>>
+}
+
+export default async function SummerTourLiguriaPage({
+    searchParams,
+}: SummerTourLiguriaPageProps) {
+    const params = (await searchParams) ?? {}
+    const rawVariant = params.v
+    const variantValue = Array.isArray(rawVariant) ? rawVariant[0] : rawVariant
+    const variant = variantValue === "b" ? "b" : "a"
+
+    return <SummerTourLiguriaClient variant={variant} />
 }

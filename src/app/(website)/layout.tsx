@@ -1,9 +1,11 @@
 import React from "react";
 import { Navbar } from "@/components/website/layout/navbar";
 import { Footer } from "@/components/website/layout/footer";
+import { OrganizationJsonLd } from "@/components/website/seo/organization-json-ld";
 import { StickyBanner } from "@/components/website/ui/sticky-banner";
 import { WelcomeLoader } from "@/components/website/layout/welcome-loader";
 import { WhatsAppButton } from "@/components/website/ui/whatsapp-button";
+import { MarketingTracking } from "@/components/website/analytics/marketing-tracking";
 
 export default function WebsiteLayout({
     children,
@@ -12,6 +14,8 @@ export default function WebsiteLayout({
 }) {
     return (
         <div className="flex flex-col min-h-screen font-[var(--font-montserrat)]">
+            <MarketingTracking />
+            <OrganizationJsonLd />
             <WelcomeLoader />
             <WhatsAppButton />
             <div className="fixed top-0 z-50 w-full bg-transparent">

@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     default: "GiBravo Travel | Agenzia Viaggi a Milano - Viaggi Organizzati in Bus e Aereo",
     template: "%s | GiBravo Travel"
   },
-  description: "Scopri le migliori destinazioni con GiBravo Travel. Viaggi organizzati in pullman e aereo, tour guidati e vacanze indimenticabili in Italia e Europa.",
+  description: "GiBravo Travel — agenzia di viaggio a Milano: viaggi organizzati in pullman e aereo, partenze confermate in Italia ed Europa. Tour di gruppo e assistenza dedicata.",
   keywords: ["viaggi organizzati", "tour in bus", "viaggi aereo", "agenzia viaggi milano", "gibravo travel", "vacanze gruppo"],
   authors: [{ name: "GiBravo Travel" }],
   creator: "GiBravo Travel",
@@ -73,9 +73,6 @@ export default function RootLayout({
             {children}
           </ThemeProvider>
         </ClerkProvider>
-        {/* Global GoHighLevel Form Script */}
-        <script src="https://link.msgsndr.com/js/form_embed.js" defer></script>
-        {/* <script src="https://swiftfill-sigma.vercel.app/widget.js?v=3" defer></script> */}
 
       </body>
     </html>

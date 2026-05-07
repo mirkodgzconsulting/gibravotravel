@@ -3,8 +3,14 @@ import React from 'react';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { prisma } from '@/lib/prisma'; // Adjust import based on your project structure, e.g., '@/lib/db' or '@/lib/prisma'
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
 import Link from 'next/link';
+import {
+    absoluteOgImage,
+    buildTourKeywords,
+    buildTourMetaDescription,
+    buildTourTitleSegment,
+} from '@/lib/seo/tour-metadata';
 import { TourItinerary } from '@/components/tour/TourItinerary';
 import { TourFAQ } from '@/components/tour/TourFAQ';
 import { TourStickyNav } from '@/components/tour/TourStickyNav';
@@ -108,13 +114,67 @@ async function getTour(slug: string) {
 export async function generateMetadata({ params }: TourPageProps): Promise<Metadata> {
     const { slug } = await params;
     const tour = await getTour(slug);
-    if (!tour) return { title: 'Tour non trovato' };
+    if (!tour) {
+        return {
+            title: 'Tour non trovato',
+            robots: { index: false, follow: false },
+        };
+    }
+
+    const canonicalSlug = (tour.slug?.trim() || slug).trim();
+    const canonicalUrl = `https://www.gibravo.it/tour/${encodeURIComponent(canonicalSlug)}`;
+
+    const metaTour = {
+        titulo: tour.titulo,
+        subtitulo: tour.subtitulo,
+        descripcion: tour.descripcion,
+        type: tour.type as 'aereo' | 'bus',
+        fechaViaje: tour.fechaViaje,
+        etiquetas: tour.etiquetas,
+    };
+
+    const description = buildTourMetaDescription(metaTour);
+    const titleSegment = buildTourTitleSegment(metaTour);
+    const keywords = buildTourKeywords(metaTour);
+    const ogImage = absoluteOgImage(tour.webCoverImage || tour.coverImage);
+
+    const indexable = tour.isPublic === true && tour.isActive === true;
+
+    const ogTitle = `${tour.titulo.trim()} | GiBravo Travel`;
 
     return {
-        title: `${tour.titulo} | Gibravo Travel`,
-        description: tour.subtitulo || tour.descripcion?.slice(0, 160) || `Viaggia con noi in ${tour.titulo}`,
+        title: titleSegment,
+        description,
+        keywords,
+        alternates: { canonical: canonicalUrl },
+        robots: indexable
+            ? { index: true, follow: true }
+            : { index: false, follow: false },
         openGraph: {
-            images: tour.coverImage ? [tour.coverImage] : [],
+            type: 'website',
+            locale: 'it_IT',
+            url: canonicalUrl,
+            siteName: 'GiBravo Travel',
+            title: ogTitle,
+            description,
+            ...(ogImage
+                ? {
+                      images: [
+                          {
+                              url: ogImage,
+                              width: 1200,
+                              height: 630,
+                              alt: tour.titulo,
+                          },
+                      ],
+                  }
+                : {}),
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title: ogTitle,
+            description,
+            ...(ogImage ? { images: [ogImage] } : {}),
         },
     };
 }

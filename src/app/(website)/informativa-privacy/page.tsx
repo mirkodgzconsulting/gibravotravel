@@ -1,10 +1,11 @@
 import { RevealOnScroll } from "@/components/website/ui/reveal-on-scroll"
+import { WEBSITE_FIXED_HEADER_MAIN_PT } from "@/lib/website/fixed-header-offset"
 
 export default function PrivacyPolicyPage() {
     return (
-        <main className="min-h-screen bg-white">
+        <main className={`min-h-screen bg-white ${WEBSITE_FIXED_HEADER_MAIN_PT}`}>
             {/* Mini Hero */}
-            <section className="bg-gradient-to-r from-[#004ba5] to-[#003580] py-16 flex items-center min-h-[220px]">
+            <section className="bg-gradient-to-r from-[#004ba5] to-[#003580] pt-12 pb-16 md:pt-16 md:pb-20 flex items-center min-h-[220px]">
                 <div className="container mx-auto px-4 max-w-5xl">
                     <RevealOnScroll>
                         <h1 className="section-title text-white text-3xl md:text-4xl text-left">

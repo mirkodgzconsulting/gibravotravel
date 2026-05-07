@@ -3,7 +3,8 @@
 import { useUser as useClerkUser } from "@clerk/nextjs";
 import { useEffect, useState, useRef } from "react";
 
-type UserRole = 'USER' | 'ADMIN' | 'TI';
+/** Igual que `UserRole` en Prisma; incluye CLIENT (cuenta web típica). */
+type UserRole = "USER" | "ADMIN" | "TI" | "CLIENT";
 
 export function useUserRole() {
   const { user: clerkUser, isLoaded } = useClerkUser();
@@ -95,13 +96,13 @@ export function useUserRole() {
         
         if (response.ok) {
           const data = await response.json();
-          if (!signal.aborted) {
+          if (!signal.aborted && data?.role) {
             // Guardar en localStorage
             if (typeof window !== 'undefined' && clerkUser) {
               localStorage.setItem('userRole', data.role);
               localStorage.setItem('userId', clerkUser.id);
             }
-            setUserRole(data.role);
+            setUserRole(data.role as UserRole);
           }
         } else if (response.status === 404) {
           if (!signal.aborted) {
@@ -152,7 +153,8 @@ export function useUserRole() {
     isLoading,
     isAdmin: userRole === 'ADMIN',
     isTI: userRole === 'TI',
-    isUser: userRole === 'USER',
+    isUser: userRole === "USER",
+    isClient: userRole === "CLIENT",
     canManageUsers: userRole === 'TI', // Solo TI puede crear usuarios
     canAccessGestione: userRole === 'ADMIN' || userRole === 'TI' || userRole === 'USER', // Admin, TI y USER pueden acceder a GESTIONE
     canAccessUtenti: userRole === 'ADMIN' || userRole === 'TI', // Solo ADMIN y TI pueden acceder a UTENTI

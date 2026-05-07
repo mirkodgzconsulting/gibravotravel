@@ -1,7 +1,26 @@
+import type { Metadata } from "next";
+
 import { prisma } from "@/lib/prisma"
 import { DestinazioniClient } from "./client"
 
 export const dynamic = 'force-dynamic'
+
+export const metadata: Metadata = {
+    title: "Partenze viaggi organizzati da Milano",
+    description:
+        "Calendario partenze GiBravo Travel: viaggi organizzati in aereo e in pullman da Milano. Filtra per mese e tipo di tour verso Italia ed Europa.",
+    alternates: {
+        canonical: "https://www.gibravo.it/partenze",
+    },
+    openGraph: {
+        title: "Partenze | GiBravo Travel — Viaggi organizzati Milano",
+        description:
+            "Prossime partenze confermate: tour in bus e aereo con gruppi ristretti e assistenza dedicata.",
+        url: "https://www.gibravo.it/partenze",
+        locale: "it_IT",
+        type: "website",
+    },
+};
 
 async function getAllTours() {
     try {
@@ -49,5 +68,12 @@ export default async function PartenzePage() {
         "https://res.cloudinary.com/dskliu1ig/image/upload/v1768264413/img-viaggi-bus_ggkkfn.jpg"
     ]
 
-    return <DestinazioniClient flightTours={flightTours} busTours={busTours} heroImages={heroImages} />
+    return (
+        <DestinazioniClient
+            flightTours={flightTours}
+            busTours={busTours}
+            heroImages={heroImages}
+            description="Da Milano partono i nostri viaggi organizzati in gruppo: tour in pullman o in aereo verso le migliori destinazioni in Italia e Europa. Date confermate e assistenza GiBravo Travel."
+        />
+    )
 }

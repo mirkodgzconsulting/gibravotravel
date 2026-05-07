@@ -62,7 +62,7 @@ export default function ChiSiamoPage() {
                                 <span className="text-[#FE8008]">Culture e Persone</span>
                             </h1>
                             <p className="text-xl text-white/90 font-medium leading-relaxed max-w-2xl">
-                                Siamo un team giovane, dinamico e altamente professionale specializzato nell'organizzazione di viaggi che lasciano il segno.
+                                Siamo un&apos;agenzia di viaggio a Milano specializzata in viaggi organizzati in gruppo: tour in pullman e in aereo verso Italia ed Europa.
                             </p>
                         </div>
                     </RevealOnScroll>

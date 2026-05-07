@@ -74,3 +74,77 @@ export async function sendOrderConfirmationEmail({
         console.error("❌ Error enviando email:", error);
     }
 }
+
+/** Richieste dal modulo Contatti sul sito pubblico */
+export async function sendContactFormEmail(input: {
+    name: string;
+    email: string;
+    phone?: string;
+    message: string;
+    newsletter: boolean;
+}) {
+    if (!process.env.RESEND_API_KEY) {
+        console.error("❌ RESEND_API_KEY mancante — modulo contatti disabilitato");
+        return { ok: false as const, reason: "missing_key" as const };
+    }
+
+    const to = process.env.CONTACT_INBOX_EMAIL?.trim() || "info@gibravo.it";
+
+    try {
+        await resend.emails.send({
+            from: "GiBravo Travel <noreply@gibravo.it>",
+            to: [to],
+            replyTo: input.email,
+            subject: `[Contatto web] ${input.name.replace(/[\r\n]/g, " ").slice(0, 120)}`,
+            html: `
+            <div style="font-family: sans-serif; max-width: 640px; margin: 0 auto; color: #333;">
+                <p><strong>Nome:</strong> ${escapeHtml(input.name)}</p>
+                <p><strong>Email:</strong> ${escapeHtml(input.email)}</p>
+                ${input.phone ? `<p><strong>Telefono:</strong> ${escapeHtml(input.phone)}</p>` : ""}
+                <p><strong>Newsletter:</strong> ${input.newsletter ? "Sì" : "No"}</p>
+                <hr style="border: none; border-top: 1px solid #eee; margin: 16px 0;" />
+                <p style="white-space: pre-wrap;">${escapeHtml(input.message)}</p>
+            </div>`,
+        });
+        return { ok: true as const };
+    } catch (error) {
+        console.error("❌ Errore invio email modulo contatti:", error);
+        return { ok: false as const, reason: "send_failed" as const };
+    }
+}
+
+function escapeHtml(s: string) {
+    return s
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+}
+
+/** Notifica interna: qualcuno si è iscritto alla newsletter dal sito */
+export async function sendNewsletterSignupNotification(email: string) {
+    if (!process.env.RESEND_API_KEY) {
+        console.error("❌ RESEND_API_KEY mancante — iscrizione newsletter non inviata");
+        return { ok: false as const, reason: "missing_key" as const };
+    }
+
+    const to = process.env.CONTACT_INBOX_EMAIL?.trim() || "info@gibravo.it";
+
+    try {
+        await resend.emails.send({
+            from: "GiBravo Travel <noreply@gibravo.it>",
+            to: [to],
+            subject: "[Newsletter sito] Nuova iscrizione",
+            html: `
+            <div style="font-family: sans-serif; max-width: 640px; margin: 0 auto; color: #333;">
+                <p>Nuova richiesta di iscrizione alla newsletter dal modulo in homepage/footer.</p>
+                <p><strong>Email:</strong> ${escapeHtml(email)}</p>
+                <p style="font-size: 12px; color: #666;">Aggiungi manualmente alla lista o gestisci dal CRM.</p>
+            </div>`,
+        });
+        return { ok: true as const };
+    } catch (error) {
+        console.error("❌ Errore invio email newsletter:", error);
+        return { ok: false as const, reason: "send_failed" as const };
+    }
+}

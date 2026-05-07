@@ -75,7 +75,24 @@ export function Navbar() {
     const partenzeRef = useRef<HTMLDivElement>(null)
     const pathname = usePathname()
 
-    const effectiveScrolled = scrolled || mobileMenuOpen || pathname?.includes('/prenotazione') || pathname?.includes('/checkout')
+    const forceSolidHeader = pathname?.includes('/informativa-privacy')
+        || pathname?.includes('/informativa-cookie')
+        || pathname?.includes('/termini-e-condizioni')
+        || pathname?.startsWith('/area-riservata')
+
+    const effectiveScrolled = scrolled
+        || mobileMenuOpen
+        || forceSolidHeader
+        || pathname?.includes('/prenotazione')
+        || pathname?.includes('/checkout')
+
+    /** Su pagine chiare sfondo quasi bianco opaco; altrimenti vetro sopra hero. */
+    const headerSurfaceClass =
+        forceSolidHeader
+            ? 'bg-white shadow-sm border-b border-slate-200/70'
+            : effectiveScrolled
+              ? 'bg-white/40 backdrop-blur-md shadow-sm'
+              : 'bg-transparent'
 
     useEffect(() => {
         const handleScroll = () => {
@@ -117,12 +134,12 @@ export function Navbar() {
         <>
             <header
                 className={cn(
-                    "w-full transition-all duration-300",
-                    effectiveScrolled ? "bg-white/40 backdrop-blur-md shadow-sm py-0" : "bg-transparent py-2"
+                    "w-full transition-all duration-300 py-0",
+                    headerSurfaceClass,
                 )}
                 onMouseLeave={() => setPartenzeOpen(false)}
             >
-                <div className="container mx-auto flex h-[70px] lg:h-[80px] items-center px-4 lg:px-8 relative justify-between">
+                <div className="container mx-auto flex h-[56px] lg:h-[60px] items-center px-4 lg:px-8 relative justify-between">
                     {/* Logo Section - Aligned Left */}
                     <div className="flex-shrink-0 flex items-center z-50">
                         <Link href="/" className="flex items-center gap-2 group">
@@ -131,7 +148,7 @@ export function Navbar() {
                                 alt="Gibravo Travel Logo"
                                 width={160}
                                 height={46}
-                                className="h-10 w-auto md:h-12 transition-all duration-300"
+                                className="h-9 w-auto md:h-10 transition-all duration-300"
                                 priority
                             />
                         </Link>
@@ -142,13 +159,13 @@ export function Navbar() {
                         "hidden lg:flex items-center absolute left-1/2 -translate-x-1/2 gap-8 text-[15px] font-[600] tracking-wide transition-colors h-full",
                         effectiveScrolled ? "text-black" : "text-white"
                     )}>
-                        <Link href="/chi-siamo" className="hover:text-[#FE8008] transition-colors py-2">Chi siamo</Link>
+                        <Link href="/chi-siamo" className="hover:text-[#FE8008] transition-colors py-1">Chi siamo</Link>
 
-                        <Link href="/partenze" className="hover:text-[#FE8008] transition-colors py-2">Partenze</Link>
+                        <Link href="/partenze" className="hover:text-[#FE8008] transition-colors py-1">Partenze</Link>
 
-                        <Link href="/come-funziona" className="hover:text-[#FE8008] transition-colors py-2">Come funziona</Link>
-                        <Link href="/domande-frequenti" className="hover:text-[#FE8008] transition-colors py-2">FAQ</Link>
-                        <Link href="/contatti" className="hover:text-[#FE8008] transition-colors py-2">Contatti</Link>
+                        <Link href="/come-funziona" className="hover:text-[#FE8008] transition-colors py-1">Come funziona</Link>
+                        <Link href="/domande-frequenti" className="hover:text-[#FE8008] transition-colors py-1">FAQ</Link>
+                        <Link href="/contatti" className="hover:text-[#FE8008] transition-colors py-1">Contatti</Link>
                     </nav>
 
                     {/* Action Buttons - Aligned Right */}
@@ -211,7 +228,7 @@ export function Navbar() {
                             aria-label="Apri menu"
                         >
 
-                            {/* Custom 3-line Menu Icon (Hamburger) */}
+                            {/* Custom 2-line menu icon (mobile) */}
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 className="h-7 w-7"
@@ -222,9 +239,8 @@ export function Navbar() {
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                             >
-                                <line x1="4" x2="20" y1="6" y2="6" />
-                                <line x1="4" x2="20" y1="12" y2="12" />
-                                <line x1="4" x2="20" y1="18" y2="18" />
+                                <line x1="4" x2="20" y1="9" y2="9" />
+                                <line x1="4" x2="20" y1="15" y2="15" />
                             </svg>
                         </button>
                     </div>

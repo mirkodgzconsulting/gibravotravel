@@ -58,7 +58,7 @@ interface DashboardViajesContentProps {
 }
 
 function DashboardViajesContent({ currentUserId }: DashboardViajesContentProps) {
-  const { userRole, isLoading: roleLoading, isUser, isAdmin, isTI } = useUserRole();
+  const { userRole, isLoading: roleLoading, isUser, isAdmin, isTI, isClient } = useUserRole();
   const dashboardData = useDashboardData();
   const [monthlyData, setMonthlyData] = useState<MonthlyFeeData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -314,14 +314,35 @@ function DashboardViajesContent({ currentUserId }: DashboardViajesContentProps) 
     );
   }
 
-  // Verificar acceso - solo TI y ADMIN pueden ver datos globales
-  if (!isTI && !isAdmin && !isUser) {
+  // Solo equipo interno (USER interno del CRM, ADMIN, TI).
+  const canAccess = isTI || isAdmin || isUser;
+
+  if (!canAccess) {
+    let detail = "";
+    let hint = "";
+    if (isClient) {
+      detail =
+        "Esta zona es exclusiva para el equipo de GiBravo (roles internos). Tu cuenta tiene rol de cliente publico.";
+      hint = "Si trabajas en la agencia, pide a un ADMIN o TI que te asigne el rol USER, ADMIN o TI en la base de datos.";
+    } else if (!userRole) {
+      detail =
+        "No encontramos tu usuario en la base de datos de la aplicacion (tabla Users vinculada a Clerk).";
+      hint =
+        "Debes tener una fila de usuario importada desde Clerk (o creada por un administrador) con uno de estos roles: USER, ADMIN o TI.";
+    } else {
+      detail = "Tu rol actual no permite abrir esta seccion.";
+      hint = "";
+    }
+
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-red-500 text-xl mb-4">🚫</div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Acceso Denegado</h2>
-          <p className="text-gray-600 dark:text-gray-400">No tienes permisos para acceder a esta sección.</p>
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="max-w-lg text-center">
+          <div className="text-red-500 text-xl mb-4" aria-hidden>🚫</div>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Acceso denegado</h2>
+          <p className="text-gray-600 dark:text-gray-400">{detail}</p>
+          {hint ? (
+            <p className="mt-4 text-sm text-gray-500 dark:text-gray-500">{hint}</p>
+          ) : null}
         </div>
       </div>
     );

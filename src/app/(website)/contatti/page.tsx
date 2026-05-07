@@ -1,9 +1,7 @@
 import { RevealOnScroll } from "@/components/website/ui/reveal-on-scroll"
-import { Button } from "@/components/website/ui/button"
 import { MapPin, Phone, Mail, Clock } from "lucide-react"
 import Image from "next/image"
-import Script from "next/script"
-
+import { ContactForm } from "@/components/website/contact/contact-form"
 export default function ContactsPage() {
     return (
         <main className="min-h-screen bg-slate-50 pb-24">
@@ -118,30 +116,7 @@ export default function ContactsPage() {
 
                     {/* Right Col: Form */}
                     <RevealOnScroll delay={200}>
-                        <div className="p-0 overflow-hidden w-full max-w-full">
-                            <div className="w-full overflow-hidden">
-                                <div className="w-full relative" style={{ minHeight: "550px" }}>
-                                    <iframe
-                                        src="https://api.leadconnectorhq.com/widget/form/72A42sQgiiHmw4cwtZSf"
-                                        style={{ width: "100%", height: "100%", minHeight: "550px", border: "none", borderRadius: "0px", overflow: "hidden" }}
-                                        id="inline-72A42sQgiiHmw4cwtZSf"
-                                        data-layout="{'id':'INLINE'}"
-                                        data-trigger-type="alwaysShow"
-                                        data-trigger-value=""
-                                        data-activation-type="alwaysActivated"
-                                        data-activation-value=""
-                                        data-deactivation-type="neverDeactivate"
-                                        data-deactivation-value=""
-                                        data-form-name="Contact - pagina gibravo.it"
-                                        data-height="550"
-                                        data-layout-iframe-id="inline-72A42sQgiiHmw4cwtZSf"
-                                        data-form-id="72A42sQgiiHmw4cwtZSf"
-                                        title="Contact - pagina gibravo.it"
-                                        scrolling="no"
-                                    ></iframe>
-                                </div>
-                            </div>
-                        </div>
+                        <ContactForm />
                     </RevealOnScroll>
 
                 </div>

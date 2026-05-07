@@ -1,11 +1,25 @@
 "use client"
 
-import { MessageCircle } from "lucide-react"
+import { buildWhatsAppUrl } from "@/lib/website/whatsapp"
+import { trackWhatsAppClick } from "@/lib/website/marketing-events"
 
 export function WhatsAppButton() {
     const phoneNumber = "393519788531"
-    const message = encodeURIComponent("Ciao GiBravo! Vorrei avere informazioni sui vostri viaggi.")
-    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`
+    const baseMessage = "Ciao GiBravo! Vorrei avere informazioni sui vostri viaggi."
+    const whatsappUrl = buildWhatsAppUrl({
+        phoneNumber,
+        baseMessage,
+        section: "floating-widget",
+    })
+
+    const handleClick = () => {
+        trackWhatsAppClick({
+            section: "floating-widget",
+            placement: "floating-button",
+            ctaText: "Scrivici su WhatsApp",
+            href: whatsappUrl,
+        })
+    }
 
     return (
         <a
@@ -14,6 +28,7 @@ export function WhatsAppButton() {
             rel="noopener noreferrer"
             className="fixed bottom-6 right-6 z-[45] group"
             aria-label="Chat on WhatsApp"
+            onClick={handleClick}
         >
             {/* Tooltip */}
             <div className="absolute bottom-full right-0 mb-4 px-4 py-2 bg-white text-[#25D366] text-sm font-[800] rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.15)] border border-slate-100 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 pointer-events-none whitespace-nowrap flex items-center gap-2">

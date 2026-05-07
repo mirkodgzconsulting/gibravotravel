@@ -4,17 +4,40 @@ import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "motion/react"
 import Image from "next/image"
 
+const WELCOME_KEY = "gibravo_welcome_seen"
+const SPLASH_MS = 550
+
 export function WelcomeLoader() {
-    const [isLoading, setIsLoading] = useState(true)
+    // Evita splash in SSR/HTML iniziale: mostra overlay solo dopo idratazione se serve.
+    const [isLoading, setIsLoading] = useState(false)
 
     useEffect(() => {
-        // Prevent scrolling while loading
+        const reduceMotion =
+            typeof window.matchMedia !== "undefined" &&
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        let seen = false
+        try {
+            seen = sessionStorage.getItem(WELCOME_KEY) === "1"
+        } catch {
+            seen = false
+        }
+
+        if (reduceMotion || seen) {
+            return
+        }
+
         document.body.style.overflow = "hidden"
+        setIsLoading(true)
 
         const timer = setTimeout(() => {
             setIsLoading(false)
             document.body.style.overflow = "unset"
-        }, 2000)
+            try {
+                sessionStorage.setItem(WELCOME_KEY, "1")
+            } catch {
+                /* noop */
+            }
+        }, SPLASH_MS)
 
         return () => {
             clearTimeout(timer)

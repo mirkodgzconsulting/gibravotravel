@@ -65,6 +65,7 @@
     "@fullcalendar/react": "^6.1.15",
     "@fullcalendar/timegrid": "^6.1.15",
     "@iconify/react": "^6.0.2",
+    "@marsidev/react-turnstile": "^1.5.2",
     "@popperjs/core": "^2.11.8",
     "@prisma/client": "^6.16.3",
     "@radix-ui/react-accordion": "^1.2.12",

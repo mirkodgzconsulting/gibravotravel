@@ -3,8 +3,8 @@ import Link from "next/link"
 import Image from "next/image"
 import { Facebook, Instagram, Send } from "lucide-react"
 import { RevealOnScroll } from "@/components/website/ui/reveal-on-scroll"
-import Script from "next/script"
 import { usePathname } from "next/navigation"
+import { NewsletterSignupForm } from "@/components/website/contact/newsletter-signup-form"
 
 export function Footer() {
     const pathname = usePathname();
@@ -31,26 +31,8 @@ export function Footer() {
                                     </p>
                                 </div>
 
-                                <div className="w-full flex justify-center lg:justify-end overflow-hidden">
-                                    <div className="w-full max-w-[460px] relative" style={{ minHeight: "280px" }}>
-                                        <iframe
-                                            src="https://api.leadconnectorhq.com/widget/form/XHgIpGv8wjIQyGF6ScOS"
-                                            style={{ width: "100%", height: "100%", minHeight: "280px", border: "none", overflow: "hidden" }}
-                                            id="inline-XHgIpGv8wjIQyGF6ScOS"
-                                            data-layout="{'id':'INLINE'}"
-                                            data-trigger-type="alwaysShow"
-                                            data-trigger-value=""
-                                            data-activation-type="alwaysActivated"
-                                            data-activation-value=""
-                                            data-deactivation-type="neverDeactivate"
-                                            data-deactivation-value=""
-                                            data-form-name="NEWSLETTER -VA"
-                                            data-height="280"
-                                            data-layout-iframe-id="inline-XHgIpGv8wjIQyGF6ScOS"
-                                            data-form-id="XHgIpGv8wjIQyGF6ScOS"
-                                            title="NEWSLETTER -VA"
-                                        ></iframe>
-                                    </div>
+                                <div className="w-full flex justify-center lg:justify-end">
+                                    <NewsletterSignupForm />
                                 </div>
                             </div>
                         </RevealOnScroll>
@@ -118,7 +100,7 @@ export function Footer() {
                             <h3 className="font-[600] text-white text-lg mb-6 tracking-tight">Supporto</h3>
                             <div className="flex flex-col gap-3">
                                 <Link href="/contatti" className="text-[16px] font-medium text-white/90 hover:text-white transition-colors">Contattaci</Link>
-                                <Link href="#" className="text-[16px] font-medium text-white/90 hover:text-white transition-colors">Domande Frequenti (FAQ)</Link>
+                                <Link href="/domande-frequenti" className="text-[16px] font-medium text-white/90 hover:text-white transition-colors">Domande Frequenti (FAQ)</Link>
                                 <div className="h-px w-10 bg-white/20 my-2 mx-auto md:mx-0"></div>
                                 <Link href="/informativa-privacy" className="text-[14px] font-medium text-white/70 hover:text-white transition-colors">Privacy Policy</Link>
                                 <Link href="/termini-e-condizioni" className="text-[14px] font-medium text-white/70 hover:text-white transition-colors">Termini e Condizioni</Link>

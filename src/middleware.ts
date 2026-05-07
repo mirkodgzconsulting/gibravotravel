@@ -16,6 +16,7 @@ const isPublicRoute = createRouteMatcher([
   '/signin(.*)',
   '/domande-frequenti(.*)',
   '/come-funziona(.*)',
+  '/offerta-summer-tour-liguria(.*)',
   '/informativa-privacy(.*)',
   '/termini-e-condizioni(.*)',
   '/informativa-cookie(.*)',
@@ -31,11 +32,17 @@ export default clerkMiddleware(async (auth, req) => {
   const { pathname } = req.nextUrl;
   const hostname = req.nextUrl.hostname;
 
-  // Debug per vedere se il middleware viene eseguito (controllare i log di Vercel/Produzione)
-  console.log(`🛡️ Clerk v6 Middleware: ${pathname} [${hostname}]`);
-
-  const isSystemsDomain = hostname === 'systems.gibravo.it' || hostname === 'www.systems.gibravo.it';
+  const isSystemsDomain =
+    hostname === 'systems.gibravo.it' || hostname === 'www.systems.gibravo.it';
   const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+
+  // Un solo redirect applicativo apex → www (aiuta Lighthouse su gibravo.it vs www).
+  // Completare con redirect 301 HTTP→HTTPS nel pannello hosting (es. Vercel Domains).
+  if (!isSystemsDomain && !isLocalhost && hostname === 'gibravo.it') {
+    const url = req.nextUrl.clone();
+    url.hostname = 'www.gibravo.it';
+    return NextResponse.redirect(url, 308);
+  }
 
   // Redirect per la rotta /admin legacy
   if (pathname === '/admin') {

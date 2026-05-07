@@ -65,7 +65,7 @@ export function DestinazioniClient(props: DestinazioniClientProps) {
     const content = {
         subtitle: subtitle || "Le Prossime Partenze",
         title: title || "Partenze",
-        description: description || "Che tu preferisca volare o viaggiare su strada, abbiamo l'avventura perfecta per te. Scegli la tua prossima meta.",
+        description: description || "Che tu preferisca volare o viaggiare su strada, abbiamo l'avventura perfetta per te. Scegli la tua prossima meta.",
         empty: "Nessun viaggio disponibile al momento."
     }
 

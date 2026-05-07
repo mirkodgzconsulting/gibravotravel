@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { Navbar } from "@/components/website/layout/navbar";
 import { Footer } from "@/components/website/layout/footer";
 import { OrganizationJsonLd } from "@/components/website/seo/organization-json-ld";
@@ -14,7 +14,9 @@ export default function WebsiteLayout({
 }) {
     return (
         <div className="flex flex-col min-h-screen font-[var(--font-montserrat)]">
-            <MarketingTracking />
+            <Suspense fallback={null}>
+                <MarketingTracking />
+            </Suspense>
             <OrganizationJsonLd />
             <WelcomeLoader />
             <WhatsAppButton />

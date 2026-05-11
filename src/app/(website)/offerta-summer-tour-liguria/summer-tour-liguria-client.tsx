@@ -935,10 +935,10 @@ export function SummerTourLiguriaClient({ variant = "a" }: SummerTourLiguriaClie
                 <div className="footer-col footer-col--brand">
                     <Link href="/" className="footer-brand-link">
                         <Image
-                            src="/Logo_gibravo.svg"
+                            src="/Logo-GiBravo-TraciaoBianco.svg"
                             alt="GiBravo Travel"
-                            width={200}
-                            height={56}
+                            width={406}
+                            height={100}
                             className="hero-logo-img"
                         />
                     </Link>

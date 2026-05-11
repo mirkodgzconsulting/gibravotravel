@@ -12,6 +12,10 @@ import { CopyNotification } from "@/components/ui/notification/CopyNotification"
 import { PlaneIcon, TrashIcon, EditIcon, PlusIcon, GlobeIcon, EyeIcon, CopyIcon } from "lucide-react";
 import Image from "next/image";
 import WebContentModal from "@/components/tour/WebContentModal";
+import {
+  TOUR_ATTACHMENT_INPUT_ACCEPT,
+  validateTourAttachmentFile,
+} from "@/lib/tour-attachment-file";
 
 interface TourAereo {
   id: string;
@@ -191,6 +195,14 @@ export default function TourAereoPage() {
     e.preventDefault();
     if (isSubmitting) return;
 
+    if (formData.pdfFile) {
+      const attachmentErr = validateTourAttachmentFile(formData.pdfFile);
+      if (attachmentErr) {
+        setError(attachmentErr);
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     try {
       const formDataToSend = new FormData();
@@ -270,6 +282,14 @@ export default function TourAereoPage() {
   const handleUpdateTour = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!editingTour || isSubmitting) return;
+
+    if (formData.pdfFile) {
+      const attachmentErr = validateTourAttachmentFile(formData.pdfFile);
+      if (attachmentErr) {
+        setError(attachmentErr);
+        return;
+      }
+    }
 
     setIsSubmitting(true);
     try {
@@ -946,14 +966,17 @@ export default function TourAereoPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  File PDF
+                  Documento informativo
                 </label>
                 <input
                   type="file"
-                  accept=".pdf"
+                  accept={TOUR_ATTACHMENT_INPUT_ACCEPT}
                   onChange={(e) => setFormData(prev => ({ ...prev, pdfFile: e.target.files?.[0] || null }))}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 />
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  PDF, immagini (JPG, PNG, WebP…), Word, Excel, PowerPoint, ZIP, TXT, CSV (max 50 MB).
+                </p>
               </div>
 
               {/* Campo Documento Viaggio oculto visualmente - funcionalidad mantenida para uso futuro */}

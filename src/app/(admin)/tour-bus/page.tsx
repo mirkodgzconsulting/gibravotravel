@@ -13,6 +13,10 @@ import { BusIcon, CalendarIcon, UsersIcon, DollarSignIcon, TrashIcon, EditIcon, 
 import Image from "next/image";
 import { cachedFetch, invalidateCacheByPrefix } from "@/utils/cachedFetch";
 import WebContentModal from "@/components/tour/WebContentModal";
+import {
+  TOUR_ATTACHMENT_INPUT_ACCEPT,
+  validateTourAttachmentFile,
+} from "@/lib/tour-attachment-file";
 
 interface TourBus {
   id: string;
@@ -245,6 +249,14 @@ export default function TourBusPage() {
     e.preventDefault();
     if (isSubmitting) return;
 
+    if (formData.pdfFile) {
+      const attachmentErr = validateTourAttachmentFile(formData.pdfFile);
+      if (attachmentErr) {
+        setError(attachmentErr);
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     try {
       const formDataToSend = new FormData();
@@ -329,6 +341,14 @@ export default function TourBusPage() {
   const handleUpdateTour = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!editingTour || isSubmitting) return;
+
+    if (formData.pdfFile) {
+      const attachmentErr = validateTourAttachmentFile(formData.pdfFile);
+      if (attachmentErr) {
+        setError(attachmentErr);
+        return;
+      }
+    }
 
     setIsSubmitting(true);
     try {
@@ -920,14 +940,17 @@ export default function TourBusPage() {
 
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    File PDF/Documento
+                    Documento informativo
                   </label>
                   <input
                     type="file"
-                    accept=".pdf,.doc,.docx"
+                    accept={TOUR_ATTACHMENT_INPUT_ACCEPT}
                     onChange={(e) => setFormData(prev => ({ ...prev, pdfFile: e.target.files?.[0] || null }))}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 dark:file:bg-brand-900/20 dark:file:text-brand-400"
                   />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    PDF, immagini (JPG, PNG, WebP…), Word, Excel, PowerPoint, ZIP, TXT, CSV (max 50 MB).
+                  </p>
                   {editingTour?.pdfFile && (
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                       File attuale: {editingTour.pdfFileName || 'Documento caricato'}

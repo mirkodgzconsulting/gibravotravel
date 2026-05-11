@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { v2 as cloudinary } from 'cloudinary';
 import { prisma } from '@/lib/prisma';
+import {
+  tourAttachmentCloudinaryResourceType,
+  validateTourAttachmentFile,
+} from '@/lib/tour-attachment-file';
 import { Prisma } from '@prisma/client';
 
 if (process.env.CLOUDINARY_URL) {
@@ -191,12 +195,9 @@ export async function PUT(
     }
 
     if (pdfFile && pdfFile.size > 0) {
-      const maxPdfSize = 50 * 1024 * 1024; // 50MB
-      if (pdfFile.size > maxPdfSize) {
-        return NextResponse.json(
-          { error: 'El archivo PDF es demasiado grande. Máximo 50MB.' },
-          { status: 400 }
-        );
+      const attachmentErr = validateTourAttachmentFile(pdfFile);
+      if (attachmentErr) {
+        return NextResponse.json({ error: attachmentErr }, { status: 400 });
       }
     }
 
@@ -267,18 +268,19 @@ export async function PUT(
       uploadPromises.push(webImageUploadPromise);
     }
 
-    // Upload de PDF si existe
+    // Allegato informativo (PDF / immagini / documenti)
     if (pdfFile && pdfFile.size > 0) {
       const pdfUploadPromise = (async () => {
         try {
           const bytes = await pdfFile.arrayBuffer();
           const buffer = Buffer.from(bytes);
+          const resourceType = tourAttachmentCloudinaryResourceType(pdfFile.name);
 
           const result = await new Promise((resolve, reject) => {
             cloudinary.uploader.upload_stream(
               {
                 folder: 'gibravotravel/tour-bus',
-                resource_type: 'raw'
+                resource_type: resourceType,
               },
               (error, result) => {
                 if (error) reject(error);
@@ -289,7 +291,7 @@ export async function PUT(
 
           return { type: 'pdf', url: (result as { secure_url: string }).secure_url, name: pdfFile.name };
         } catch (error) {
-          throw new Error(`Error uploading PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          throw new Error(`Error uploading attachment: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
       })();
 

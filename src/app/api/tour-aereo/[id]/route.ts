@@ -3,6 +3,10 @@ import { prisma } from '@/lib/prisma';
 import { UploadApiResponse, v2 as cloudinary } from 'cloudinary';
 import { auth } from '@clerk/nextjs/server';
 import { Prisma } from '@prisma/client';
+import {
+  tourAttachmentCloudinaryResourceType,
+  validateTourAttachmentFile,
+} from '@/lib/tour-attachment-file';
 
 // Config Cloudinary
 cloudinary.config({
@@ -197,6 +201,12 @@ export async function PUT(
     // Archivos
     const coverImage = formData.get('coverImage') as File | null;
     const pdfFile = formData.get('pdfFile') as File | null;
+    if (pdfFile && pdfFile.size > 0) {
+      const attachmentErr = validateTourAttachmentFile(pdfFile);
+      if (attachmentErr) {
+        return NextResponse.json({ error: attachmentErr }, { status: 400 });
+      }
+    }
     const coordinadorFoto = formData.get('coordinadorFoto') as File | string | null;
     const webCoverImage = formData.get('webCoverImage') as File | null;
     // New: multiple gallery images
@@ -234,14 +244,17 @@ export async function PUT(
       })());
     }
 
-    // 2. PDF
+    // 2. Allegato informativo (PDF / immagini / documenti)
     if (pdfFile && pdfFile.size > 0) {
       uploadPromises.push((async () => {
         const bytes = await pdfFile.arrayBuffer();
         const buffer = Buffer.from(bytes);
+        const resourceType = tourAttachmentCloudinaryResourceType(pdfFile.name);
         const res: UploadApiResponse = await new Promise((resolve, reject) => {
-          cloudinary.uploader.upload_stream({ folder: 'gibravotravel/tour_aereo/pdfs', resource_type: 'raw' },
-            (err, res) => { if (err) reject(err); else resolve(res!); }).end(buffer);
+          cloudinary.uploader.upload_stream(
+            { folder: 'gibravotravel/tour_aereo/pdfs', resource_type: resourceType },
+            (err, res) => { if (err) reject(err); else resolve(res!); }
+          ).end(buffer);
         });
         return { type: 'pdf', url: res.secure_url, name: pdfFile.name };
       })());

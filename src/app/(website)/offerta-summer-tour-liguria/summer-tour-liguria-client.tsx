@@ -12,7 +12,22 @@ const WHATSAPP_PHONE = "393519788531"
 const BASE_WHATSAPP_MESSAGE =
     "Ciao GiBravo! Voglio prenotare il Summer Tour Liguria. Potete inviarmi disponibilita e dettagli?"
 
-const TIKTOK_VIDEO_URL = "https://www.tiktok.com/@gibravotravel/video/7544036337565863190"
+/** ID video TikTok — player v1 (solo riproduzione, senza descrizione sotto). */
+const TIKTOK_EMBED_VIDEO_IDS = [
+    "7529922473836481814",
+    "7527327110701108502",
+    "7513234050094566678",
+    "7519881034884828438", // vm.tiktok.com/ZNRgXr9pk/
+] as const
+
+function tiktokPlayerEmbedSrc(videoId: string) {
+    const q = new URLSearchParams({
+        description: "0",
+        music_info: "0",
+        rel: "0",
+    })
+    return `https://www.tiktok.com/player/v1/${videoId}?${q.toString()}`
+}
 
 const SOCIAL = {
     instagram: "https://www.instagram.com/gibravo.travel",
@@ -619,52 +634,26 @@ export function SummerTourLiguriaClient({ variant = "a" }: SummerTourLiguriaClie
                             </div>
                         ))}
                     </div>
-                    <Link
-                        href={TIKTOK_VIDEO_URL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="exp-video-cta"
-                        aria-label="Guarda il video dei nostri viaggi su TikTok"
-                    >
-                        <span className="exp-play-wrap">
-                            <span className="exp-play-sketch" aria-hidden />
-                            <span className="exp-play-btn" aria-hidden>
-                                <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden>
-                                    <polygon fill="#fff" points="8 5 8 19 19 12" />
-                                </svg>
-                            </span>
-                        </span>
-                        <svg
-                            className="exp-video-arrow"
-                            viewBox="0 0 48 32"
-                            width="40"
-                            height="28"
-                            aria-hidden
-                            fill="none"
-                        >
-                            <path
-                                d="M44 8c-8 12-22 18-36 20"
-                                stroke="var(--blue)"
-                                strokeWidth="2.2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
+                </div>
+            </section>
+
+            <section className="exp-tiktok-section" aria-labelledby="exp-tiktok-heading">
+                <h2 id="exp-tiktok-heading" className="exp-tiktok-title">
+                    GUARDA I NOSTRI VIAGGI SU TIKTOK
+                </h2>
+                <div className="exp-tiktok-embeds">
+                    {TIKTOK_EMBED_VIDEO_IDS.map((videoId, i) => (
+                        <div key={videoId} className="exp-tiktok-cell">
+                            <iframe
+                                src={tiktokPlayerEmbedSrc(videoId)}
+                                title={`Video GiBravo Travel su TikTok (${i + 1})`}
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                                allowFullScreen
+                                loading="lazy"
+                                className="exp-tiktok-iframe"
                             />
-                            <path
-                                d="M12 26 L6 28 L8 22"
-                                stroke="var(--blue)"
-                                strokeWidth="2.2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            />
-                        </svg>
-                        <span className="exp-video-label">
-                            <span className="exp-video-label-text">
-                                GUARDA IL VIDEO
-                                <br />
-                                DEI NOSTRI VIAGGI
-                            </span>
-                        </span>
-                    </Link>
+                        </div>
+                    ))}
                 </div>
             </section>
 

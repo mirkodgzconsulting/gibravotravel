@@ -310,7 +310,7 @@
     }
 
     /* ============================================================
-       EXPERIENCE (testo ~38% + collage 4 foto + CTA video)
+       EXPERIENCE (testo ~38% + collage 4 foto + embed TikTok)
     ============================================================ */
     #liguria-offer-root .exp-section {
       display: flex;
@@ -405,7 +405,7 @@
       min-width: 0;
       position: relative;
       min-height: clamp(400px, 44vw, 500px);
-      padding-bottom: 72px;
+      padding-bottom: 8px;
     }
     #liguria-offer-root .exp-collage {
       position: relative;
@@ -453,76 +453,62 @@
     #liguria-offer-root .exp-collage-card .exp-fill-img {
       object-fit: cover;
     }
-    #liguria-offer-root .exp-video-cta {
-      position: absolute;
-      left: 50%;
-      bottom: 4px;
-      transform: translateX(-50%);
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      gap: 6px 12px;
-      z-index: 12;
-      text-decoration: none;
-      max-width: 100%;
-      padding: 0 8px;
+    /* TikTok: sezione a tutta larghezza sotto testo+collage (niente “mezza pagina” vuota). */
+    #liguria-offer-root .exp-tiktok-section {
+      width: 100%;
+      box-sizing: border-box;
+      background: #fff;
+      padding: clamp(12px, 2.5vw, 24px) clamp(28px, 5vw, 72px) clamp(40px, 5vw, 64px);
     }
-    #liguria-offer-root .exp-video-cta:hover .exp-play-btn {
-      transform: scale(1.05);
+    #liguria-offer-root .exp-tiktok-title {
+      font-family: var(--font-bangers), cursive;
+      font-size: clamp(30px, 3.75vw, 44px);
+      color: var(--blue);
+      text-align: center;
+      letter-spacing: 0.06em;
+      line-height: 1.15;
+      margin: 0 0 clamp(18px, 2.5vw, 28px);
+      font-weight: 400;
     }
-    #liguria-offer-root .exp-play-wrap {
+    #liguria-offer-root .exp-tiktok-embeds {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 6px;
+      width: 100%;
+      min-width: 0;
+      align-items: start;
+    }
+    /* Riempie ogni colonna (niente “mattonelle” centrate con vuoti enormi). Altezza limitata al viewport. */
+    #liguria-offer-root .exp-tiktok-cell {
       position: relative;
-      width: 74px;
-      height: 74px;
-      flex-shrink: 0;
+      justify-self: stretch;
+      box-sizing: border-box;
+      width: 100%;
+      max-width: 100%;
+      aspect-ratio: 9 / 16;
+      max-height: min(58vh, 520px);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 12px 28px rgba(8, 31, 77, 0.12);
+      border: 1px solid rgba(229, 234, 245, 0.95);
+      background: #0b1220;
     }
-    #liguria-offer-root .exp-play-sketch {
-      position: absolute;
-      inset: -5px;
-      border: 2.5px dashed rgba(255, 255, 255, 0.95);
-      border-radius: 50%;
-      transform: rotate(-7deg);
-      pointer-events: none;
-    }
-    #liguria-offer-root .exp-play-btn {
+    #liguria-offer-root .exp-tiktok-iframe {
       position: absolute;
       inset: 0;
-      margin: auto;
-      width: 58px;
-      height: 58px;
-      border-radius: 50%;
-      background: var(--blue);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow:
-        inset 0 0 0 2px rgba(255, 255, 255, 0.35),
-        0 8px 24px rgba(8, 31, 77, 0.35);
-      transition: transform 0.18s ease;
-    }
-    #liguria-offer-root .exp-video-arrow {
-      flex-shrink: 0;
-      margin: 0 -4px;
-    }
-    #liguria-offer-root .exp-video-label {
-      background: #fff;
-      color: var(--blue);
-      padding: 12px 18px 14px;
-      font-family: var(--font-outfit), system-ui, sans-serif;
-      font-weight: 800;
-      font-style: italic;
-      font-size: clamp(10px, 0.95vw, 13px);
-      line-height: 1.28;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      text-align: center;
-      border-radius: 42% 58% 48% 52% / 50% 45% 55% 50%;
-      box-shadow: 0 10px 32px rgba(8, 31, 77, 0.14);
-      transform: rotate(-1deg);
-      max-width: min(220px, 42vw);
-    }
-    #liguria-offer-root .exp-video-label-text {
+      width: 100%;
+      height: 100%;
+      border: 0;
       display: block;
+      transform: scale(1.01);
+      transform-origin: center center;
+    }
+
+    @media (max-width: 1100px) and (min-width: 901px) {
+      #liguria-offer-root .exp-tiktok-embeds {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
     }
 
     /* ============================================================
@@ -546,7 +532,7 @@
       font-style: italic;
       text-transform: uppercase;
       color: #1a2b5a;
-      font-size: clamp(17px, 1.65vw, 24px);
+      font-size: clamp(22px, 2.25vw, 34px);
       line-height: 1.18;
       letter-spacing: 0.04em;
       margin: 0 0 32px;
@@ -1652,20 +1638,33 @@
       #liguria-offer-root .exp-collage-card--4 {
         transform: rotate(2deg);
       }
-      #liguria-offer-root .exp-video-cta {
-        position: relative;
-        left: auto;
-        bottom: auto;
-        transform: none;
-        justify-content: center;
-        flex-wrap: wrap;
-        margin-top: 20px;
-        padding: 0;
+      #liguria-offer-root .exp-tiktok-section {
+        padding-left: max(16px, env(safe-area-inset-left, 0px));
+        padding-right: max(16px, env(safe-area-inset-right, 0px));
+        padding-top: 16px;
+        padding-bottom: 40px;
       }
-      #liguria-offer-root .exp-video-label {
-        max-width: min(260px, 92vw);
+      #liguria-offer-root .exp-tiktok-title {
+        padding-left: max(8px, env(safe-area-inset-left, 0px));
+        padding-right: max(8px, env(safe-area-inset-right, 0px));
+        margin-bottom: 16px;
       }
-
+      #liguria-offer-root .exp-tiktok-embeds {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      #liguria-offer-root .exp-tiktok-cell {
+        width: 100%;
+        max-width: min(380px, 100%);
+        margin-left: auto;
+        margin-right: auto;
+        aspect-ratio: 9 / 16;
+        max-height: min(62vh, 540px);
+      }
+      #liguria-offer-root .exp-tiktok-iframe {
+        transform: scale(1.02);
+        transform-origin: center center;
+      }
       /* Two-col section: ancho completo y padding simétrico (safe area) */
       #liguria-offer-root .two-col-section {
         flex-direction: column;
@@ -2013,12 +2012,31 @@
       #liguria-offer-root .liguria-partenze-grid {
         grid-template-columns: 1fr;
       }
-      #liguria-offer-root .liguria-extra-partenze,
-      #liguria-offer-root .liguria-faq {
+      #liguria-offer-root .liguria-extra-partenze {
         padding: 40px 20px 48px;
       }
+      #liguria-offer-root .liguria-faq {
+        padding: 40px max(18px, env(safe-area-inset-left, 0px)) 48px max(18px, env(safe-area-inset-right, 0px));
+        background: #fff;
+      }
+      #liguria-offer-root .liguria-faq h2 {
+        padding-left: 0;
+        padding-right: 0;
+      }
       #liguria-offer-root .liguria-faq details {
-        padding: 4px 14px;
+        max-width: none;
+        width: 100%;
+        box-sizing: border-box;
+        margin-left: 0;
+        margin-right: 0;
+        margin-bottom: 10px;
+        padding: 14px 14px;
+        border-radius: 12px;
+        border: 1px solid #e5eaf5;
+        background: var(--gray-light);
+      }
+      #liguria-offer-root .liguria-faq details:last-of-type {
+        margin-bottom: 0;
       }
       #liguria-offer-root .liguria-faq summary {
         min-height: 48px;
@@ -2055,7 +2073,10 @@
         text-align: center;
       }
       #liguria-offer-root .col-heading {
-        font-size: clamp(16px, 4.2vw, 20px);
+        font-size: clamp(19px, 5vw, 26px);
+      }
+      #liguria-offer-root .exp-tiktok-title {
+        font-size: clamp(24px, 6.5vw, 34px);
       }
       #liguria-offer-root .features-bar {
         flex-direction: row;
@@ -2174,8 +2195,24 @@
       color: var(--text-mid);
     }
 
+    /* FAQ: reglas "tarjeta centrada" solo desktop; si van fuera del media,
+       sobrescriben el layout full-bleed del bloque mobile (max-width: 900px). */
+    @media (min-width: 901px) {
+      #liguria-offer-root .liguria-faq {
+        padding: 56px 64px 64px;
+        background: #fff;
+      }
+      #liguria-offer-root .liguria-faq details {
+        max-width: 720px;
+        margin: 0 auto 10px;
+        border: 1px solid #e5eaf5;
+        border-radius: 12px;
+        padding: 14px 18px;
+        background: var(--gray-light);
+      }
+    }
+
     #liguria-offer-root .liguria-faq {
-      padding: 56px 64px 64px;
       background: #fff;
     }
     #liguria-offer-root .liguria-faq h2 {
@@ -2186,22 +2223,42 @@
       margin-bottom: 24px;
       letter-spacing: 1px;
     }
-    #liguria-offer-root .liguria-faq details {
-      max-width: 720px;
-      margin: 0 auto 10px;
-      border: 1px solid #e5eaf5;
-      border-radius: 12px;
-      padding: 14px 18px;
-      background: var(--gray-light);
-    }
     #liguria-offer-root .liguria-faq summary {
       cursor: pointer;
       font-weight: 700;
       color: var(--blue-dark);
       list-style: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      text-align: left;
+    }
+    #liguria-offer-root .liguria-faq summary::marker {
+      display: none;
     }
     #liguria-offer-root .liguria-faq summary::-webkit-details-marker {
       display: none;
+    }
+    #liguria-offer-root .liguria-faq summary::after {
+      content: "+";
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      background: rgba(11, 42, 102, 0.1);
+      color: var(--blue);
+      font-size: 20px;
+      font-weight: 800;
+      line-height: 1;
+      margin-top: 1px;
+      transition: transform 0.2s ease;
+    }
+    #liguria-offer-root .liguria-faq details[open] summary::after {
+      transform: rotate(45deg);
     }
     #liguria-offer-root .liguria-faq details p {
       margin-top: 10px;

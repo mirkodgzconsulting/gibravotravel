@@ -13,15 +13,24 @@ export const metadata: Metadata = {
         description:
             "Gruppi organizzati, mare, relax e divertimento. Prenota ora su WhatsApp: posti limitati.",
         url: "https://www.gibravo.it/offerta-summer-tour-liguria",
+        siteName: "GiBravo Travel",
+        locale: "it_IT",
         type: "website",
         images: [
             {
-                url: "https://res.cloudinary.com/dskliu1ig/image/upload/v1768252163/img-hero2_xx72si.jpg",
+                url: "https://res.cloudinary.com/dskliu1ig/image/upload/v1778530299/liguria_lzxjpy.jpg",
                 width: 1200,
                 height: 630,
-                alt: "Summer Tour Liguria - GiBravo Travel",
+                alt: "Summer Tour Liguria — mare e borghi della Riviera",
             },
         ],
+    },
+    twitter: {
+        card: "summary_large_image",
+        title: "Summer Tour Liguria | Offerta limitata a 40EUR",
+        description:
+            "Gruppi organizzati, mare, relax e divertimento. Prenota ora su WhatsApp: posti limitati.",
+        images: ["https://res.cloudinary.com/dskliu1ig/image/upload/v1778530299/liguria_lzxjpy.jpg"],
     },
 }
 

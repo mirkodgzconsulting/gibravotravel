@@ -528,16 +528,19 @@ export function SummerTourLiguriaClient({ variant = "a" }: SummerTourLiguriaClie
         <main id="liguria-offer-root">
             <section className="hero">
                 <div className="hero-left">
-                    <Link href="/" className="hero-logo">
-                        <Image
-                            src="/Logo_gibravo.svg"
-                            alt="GiBravo Travel"
-                            width={200}
-                            height={56}
-                            priority
-                            className="hero-logo-img"
-                        />
-                    </Link>
+                    <div className="hero-brand-badge-wrap">
+                        <Link href="/" className="hero-logo">
+                            <Image
+                                src="/Logo_gibravo.svg"
+                                alt="GiBravo Travel"
+                                width={200}
+                                height={56}
+                                priority
+                                className="hero-logo-img"
+                            />
+                        </Link>
+                        <div className="hero-badge">TUTTO IN UN SOLO GIORNO!</div>
+                    </div>
                     <h1 className="hero-title">
                         <span className="hero-title-line hero-title-line--blue">VIVI L&apos;ESTATE</span>
                         <span className="hero-title-line hero-title-line--yellow">AL MASSIMO</span>
@@ -545,17 +548,16 @@ export function SummerTourLiguriaClient({ variant = "a" }: SummerTourLiguriaClie
                     <div className="hero-sub-row">
                         <p className="hero-sub">{heroSub}</p>
                         <span className="hero-heart" aria-hidden>
-                            <svg viewBox="0 0 64 64" width="36" height="36" fill="none">
+                            <svg viewBox="0 0 64 64" width="56" height="56" fill="none">
                                 <path
                                     d="M32 54C32 54 8 38 8 22c0-8 6-14 14-14 5 0 10 3 10 8 0-5 5-8 10-8 8 0 14 6 14 14 0 16-24 32-24 32z"
                                     stroke="#e63946"
-                                    strokeWidth="2.5"
+                                    strokeWidth="2.8"
                                     strokeLinejoin="round"
                                 />
                             </svg>
                         </span>
                     </div>
-                    <div className="hero-badge">TUTTO IN UN SOLO GIORNO!</div>
                     <WhatsAppLink section="hero" placement="hero-primary" className="btn-wa">
                         <WaIcon className="wa-svg" />
                         PRENOTA ORA SU WHATSAPP

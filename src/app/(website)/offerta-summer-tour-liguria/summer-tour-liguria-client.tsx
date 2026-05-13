@@ -196,29 +196,6 @@ function DestPinIcon() {
     )
 }
 
-function OfferClockIcon() {
-    return (
-        <svg className="offer-clock-svg" viewBox="0 0 28 28" aria-hidden>
-            <path
-                d="M4 14h-1.5M24 14h1.5M14 4v-1.5M14 24v1.5M6.5 6.5L5.3 5.3M21.5 21.5l1.2 1.2M21.5 6.5l1.2-1.2M6.5 21.5L5.3 22.7"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.2"
-                strokeLinecap="round"
-            />
-            <circle cx="14" cy="15" r="8.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
-            <path d="M14 11v4.2l2.8 1.6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            <path
-                d="M14 4.5v1.8M7.2 5.5l1.3 1.3M20.8 5.5l-1.3 1.3"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.25"
-                strokeLinecap="round"
-            />
-        </svg>
-    )
-}
-
 const expCollageAlts = [
     "Gruppo GiBravo sul pullman verso il mare",
     "Divertimento in spiaggia Summer Tour Liguria",
@@ -361,22 +338,7 @@ function ReviewsTitleHeartIcon() {
     )
 }
 
-function ReviewsCtaArrowIcon() {
-    return (
-        <svg className="reviews-cta-arrow-svg" viewBox="0 0 100 32" aria-hidden>
-            <path
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.25"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6 16h68M62 9l14 7-14 7"
-            />
-        </svg>
-    )
-}
-
-/** Mismo trazo que el corazón del bloque hero (hero-sub-row). */
+/** Corazón decorativo (footer). */
 function HeroHeartIcon({ className, size = 40 }: { className?: string; size?: number }) {
     return (
         <svg className={className} viewBox="0 0 64 64" width={size} height={size} fill="none" aria-hidden>
@@ -459,12 +421,14 @@ function WhatsAppLink({
     className,
     style,
     children,
+    ctaText = "WhatsApp",
 }: {
     section: string
     placement: string
     className?: string
     style?: CSSProperties
     children: ReactNode
+    ctaText?: string
 }) {
     const href = useMemo(
         () =>
@@ -486,7 +450,7 @@ function WhatsAppLink({
                 trackWhatsAppClick({
                     section,
                     placement,
-                    ctaText: "WhatsApp",
+                    ctaText,
                     href,
                 })
             }
@@ -519,7 +483,6 @@ export function SummerTourLiguriaClient({ variant = "a" }: SummerTourLiguriaClie
                                 className="hero-logo-img"
                             />
                         </Link>
-                        <div className="hero-badge">TUTTO IN UN SOLO GIORNO!</div>
                     </div>
                     <h1 className="hero-title">
                         <span className="hero-title-line hero-title-line--blue">VIVI L&apos;ESTATE</span>
@@ -527,20 +490,22 @@ export function SummerTourLiguriaClient({ variant = "a" }: SummerTourLiguriaClie
                     </h1>
                     <div className="hero-sub-row">
                         <p className="hero-sub">{heroSub}</p>
-                        <span className="hero-heart" aria-hidden>
-                            <svg viewBox="0 0 64 64" width="56" height="56" fill="none">
-                                <path
-                                    d="M32 54C32 54 8 38 8 22c0-8 6-14 14-14 5 0 10 3 10 8 0-5 5-8 10-8 8 0 14 6 14 14 0 16-24 32-24 32z"
-                                    stroke="#e63946"
-                                    strokeWidth="2.8"
-                                    strokeLinejoin="round"
-                                />
-                            </svg>
-                        </span>
                     </div>
-                    <WhatsAppLink section="hero" placement="hero-primary" className="btn-wa">
-                        <WaIcon className="wa-svg" />
-                        PRENOTA ORA SU WHATSAPP
+                    <WhatsAppLink
+                        section="hero"
+                        placement="hero-flyer"
+                        className="hero-flyer-wa-link"
+                        ctaText="Hero flyer WhatsApp"
+                    >
+                        <Image
+                            src="/flyer3.webp"
+                            alt="Tutto in un solo giorno — Prenota ora su WhatsApp"
+                            width={800}
+                            height={360}
+                            className="hero-flyer-wa-img"
+                            priority
+                            sizes="(max-width: 900px) min(92vw, 460px), min(100%, 460px)"
+                        />
                     </WhatsAppLink>
                     <p className="hero-wa-note">Posti limitati ogni settimana!</p>
                 </div>
@@ -729,80 +694,34 @@ export function SummerTourLiguriaClient({ variant = "a" }: SummerTourLiguriaClie
             </section>
             */}
 
-            <section className="offer-banner" aria-labelledby="offer-banner-heading">
-                <div className="offer-banner-inner">
-                    <div className="offer-cluster offer-cluster--badge">
-                        <div className="offer-splat offer-splat--red">
-                            <span className="offer-splat-line font-bangers">OFFERTA</span>
-                            <span className="offer-splat-line font-bangers">SPECIALE</span>
-                        </div>
-                        <span className="offer-clock-wrap" aria-hidden>
-                            <OfferClockIcon />
-                        </span>
-                    </div>
-
-                    <div className="offer-cluster offer-cluster--deadline">
-                        <p id="offer-banner-heading" className="offer-deadline-pre">
-                            PRENOTA ENTRO IL
-                        </p>
-                        <p className="offer-deadline-date font-bangers">15 MAGGIO</p>
-                    </div>
-
-                    <div className="offer-cluster offer-cluster--compare">
-                        <p className="offer-compare-caps">E APPROFITTA DEL PREZZO SCONTATO!</p>
-                        <div className="offer-old-box">
-                            <span className="offer-old-label">INVECE DI</span>
-                            <span className="offer-old-row">
-                                <span className="offer-old-price">45€</span>
-                            </span>
-                        </div>
-                    </div>
-
-                    <div className="offer-cluster offer-cluster--hero">
-                        <div className="offer-splat offer-splat--white">
-                            <p className="offer-hero-solo">SOLO</p>
-                            <p className="offer-price-hero font-bangers">40€</p>
-                            <p className="offer-hero-ppx">A PERSONA</p>
-                        </div>
-                    </div>
-
-                    <div className="offer-cluster offer-cluster--urgency">
-                        <div className="offer-splat offer-splat--navy">
-                            <span className="offer-navy-brush font-bangers">
-                                POSTI
-                                <br />
-                                LIMITATI!
-                            </span>
-                        </div>
-                        <div className="offer-urgent-row">
-                            <span className="offer-urgent-text">PRENOTA SUBITO IL TUO POSTO!</span>
-                            <svg
-                                className="offer-urgent-arrow"
-                                viewBox="0 0 56 28"
-                                width="48"
-                                height="26"
-                                aria-hidden
-                            >
-                                <path
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M52 6c-10 10-28 16-44 18"
-                                />
-                                <path
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M14 22l-6 2 2-6"
-                                />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
+            <section className="offer-banner" aria-label="Offerta Summer Tour Liguria">
+                <WhatsAppLink
+                    section="promo"
+                    placement="offer-banner"
+                    className="offer-banner-wa-link"
+                    ctaText="Banner offerta WhatsApp"
+                >
+                    <Image
+                        src="/flyer1.webp"
+                        alt="Offerta speciale Summer Tour Liguria: promo, date e prezzo"
+                        width={2320}
+                        height={462}
+                        className="offer-banner-img offer-banner-img--desktop"
+                        sizes="100vw"
+                        quality={90}
+                    />
+                    <Image
+                        src="/flyer4.webp"
+                        alt="Offerta speciale Summer Tour Liguria: promo, date e prezzo"
+                        width={1200}
+                        height={600}
+                        className="offer-banner-img offer-banner-img--mobile"
+                        sizes="100vw"
+                        quality={90}
+                        loading="lazy"
+                        fetchPriority="low"
+                    />
+                </WhatsAppLink>
             </section>
 
             <section className="reviews-section reviews-scrapbook" aria-labelledby="reviews-scrapbook-heading">
@@ -861,6 +780,7 @@ export function SummerTourLiguriaClient({ variant = "a" }: SummerTourLiguriaClie
                     </div>
                 </div>
 
+                {/* CTA “NON ASPETTARE…” (franja bajo testimonios; no es el bloque de tarjetas) */}
                 <div className="reviews-scrapbook-cta">
                     <svg
                         className="reviews-scrapbook-cta-wave"
@@ -879,10 +799,20 @@ export function SummerTourLiguriaClient({ variant = "a" }: SummerTourLiguriaClie
                             <p className="reviews-cta-line2">PRENOTA ORA IL TUO POSTO!</p>
                         </div>
                         <div className="reviews-scrapbook-cta-wa">
-                            <ReviewsCtaArrowIcon />
-                            <WhatsAppLink section="reviews" placement="reviews-cta" className="btn-wa reviews-cta-wa-btn">
-                                <WaIcon className="wa-svg" />
-                                PRENOTA SU WHATSAPP
+                            <WhatsAppLink
+                                section="reviews"
+                                placement="reviews-cta"
+                                className="reviews-cta-flyer-wa-link"
+                                ctaText="Flyer WhatsApp CTA"
+                            >
+                                <Image
+                                    src="/flyer2.webp"
+                                    alt="Prenota su WhatsApp"
+                                    width={900}
+                                    height={300}
+                                    className="reviews-cta-flyer-wa-img"
+                                    sizes="(max-width: 900px) min(92vw, 400px), (max-width: 1320px) min(55vw, 420px), 380px"
+                                />
                             </WhatsAppLink>
                         </div>
                     </div>

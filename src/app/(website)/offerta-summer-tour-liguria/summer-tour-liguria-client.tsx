@@ -396,46 +396,26 @@ function FooterPhoneIcon() {
             <path
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="1.85"
+                strokeWidth="1.75"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                d="M6.5 4h3l1.5 4-2 1.2a11 11 0 006.3 6.3l1.2-2 4 1.5v3a2 2 0 01-2.2 2A16 16 0 016.5 6.2 2 2 0 014-2.2z"
+                d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.44 12.44 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.44 12.44 0 002.81.7A2 2 0 0122 16.92z"
             />
         </svg>
     )
 }
 
-function FooterSocialIg() {
+function FooterSocialIcon({ src }: { src: string }) {
     return (
-        <svg className="footer-social-svg" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" strokeWidth="1.65" />
-            <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.65" />
-            <circle cx="17.5" cy="6.5" r="1.15" fill="currentColor" />
-        </svg>
-    )
-}
-
-function FooterSocialFb() {
-    return (
-        <svg className="footer-social-svg" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5" />
-            <path
-                fill="currentColor"
-                d="M13.2 16v-4.1h1.3l.2-1.5h-1.5V9.3c0-.4.1-.6.6-.6h1V7h-1.6c-1.5 0-2.1.7-2.1 1.9V10H9v1.5h1.1V16h3.1z"
-            />
-        </svg>
-    )
-}
-
-function FooterSocialTiktok() {
-    return (
-        <svg className="footer-social-svg" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <path d="M12 7v7.2" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" />
-            <circle cx="10.2" cy="16.8" r="2.2" stroke="currentColor" strokeWidth="1.65" />
-            <path d="M12 7h4.2" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" />
-            <path d="M16.2 7v4.8" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" />
-            <path d="M16.2 7c.9 1.3 2.1 2.1 3.6 2.3" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" />
-        </svg>
+        <Image
+            src={src}
+            alt=""
+            width={22}
+            height={22}
+            className="footer-social-img"
+            sizes="22px"
+            aria-hidden
+        />
     )
 }
 
@@ -578,7 +558,7 @@ export function SummerTourLiguriaClient({ variant = "a" }: SummerTourLiguriaClie
 
             <div className="features-bar">
                 {featuresBar.map((f) => (
-                    <div key={f.id} className="feat-item">
+                    <div key={f.id} className="feat-item" data-icon={f.icon}>
                         <span className="feat-icon-wrap" aria-hidden>
                             <FeatBarIcon name={f.icon} />
                         </span>
@@ -780,9 +760,6 @@ export function SummerTourLiguriaClient({ variant = "a" }: SummerTourLiguriaClie
 
                     <div className="offer-cluster offer-cluster--hero">
                         <div className="offer-splat offer-splat--white">
-                            <span className="offer-hero-pin" aria-hidden>
-                                <DestPinIcon />
-                            </span>
                             <p className="offer-hero-solo">SOLO</p>
                             <p className="offer-price-hero font-bangers">40€</p>
                             <p className="offer-hero-ppx">A PERSONA</p>
@@ -956,13 +933,13 @@ export function SummerTourLiguriaClient({ variant = "a" }: SummerTourLiguriaClie
                     <p className="footer-col-heading">SEGUICI SU</p>
                     <div className="footer-social-row">
                         <a href={SOCIAL.instagram} className="footer-social-btn" aria-label="Instagram" target="_blank" rel="noopener noreferrer">
-                            <FooterSocialIg />
+                            <FooterSocialIcon src="/instagram.png" />
                         </a>
                         <a href={SOCIAL.facebook} className="footer-social-btn" aria-label="Facebook" target="_blank" rel="noopener noreferrer">
-                            <FooterSocialFb />
+                            <FooterSocialIcon src="/facebook.png" />
                         </a>
                         <a href={SOCIAL.tiktok} className="footer-social-btn" aria-label="TikTok" target="_blank" rel="noopener noreferrer">
-                            <FooterSocialTiktok />
+                            <FooterSocialIcon src="/tik-tok.png" />
                         </a>
                     </div>
                 </div>

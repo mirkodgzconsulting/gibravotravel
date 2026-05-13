@@ -894,27 +894,12 @@
       background: #fff;
       color: var(--offer-ink);
       padding: clamp(20px, 2.6vw, 28px) clamp(26px, 4vw, 48px) clamp(18px, 2.4vw, 26px);
-      padding-top: clamp(28px, 3.2vw, 36px);
       border-radius: 36px 28px 40px 32px;
       border: 1px solid rgba(0, 0, 0, 0.06);
       box-shadow:
         0 10px 32px rgba(0, 0, 0, 0.1),
         0 3px 10px rgba(0, 0, 0, 0.06),
         inset 0 1px 0 #fff;
-    }
-    #liguria-offer-root .offer-hero-pin {
-      position: absolute;
-      top: clamp(8px, 1.2vw, 12px);
-      left: clamp(10px, 1.8vw, 16px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--offer-red);
-    }
-    #liguria-offer-root .offer-hero-pin .dest-pin-icon {
-      width: 22px;
-      height: 22px;
-      filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
     }
     #liguria-offer-root .offer-hero-solo {
       margin: 0 0 2px;
@@ -1395,11 +1380,14 @@
       box-sizing: border-box;
       transition: background 0.15s, border-color 0.15s;
     }
-    #liguria-offer-root .footer-social-btn .footer-social-svg {
+    #liguria-offer-root .footer-social-btn .footer-social-img {
       width: 19px;
       height: 19px;
       display: block;
       flex-shrink: 0;
+      object-fit: contain;
+      filter: brightness(0) invert(1);
+      opacity: 0.96;
     }
     #liguria-offer-root .footer-social-btn:hover {
       background: rgba(255, 255, 255, 0.12);
@@ -1743,37 +1731,74 @@
         height: 26px;
       }
 
-      /* Features bar (vuelta al layout 2 columnas estable) */
+      /* Features bar — móvil: tarjeta blanca, rejilla 3+2, iconos a color (ref. cliente) */
       #liguria-offer-root .features-bar {
-        flex-direction: row;
-        flex-wrap: wrap;
-        justify-content: center;
-        align-items: center;
-        row-gap: 18px;
-        column-gap: 16px;
-        padding: clamp(22px, 4.5vw, 32px) 16px;
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        row-gap: clamp(14px, 4vw, 22px);
+        column-gap: 0;
+        align-items: stretch;
+        justify-items: stretch;
+        margin: 0 14px;
+        padding: clamp(18px, 4vw, 26px) clamp(8px, 2vw, 14px);
+        background: #fff;
+        border: 1px solid #e4e9f2;
+        border-radius: 18px;
+        box-shadow: 0 4px 22px rgba(8, 31, 77, 0.06);
       }
       #liguria-offer-root .feat-item {
-        flex: 1 1 calc(50% - 12px);
-        min-width: 0;
-        max-width: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
         justify-content: flex-start;
         gap: 10px;
-        padding: 8px 8px;
+        padding: 10px 8px 14px;
+        min-width: 0;
+        max-width: none;
+        flex: unset;
+      }
+      #liguria-offer-root .feat-item:nth-child(1) {
+        grid-column: 1 / span 2;
+        border-right: 1px solid #e8ecf4;
+      }
+      #liguria-offer-root .feat-item:nth-child(2) {
+        grid-column: 3 / span 2;
+        border-right: 1px solid #e8ecf4;
+      }
+      #liguria-offer-root .feat-item:nth-child(3) {
+        grid-column: 5 / span 2;
+      }
+      #liguria-offer-root .feat-item:nth-child(4) {
+        grid-column: 2 / span 2;
+        border-right: 1px solid #e8ecf4;
+      }
+      #liguria-offer-root .feat-item:nth-child(5) {
+        grid-column: 4 / span 2;
       }
       #liguria-offer-root .feat-text {
-        flex: 1;
-        min-width: 0;
+        flex: 0 1 auto;
+        align-items: center;
+        text-align: center;
+        width: 100%;
+      }
+      #liguria-offer-root .feat-line {
+        color: var(--blue);
+        font-weight: 800;
       }
       #liguria-offer-root .feat-icon-wrap {
-        width: clamp(52px, 14vw, 76px);
-        height: clamp(52px, 14vw, 76px);
+        width: clamp(48px, 13vw, 72px);
+        height: clamp(48px, 13vw, 72px);
       }
-      /* 5 filas impares: la última queda sola en la fila pero solo media anchura */
-      #liguria-offer-root .feat-item:last-child:nth-child(odd) {
-        flex: 1 1 calc(50% - 12px);
-        max-width: calc(50% - 12px);
-        justify-content: flex-start;
+      #liguria-offer-root .feat-item[data-icon="bus"] .feat-icon-wrap,
+      #liguria-offer-root .feat-item[data-icon="group"] .feat-icon-wrap {
+        color: var(--pink);
+      }
+      #liguria-offer-root .feat-item[data-icon="person"] .feat-icon-wrap,
+      #liguria-offer-root .feat-item[data-icon="camera"] .feat-icon-wrap {
+        color: var(--yellow);
+      }
+      #liguria-offer-root .feat-item[data-icon="clock"] .feat-icon-wrap {
+        color: #5ba3e8;
       }
 
       /* Experience */
@@ -1784,6 +1809,70 @@
       }
       #liguria-offer-root .exp-title-line {
         font-size: clamp(20px, 5.4vw, 30px);
+      }
+      #liguria-offer-root .exp-title-copy .exp-title-line--underline {
+        color: var(--blue);
+      }
+      #liguria-offer-root .exp-title-copy .exp-title-line:nth-child(2),
+      #liguria-offer-root .exp-title-copy .exp-title-line:nth-child(3) {
+        color: var(--pink);
+        font-size: clamp(22px, 5.8vw, 32px);
+        letter-spacing: 0.03em;
+      }
+      #liguria-offer-root .exp-title-copy .exp-title-line:nth-child(2) em {
+        color: inherit;
+      }
+      #liguria-offer-root .exp-title-line--underline::after {
+        height: 3px;
+        max-width: 100%;
+        border-radius: 2px;
+        transform: rotate(-0.6deg) scaleY(1);
+        background: var(--yellow);
+        opacity: 1;
+      }
+      #liguria-offer-root .exp-title-heart svg {
+        width: 52px;
+        height: 52px;
+      }
+      #liguria-offer-root .exp-title-heart path {
+        stroke: var(--pink);
+      }
+      #liguria-offer-root .exp-title-block {
+        margin-bottom: 22px;
+        align-items: flex-start;
+      }
+      #liguria-offer-root .exp-para {
+        position: relative;
+        padding-left: 38px;
+        font-size: 16px;
+        line-height: 1.55;
+        color: #1e3a6e;
+      }
+      #liguria-offer-root .exp-para::before {
+        content: "✓";
+        position: absolute;
+        left: 0;
+        top: 0.4em;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: var(--pink);
+        color: #fff;
+        font-size: 11px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+        font-family: var(--font-outfit), system-ui, sans-serif;
+      }
+      #liguria-offer-root .exp-body {
+        gap: 16px;
+      }
+      #liguria-offer-root .exp-left .motto {
+        font-size: clamp(12px, 3.4vw, 14px);
+        text-align: left;
+        margin-top: 20px;
       }
       #liguria-offer-root .exp-left {
         flex: none;
@@ -1858,6 +1947,7 @@
         margin-left: 0;
         margin-right: 0;
         box-sizing: border-box;
+        background: #fff;
         padding-top: 44px;
         padding-bottom: 48px;
         padding-left: max(20px, env(safe-area-inset-left, 0px));
@@ -1872,17 +1962,84 @@
       #liguria-offer-root .two-col-col--dest .col-heading {
         text-align: center;
       }
+      #liguria-offer-root .two-col-col--why .col-heading {
+        text-align: center;
+        margin-bottom: 22px;
+      }
+      #liguria-offer-root .two-col-col--why .col-heading-under::after {
+        display: none;
+      }
+      #liguria-offer-root .two-col-col--why .col-heading-line:nth-child(2) {
+        position: relative;
+        display: inline-block;
+        margin-top: 6px;
+        padding-bottom: 10px;
+      }
+      #liguria-offer-root .two-col-col--why .col-heading-line:nth-child(2)::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 2px;
+        background: var(--pink);
+        border-radius: 2px;
+      }
       #liguria-offer-root .why-grid {
-        grid-template-columns: repeat(2, 1fr);
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        border: none;
+        background: transparent;
       }
       #liguria-offer-root .why-card {
-        padding: 22px 16px 24px;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        grid-template-rows: auto auto;
+        align-items: center;
+        column-gap: 18px;
+        row-gap: 4px;
+        padding: 16px 18px;
+        background: #fff;
+        border: 1px solid #e8ecf4;
+        border-radius: 14px;
+        box-shadow: 0 2px 14px rgba(8, 31, 77, 0.07);
+        border-right: none;
+        border-bottom: none;
+      }
+      #liguria-offer-root .why-card:hover {
+        background: #fafbff;
+      }
+      #liguria-offer-root .why-card-icon {
+        grid-row: 1 / span 2;
+        grid-column: 1;
+        margin-bottom: 0;
+        align-self: center;
+        width: clamp(52px, 15vw, 64px);
+        height: clamp(52px, 15vw, 64px);
       }
       #liguria-offer-root .why-card-name {
-        font-size: clamp(11px, 2.9vw, 12px);
+        grid-column: 2;
+        grid-row: 1;
+        margin-bottom: 0;
+        font-size: clamp(11px, 3.1vw, 13px);
+        line-height: 1.2;
       }
       #liguria-offer-root .why-card-desc {
-        font-size: clamp(12px, 3.2vw, 14px);
+        grid-column: 2;
+        grid-row: 2;
+        font-size: clamp(12px, 3.3vw, 14px);
+        line-height: 1.45;
+      }
+      #liguria-offer-root .why-card:nth-child(6n + 1) .why-card-icon,
+      #liguria-offer-root .why-card:nth-child(6n + 3) .why-card-icon,
+      #liguria-offer-root .why-card:nth-child(6n + 5) .why-card-icon {
+        color: var(--pink);
+      }
+      #liguria-offer-root .why-card:nth-child(6n + 2) .why-card-icon,
+      #liguria-offer-root .why-card:nth-child(6n + 4) .why-card-icon,
+      #liguria-offer-root .why-card:nth-child(6n + 6) .why-card-icon {
+        color: var(--yellow);
       }
       #liguria-offer-root .dest-grid {
         width: 100%;
@@ -1986,11 +2143,13 @@
         flex-direction: column;
         align-items: stretch;
         text-align: center;
-        gap: 8px;
+        gap: 6px;
         padding: 14px 20px 18px;
       }
       #liguria-offer-root .reviews-scrapbook-cta-copy {
         text-align: center;
+        flex: 0 1 auto;
+        min-width: 0;
       }
       #liguria-offer-root .reviews-cta-line1 {
         margin-bottom: 4px;
@@ -2016,13 +2175,13 @@
         justify-content: center;
       }
 
-      /* Footer móvil: diseño unificado (bloques claros, sin “rayas” pesadas) */
+      /* Footer móvil: bloques separados solo por espacio (sin líneas) */
       #liguria-offer-root .liguria-footer {
         flex-direction: column;
         flex-wrap: nowrap;
         align-items: center;
-        gap: 0;
-        background: linear-gradient(180deg, #061335 0%, var(--blue) 35%, #0d3270 100%);
+        gap: 26px;
+        background: var(--blue);
         padding: 22px max(18px, env(safe-area-inset-left, 0px)) calc(12px + 56px + env(safe-area-inset-bottom, 0px))
           max(18px, env(safe-area-inset-right, 0px));
         box-sizing: border-box;
@@ -2043,25 +2202,14 @@
         justify-content: flex-start;
         align-items: stretch;
         text-align: center;
-        padding: 0 0 20px;
-        margin-bottom: 20px;
+        padding: 0;
+        margin: 0;
         border-bottom: none;
-        position: relative;
-      }
-      #liguria-offer-root .footer-col:not(:last-child)::after {
-        content: "";
-        position: absolute;
-        left: 8%;
-        right: 8%;
-        bottom: 0;
-        height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent);
       }
       #liguria-offer-root .footer-col--brand {
         align-items: center;
-        padding-top: 4px;
-        padding-bottom: 22px;
-        margin-bottom: 22px;
+        padding: 0;
+        margin: 0;
       }
       #liguria-offer-root .footer-col--brand .footer-brand-link {
         margin: 0 auto;
@@ -2073,7 +2221,7 @@
         filter: none;
       }
       #liguria-offer-root .footer-col-heading {
-        margin: 0 auto 16px;
+        margin: 0 auto 10px;
         max-width: 100%;
         font-family: var(--font-outfit), system-ui, sans-serif;
         font-size: 10px;
@@ -2135,21 +2283,18 @@
         background: rgba(255, 255, 255, 0.06);
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
       }
-      #liguria-offer-root .footer-social-btn .footer-social-svg {
+      #liguria-offer-root .footer-social-btn .footer-social-img {
         width: 19px;
         height: 19px;
       }
       #liguria-offer-root .footer-col--social {
         align-items: center;
-        padding-bottom: 22px;
-        margin-bottom: 22px;
+        padding: 0;
+        margin: 0;
       }
       #liguria-offer-root .footer-col:last-child {
         margin-bottom: 0;
-        padding-bottom: 2px;
-      }
-      #liguria-offer-root .footer-col:last-child::after {
-        display: none;
+        padding-bottom: 0;
       }
       #liguria-offer-root .footer-col--tagline {
         align-items: center;
@@ -2162,7 +2307,7 @@
         justify-content: center;
         gap: 12px;
         text-align: center;
-        padding: 10px 4px 0;
+        padding: 6px 4px 0;
       }
       #liguria-offer-root .footer-tagline-text {
         align-items: center;
@@ -2264,34 +2409,19 @@
         font-size: clamp(24px, 6.5vw, 34px);
       }
       #liguria-offer-root .features-bar {
-        flex-direction: row;
-        flex-wrap: wrap;
-        justify-content: center;
-        align-items: stretch;
-        row-gap: 14px;
-        column-gap: 10px;
-        padding: clamp(20px, 5vw, 28px) 12px;
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        margin: 0 12px;
+        padding: 16px 6px 18px;
+        row-gap: 12px;
+        column-gap: 0;
       }
       #liguria-offer-root .feat-item {
-        flex: 1 1 calc(50% - 8px);
-        min-width: 0;
-        max-width: none;
-        justify-content: flex-start;
-        gap: 8px;
-        padding: 6px 4px;
-      }
-      #liguria-offer-root .feat-text {
-        flex: 1;
-        min-width: 0;
+        padding: 8px 4px 10px;
       }
       #liguria-offer-root .feat-icon-wrap {
-        width: clamp(48px, 16vw, 68px);
-        height: clamp(48px, 16vw, 68px);
-      }
-      #liguria-offer-root .feat-item:last-child:nth-child(odd) {
-        flex: 1 1 calc(50% - 8px);
-        max-width: calc(50% - 8px);
-        justify-content: flex-start;
+        width: clamp(44px, 15vw, 64px);
+        height: clamp(44px, 15vw, 64px);
       }
       #liguria-offer-root .btn-wa { font-size: 14px; padding: 14px 24px; }
       #liguria-offer-root .offer-urgent-arrow {

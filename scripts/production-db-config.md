@@ -60,7 +60,7 @@ const nextConfig = {
 ### Endpoints de Monitoreo
 ```bash
 # Verificar salud de la base de datos
-curl https://tu-dominio.com/api/health/database
+curl https://www.gibravo.it/api/health/database
 
 # Respuesta esperada:
 {

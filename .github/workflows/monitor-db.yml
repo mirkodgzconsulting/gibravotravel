@@ -1,18 +1,18 @@
 name: Monitor Database Connections
 
 on:
-  schedule:
-    # Corre cada hora
-    - cron: '0 * * * *'
-  workflow_dispatch: # Permite ejecución manual
-
+  workflow_dispatch: # Solo ejecución manual (sin schedule)
 jobs:
   monitor:
     runs-on: ubuntu-latest
     steps:
       - name: Check Database Health
         run: |
-          response=$(curl -s https://tu-dominio.com/api/health/database)
+          # Produzione: dominio canonico del sito (evita placeholder tu-dominio.com)
+          response=$(curl -sfL "https://www.gibravo.it/api/health/database") || {
+            echo "::error::Health endpoint non raggiungibile o HTTP errore"
+            exit 1
+          }
           echo "$response" | jq '.'
           
           # Extraer métricas

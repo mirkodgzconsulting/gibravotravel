@@ -180,6 +180,30 @@ function WhyGridIcon({ name }: { name: WhyIconName }) {
     }
 }
 
+function SpiaggiaCalendarIcon() {
+    return (
+        <svg className="spiaggia-cal-ico" viewBox="0 0 24 24" width="26" height="26" aria-hidden>
+            <rect x="3" y="5" width="18" height="16" rx="2" fill="none" stroke="currentColor" strokeWidth="1.75" />
+            <path d="M3 9h18M8 3v4M16 3v4" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+            <circle cx="12" cy="14" r="2.5" fill="currentColor" />
+        </svg>
+    )
+}
+
+function SpiaggiaDepartureRow({ date, place }: SpiaggiaDeparture) {
+    return (
+        <li className="spiaggia-dep-row">
+            <span className="spiaggia-dep-ico-wrap" aria-hidden>
+                <SpiaggiaCalendarIcon />
+            </span>
+            <div className="spiaggia-dep-text">
+                <span className="spiaggia-dep-date">{date}</span>
+                <span className="spiaggia-dep-place">{place}</span>
+            </div>
+        </li>
+    )
+}
+
 function DestPinIcon() {
     return (
         <svg className="dest-pin-icon" viewBox="0 0 24 24" aria-hidden width="15" height="15">
@@ -256,6 +280,33 @@ const destinations: { place: string; src: string }[] = [
     { place: "FINALE LIGURE", src: campaignAssets.gallery[4]! },
     { place: "ALBISOLA MARINA", src: campaignAssets.gallery[5]! },
 ]
+
+type SpiaggiaDeparture = { date: string; place: string }
+
+const spiaggiaDeparturesCol1: SpiaggiaDeparture[] = [
+    { date: "DOMENICA 28 GIUGNO", place: "BERGEGGI" },
+    { date: "DOMENICA 05 LUGLIO", place: "SPOTORNO" },
+    { date: "DOMENICA 12 LUGLIO", place: "NOLI" },
+    { date: "DOMENICA 19 LUGLIO", place: "VARIGOTTI" },
+    { date: "DOMENICA 26 LUGLIO", place: "FINALE LIGURE" },
+    { date: "DOMENICA 02 AGOSTO", place: "SPOTORNO" },
+    { date: "SABATO 08 AGOSTO", place: "ALBISSOLA MARINA" },
+]
+
+const spiaggiaDeparturesCol2: SpiaggiaDeparture[] = [
+    { date: "DOMENICA 09 AGOSTO", place: "VARIGOTTI" },
+    { date: "FERRAGOSTO 15 AGOSTO", place: "NOLI / FINALE LIGURE" },
+    { date: "DOMENICA 16 AGOSTO", place: "SPOTORNO" },
+    { date: "SABATO 22 AGOSTO", place: "BERGEGGI" },
+    { date: "DOMENICA 23 AGOSTO", place: "ALBISSOLA MARINA" },
+    { date: "DOMENICA 30 AGOSTO", place: "NOLI" },
+]
+
+const spiaggiaPolaroids = [
+    { label: "VARIGOTTI", src: campaignAssets.gallery[3]! },
+    { label: "SPOTORNO", src: campaignAssets.gallery[1]! },
+    { label: "FINALE LIGURE", src: campaignAssets.gallery[4]! },
+] as const
 
 const departures = [
     "Domenica 28 Giugno - Bergeggi",
@@ -722,6 +773,137 @@ export function SummerTourLiguriaClient({ variant = "a" }: SummerTourLiguriaClie
                         fetchPriority="low"
                     />
                 </WhatsAppLink>
+            </section>
+
+            <section className="liguria-spiaggia-program" aria-labelledby="liguria-spiaggia-heading">
+                <div className="spiaggia-program-top">
+                    <header className="spiaggia-program-head">
+                        <h2 id="liguria-spiaggia-heading" className="spiaggia-program-head-title">
+                            <Image
+                                src="/flyer5.webp"
+                                alt="Spiaggia 2026 Liguria — Destinazioni in programma"
+                                width={1446}
+                                height={720}
+                                className="spiaggia-program-head-img"
+                                sizes="(max-width: 900px) 92vw, min(620px, 48vw)"
+                                priority
+                            />
+                        </h2>
+                    </header>
+
+                    <div className="spiaggia-badge">
+                        <Image
+                            src="/flyer6.webp"
+                            alt="Mare cristallino, divertimento, relax"
+                            width={923}
+                            height={868}
+                            className="spiaggia-badge-img"
+                            sizes="(max-width: 900px) 28vw, 160px"
+                        />
+                    </div>
+
+                    <div className="spiaggia-schedule">
+                        <ul className="spiaggia-dep-col">
+                            {spiaggiaDeparturesCol1.map((d) => (
+                                <SpiaggiaDepartureRow key={`${d.date}-${d.place}`} {...d} />
+                            ))}
+                        </ul>
+                        <ul className="spiaggia-dep-col">
+                            {spiaggiaDeparturesCol2.map((d) => (
+                                <SpiaggiaDepartureRow key={`${d.date}-${d.place}`} {...d} />
+                            ))}
+                        </ul>
+                    </div>
+
+                    <div className="spiaggia-polaroids">
+                        {spiaggiaPolaroids.map((p, i) => (
+                            <div key={p.label} className={`spiaggia-pol spiaggia-pol--${i + 1}`}>
+                                <div className="spiaggia-pol-frame">
+                                    <Image
+                                        src={p.src}
+                                        alt={p.label}
+                                        width={360}
+                                        height={300}
+                                        className="spiaggia-pol-img"
+                                        sizes="(max-width: 900px) 96vw, 38vw"
+                                    />
+                                    <span className="spiaggia-pol-label font-bangers">{p.label}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="spiaggia-program-bottom">
+                    <div className="spiaggia-bottom-col spiaggia-bottom-col--copy">
+                        <div className="spiaggia-beach-deco">
+                            <Image
+                                src="/flyer10.webp"
+                                alt=""
+                                width={1008}
+                                height={1001}
+                                className="spiaggia-beach-deco-img"
+                                sizes="(max-width: 900px) 40vw, 120px"
+                            />
+                        </div>
+                        <p className="spiaggia-intro">
+                            Preparati a vivere una giornata indimenticabile nella splendida{" "}
+                            <strong>LIGURIA</strong>, una delle mete più amate della Riviera Ligure. Ti aspettano{" "}
+                            <strong>9 ore</strong> piene di mare cristallino, relax e divertimento in un&apos;atmosfera
+                            perfetta per staccare dalla routine. Un&apos;esperienza perfetta per una fuga estiva senza
+                            pensieri.
+                        </p>
+                        <div className="spiaggia-price-badge">
+                            <Image
+                                src="/flyer7.webp"
+                                alt="Quota di partecipazione: adulti 45€, bambini fino a 11 anni 40€"
+                                width={945}
+                                height={901}
+                                className="spiaggia-price-badge-img"
+                                sizes="(max-width: 900px) 72vw, 220px"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="spiaggia-bottom-col spiaggia-bottom-col--includes">
+                        <div className="spiaggia-includes-stack">
+                            <Image
+                                src="/flyer9.png"
+                                alt="La quota comprende: viaggio A/R con pullman GT, coordinatore di viaggio, polizza medico-bagaglio, servizio fotografico"
+                                width={1054}
+                                height={1024}
+                                className="spiaggia-includes-img"
+                                sizes="(max-width: 900px) 92vw, 340px"
+                            />
+                            <WhatsAppLink
+                                section="spiaggia"
+                                placement="spiaggia-includes-wa"
+                                className="spiaggia-includes-wa-link"
+                                ctaText="Prenota su WhatsApp"
+                            >
+                                <Image
+                                    src="/flyer2.webp"
+                                    alt="Prenota su WhatsApp"
+                                    width={2087}
+                                    height={432}
+                                    className="spiaggia-includes-wa-img"
+                                    sizes="(max-width: 900px) 92vw, 320px"
+                                />
+                            </WhatsAppLink>
+                        </div>
+                    </div>
+
+                    <div className="spiaggia-bottom-col spiaggia-bottom-col--logistics">
+                        <Image
+                            src="/flyer8.webp"
+                            alt="9 ore di spiaggia relax. Luoghi di ritiro e orari: Bergamo Malpensa 05:50, Trezzo 06:10, Agrate 06:20, Cologno 06:30, Lambrate 06:50. Ripartenza ore 19:00 circa, rientro in serata."
+                            width={832}
+                            height={1271}
+                            className="spiaggia-logistics-img"
+                            sizes="(max-width: 900px) 94vw, 350px"
+                        />
+                    </div>
+                </div>
             </section>
 
             <section className="reviews-section reviews-scrapbook" aria-labelledby="reviews-scrapbook-heading">

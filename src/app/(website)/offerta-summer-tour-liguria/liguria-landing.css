@@ -1035,6 +1035,9 @@
     }
 
     @media (max-width: 1100px) {
+      #liguria-offer-root .liguria-spiaggia-program {
+        padding-top: 22px;
+      }
       #liguria-offer-root .spiaggia-program-top {
         grid-template-columns: 1fr;
         grid-template-areas:
@@ -1042,7 +1045,7 @@
           "badge"
           "schedule"
           "photos";
-        gap: 20px;
+        gap: 16px;
         margin-bottom: 24px;
         justify-items: stretch;
         width: 100%;
@@ -1053,7 +1056,7 @@
         top: auto;
         right: auto;
         width: clamp(112px, 26vw, 148px);
-        margin: 0 auto 4px;
+        margin: -4px auto -4px;
       }
       #liguria-offer-root .spiaggia-schedule {
         grid-area: schedule;
@@ -1114,8 +1117,11 @@
         margin-left: auto;
         margin-right: auto;
       }
+      #liguria-offer-root .spiaggia-bottom-col--includes {
+        margin-top: -40px;
+      }
       #liguria-offer-root .spiaggia-bottom-col--logistics {
-        margin-top: 0;
+        margin-top: -40px;
         justify-content: center;
       }
     }
@@ -1123,15 +1129,16 @@
     /* SPIAGGIA — móvil */
     @media (max-width: 900px) {
       #liguria-offer-root .liguria-spiaggia-program {
-        padding: 24px 16px 40px;
+        padding: 14px 16px 40px;
       }
       #liguria-offer-root .spiaggia-program-top {
-        gap: 18px;
+        gap: 14px;
         margin-bottom: 28px;
         justify-items: stretch;
       }
       #liguria-offer-root .spiaggia-program-head {
         text-align: center;
+        margin-bottom: 0;
       }
       #liguria-offer-root .spiaggia-program-head-img {
         width: min(100%, 100%);
@@ -1141,7 +1148,7 @@
       }
       #liguria-offer-root .spiaggia-badge {
         width: clamp(100px, 24vw, 132px);
-        margin-bottom: 0;
+        margin: -6px auto -6px;
       }
       #liguria-offer-root .spiaggia-schedule {
         display: flex;
@@ -1152,6 +1159,7 @@
         width: 100%;
         max-width: 100%;
         padding: 0;
+        margin-top: 0;
         box-sizing: border-box;
       }
       #liguria-offer-root .spiaggia-dep-col {
@@ -1222,6 +1230,7 @@
         display: block;
         width: 100%;
         text-align: center;
+        margin-bottom: -12px;
       }
       #liguria-offer-root .spiaggia-price-badge-img {
         width: min(78vw, 200px);
@@ -1232,6 +1241,7 @@
       }
       #liguria-offer-root .spiaggia-bottom-col--includes {
         width: 100%;
+        margin-top: -52px;
       }
       #liguria-offer-root .spiaggia-includes-stack {
         width: 100%;
@@ -1251,6 +1261,7 @@
         width: 100%;
         display: flex;
         justify-content: center;
+        margin-top: -44px;
       }
       #liguria-offer-root .spiaggia-logistics-img {
         width: 100%;
@@ -1262,8 +1273,19 @@
     }
 
     @media (max-width: 480px) {
+      #liguria-offer-root .liguria-spiaggia-program {
+        padding-top: 10px;
+      }
+      #liguria-offer-root .spiaggia-program-top {
+        gap: 12px;
+      }
+      #liguria-offer-root .spiaggia-badge {
+        margin-top: -8px;
+        margin-bottom: -8px;
+      }
       #liguria-offer-root .spiaggia-schedule {
         gap: 8px;
+        margin-top: 0;
       }
       #liguria-offer-root .spiaggia-dep-col {
         gap: 10px;
@@ -1297,6 +1319,12 @@
       #liguria-offer-root .spiaggia-program-bottom {
         max-width: 100%;
         gap: 32px;
+      }
+      #liguria-offer-root .spiaggia-bottom-col--includes {
+        margin-top: -40px;
+      }
+      #liguria-offer-root .spiaggia-bottom-col--logistics {
+        margin-top: -40px;
       }
     }
 

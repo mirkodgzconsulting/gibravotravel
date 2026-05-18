@@ -253,16 +253,19 @@
     #liguria-offer-root .img-placeholder svg { opacity: 0.25; }
 
     /* ============================================================
-       FEATURES BAR (icona outline oro + due righe bianche)
+       FEATURES BAR (fondo bianco, icone a colori, testo blu)
     ============================================================ */
     #liguria-offer-root .features-bar {
-      background: #001a3d;
+      background: #fff;
       display: flex;
       flex-wrap: nowrap;
       align-items: center;
       justify-content: space-evenly;
       gap: clamp(12px, 2vw, 28px);
       padding: clamp(26px, 3.2vw, 40px) clamp(20px, 3.5vw, 56px);
+      border-top: 1px solid #e4e9f2;
+      border-bottom: 1px solid #e4e9f2;
+      box-shadow: 0 4px 22px rgba(8, 31, 77, 0.06);
     }
     #liguria-offer-root .feat-item {
       flex: 1 1 0;
@@ -272,7 +275,7 @@
       align-items: center;
       justify-content: center;
       gap: clamp(8px, 1vw, 14px);
-      padding: 4px 6px;
+      padding: 4px clamp(10px, 1.5vw, 18px);
     }
     #liguria-offer-root .feat-icon-wrap {
       flex-shrink: 0;
@@ -281,8 +284,18 @@
       justify-content: center;
       width: clamp(64px, 8.5vw, 104px);
       height: clamp(64px, 8.5vw, 104px);
-      color: #f1b434;
       line-height: 0;
+    }
+    #liguria-offer-root .feat-item[data-icon="bus"] .feat-icon-wrap,
+    #liguria-offer-root .feat-item[data-icon="group"] .feat-icon-wrap {
+      color: var(--pink);
+    }
+    #liguria-offer-root .feat-item[data-icon="person"] .feat-icon-wrap,
+    #liguria-offer-root .feat-item[data-icon="camera"] .feat-icon-wrap {
+      color: var(--yellow);
+    }
+    #liguria-offer-root .feat-item[data-icon="clock"] .feat-icon-wrap {
+      color: #5ba3e8;
     }
     #liguria-offer-root .feat-bar-svg {
       display: block;
@@ -300,12 +313,18 @@
       min-width: 0;
     }
     #liguria-offer-root .feat-line {
-      color: #fff;
+      color: var(--blue);
       font-size: clamp(11px, 1.15vw, 14px);
-      font-weight: 700;
+      font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.09em;
       line-height: 1.22;
+    }
+
+    @media (min-width: 901px) {
+      #liguria-offer-root .feat-item:not(:last-child) {
+        border-right: 1px solid #e8ecf4;
+      }
     }
 
     /* ============================================================
@@ -352,6 +371,13 @@
       font-weight: 800;
       color: var(--blue);
     }
+    #liguria-offer-root .exp-title-copy .exp-title-line:nth-child(2),
+    #liguria-offer-root .exp-title-copy .exp-title-line:nth-child(3) {
+      color: var(--pink);
+    }
+    #liguria-offer-root .exp-title-copy .exp-title-line:nth-child(2) em {
+      color: inherit;
+    }
     #liguria-offer-root .exp-title-line--underline {
       position: relative;
       padding-bottom: 10px;
@@ -375,6 +401,9 @@
       margin-top: 2px;
       line-height: 0;
     }
+    #liguria-offer-root .exp-title-heart path {
+      stroke: var(--pink);
+    }
     #liguria-offer-root .exp-body {
       display: flex;
       flex-direction: column;
@@ -382,11 +411,31 @@
       margin-top: 4px;
     }
     #liguria-offer-root .exp-para {
+      position: relative;
+      padding-left: 38px;
       font-family: var(--font-outfit), system-ui, sans-serif;
       font-size: 15px;
       line-height: 1.55;
-      color: var(--blue);
+      color: #1e3a6e;
       font-weight: 400;
+    }
+    #liguria-offer-root .exp-para::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      top: 0.4em;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--pink);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      font-family: var(--font-outfit), system-ui, sans-serif;
     }
     #liguria-offer-root .exp-left .motto {
       font-family: var(--font-outfit), system-ui, sans-serif;
@@ -2150,17 +2199,10 @@
       #liguria-offer-root .exp-title-line {
         font-size: clamp(20px, 5.4vw, 30px);
       }
-      #liguria-offer-root .exp-title-copy .exp-title-line--underline {
-        color: var(--blue);
-      }
       #liguria-offer-root .exp-title-copy .exp-title-line:nth-child(2),
       #liguria-offer-root .exp-title-copy .exp-title-line:nth-child(3) {
-        color: var(--pink);
         font-size: clamp(22px, 5.8vw, 32px);
         letter-spacing: 0.03em;
-      }
-      #liguria-offer-root .exp-title-copy .exp-title-line:nth-child(2) em {
-        color: inherit;
       }
       #liguria-offer-root .exp-title-line--underline::after {
         height: 3px;
@@ -2174,37 +2216,12 @@
         width: 52px;
         height: 52px;
       }
-      #liguria-offer-root .exp-title-heart path {
-        stroke: var(--pink);
-      }
       #liguria-offer-root .exp-title-block {
         margin-bottom: 22px;
         align-items: flex-start;
       }
       #liguria-offer-root .exp-para {
-        position: relative;
-        padding-left: 38px;
         font-size: 16px;
-        line-height: 1.55;
-        color: #1e3a6e;
-      }
-      #liguria-offer-root .exp-para::before {
-        content: "✓";
-        position: absolute;
-        left: 0;
-        top: 0.4em;
-        width: 22px;
-        height: 22px;
-        border-radius: 50%;
-        background: var(--pink);
-        color: #fff;
-        font-size: 11px;
-        font-weight: 800;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        line-height: 1;
-        font-family: var(--font-outfit), system-ui, sans-serif;
       }
       #liguria-offer-root .exp-body {
         gap: 16px;
